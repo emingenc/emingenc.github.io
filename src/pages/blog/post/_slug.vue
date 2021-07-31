@@ -56,7 +56,7 @@
               class="rounded-lg flex space-x-1 bg-gray-100 py-1 px-2 pl-2 text-gray-800 items-center dark:(bg-gray-700 text-gray-300)"
             >
               <IconClock class="h-4 w-4" />
-              <div>{{ getReadingTime }} min read time</div>
+              <div>{{ getReadingTime  }} min read time</div>
             </div>
 
             <div

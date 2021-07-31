@@ -9,5 +9,5 @@ export default function getReadingTime(
   wpm: number = 200
 ): string {
   const splitted = words?.split(" ").length || 0
-  return Math.ceil(splitted / wpm).toFixed()
+  return Math.ceil((splitted / wpm)/10).toFixed()
 }
