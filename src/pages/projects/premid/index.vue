@@ -117,7 +117,7 @@ export default Vue.extend({
       link: [
         {
           rel: "canonical",
-          href: "https://eggsy.xyz/projects/premid",
+          href: "https://emingenc.github.io/projects/premid",
         },
       ],
     }

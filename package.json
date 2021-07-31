@@ -1,31 +1,31 @@
 {
-  "name": "emingenc-website",
-  "description": "emingenc's personal website made in TypeScript, Nuxt.js and Windi/Tailwind CSS",
+  "name": "eggsy-website",
+  "description": "EGGSY's personal website made in TypeScript, Nuxt.js and Windi/Tailwind CSS",
   "license": "MIT",
   "version": "4.0.0",
-  "homepage": "https://emingenc.github.io",
-  "readme": "https://github.com/emingenc/website#readme",
+  "homepage": "https://eggsy.xyz",
+  "readme": "https://github.com/eggsy/website#readme",
   "author": {
-    "name": "Mehmet Emin Genc",
-    "email": "emingenc@gmail.com",
-    "url": "https://emingenc.github.io"
+    "name": "Abdulbaki Dursun",
+    "email": "eggsydev@gmail.com",
+    "url": "https://eggsy.xyz"
   },
   "bugs": {
-    "email": "emingenc@gmail.com",
-    "url": "https://github.com/emingenc/website/issues"
+    "email": "eggsydev@gmail.com",
+    "url": "https://github.com/eggsy/website/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/emingenc/website.git"
+    "url": "https://github.com/eggsy/website.git"
   },
   "funding": [
     {
       "type": "individual",
-      "url": "https://emingenc.github.io/donate"
+      "url": "https://eggsy.xyz/donate"
     },
     {
-      "type": "buymeacoffee",
-      "url": "https://www.buymeacoffee.com/emingenc"
+      "type": "patreon",
+      "url": "https://www.patreon.com/eggsy"
     }
   ],
   "scripts": {
@@ -37,7 +37,7 @@
     "lint": "yarn lint:js"
   },
   "dependencies": {
-    "@emingencdev/vue-lanyard": "^1.1.2",
+    "@eggsydev/vue-lanyard": "^1.1.2",
     "@nuxt/content": "^1.14.0",
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/firebase": "^7.6.1",
