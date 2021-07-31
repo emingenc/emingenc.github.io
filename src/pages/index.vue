@@ -305,18 +305,27 @@ export default Vue.extend({
         "Linux",
         "Pytorch",
         "Django",
+        "Django Rest",
         "Elasticsearch",
         "Fastapi",
         "SQLAlchemy",
         "Opencv",
         "Yolov5",
-        "Detectron2"
+        "Detectron2",
+        "Nginx",
+        "MySQL",
+        "PostgreSQL",
+        "Git",
+        "Scrapy",
+        "Splash",
+        "Selenium",
+        "Pandas",
       ],
     }
   },
   fetchOnServer: false,
   async fetch() {
-    const filter = ["eggsy", "DBM", "eggsywashere.github.io"]
+    const filter = ["emingenc", "DBM", "emingenc.github.io"]
 
     const repos: Repository[] = (
       await this.$axios.get(
