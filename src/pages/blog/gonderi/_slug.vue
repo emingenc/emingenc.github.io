@@ -4,7 +4,7 @@
     class="flex font-semibold h-screen space-x-2 -mt-10 text-2xl text-gray-900 items-center justify-center overflow-hidden select-none dark:text-gray-100"
   >
     <IconSync class="h-8 animate-spin w-8" />
-    <h3>Gönderi yükleniyor...</h3>
+    <h3>Post loading...</h3>
   </div>
 
   <div
@@ -16,18 +16,18 @@
         class="flex font-semibold space-x-2 text-2xl items-center justify-center"
       >
         <IconTimes class="h-8 w-8" />
-        <h3>Gönderi yüklenemedi.</h3>
+        <h3>Post did not load.</h3>
       </div>
 
-      <small class="text-sm">Büyük ihtimalle gönderi henüz blogumda yok</small>
+      <small class="text-sm">Probably there is no post yet</small>
 
       <div class="flex justify-center">
         <SmartLink
           href="/blog"
           class="rounded-md bg-gray-700 py-2 px-4 text-gray-200 hover:bg-gray-800"
-          title="bloga dön"
+          title="return to blog"
         >
-          Bloga Dön
+          Return to blog
         </SmartLink>
       </div>
     </div>
@@ -56,7 +56,7 @@
               class="rounded-lg flex space-x-1 bg-gray-100 py-1 px-2 pl-2 text-gray-800 items-center dark:(bg-gray-700 text-gray-300)"
             >
               <IconClock class="h-4 w-4" />
-              <div>{{ getReadingTime }} dakika okuma</div>
+              <div>{{ getReadingTime }} min read time</div>
             </div>
 
             <div
@@ -97,7 +97,7 @@
 
         <div>
           <h3 class="font-medium text-lg mb-1 text-gray-900 dark:text-gray-100">
-            Yazıyı paylaş
+            Share the post
           </h3>
 
           <BlogShare :title="post.title" :path="$route.path" />
@@ -105,7 +105,7 @@
 
         <div v-if="getTags.length > 0">
           <h3 class="font-medium text-lg mb-1 text-gray-900 dark:text-gray-100">
-            Etiketler
+            Tags
           </h3>
 
           <div class="flex flex-wrap space-x-2">
@@ -127,7 +127,7 @@
 
         <div v-if="getRelatedPosts.length > 0">
           <h3 class="font-medium text-lg mb-1 text-gray-900 dark:text-gray-100">
-            Bunlar da hoşunuza gidebilir
+            You may like these also
           </h3>
 
           <div class="grid gap-2 sm:grid-cols-3">
@@ -199,7 +199,7 @@ export default Vue.extend({
 
     const title = post.title
     const description =
-      post.description || "Emin'in blogunda bu yazıyı okumaya davet edildin."
+      post.description || "You are invited to read to post on emingench's blog."
 
     const image = getPostImage
     const tags = getTags?.join(", ") || title
