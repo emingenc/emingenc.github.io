@@ -16,12 +16,12 @@ jobs:
         uses: actions/checkout@master
 
       - name: Setup node env
-        uses: actions/setup-node@v9.6.0
+        uses: actions/setup-node@v2.1.2
         with:
           node-version: ${{ matrix.node }}
           
-      - name: cache clean
-        run: yarn cache clean
+      - name: cfg
+        run: yarn config set strict-ssl false
         
       - name: Install dependencies
         run: yarn
