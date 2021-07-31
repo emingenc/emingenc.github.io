@@ -1,14 +1,6 @@
 [![cd](https://github.com/emingenc/emingenc.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/emingenc/emingenc.github.io/actions/workflows/deploy.yml)
 
-<p align="center">
-  <img src="/demo/featuring.jpg" />
-</p>
 
-<p align="center">
-  <img src="https://api.netlify.com/api/v1/badges/235c4935-39c2-4aef-9b79-f5b6c5686855/deploy-status" alt="Deploy status" />
-
-  <img src="https://app.codacy.com/project/badge/Grade/ff917529015742d3a3c3eda2674162de" alt="Codacy code quality" />
-</p>
 
 > This is a Nuxt.js Fully Static website, so you can use/host it anywhere!
 
