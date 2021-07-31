@@ -23,8 +23,14 @@ jobs:
       - name: Install dependencies
         run: yarn install
         
-      - name: .env create for build not to crush
-        run: touch .env
+      - name: 1 .env create for build not to crush
+        run: echo 'FIREBASE_API_KEY="YOUR-API-KEY"' >> .env
+        
+      - name: 2 .env create for build not to crush
+        run: echo 'FIREBASE_PROJECT_ID="YOUR-PROJECT-ID"' >> .env
+        
+      - name: 3 .env create for build not to crush
+        run: echo 'FIREBASE_APP_ID="YOUR-APP-ID"' >> .env
 
       - name: Generate
         run: yarn run generate
