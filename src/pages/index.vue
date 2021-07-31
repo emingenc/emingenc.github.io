@@ -237,11 +237,18 @@ export default Vue.extend({
     return {
       repos: [] as Repository[],
       projects: [
+      {
+          title: "Pomodoro - Tomato Luck",
+          description:
+            "Pomodoro app that rewards with luck wheel after pomodoro sessions",
+          image: "/assets/images/projects/pomodoro.png",
+          href: "https://github.com/emingenc/pomodoro_wheel",
+        },
         {
           title: "Yolov5-face detection",
           description:
             "you can run face_detect.ipynb with voila and detect faces",
-          image: "/assets/images/facerecognition_1.jpeg",
+          image: "/assets/images/projects/facerecognition_1.jpeg",
           href: "https://github.com/emingenc/yolov5-face",
         },
       ] as Project[],
