@@ -2,7 +2,7 @@ export default {
   social: {
     discord: "",
     twitter: "https://twitter.com/emingench/",
-    github: "https://github.com/emingench/",
+    github: "https://github.com/emingenc/",
     instagram: "https://instagram.com/emin.gench/",
     trello: "",
     email: "emingench@gmail.com",
