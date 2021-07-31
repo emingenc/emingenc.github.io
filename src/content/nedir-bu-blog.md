@@ -6,7 +6,7 @@ tags:
   - site
 createdAt: 2020-01-09T00:28:41.545Z
 related:
-  - blog-yenilendi
+ 
 ---
 
 Şu anda bu gönderiyi okuduğunuz blog, sizlere ulaşabilmek için oldukça uzun ve zorlu bir yoldan geçmek zorundaydı. Bunlardan birisi yapan kişinin daha önce hiç bu kadar büyük çapta (evet bottan *daha zor* oldu 😎) bir proje yapmamış olması... Eğer ilk defa böyle bir işe girişiyorsanız, her şeyin planını önceden yapmalı, oldukça geniş bir zaman ayırmalı ve neredeyse diğer her şeyden kısmanız gerekmekte.
