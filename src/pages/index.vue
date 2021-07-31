@@ -11,7 +11,7 @@
           </div>
 
           <p class="text-gray-800 dark:text-gray-200">
-            Hello, my name is Emin, I am from Turkey and I am a self
+            Hello, my name is Emin, I am a self
             taught developer.
             <SmartLink href="https://pytorch.org/" class="description-link" blank>
               Deep Learning </SmartLink
