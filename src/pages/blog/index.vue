@@ -235,8 +235,7 @@ export default Vue.extend({
   },
   head() {
     const title = "Emin's Blog"
-    const description =
-      "Mehmet Emin GENC's blog page thst he share his perspective"
+    const description = "Mehmet Emin GENC's blog page thst he share his perspective"
 
     return {
       title: "Blog",
