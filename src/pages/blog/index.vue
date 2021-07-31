@@ -4,7 +4,7 @@
       <h3
         class="font-semibold space-x-2 text-lg text-gray-900 dark:text-gray-100"
       >
-        Son gönderiler
+        Last posts
       </h3>
 
       <div class="mt-2 grid gap-2 md:grid-cols-3">
@@ -89,7 +89,7 @@
         <h3
           class="font-semibold space-x-2 text-lg text-gray-900 dark:text-gray-100"
         >
-          Diğer gönderiler
+          Other posts
         </h3>
 
         <div class="mt-4 grid gap-3 md:grid-cols-3">
@@ -131,20 +131,19 @@
         <h2
           class="font-semibold text-2xl text-gray-900 md:text-4xl dark:text-gray-100"
         >
-          Aramanıza uygun herhangi bir gönderi bulunamadı.
+          No match found.
         </h2>
 
         <div class="md:w-4/6">
           <h3 class="text-lg text-gray-900 dark:text-gray-100">
-            Deneyebileceğiniz yöntemler:
+            methods that you can try:
           </h3>
 
           <ul class="list-disc pl-4 text-gray-700 dark:text-gray-300">
-            <li>Aramanızda anahtar kelimeler kullanmayı deneyin.</li>
-            <li>Etiketler kullanmayı deneyin.</li>
+            <li>Try to use keywords on your search.</li>
+            <li>Try to use tags.</li>
             <li>
-              Gönderinin başlığında veya açıklamasında olan kelimelerle arama
-              yapmayı deneyin.
+              Try to do searches with words that in title or in description.
             </li>
           </ul>
         </div>
@@ -154,7 +153,7 @@
           class="rounded flex space-x-2 bg-gray-100 py-2 px-4 ring-1 ring-gray-200 text-gray-900 items-center justify-center md:w-max dark:(bg-gray-800 ring-gray-700 text-gray-100 hover:bg-gray-700) hover:bg-gray-200"
         >
           <IconHome class="h-6 w-6" />
-          <span>Bloga Dön</span>
+          <span>Return to Blog</span>
         </SmartLink>
       </div>
 
@@ -235,9 +234,9 @@ export default Vue.extend({
     }
   },
   head() {
-    const title = "EGGSY's Blog"
+    const title = "Emin's Blog"
     const description =
-      "EGGSY'nin günlük hayattan, tecrübelerinden bahsettiği, göstermek veya anlatmak istediği şeyleri daha düzenli ve profesyonel bir şekilde tuttuğu blog sayfası."
+      "Mehmet Emin GENC's blog page thst he share his perspective"
 
     return {
       title: "Blog",
