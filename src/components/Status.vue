@@ -109,7 +109,7 @@ export default Vue.extend({
   async mounted() {
     // Connect to Lanyard Socket API, send heartbeat every 30 seconds and replace the Vue data value with the message using @eggsydev/vue-lanyard module
     this.socket = (await this.$lanyard({
-      userId: "162969778699501569",
+      userId: "633211913387376641", // Discord profile id
       socket: true,
     })) as WebSocket
 
