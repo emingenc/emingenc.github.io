@@ -242,7 +242,7 @@ export default Vue.extend({
           description:
             "Pomodoro app that rewards with luck wheel after pomodoro sessions",
           image: "/assets/images/projects/pomodoro.png",
-          href: "https://github.com/emingenc/pomodoro_wheel",
+          href: "https://emingenc.github.io/pomodoro_wheel/",
         },
         {
           title: "Yolov5-face detection",
