@@ -22,6 +22,9 @@ jobs:
 
       - name: Install dependencies
         run: yarn install
+        
+      - name: .env create for build not to crush
+        run: touch .env
 
       - name: Generate
         run: yarn run generate
