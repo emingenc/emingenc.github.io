@@ -4,27 +4,27 @@
     class="grid gap-6 grid-cols-1 sm:grid-cols-2 dark:text-gray-200"
   >
     <div>
-      <h4 class="font-medium">Önceki Gönderi</h4>
+      <h4 class="font-medium">Previous Post</h4>
 
-      <SmartLink v-if="prev" :href="`/blog/gonderi/${prev.slug}`">
+      <SmartLink v-if="prev" :href="`/blog/post/${prev.slug}`">
         <h5>
           {{ prev.title }}
         </h5>
       </SmartLink>
 
-      <h5 v-else class="line-through">Daha Eski Bir Gönderi Yok</h5>
+      <h5 v-else class="line-through">No previous post</h5>
     </div>
 
     <div class="text-right">
-      <h4 class="font-medium">Sonraki Gönderi</h4>
+      <h4 class="font-medium">Next Post</h4>
 
-      <SmartLink v-if="next" :href="`/blog/gonderi/${next.slug}`">
+      <SmartLink v-if="next" :href="`/blog/post/${next.slug}`">
         <h5>
           {{ next.title }}
         </h5>
       </SmartLink>
 
-      <h5 v-else class="line-through">Daha Yeni Bir Gönderi Yok</h5>
+      <h5 v-else class="line-through">No next post</h5>
     </div>
   </div>
 </template>

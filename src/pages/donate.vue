@@ -18,7 +18,7 @@
 
             <p>
               <small class="text-sm">
-                P.S. Use the name "Emin Genc" on your transactions.
+                P.S. Use the name "Mehmet Emin Genc" on your transactions.
               </small>
             </p>
           </div>
