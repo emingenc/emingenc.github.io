@@ -1,4 +1,4 @@
-## 🔥 My Personal Website
+[![cd](https://github.com/emingenc/emingenc.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/emingenc/emingenc.github.io/actions/workflows/deploy.yml)
 
 <p align="center">
   <img src="/demo/featuring.jpg" />
