@@ -1,6 +1,6 @@
 export default {
   social: {
-    discord: "",
+    discord: "https://discord.gg/AwDJ9qRv",
     twitter: "https://twitter.com/emingench/",
     github: "https://github.com/emingenc/",
     instagram: "https://instagram.com/emin.gench/",
