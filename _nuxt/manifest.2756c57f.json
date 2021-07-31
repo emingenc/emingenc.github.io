@@ -1,0 +1,11 @@
+{
+  "name": "emingench",
+  "short_name": "emingench",
+  "description": "EGGSY's personal website made in TypeScript, Nuxt.js and Windi/Tailwind CSS",
+  "icons": [],
+  "start_url": "/?standalone=true",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f56565",
+  "lang": "en"
+}

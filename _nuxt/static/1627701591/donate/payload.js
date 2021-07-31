@@ -1,0 +1,1 @@
+__NUXT_JSONP__("/donate", {data:[{_img:{}}],fetch:{},mutations:void 0});
