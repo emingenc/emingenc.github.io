@@ -12,7 +12,8 @@
                 height="40"
                 title="EMIN's Website"
               />
-               <p class="rounded py-1 px-2 text-gray-800 dark:(text-teal-400 hover:rotate-10) sm:transform hover:rotate-10">Emin GENC</p>
+               <p class="rounded py-1 px-2 text-gray-800 dark:(text-teal-400 hover:rotate-10) sm:transform hover:rotate-10">
+                 Emin GENCH</p>
           </div>
         </SmartLink>
 
