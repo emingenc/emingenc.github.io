@@ -3,18 +3,18 @@
     <div
       class="container flex mx-auto space-x-4 text-gray-200 w-11/12 items-center justify-between sm:(px-0 w-9/12) md:w-7/12"
     >
-      <SmartLink
-        :href="{ name: getTargetRoute.name }"
-        class="flex-shrink-0 "
-      >
-        <SmartImage
-          src="/assets/icons/icon.svg"
-          class="rounded-md ring-black transition-transform ring-2 ring-opacity-5 sm:transform hover:-rotate-6"
-          width="100"
-          height="40"
-          :title="getTargetRoute.title"
-        />
-      </SmartLink>
+      <SmartLink :href="{ name: 'index' }" class="flex-shrink-0 ">
+          <div class="flex items-center justify-between">
+              <SmartImage
+                src="/assets/icons/icon.svg"
+                class="rounded-md ring-black transition-transform ring-2 ring-opacity-5 sm:transform hover:-rotate-20"
+                width="100"
+                height="40"
+                title="EMIN's Website"
+              />
+               <p class="rounded py-1 px-2 text-gray-800 dark:(text-teal-400 hover:rotate-10) sm:transform hover:rotate-10">Emin GENC</p>
+          </div>
+        </SmartLink>
 
       <div class="flex space-x-2 items-center justify-end sm:space-x-4">
         <div
