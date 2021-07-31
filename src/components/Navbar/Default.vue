@@ -2,15 +2,16 @@
   <nav class="w-full">
     <div class="container mx-auto w-11/12 relative sm:w-9/12 md:w-7/12">
       <div class="flex items-center justify-between">
-        <SmartLink :href="{ name: 'index' }" class="flex-shrink-0 h-10 w-10">
+        <SmartLink :href="{ name: 'index' }" class="flex-shrink-0 ">
           <SmartImage
             src="/assets/icons/icon.svg"
             class="rounded-md ring-black transition-transform ring-2 ring-opacity-5 sm:transform hover:-rotate-6"
-            width="200"
-            height="200"
+            width="100"
+            height="40"
             title="EMIN's Website"
           />
         </SmartLink>
+   
 
         <div class="space-x-2 hidden sm:flex sm:items-center">
           <SmartLink
@@ -21,6 +22,7 @@
           >
             {{ link.title }}
           </SmartLink>
+          
 
           <ColorSwitcher />
         </div>

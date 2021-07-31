@@ -5,13 +5,13 @@
     >
       <SmartLink
         :href="{ name: getTargetRoute.name }"
-        class="flex-shrink-0 h-10 w-10"
+        class="flex-shrink-0 "
       >
         <SmartImage
           src="/assets/icons/icon.svg"
           class="rounded-md ring-black transition-transform ring-2 ring-opacity-5 sm:transform hover:-rotate-6"
           width="100"
-          height="100"
+          height="40"
           :title="getTargetRoute.title"
         />
       </SmartLink>
