@@ -85,8 +85,8 @@
 
       <Disqus
         :title="post.title"
-        :url="`https://eminegnc.github.io/blog/gonderi/${post.slug}`"
-        :identifier="`/blog/gonderi/${post.slug}`"
+        :url="`https://eminegnc.github.io/blog/post/${post.slug}`"
+        :identifier="`/blog/post/${post.slug}`"
         :slug="post.slug"
         lang="tr"
         class="mt-10"
@@ -134,7 +134,7 @@
             <SmartLink
               v-for="(relatedPost, index) in getRelatedPosts"
               :key="`related-${index}`"
-              :href="`/blog/gonderi/${relatedPost.slug}`"
+              :href="`/blog/post/${relatedPost.slug}`"
 
               class="rounded-lg bg-gray-200 bg-opacity-40 text-center p-4 transition-shadow text-gray-800 hover:shadow-md truncate dark:(bg-gray-800 text-gray-200)"
             >

@@ -6,7 +6,7 @@
     <div>
       <h4 class="font-medium">Previous Post</h4>
 
-      <SmartLink v-if="prev" :href="`/blog/gonderi/${prev.slug}`">
+      <SmartLink v-if="prev" :href="`/blog/post/${prev.slug}`">
         <h5>
           {{ prev.title }}
         </h5>
@@ -18,7 +18,7 @@
     <div class="text-right">
       <h4 class="font-medium">Next Post</h4>
 
-      <SmartLink v-if="next" :href="`/blog/gonderi/${next.slug}`">
+      <SmartLink v-if="next" :href="`/blog/post/${next.slug}`">
         <h5>
           {{ next.title }}
         </h5>

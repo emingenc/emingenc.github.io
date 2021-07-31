@@ -3,7 +3,7 @@
     v-if="type === 'normal'"
     :title="getPostMeta.title"
     :href="{
-      name: 'blog-gonderi-slug',
+      name: 'blog-post-slug',
       params: { slug: getPostMeta.slug },
     }"
     class="rounded-lg cursor-pointer space-y-2 bg-gray-200 bg-opacity-40 p-3 transition-shadow hover:shadow-md dark:bg-gray-800"
@@ -33,7 +33,7 @@
     v-else-if="type === 'text'"
     :title="getPostMeta.title"
     :href="{
-      name: 'blog-gonderi-slug',
+      name: 'blog-post-slug',
       params: { slug: getPostMeta.slug },
     }"
     class="rounded-lg cursor-pointer flex space-x-4 bg-gray-200 bg-opacity-40 p-3 transition-shadow items-center hover:shadow-md dark:bg-gray-800"
@@ -60,7 +60,7 @@
     v-else-if="type === 'text-only-title'"
     :title="getPostMeta.title"
     :href="{
-      name: 'blog-gonderi-slug',
+      name: 'blog-post-slug',
       params: { slug: getPostMeta.slug },
     }"
     class="rounded-lg cursor-pointer flex flex-col bg-gray-200 bg-opacity-40 p-3 transition-shadow hover:shadow-md truncate dark:bg-gray-800"
