@@ -5,7 +5,7 @@
       </h2>
       <div class="mt-2 grid gap-2 md:(gap-4 grid-cols-3)">
         <div
-          v-for="(project, index) in getProjects.featured"
+          v-for="(project, index) in apps"
           :key="`project-featured-${index}`"
         >
           <SmartLink
@@ -16,34 +16,13 @@
           >
             <CardProject
               :title="project.title"
-              :description="project.description"
               :image="project.image"
               class="h-full"
             />
+
           </SmartLink>
-
-          <CardProject
-            v-else
-            :title="project.title"
-            :description="project.description"
-            :image="project.image"
-            class="h-full"
-          />
+         
         </div>
-      </div>
-
-      <div class="mt-2 grid gap-2 md:(mt-4 gap-4 grid-cols-2)">
-        <SmartLink
-          v-for="(project, index) in getProjects.rest"
-          :key="`project-rest-${index}`"
-          :href="project.to"
-        >
-          <CardProject
-            :title="project.title"
-            :description="project.description"
-            class="h-full"
-          />
-        </SmartLink>
       </div>
     </section>
 </template>

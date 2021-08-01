@@ -109,12 +109,20 @@ export default Vue.extend({
       links: {
         default: [
           {
+            title: "Freelance",
+            to: "https://www.upwork.com/o/profiles/users/~01dbc331a50d638d39/",
+          },
+          {
             title: "Blog",
             to: "/blog/",
           },
           {
             title: "Projects",
             to: "/#projects",
+          },
+          {
+            title: "Apps",
+            to: "/#apps",
           },
           {
             title: "Donate",
