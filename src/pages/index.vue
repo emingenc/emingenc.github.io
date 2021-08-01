@@ -195,7 +195,7 @@
         </div>
       </div>
     </section>
-
+    <Apps/>
     <section id="socials" class="mt-6">
       <h2 class="mt-10 text-xl font-semibold text-gray-900 dark:text-gray-100">
         Follow me
