@@ -35,7 +35,7 @@ export default Vue.extend({
     getLocalizedNotice(): string {
       if (this.$route.name?.includes("blog"))
         return "Emin Gench's blog"
-      else return "Emin Gench's blog"
+      else return "Emin Gench's site"
     },
   },
 })

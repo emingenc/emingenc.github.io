@@ -332,7 +332,7 @@ export default Vue.extend({
   },
   fetchOnServer: false,
   async fetch() {
-    const filter = ["emingenc", "DBM", "emingenc.github.io"]
+    const filter = ['']
 
     const repos: Repository[] = (
       await this.$axios.get(
