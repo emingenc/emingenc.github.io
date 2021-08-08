@@ -3,7 +3,7 @@
       <h2 class="mt-10 text-2xl font-semibold text-gray-900 dark:text-gray-100">
         My Apps & Games
       </h2>
-      <div class="mt-2 grid gap-2 md:(gap-4 grid-cols-3)">
+      <div class="mt-4 grid gap-4 grid-cols-3 md:(gap-4 grid-cols-6)">
         <div
           v-for="(project, index) in apps"
           :key="`project-featured-${index}`"
