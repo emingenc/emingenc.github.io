@@ -15,7 +15,7 @@
             :blank="!!project.href"
           >
             <CardProject
-              :title="project.title"
+              :description="project.title"
               :image="project.image"
               class="h-full"
             />
