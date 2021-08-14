@@ -54,7 +54,7 @@ export default Vue.extend({
         twitter: "Follow me on Twitter!",
         github: "Follow me on GitHub!",
         instagram: "Follow me on Instagram!",
-        trello: "View my Trello board!",
+        linkedin : "Follow me on linkedIn"
       }
 
       const array: Link[] = []

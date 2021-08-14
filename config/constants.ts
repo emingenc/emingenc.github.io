@@ -4,7 +4,7 @@ export default {
     twitter: "https://twitter.com/emingench/",
     github: "https://github.com/emingenc/",
     instagram: "https://instagram.com/emin.gench/",
-    trello: "",
+    //linkedin: "https://www.linkedin.com/in/emingench/",
     email: "emingench@gmail.com",
   },
   sponsor: {
