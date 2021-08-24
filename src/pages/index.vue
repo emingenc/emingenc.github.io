@@ -7,7 +7,7 @@
             class="text-2xl font-semibold text-gray-900 md:text-3xl md:text-4xl dark:text-gray-100"
           >
             <h1>Self taught</h1>
-            <h1><span class="text-blue-600">Full-stack</span> Developer</h1>
+            <h1><span class="text-blue-600">Software</span> Engineer</h1>
           </div>
 
           <p class="text-gray-800 dark:text-gray-200">
