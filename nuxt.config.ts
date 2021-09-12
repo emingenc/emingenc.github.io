@@ -27,22 +27,13 @@ const Config: NuxtConfig = {
   // Imported options
   head,
   loading,
-  buildModules: [
-    '@nuxtjs/google-analytics'
-  ],
-  googleAnalytics: {
-    id: process.env.GOOGLE_ANALYTICS_ID,
-  },
+  buildModules,
   components,
   generate,
   css,
   modules,
   plugins,
-  publicRuntimeConfig: {
-    googleAnalytics: {
-      id: process.env.GOOGLE_ANALYTICS_ID
-    }
-  },
+  publicRuntimeConfig,
 
   
 
