@@ -3,7 +3,7 @@ import { NuxtOptionsHead } from "@nuxt/types/config/head"
 /* Define constants */
 const image = "https://emingenc.github.io/icon.png"
 const description =
-  "Young JavaScript developer from Turkey, interested in languages, gaming, and programming, trying to improve his JavaScript skills!"
+  "Hey, I am Emin, Full-stack developer from Turkey, interested in deep learning, ai, and game developing, trying to improve his programming skills!"
 
 const Head: NuxtOptionsHead = {
   title: "emingenc.github.io",
