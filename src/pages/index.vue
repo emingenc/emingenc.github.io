@@ -238,6 +238,13 @@ export default Vue.extend({
       repos: [] as Repository[],
       projects: [
       {
+          title: "CSVision csv app",
+          description:
+            "drop your csv and do magic on it",
+          image: "/assets/images/projects/csv.png",
+          href: "https://emingenc.github.io/csvision/",
+        },
+      {
           title: "Pomodoro - Tomato Luck",
           description:
             "Pomodoro app that rewards with luck wheel after pomodoro sessions",
