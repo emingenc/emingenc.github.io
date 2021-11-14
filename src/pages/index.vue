@@ -245,11 +245,11 @@ export default Vue.extend({
           href: "https://emingenc.github.io/csvision/",
         },
       {
-          title: "Pomodoro - Tomato Luck",
+          title: "Pomodoro - Tomatodo",
           description:
             "Pomodoro app that rewards with luck wheel after pomodoro sessions",
           image: "/assets/images/projects/pomodoro.png",
-          href: "https://emingenc.github.io/pomodoro_wheel/",
+          href: "https://emingenc.github.io/tomatodo/",
         },
         {
           title: "Yolov5-face detection",
