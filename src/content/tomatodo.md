@@ -1,6 +1,6 @@
 ---
 title: Tomatodo - Pomodoro app with fortune wheel
-description:  Tomatodo is a Pomodoro app with fortune wheel. You can use it to track your work time. It is a simple and easy to use Pomodoro app. You can reware your work time and get a random fortune.
+description:  Tomatodo is a Pomodoro app with fortune wheel. You can use it to track your work time. It is a simple and easy to use Pomodoro app. You can reward your work time and get a random fortune.
 tags:
   - App
 createdAt: 2021-11-15T03:26:00.000Z
@@ -55,8 +55,4 @@ You will be surprised how easy it is to do. It is a trick to get a good result.
 4- Reward your self with simple small reward.
 
 5- Repeat steps 1-4.
-
-
-
-
 
