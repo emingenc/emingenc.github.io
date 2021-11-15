@@ -37,7 +37,7 @@ Pomodoro is useful because it helps you to prevent procrastination.
 Other benefits of pomodoro are that it helps you to get back to work. You can focus on your work and not on other things.
 
 
-### You need to pay attention whe you use pomodoro technique:
+### You need to pay attention when you use pomodoro technique:
 
 First sessions pick something that is hard to do. Focus first 4 sessions. 
 You will be surprised how easy it is to do. It is a trick to get a good result.
