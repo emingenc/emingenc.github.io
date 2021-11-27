@@ -16,6 +16,8 @@ Repo link : <a target='blank' href="https://github.com/emingenc/tomatodo">tomato
 
 Site link : <a target='blank' href="https://tomatodo.web.app">tomatodo.web.app</a>
 
+Playstore link : <a target='blank' href="https://play.google.com/store/apps/details?id=com.emdiapps.tomatodo">Tomatodo</a>
+
 Demo GH-page : <a target='blank' href="https://emingenc.github.io/tomatodo">emingenc.github.io/tomatodo</a>
 
 
@@ -55,4 +57,5 @@ You will be surprised how easy it is to do. It is a trick to get a good result.
 4- Reward your self with simple small reward.
 
 5- Repeat steps 1-4.
+
 
