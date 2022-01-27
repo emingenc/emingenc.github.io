@@ -21,7 +21,7 @@
               class="description-link"
               blank
             >
-              Nuxt.js</SmartLink
+              Vue.js</SmartLink
             >
             and
             <SmartLink
