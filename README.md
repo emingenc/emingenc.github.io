@@ -4,4 +4,4 @@ https://emingenc.github.io/
 
 pomodoro_wheel app
 
-https://emingenc.github.io/pomodoro_wheel
+https://emingenc.github.io/tomatodo
