@@ -262,15 +262,21 @@ export default Vue.extend({
       experiences: {
         jobs: [
           {
+            title: "Vivoo",
+            url: "https://vivoo.io/",
+            position: "ML Engineer - Software Enginee",
+            date: "2022-",
+          },
+          {
             title: "Novit Ai",
             url: "https://novit.ai/",
-            position: "Full Stack Software Engineer",
-            date: "2021-",
+            position: "ML Engineer - Software Engineer",
+            date: "2021-2022",
           },
           {
             title: "Caycom Tech",
             url: "https://novit.ai/",
-            position: "Backend Developer",
+            position: "Fullstack Developer - Software Engineer",
             date: "2020-2021",
           },
           {
