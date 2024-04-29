@@ -3,7 +3,7 @@ export default {
     discord: "https://discord.gg/AwDJ9qRv",
     twitter: "https://twitter.com/emingench/",
     github: "https://github.com/emingenc/",
-    instagram: "https://instagram.com/emin.gench/",
+    instagram: "https://instagram.com/emin_gench/",
     //linkedin: "https://www.linkedin.com/in/emingench/",
     email: "emingench@gmail.com",
   },
