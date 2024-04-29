@@ -1,5 +1,5 @@
 <template>
-  <section v-if="apps" id="apps">
+  <section v-if="0" id="apps">
       <h2 class="mt-10 text-2xl font-semibold text-gray-900 dark:text-gray-100">
         My Apps & Games
       </h2>

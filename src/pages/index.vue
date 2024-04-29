@@ -12,25 +12,7 @@
 
           <p class="text-gray-800 dark:text-gray-200">
             Hello, my name is Emin, I am a self
-            taught developer.
-            <SmartLink href="https://pytorch.org/" class="description-link" blank>
-              Deep Learning </SmartLink
-            >,
-            <SmartLink
-              href="https://nuxtjs.org/"
-              class="description-link"
-              blank
-            >
-              Vue.js</SmartLink
-            >
-            and
-            <SmartLink
-              href="https://www.djangoproject.com/"
-              class="description-link"
-              blank
-            >
-              Django</SmartLink
-            >.
+            taught ML - Software Engineer with a Bachelor's degree in Aerospace Engineering
           </p>
         </div>
 
@@ -39,7 +21,7 @@
 
       <div class="flex flex-shrink-0 mb-8 md:(justify-end mb-0 w-4/12)">
         <SmartImage
-          src="/assets/images/pp.jpeg"
+          src="/assets/images/pp1.jpeg"
           class="rounded-full h-40 ring-black ring-4 ring-opacity-5 w-40 dark:(ring-white ring-opacity-5)"
         />
       </div>
@@ -262,10 +244,16 @@ export default Vue.extend({
       experiences: {
         jobs: [
           {
+            title: "Goodfintech",
+            url: "kyxplatform.com",
+            position: "ML Engineer - Software Enginee",
+            date: "2023-",
+          },
+          {
             title: "Vivoo",
             url: "https://vivoo.io/",
             position: "ML Engineer - Software Enginee",
-            date: "2022-",
+            date: "2022-2023",
           },
           {
             title: "Novit Ai",
