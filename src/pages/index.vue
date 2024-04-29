@@ -259,13 +259,7 @@ export default Vue.extend({
             title: "Novit Ai",
             url: "https://novit.ai/",
             position: "ML Engineer - Software Engineer",
-            date: "2021-2022",
-          },
-          {
-            title: "Caycom Tech",
-            url: "https://novit.ai/",
-            position: "Fullstack Developer - Software Engineer",
-            date: "2020-2021",
+            date: "2020-2022",
           },
           {
             title: "Pharmacircle",
