@@ -120,10 +120,10 @@ export default Vue.extend({
             title: "Projects",
             to: "/#projects",
           },
-          {
-            title: "Apps",
-            to: "/#apps",
-          },
+          //{
+          //  title: "Apps",
+          //  to: "/#apps",
+          //},
           {
             title: "Donate",
             to: "/donate",
