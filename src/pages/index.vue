@@ -27,7 +27,7 @@
       </div>
     </header>
 
-    <section id="projects">
+   <!--  <section id="projects">
       <h2 class="mt-10 text-2xl font-semibold text-gray-900 dark:text-gray-100">
         Projects I currently work on
       </h2>
@@ -75,6 +75,7 @@
         </SmartLink>
       </div>
     </section>
+    -->
 
     <section
       id="experiences"
