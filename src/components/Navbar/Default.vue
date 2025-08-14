@@ -108,18 +108,18 @@ export default Vue.extend({
       mobileMenu: false,
       links: {
         default: [
-          {
-            title: "Freelance",
-            to: "https://www.upwork.com/o/profiles/users/~01dbc331a50d638d39/",
-          },
+          //{
+            //title: "Freelance",
+            //to: "https://www.upwork.com/o/profiles/users/~01dbc331a50d638d39/",
+          //},
           {
             title: "Blog",
             to: "/blog/",
           },
-          {
-            title: "Projects",
-            to: "/#projects",
-          },
+          //{
+            //title: "Projects",
+            //to: "/#projects",
+          //},
           //{
           //  title: "Apps",
           //  to: "/#apps",
