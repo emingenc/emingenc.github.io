@@ -16,11 +16,7 @@
               information on this page! Thank you ♥
             </p>
 
-            <p>
-              <small class="text-sm">
-                P.S. Use the name "Mehmet Emin Genc" on your transactions.
-              </small>
-            </p>
+        
           </div>
         </div>
       </header>
