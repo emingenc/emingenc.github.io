@@ -1,1 +1,0 @@
-__NUXT_JSONP__("/", {data:[{_img:{}}],fetch:{"0":{apps:[]}},mutations:void 0});
