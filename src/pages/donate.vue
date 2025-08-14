@@ -43,46 +43,7 @@
         </div>
       </section>
 
-      <section class="space-y-4">
-        <h2 class="text-lg text-gray-900 dark:text-gray-100">My Accounts</h2>
-
-        <div class="grid gap-4">
-          <div
-            v-for="(account, index) in accounts"
-            :key="`account-${index}`"
-            class="flex h-full items-center"
-          >
-            <div class="rounded-tl rounded-bl bg-gray-300 dark:bg-gray-800">
-              <SmartImage :src="account.image" class="h-24 w-24" />
-            </div>
-
-            <div
-              class="rounded-tr rounded-br flex h-full bg-gray-200 w-full pl-4 items-center dark:bg-gray-700"
-            >
-              <div>
-                <h3 class="font-medium text-gray-900 dark:text-gray-100">
-                  {{ account.name }}
-                </h3>
-
-                <span
-                  v-if="account.revealed == true"
-                  class="text-gray-800 dark:text-gray-200"
-                >
-                  {{ account.iban }}
-                </span>
-
-                <span
-                  v-else
-                  class="cursor-pointer text-gray-800 underline dark:text-gray-200"
-                  @click="account.revealed = true"
-                >
-                  Click to reveal
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      
     </div>
   </div>
 </template>
@@ -97,18 +58,7 @@ export default Vue.extend({
   data() {
     return {
       accounts: [
-        {
-          image: "/assets/images/garanti.png",
-          name: "Garanti Bankası",
-          iban: "TR 7200 0620 0008 20000685 3326",
-          revealed: false,
-        },
-        {
-          image: "https://i.vgy.me/R0Jwqn.png",
-          name: "Papara",
-          iban: "2018126806",
-          revealed: false,
-        },
+        
       ],
     }
   },
