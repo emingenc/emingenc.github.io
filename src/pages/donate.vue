@@ -69,7 +69,7 @@ export default Vue.extend({
         title,
         description,
         keywords: "donate",
-        url: "https://buymeacoffee.com/emingenc,
+        url: "https://buymeacoffee.com/emingenc",
       }),
       link: [
         {
