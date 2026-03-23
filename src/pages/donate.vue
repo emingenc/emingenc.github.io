@@ -69,12 +69,12 @@ export default Vue.extend({
         title,
         description,
         keywords: "donate",
-        url: "https://www.buymeacoffee.com/emingenc",
+        url: "https://buymeacoffee.com/emingenc,
       }),
       link: [
         {
           rel: "canonical",
-          href: "https://www.buymeacoffee.com/emingenc",
+          href: "https://buymeacoffee.com/emingenc",
         },
       ],
     }
