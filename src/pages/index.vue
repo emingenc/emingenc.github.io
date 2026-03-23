@@ -12,7 +12,7 @@
 
           <p class="text-gray-800 dark:text-gray-200">
             Hello, my name is Emin, I am a self
-            taught ML - Software Engineer with a Bachelor's degree in Aerospace Engineering
+            taught AI - Software Engineer with a Bachelor's degree in Aerospace Engineering
           </p>
         </div>
 
@@ -245,15 +245,21 @@ export default Vue.extend({
       experiences: {
         jobs: [
           {
+            title: "Cresta AI",
+            url: "https://cresta.com/",
+            position: "Forward Deployed AI Engineer",
+            date: "2026-",
+          },
+          {
             title: "Goodfintech",
-            url: "kyxplatform.com",
-            position: "ML Engineer - Software Enginee",
-            date: "2023-",
+            url: "https://goodfintech.ai/",
+            position: "AI Engineer - Software Engineer",
+            date: "2023-2026",
           },
           {
             title: "Vivoo",
             url: "https://vivoo.io/",
-            position: "ML Engineer - Software Enginee",
+            position: "ML Engineer - Software Engineer",
             date: "2022-2023",
           },
           {
