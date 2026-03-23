@@ -25,7 +25,7 @@
         <h2 class="text-lg text-gray-900 dark:text-gray-100">Support Me On</h2>
 
         <div class="grid gap-4">
-          <SmartLink :href="getSponsorLinks.buymeacoffee" class="w-max" blank>
+          <SmartLink :href="getSponsorLinks.buymeacoffee" class="w-max" blank :utm="false">
             <div
               class="rounded cursor-pointer flex space-x-2 bg-[#FFDD00] py-2 px-4 items-center hover:bg-opacity-95"
             >
