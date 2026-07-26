@@ -1,0 +1,7 @@
+{
+  "pad": 0,
+  "eos": 1,
+  "bos": 2,
+  "tool_call": 4,
+  "tools": 5
+}

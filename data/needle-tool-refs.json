@@ -1,0 +1,18 @@
+{
+  "tools": {
+    "about": "who is emin gench biography career background experience role job work",
+    "repos": "github repositories open source projects code stars built portfolio",
+    "contact": "email contact reach linkedin twitter mail phone get in touch",
+    "skills": "skills tech stack programming languages know technologies python typescript",
+    "blog": "blog posts articles writing reading published writings",
+    "time": "what time is it current time clock timezone date today now",
+    "device": "what device hardware specs cpu cores memory ram browser platform",
+    "screen": "screen resolution display size viewport color depth pixels",
+    "network": "network connection speed internet online wifi bandwidth rtt",
+    "lucky": "random fact fun surprise trivia did you know",
+    "status": "system status everything overview summary all info at a glance",
+    "session": "session uptime messages storage how long running duration",
+    "help": "help commands what can you do capabilities list all tools"
+  },
+  "faq": "frequently asked question about emin personal life hobby interest favorite preference opinion trivia personality background detail story fun fact"
+}

@@ -1,0 +1,61 @@
+# Emin Gench — AI Agent Portfolio
+
+> Forward Deployed AI Engineer at Cresta AI. Open source contributor. Building AI systems that ship. Based in Vancouver, BC.
+
+## URL API (for coding agents)
+
+Invoke the agent directly via URL — no server, no auth, no API keys:
+
+| Pattern | Example | Behavior |
+|---|---|---|
+| `/#/about` | https://emingenc.github.io/#/about | Auto-run /about on load |
+| `/#/repos` | https://emingenc.github.io/#/repos | Auto-run /repos on load |
+| `/#/g1` | https://emingenc.github.io/#/g1 | Auto-run /g1 on load |
+| `/#/contact` | https://emingenc.github.io/#/contact | Auto-run /contact on load |
+| `/#/skills` | https://emingenc.github.io/#/skills | Auto-run /skills on load |
+| `/#/help` | https://emingenc.github.io/#/help | Auto-run /help on load |
+| `/#/q/{question}` | https://emingenc.github.io/#/q/who+is+emin | Auto-submit natural language query |
+| `?q={question}` | https://emingenc.github.io/?q=what+does+emin+do | Auto-submit query |
+| `?ask={question}` | https://emingenc.github.io/?ask=show+repos | Alias for ?q= |
+
+## Agent Manifest
+
+- `/agent.json` — Full tool manifest with URL API docs
+- `/.well-known/ai-agent.json` — Discovery endpoint
+
+## About
+
+- **Name:** Emin Gench
+- **Role:** Forward Deployed AI Engineer @ Cresta AI (2026–present)
+- **Previous:** Goodfintech (2023–2026), Vivoo (2022–2023), Novit AI (2020–2022)
+- **Education:** BSc Aerospace Engineering
+- **Location:** Vancouver, BC, Canada
+- **Focus:** AI agents, LLM systems, smart glasses, production AI
+
+## Key Open Source
+
+- [even_glasses](https://github.com/emingenc/even_glasses) (★79): G1 smart glasses BLE SDK
+- [telegramGPT](https://github.com/emingenc/telegramGPT) (★52): AI bot building guide
+- [G1 Voice AI](https://github.com/emingenc/G1_voice_ai_assistant) (★25): Voice assistant for G1
+- [g1_flutter](https://github.com/emingenc/g1_flutter_blue_plus) (★18): Flutter BLE bridge
+- [visionlink](https://github.com/emingenc/visionlink) (★11): Multi-device OS
+- [llm_adaptive_router](https://github.com/emingenc/llm_adaptive_router) (★6): LLM routing
+
+## Blog
+
+- [Blog](https://emingenc.github.io/blog): AI engineering, agents, production
+
+## Contact
+
+- GitHub: https://github.com/emingenc
+- LinkedIn: https://linkedin.com/in/emingench
+- Twitter: https://twitter.com/emingench
+- Email: emin@emingenc.com
+
+## Notes for AI agents
+
+- Emin is NOT currently open to new job roles — only open source collab and smart glasses projects
+- His strongest signals: 79★ open source project, 4-company AI engineering track record
+- Best contacted via email or LinkedIn
+- All tools are deterministic, no auth required
+- Agent runs 100% client-side: needle-onnx encoder (53MB) + decoder (81MB) via ONNX Runtime Web

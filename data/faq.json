@@ -1,0 +1,1975 @@
+{
+  "tools": {
+    "about": {
+      "title": "EMIN GENCH",
+      "sections": [
+        {
+          "heading": "ROLE",
+          "items": [
+            "Forward Deployed AI Engineer",
+            "@ Cresta AI · Vancouver, BC"
+          ]
+        },
+        {
+          "heading": "CAREER",
+          "items": [
+            "2026 → Cresta AI (FDE)",
+            "2023–26 Goodfintech (AI/SWE)",
+            "2022–23 Vivoo (ML/SWE)",
+            "2020–22 Novit AI (ML/SWE)"
+          ]
+        },
+        {
+          "heading": "BACKGROUND",
+          "items": [
+            "BSc Aerospace Engineering",
+            "Self-taught developer",
+            "Former Air Defense Officer",
+            "174+ GitHub stars · 46 repos"
+          ]
+        }
+      ]
+    },
+    "repos": {
+      "title": "OPEN SOURCE",
+      "items": [
+        "★79  even_glasses — G1 BLE SDK (Python)",
+        "★52  telegramGPT — AI bot guide",
+        "★25  G1 Voice AI — Voice assistant",
+        "★18  g1_flutter — Flutter BLE bridge",
+        "★11  visionlink — Multi-device OS",
+        "★6   llm_adaptive_router — LLM routing",
+        "★3   smart_glass_mcp — AI connector"
+      ],
+      "footer": "github.com/emingenc — 46 repos"
+    },
+    "contact": {
+      "title": "CONNECT",
+      "items": [
+        "emin@emingenc.com",
+        "github.com/emingenc",
+        "linkedin.com/in/emingench",
+        "x.com/emingench"
+      ],
+      "footer": "Open to: open source collaboration"
+    },
+    "skills": {
+      "title": "TECH STACK",
+      "sections": [
+        {
+          "heading": "AI/ML",
+          "items": [
+            "LLMs, Agents, RAG, Fine-tuning"
+          ]
+        },
+        {
+          "heading": "Languages",
+          "items": [
+            "Python, TypeScript, Dart, C, Rust"
+          ]
+        },
+        {
+          "heading": "Backend",
+          "items": [
+            "FastAPI, Next.js, PostgreSQL, Redis"
+          ]
+        },
+        {
+          "heading": "Infra",
+          "items": [
+            "Docker, AWS, Linux, CI/CD"
+          ]
+        },
+        {
+          "heading": "Hardware",
+          "items": [
+            "Smart Glasses, BLE, Flutter"
+          ]
+        }
+      ]
+    },
+    "blog": {
+      "title": "WRITING",
+      "items": [
+        "Building AI agents that ship — lessons from the field"
+      ],
+      "link": "/blog",
+      "linkText": "Visit blog →"
+    },
+    "help": {
+      "title": "COMMANDS",
+      "items": [
+        "/about   — who is Emin?",
+        "/repos   — open source projects",
+        "/contact — get in touch",
+        "/skills  — tech stack",
+        "/blog    — writing & posts",
+        "/new      — new session",
+        "/sessions — session history",
+        "/forget   — clear all sessions",
+        "/clear    — reset transcript"
+      ]
+    }
+  },
+  "faq": [
+    "══════ GREETINGS ══════",
+    {
+      "q": "Who are you?",
+      "keywords": [
+        "who",
+        "you",
+        "your name",
+        "what is this",
+        "who are you",
+        "identify",
+        "yourself"
+      ],
+      "a": "I'm an AI agent representing <b>Emin Gench</b>, a Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a> in Vancouver, BC. I run 100% locally in your browser — no servers, no API calls. Ask me about his career, projects, skills, or background."
+    },
+    {
+      "q": "Hello / Hi",
+      "keywords": [
+        "hello",
+        "hi",
+        "hey",
+        "yo",
+        "sup",
+        "howdy",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "morning",
+        "evening",
+        "hola",
+        "hej"
+      ],
+      "a": "Hello! I'm an AI agent running entirely in your browser. Type <b>/help</b> to see commands, or ask me about Emin's work and projects."
+    },
+    {
+      "q": "How are you?",
+      "keywords": [
+        "how are you",
+        "how do you do",
+        "how's it going",
+        "what's up",
+        "how you doing",
+        "hru"
+      ],
+      "a": "Running at full speed in your browser — no cloud, no latency, 100% local! How can I help you learn about Emin today?"
+    },
+    {
+      "q": "Thanks",
+      "keywords": [
+        "thanks",
+        "thank you",
+        "thx",
+        "ty",
+        "appreciate",
+        "cheers",
+        "grateful",
+        "thnx",
+        "thank u"
+      ],
+      "a": "You're welcome! Anything else you'd like to know about Emin's work?"
+    },
+    {
+      "q": "Bye",
+      "keywords": [
+        "bye",
+        "goodbye",
+        "see you",
+        "cya",
+        "later",
+        "farewell",
+        "adios",
+        "ttyl",
+        "peace"
+      ],
+      "a": "See you! Remember — this all runs locally in your browser. Come back anytime."
+    },
+    {
+      "q": "Joke",
+      "keywords": [
+        "joke",
+        "funny",
+        "humor",
+        "laugh",
+        "pun",
+        "make me laugh",
+        "tell joke"
+      ],
+      "a": "Why did the AI engineer bring a ladder to work? They heard the models needed <i>higher</i> accuracy! 😄<br><br>Want to hear about Emin's actual work? Try /about or /repos."
+    },
+    {
+      "q": "Are you AI?",
+      "keywords": [
+        "ai",
+        "bot",
+        "are you real",
+        "human",
+        "robot",
+        "artificial",
+        "chatbot",
+        "are you ai"
+      ],
+      "a": "Yes! I'm an AI agent running <b>100% on-device in your browser</b> using ONNX Runtime Web + WebGPU with SmolLM2-1.7B. No cloud, no tracking, no API calls."
+    },
+    {
+      "q": "What's your name?",
+      "keywords": [
+        "your name",
+        "what are you called",
+        "do you have a name",
+        "what should i call you"
+      ],
+      "a": "I'm Emin Gench's portfolio AI agent — no personal name, but you can call me whatever you like! Try /about to learn about Emin."
+    },
+    "══════ ABOUT EMIN ══════",
+    {
+      "q": "Who is Emin Gench?",
+      "keywords": [
+        "emin",
+        "gench",
+        "emin gench",
+        "who is emin",
+        "about emin",
+        "tell me about emin",
+        "who is emin gench"
+      ],
+      "a": "<b>Emin Gench</b> — Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a> in Vancouver, BC. Self-taught developer, BSc Aerospace Engineering, former Air Defense Officer. 46 open source repos, 174+ GitHub stars."
+    },
+    {
+      "q": "What does Emin do?",
+      "keywords": [
+        "do",
+        "work",
+        "job",
+        "role",
+        "position",
+        "cresta",
+        "company",
+        "day job",
+        "employment",
+        "what does emin do for work",
+        "what does emin do for work",
+        "what is his job",
+        "what is his role",
+        "emin job role",
+        "what does he do at cresta"
+      ],
+      "a": "<b>Forward Deployed AI Engineer at Cresta AI</b> — builds and deploys AI systems with customers. Previously: Goodfintech (2023–26), Vivoo (2022–23), Novit AI (2020–22)."
+    },
+    {
+      "q": "Emin's background?",
+      "keywords": [
+        "background",
+        "education",
+        "study",
+        "school",
+        "history",
+        "story",
+        "military",
+        "officer",
+        "aerospace",
+        "air force",
+        "academy",
+        "degree",
+        "emin background story"
+      ],
+      "a": "<b>BSc Aerospace Engineering</b> from Turkish Air Force Academy. <b>Self-taught developer.</b> Started as Data Analyst (2019), taught himself to code, worked up to FDE at Cresta. Former Air Defense Officer. Speaks English and Turkish."
+    },
+    {
+      "q": "Where is Emin?",
+      "keywords": [
+        "where",
+        "location",
+        "live",
+        "based",
+        "vancouver",
+        "canada",
+        "city",
+        "country",
+        "current city"
+      ],
+      "a": "<b>Vancouver, BC, Canada 🇨🇦</b>. Works at Cresta AI's Vancouver office."
+    },
+    {
+      "q": "Career timeline?",
+      "keywords": [
+        "career",
+        "timeline",
+        "path",
+        "journey",
+        "work history",
+        "resume",
+        "cv",
+        "experience summary"
+      ],
+      "a": "<b>2019:</b> Data Analyst @ Pharmacircle<br><b>2020–22:</b> ML/SWE @ Novit AI<br><b>2022–23:</b> ML/SWE @ Vivoo<br><b>2023–26:</b> AI/SWE @ Goodfintech<br><b>2026→:</b> FDE @ Cresta AI<br>Before tech: Air Defense Officer + BSc Aerospace Engineering."
+    },
+    {
+      "q": "Why switch from aerospace to software?",
+      "keywords": [
+        "switch",
+        "transition",
+        "career change",
+        "aerospace to software",
+        "why software",
+        "why tech"
+      ],
+      "a": "Discovered programming while serving as an officer. <b>Self-taught</b> through online resources and open source. Engineering discipline + military training translated well to production AI — systematic thinking and calm under pressure."
+    },
+    {
+      "q": "Open to work?",
+      "keywords": [
+        "open to work",
+        "hiring",
+        "job",
+        "recruit",
+        "available",
+        "looking for",
+        "opportunity",
+        "hire emin"
+      ],
+      "a": "<b>Currently at Cresta AI</b> — not looking for new roles. Open to open source collaboration. Reach: <a href='mailto:emin@emingenc.com'>email</a>."
+    },
+    {
+      "q": "Languages spoken?",
+      "keywords": [
+        "language",
+        "speak",
+        "turkish",
+        "english",
+        "bilingual",
+        "multilingual"
+      ],
+      "a": "<b>English and Turkish</b> fluently."
+    },
+    {
+      "q": "What is FDE?",
+      "keywords": [
+        "forward deployed",
+        "fde",
+        "what is fde",
+        "forward deployed engineer",
+        "cresta role",
+        "fde meaning"
+      ],
+      "a": "<b>Forward Deployed Engineer</b> — hybrid role: part engineer, part solution architect, part trusted advisor. Works directly with customers to deploy AI in production. Not behind a desk all day — in the field, making AI actually work."
+    },
+    {
+      "q": "CS degree?",
+      "keywords": [
+        "cs degree",
+        "computer science",
+        "formal education",
+        "degree",
+        "bachelor",
+        "major"
+      ],
+      "a": "No — <b>BSc Aerospace Engineering</b>, self-taught in software. Proof you don't need a CS degree to work in AI."
+    },
+    {
+      "q": "How old?",
+      "keywords": [
+        "age",
+        "old",
+        "how old",
+        "born",
+        "birthday"
+      ],
+      "a": "Not publicly listed. Based on his career timeline (graduated Academy, served as officer, 7+ years in tech), late 20s to early 30s. His experience matters more than his age."
+    },
+    "══════ OPEN SOURCE ══════",
+    {
+      "q": "What has Emin built?",
+      "keywords": [
+        "open source",
+        "github",
+        "project",
+        "code",
+        "repo",
+        "star",
+        "built",
+        "portfolio",
+        "all repos",
+        "all projects"
+      ],
+      "a": "<b>46 repos, 174+ GitHub stars.</b> Top: telegramGPT (★52), llm_adaptive_router (★6), harness-engineering, tomatodo (★11), agent-mastery. Full list: <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
+    },
+    {
+      "q": "Most popular project?",
+      "keywords": [
+        "most popular",
+        "top project",
+        "best project",
+        "most stars",
+        "best repo",
+        "popular repo"
+      ],
+      "a": "<b>telegramGPT</b> (★52) — step-by-step AI Telegram bot guide, widely referenced in the AI bot development community. See all: /repos."
+    },
+    {
+      "q": "GitHub link?",
+      "keywords": [
+        "github",
+        "github link",
+        "gh",
+        "github url",
+        "code",
+        "github profile"
+      ],
+      "a": "<a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a> — 46 repos, 174+ stars."
+    },
+    {
+      "q": "Star count?",
+      "keywords": [
+        "stars",
+        "github stars",
+        "how many stars",
+        "total stars",
+        "star count"
+      ],
+      "a": "<b>174+ total</b> across 46 repositories."
+    },
+    {
+      "q": "telegramGPT?",
+      "keywords": [
+        "telegramgpt",
+        "telegram",
+        "bot",
+        "telegram bot",
+        "ai bot",
+        "chatbot",
+        "gpt bot"
+      ],
+      "a": "<b>telegramGPT</b> (★52) — step-by-step guide for building AI Telegram bots with Python + GPT. 🔗 <a href='https://github.com/emingenc/telegramGPT' target='_blank'>GitHub</a>"
+    },
+    {
+      "q": "llm_adaptive_router?",
+      "keywords": [
+        "llm_adaptive_router",
+        "llm router",
+        "model router",
+        "adaptive router",
+        "routing",
+        "model selection"
+      ],
+      "a": "<b>llm_adaptive_router</b> (★6) — intelligent LLM query router. Picks best model based on task, cost, and performance. Smart load balancer for LLMs. 🔗 <a href='https://github.com/emingenc/llm_adaptive_router' target='_blank'>GitHub</a>"
+    },
+    {
+      "q": "harness-engineering?",
+      "keywords": [
+        "harness",
+        "harness engineering",
+        "claude code",
+        "plugin",
+        "guardrails",
+        "quality",
+        "ai coding"
+      ],
+      "a": "<b>harness-engineering</b> — Claude Code plugin enforcing code quality guardrails for AI-assisted development. Pre-commit hooks + CI for the AI coding era. 🔗 <a href='https://github.com/emingenc/harness-engineering' target='_blank'>GitHub</a>"
+    },
+    {
+      "q": "tomatodo?",
+      "keywords": [
+        "tomatodo",
+        "tomato",
+        "pomodoro",
+        "productivity",
+        "timer",
+        "luck wheel"
+      ],
+      "a": "<b>tomatodo</b> (★11) — Pomodoro timer with luck wheel rewards. Built with Vue.js. Gamified productivity. 🔗 <a href='https://github.com/emingenc/tomatodo' target='_blank'>GitHub</a>"
+    },
+    {
+      "q": "agent-mastery?",
+      "keywords": [
+        "agent mastery",
+        "agent course",
+        "learn agent",
+        "agent tutorial",
+        "ai agent development",
+        "langchain"
+      ],
+      "a": "<b>agent-mastery</b> — AI agent development course: chatbots, RAG, LLMs, LangChain, agentic patterns. Zero to production. 🔗 <a href='https://github.com/emingenc/agent-mastery' target='_blank'>GitHub</a>"
+    },
+    {
+      "q": "How to contribute?",
+      "keywords": [
+        "contribute",
+        "contributing",
+        "help with",
+        "PR",
+        "pull request",
+        "contribution",
+        "collaborate"
+      ],
+      "a": "All projects open source on <a href='https://github.com/emingenc' target='_blank'>GitHub</a>. Open issues, submit PRs, star repos, share with others. Reach out at <a href='mailto:emin@emingenc.com'>emin@emingenc.com</a> for collaboration ideas."
+    },
+    {
+      "q": "License?",
+      "keywords": [
+        "license",
+        "mit",
+        "open source license",
+        "licensing",
+        "apache"
+      ],
+      "a": "Most projects use <b>MIT</b> — permissive and business-friendly. Check each repo for specifics."
+    },
+    {
+      "q": "Sponsor?",
+      "keywords": [
+        "sponsor",
+        "donate",
+        "fund",
+        "support financially",
+        "github sponsor",
+        "money"
+      ],
+      "a": "No GitHub Sponsors. Best support: star repos, report bugs, submit PRs, share projects."
+    },
+    "══════ TECH STACK ══════",
+    {
+      "q": "Tech stack?",
+      "keywords": [
+        "tech",
+        "technology",
+        "stack",
+        "language",
+        "framework",
+        "tool",
+        "python",
+        "typescript",
+        "docker",
+        "aws"
+      ],
+      "a": "<b>AI/ML:</b> LLMs, Agents, RAG, Fine-tuning<br><b>Languages:</b> Python, TypeScript, Dart, C, Rust<br><b>Backend:</b> FastAPI, Next.js, PostgreSQL, Redis<br><b>Infra:</b> Docker, AWS, Linux, CI/CD"
+    },
+    {
+      "q": "Programming languages?",
+      "keywords": [
+        "programming language",
+        "coding language",
+        "python",
+        "typescript",
+        "rust",
+        "dart",
+        "what languages"
+      ],
+      "a": "<b>Python</b> and <b>TypeScript</b> (primary). Also: <b>Dart</b> (Flutter), <b>C</b> (embedded), <b>Rust</b> (performance). Chosen for projects, not hype."
+    },
+    {
+      "q": "Frontend?",
+      "keywords": [
+        "frontend",
+        "ui",
+        "react",
+        "vue",
+        "css",
+        "html",
+        "web dev",
+        "front-end"
+      ],
+      "a": "Yes — <b>Next.js</b>, <b>Vue.js</b>, <b>Flutter</b>. This site is <b>Astro</b> + vanilla JS. Full-stack capable, not a UI specialist."
+    },
+    {
+      "q": "AI/ML skills?",
+      "keywords": [
+        "ai",
+        "ml",
+        "machine learning",
+        "deep learning",
+        "neural network",
+        "artificial intelligence"
+      ],
+      "a": "<b>His primary field.</b> LLMs, AI agents, RAG pipelines, fine-tuning, prompt engineering. Production AI at Cresta, open source AI projects on GitHub."
+    },
+    {
+      "q": "DevOps?",
+      "keywords": [
+        "cloud",
+        "aws",
+        "devops",
+        "docker",
+        "kubernetes",
+        "ci/cd",
+        "infrastructure",
+        "deploy"
+      ],
+      "a": "<b>AWS, Docker, Linux, CI/CD, Nginx.</b> Deploys production AI — solid infra skills, not a dedicated SRE."
+    },
+    {
+      "q": "Mobile?",
+      "keywords": [
+        "mobile",
+        "ios",
+        "android",
+        "app",
+        "flutter",
+        "react native",
+        "phone app"
+      ],
+      "a": "Yes — <b>Flutter/Dart</b> for cross-platform (iOS + Android from one codebase)."
+    },
+    {
+      "q": "Research or engineering?",
+      "keywords": [
+        "research",
+        "engineering",
+        "applied",
+        "academic",
+        "production",
+        "focus area"
+      ],
+      "a": "<b>Applied AI engineering.</b> Ships to production, not papers. Practical tools, real systems."
+    },
+    {
+      "q": "Databases?",
+      "keywords": [
+        "database",
+        "sql",
+        "postgresql",
+        "redis",
+        "nosql",
+        "storage",
+        "data store"
+      ],
+      "a": "<b>PostgreSQL</b> (structured data), <b>Redis</b> (caching/pub/sub), vector databases (Pinecone, Chroma) for RAG."
+    },
+    {
+      "q": "Python dev?",
+      "keywords": [
+        "python",
+        "py",
+        "python dev",
+        "python developer",
+        "python engineer"
+      ],
+      "a": "<b>Primary language.</b> AI/ML, backend APIs (FastAPI, Flask), data processing, open source. Most GitHub repos are Python."
+    },
+    {
+      "q": "TypeScript dev?",
+      "keywords": [
+        "typescript",
+        "ts",
+        "javascript",
+        "js",
+        "typescript dev"
+      ],
+      "a": "<b>Second primary.</b> Full-stack web (Next.js), AI agent tooling, CLI tools, this website. Values strong typing for production."
+    },
+    {
+      "q": "Rust?",
+      "keywords": [
+        "rust",
+        "rust lang",
+        "systems programming"
+      ],
+      "a": "Uses <b>Rust</b> for performance-critical systems. Not primary, but reaches for it when speed and safety matter."
+    },
+    {
+      "q": "Daily tools?",
+      "keywords": [
+        "ai tools",
+        "daily tools",
+        "everyday tools",
+        "workflow",
+        "ide",
+        "editor",
+        "tools used"
+      ],
+      "a": "VS Code/Cursor, GitHub, Docker, AWS CLI, Python (FastAPI), TypeScript (Next.js), PostgreSQL, Redis, Claude Code. Pragmatic — whatever ships fastest."
+    },
+    "══════ CAREER ADVICE ══════",
+    {
+      "q": "How did Emin learn?",
+      "keywords": [
+        "learn code",
+        "self taught",
+        "how learn",
+        "learn programming",
+        "coding journey",
+        "teach yourself",
+        "how did he learn",
+        "self taught developer",
+        "teach yourself to code",
+        "learning journey",
+        "coding journey",
+        "how to learn programming",
+        "learned to program",
+        "learn coding"
+      ],
+      "a": "<b>Self-taught through building.</b> Online resources, documentation, open source. Learned by making real projects — not just courses. Every project taught something new."
+    },
+    {
+      "q": "Advice for AI engineers?",
+      "keywords": [
+        "advice",
+        "career advice",
+        "ai engineer advice",
+        "aspiring",
+        "how to become",
+        "learn ai",
+        "become ai engineer"
+      ],
+      "a": "<b>Build and ship.</b> Put projects on GitHub. Write about them. Contribute to open source. AI fundamentals (Python, system design, debugging, testing) never go out of style. No CS degree needed — you need curiosity and shipped work."
+    },
+    {
+      "q": "AI without CS degree?",
+      "keywords": [
+        "no cs degree",
+        "aerospace to ai",
+        "non traditional",
+        "career change",
+        "bootcamp",
+        "without degree"
+      ],
+      "a": "Emin's path: learn Python → build projects → open source → apply for ML roles. Aerospace engineering gave math skills; military gave discipline. <b>No bootcamp, no CS degree — consistent learning and building.</b>"
+    },
+    {
+      "q": "AI engineer roadmap?",
+      "keywords": [
+        "what to learn",
+        "ai engineer path",
+        "roadmap",
+        "skills needed",
+        "become ai engineer",
+        "learning path"
+      ],
+      "a": "1. <b>Python</b> — AI's lingua franca<br>2. <b>Git & GitHub</b> — version control + open source<br>3. <b>LLMs & prompting</b> — the current frontier<br>4. <b>APIs & backend</b> — FastAPI, databases<br>5. <b>Docker & cloud</b> — production deployment<br>6. <b>Ship relentlessly</b> — nothing teaches like shipping."
+    },
+    {
+      "q": "CS degree necessary?",
+      "keywords": [
+        "cs degree necessary",
+        "need degree",
+        "degree required",
+        "college necessary",
+        "university required"
+      ],
+      "a": "<b>No.</b> Emin is proof. The AI industry values skills and shipped projects over credentials. Math and analytical thinking help, but you can get those from any STEM background or self-study."
+    },
+    {
+      "q": "Junior dev tips?",
+      "keywords": [
+        "junior",
+        "junior dev",
+        "entry level",
+        "starting out",
+        "new grad",
+        "beginner advice",
+        "new to tech"
+      ],
+      "a": "1. <b>Build projects</b> — your GitHub is your resume<br>2. <b>Contribute to open source</b> — even fixing docs counts<br>3. <b>Write about what you learn</b><br>4. <b>Ship fast, iterate</b> — done > perfect<br>5. <b>Network authentically</b> — help others, stay curious"
+    },
+    {
+      "q": "Career switch into tech?",
+      "keywords": [
+        "career switch",
+        "switch to tech",
+        "change career",
+        "transition to software",
+        "become developer"
+      ],
+      "a": "Emin's approach: learn evenings/weekends → build real projects → share on GitHub → apply for transitional roles → leverage previous career strengths. <b>Consistency beats intensity. Ship things.</b>"
+    },
+    {
+      "q": "Bootcamp vs self-taught?",
+      "keywords": [
+        "bootcamp",
+        "self taught vs bootcamp",
+        "bootcamp worth it",
+        "self learning"
+      ],
+      "a": "Emin went <b>self-taught</b>. Bootcamps work if you need structure. Either way: <b>build real projects</b> — the credential alone won't get you hired. GitHub > certificate."
+    },
+    {
+      "q": "Open source for career?",
+      "keywords": [
+        "open source career",
+        "why open source",
+        "contribute open source",
+        "github career"
+      ],
+      "a": "<b>Very important.</b> Emin's 46 repos are his portfolio. Open source demonstrates skills, attracts opportunities, builds reputation. Even small contributions show you can read code and collaborate."
+    },
+    "══════ BLOG ══════",
+    {
+      "q": "Blog?",
+      "keywords": [
+        "blog",
+        "write",
+        "article",
+        "post",
+        "writing",
+        "published"
+      ],
+      "a": "Yes — <b>AI engineering, agents, production systems</b> at <a href='/blog'>/blog</a>. Latest: \"Building AI agents that ship — lessons from the field.\""
+    },
+    {
+      "q": "Blog topics?",
+      "keywords": [
+        "writing topics",
+        "blog topics",
+        "what does he write",
+        "blog content",
+        "blog about"
+      ],
+      "a": "Practical AI engineering: shipping agents, production lessons, open source tools, software craftsmanship. Shipped experience, not theory."
+    },
+    {
+      "q": "RSS?",
+      "keywords": [
+        "rss",
+        "feed",
+        "subscribe",
+        "blog rss",
+        "rss feed"
+      ],
+      "a": "<a href='/blog/rss.xml'>/blog/rss.xml</a>"
+    },
+    {
+      "q": "Post frequency?",
+      "keywords": [
+        "how often",
+        "frequency",
+        "blog schedule",
+        "new posts",
+        "posting schedule"
+      ],
+      "a": "No fixed schedule — writes when he ships or learns something worth sharing. Follow <a href='https://x.com/emingench' target='_blank'>X</a> or <a href='/blog/rss.xml'>RSS</a>."
+    },
+    "══════ CONTACT ══════",
+    {
+      "q": "Contact Emin?",
+      "keywords": [
+        "contact",
+        "email",
+        "reach",
+        "hire",
+        "recruit",
+        "linkedin",
+        "twitter",
+        "github profile",
+        "get in touch"
+      ],
+      "a": "📧 <a href='mailto:emin@emingenc.com'>emin@emingenc.com</a><br>🐙 <a href='https://github.com/emingenc' target='_blank'>GitHub</a><br>💼 <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a><br>🐦 <a href='https://x.com/emingench' target='_blank'>X/Twitter</a>"
+    },
+    {
+      "q": "Email?",
+      "keywords": [
+        "email address",
+        "mail",
+        "email contact",
+        "emin email",
+        "e-mail"
+      ],
+      "a": "<a href='mailto:emin@emingenc.com'>emin@emingenc.com</a>"
+    },
+    {
+      "q": "Social media?",
+      "keywords": [
+        "linkedin",
+        "twitter",
+        "x.com",
+        "social media",
+        "social",
+        "follow",
+        "social channels"
+      ],
+      "a": "💼 <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a> | 🐦 <a href='https://x.com/emingench' target='_blank'>X/Twitter</a> | 🐙 <a href='https://github.com/emingenc' target='_blank'>GitHub</a>"
+    },
+    {
+      "q": "Freelance?",
+      "keywords": [
+        "hire",
+        "freelance",
+        "consulting",
+        "contract",
+        "consult",
+        "gig",
+        "freelance work"
+      ],
+      "a": "<b>Full-time at Cresta AI</b> — not available for freelance. Open to open source collaboration: <a href='mailto:emin@emingenc.com'>email</a>."
+    },
+    {
+      "q": "Speaking?",
+      "keywords": [
+        "speak",
+        "speaking",
+        "conference",
+        "talk",
+        "presentation",
+        "podcast",
+        "guest",
+        "speaking engagement"
+      ],
+      "a": "Occasionally open — AI engineering, open source, career transitions. Contact: <a href='mailto:emin@emingenc.com'>email</a> or <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>."
+    },
+    {
+      "q": "Response time?",
+      "keywords": [
+        "response time",
+        "how fast",
+        "reply time",
+        "when will he reply",
+        "email response"
+      ],
+      "a": "Usually within a few days for thoughtful messages. Mention the specific project if about open source."
+    },
+    {
+      "q": "Is this Emin?",
+      "keywords": [
+        "right person",
+        "correct contact",
+        "is this emin",
+        "am i talking to emin"
+      ],
+      "a": "I'm an AI agent <b>representing</b> Emin — not Emin himself. For direct contact: <a href='mailto:emin@emingenc.com'>emin@emingenc.com</a>. I'm here for questions about his work."
+    },
+    "══════ THIS WEBSITE ══════",
+    {
+      "q": "What is this site?",
+      "keywords": [
+        "website",
+        "site",
+        "this",
+        "how does this work",
+        "portfolio",
+        "local",
+        "browser",
+        "what is this site",
+        "what is this website",
+        "how does this site work",
+        "your portfolio site",
+        "emin website"
+      ],
+      "a": "<b>Emin's AI agent portfolio.</b> Runs 100% locally in your browser — ONNX Runtime Web + WebGPU + SmolLM2-1.7B. No servers, no API calls. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
+    },
+    {
+      "q": "How built?",
+      "keywords": [
+        "built with",
+        "tech stack website",
+        "how built",
+        "astro",
+        "framework",
+        "site tech"
+      ],
+      "a": "<b>Astro 5</b> + vanilla JS + <b>ONNX Runtime Web</b>. No React, no heavy frameworks. AI in Web Workers via WebGPU."
+    },
+    {
+      "q": "AI model?",
+      "keywords": [
+        "ai model",
+        "model",
+        "onnx",
+        "which model",
+        "what model",
+        "llm model",
+        "ai engine"
+      ],
+      "a": "<b>SmolLM2-1.7B-Instruct</b> (WebGPU) + custom ONNX encoder for intent routing. Both local. Model ~1GB, cached after first download."
+    },
+    {
+      "q": "Privacy?",
+      "keywords": [
+        "privacy",
+        "data",
+        "private",
+        "tracking",
+        "track",
+        "logs",
+        "secure",
+        "data privacy"
+      ],
+      "a": "<b>100% private.</b> Messages never leave your browser. No API calls, no tracking, no analytics on agent page. Cleared on tab close."
+    },
+    {
+      "q": "Tracking?",
+      "keywords": [
+        "cookies",
+        "tracking",
+        "analytics",
+        "google analytics",
+        "ga",
+        "privacy",
+        "trackers"
+      ],
+      "a": "Blog pages use GA4. <b>Agent page: zero tracking</b> — no cookies, no analytics, no data collection."
+    },
+    {
+      "q": "Offline?",
+      "keywords": [
+        "offline",
+        "no internet",
+        "disconnected",
+        "airplane mode",
+        "without internet"
+      ],
+      "a": "After first visit: <b>yes</b>. Model cached in browser (~1GB). AI works without internet once cached."
+    },
+    {
+      "q": "Downloading message?",
+      "keywords": [
+        "downloading",
+        "loading model",
+        "model download",
+        "stuck downloading",
+        "download progress",
+        "why downloading"
+      ],
+      "a": "Model downloads on first visit (~1-3 min), caches permanently. <b>Subsequent visits instant.</b> If it re-downloads, your browser may be clearing cache on refresh."
+    },
+    {
+      "q": "Open source site?",
+      "keywords": [
+        "open source website",
+        "source code site",
+        "repo this website",
+        "website code",
+        "site open source"
+      ],
+      "a": "Yes! <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>github.com/emingenc/emingenc.github.io</a>"
+    },
+    {
+      "q": "Why this site?",
+      "keywords": [
+        "why this site",
+        "purpose",
+        "why portfolio",
+        "why build this",
+        "reason for site",
+        "what is this site",
+        "what is this website",
+        "how does this site work",
+        "your portfolio site",
+        "emin website"
+      ],
+      "a": "AI-native portfolio — a website that talks back. Demonstrates on-device AI, agent architecture, and full-stack engineering. Portfolio piece + AI experiment."
+    },
+    {
+      "q": "Speed?",
+      "keywords": [
+        "speed",
+        "fast",
+        "slow",
+        "performance",
+        "tokens per second",
+        "inference speed"
+      ],
+      "a": "WebGPU: <b>15-30 tok/s</b>. First token: 2-5s. WASM: ~3x slower. FAQ/tool system: <b>instant</b> (bypasses LLM)."
+    },
+    "══════ CRESTA AI ══════",
+    {
+      "q": "What is Cresta?",
+      "keywords": [
+        "cresta",
+        "cresta ai",
+        "what is cresta",
+        "cresta company",
+        "about cresta"
+      ],
+      "a": "<a href='https://cresta.com' target='_blank'>Cresta AI</a> — AI contact center platform (real-time coaching, analytics, AI agents). Backed by Sequoia, a16z."
+    },
+    {
+      "q": "Role at Cresta?",
+      "keywords": [
+        "cresta role",
+        "cresta work",
+        "what at cresta",
+        "cresta day to day",
+        "daily work cresta"
+      ],
+      "a": "<b>Forward Deployed AI Engineer</b> — works with customers to deploy and customize AI contact center solutions. Integrations, model customization, production reliability."
+    },
+    {
+      "q": "Join date?",
+      "keywords": [
+        "join cresta",
+        "start cresta",
+        "cresta start date",
+        "when cresta"
+      ],
+      "a": "<b>2026</b>."
+    },
+    "══════ PREVIOUS COMPANIES ══════",
+    {
+      "q": "Goodfintech?",
+      "keywords": [
+        "goodfintech",
+        "good fintech",
+        "previous company goodfintech",
+        "about goodfintech"
+      ],
+      "a": "<a href='https://goodfintech.ai' target='_blank'>Goodfintech</a> — AI fintech. Emin worked there 2023–2026 as AI Engineer & SWE."
+    },
+    {
+      "q": "Vivoo?",
+      "keywords": [
+        "vivoo",
+        "vivoo company",
+        "previous company vivoo",
+        "about vivoo"
+      ],
+      "a": "<a href='https://vivoo.io' target='_blank'>Vivoo</a> — health-tech. ML Engineer & SWE, 2022–2023."
+    },
+    {
+      "q": "Novit AI?",
+      "keywords": [
+        "novit",
+        "novit ai",
+        "first tech job",
+        "first ai job",
+        "about novit"
+      ],
+      "a": "First ML engineering role (2020–2022). Transitioned from data analysis to full-stack AI here."
+    },
+    {
+      "q": "Why leave previous roles?",
+      "keywords": [
+        "leave",
+        "left",
+        "why leave",
+        "job change",
+        "move on",
+        "switch jobs"
+      ],
+      "a": "Natural career progression — each move represented growth: data analyst → ML engineer → AI engineer → FDE. Follows interesting work and growth."
+    },
+    "══════ MILITARY ══════",
+    {
+      "q": "Military service?",
+      "keywords": [
+        "military",
+        "army",
+        "air force",
+        "defense",
+        "officer",
+        "service",
+        "military background"
+      ],
+      "a": "<b>Air Defense Officer</b>, Turkish Air Force. Trained at Turkish Air Force Academy (BSc Aerospace Engineering). Developed discipline, systematic thinking, composure under pressure."
+    },
+    {
+      "q": "Military to tech?",
+      "keywords": [
+        "military to tech",
+        "military skills",
+        "defense to software",
+        "officer to engineer",
+        "veteran transition"
+      ],
+      "a": "Military skills → tech: <b>discipline, systematic problem-solving, calm under pressure</b>. Air defense requires rapid decisions with complex systems — like debugging production at 2 AM."
+    },
+    {
+      "q": "Which branch?",
+      "keywords": [
+        "branch",
+        "army or navy",
+        "air force or army",
+        "which branch",
+        "what service"
+      ],
+      "a": "<b>Turkish Air Force</b> — Air Defense branch."
+    },
+    {
+      "q": "Veteran?",
+      "keywords": [
+        "veteran",
+        "vet",
+        "former military",
+        "military veteran",
+        "air force veteran"
+      ],
+      "a": "Yes — Turkish Air Force veteran."
+    },
+    "══════ EDUCATION ══════",
+    {
+      "q": "School?",
+      "keywords": [
+        "school",
+        "university",
+        "college",
+        "education institution",
+        "study where",
+        "alma mater"
+      ],
+      "a": "<b>Turkish Air Force Academy</b> — BSc Aerospace Engineering."
+    },
+    {
+      "q": "Aerospace Engineering?",
+      "keywords": [
+        "aerospace engineering",
+        "aerospace",
+        "rocket science",
+        "aircraft engineering",
+        "aero"
+      ],
+      "a": "Engineering of aircraft/spacecraft — aerodynamics, propulsion, structures, controls. Math + analysis skills transferred well to AI/ML."
+    },
+    {
+      "q": "Masters/PhD?",
+      "keywords": [
+        "masters",
+        "phd",
+        "doctorate",
+        "graduate degree",
+        "post-grad",
+        "advanced degree"
+      ],
+      "a": "No — BSc only. <b>Self-taught in software/AI.</b> Skills and shipped projects > advanced degrees."
+    },
+    {
+      "q": "Self-taught?",
+      "keywords": [
+        "self taught developer",
+        "autodidact",
+        "self learner",
+        "taught himself"
+      ],
+      "a": "Yes — learned through online resources, docs, and building. No bootcamp, no CS degree."
+    },
+    {
+      "q": "Certifications?",
+      "keywords": [
+        "certification",
+        "cert",
+        "aws cert",
+        "google cert",
+        "professional cert",
+        "certificate"
+      ],
+      "a": "No formal certs listed. Credentials: <b>shipped projects, open source, work experience</b> — better than certs in AI engineering."
+    },
+    "══════ PRODUCT MGMT ══════",
+    {
+      "q": "Prioritization?",
+      "keywords": [
+        "prioritize",
+        "priority",
+        "important",
+        "urgent",
+        "how decide",
+        "what to build"
+      ],
+      "a": "<b>Impact × effort.</b> Ship highest-impact thing fastest. Customer impact is the primary signal as an FDE. Pragmatic — working software > perfect plans."
+    },
+    {
+      "q": "Deadlines?",
+      "keywords": [
+        "deadline",
+        "pressure",
+        "time management",
+        "urgent",
+        "crunch time"
+      ],
+      "a": "Military background: stays calm, breaks problems into steps, communicates early if timeline is unrealistic. Ships highest-value work within constraints."
+    },
+    {
+      "q": "Agile?",
+      "keywords": [
+        "waterfall",
+        "agile",
+        "scrum",
+        "kanban",
+        "methodology",
+        "development process"
+      ],
+      "a": "<b>Lightweight agile</b> — short cycles, quick feedback, continuous deployment. No rigid process for its own sake."
+    },
+    {
+      "q": "Estimation?",
+      "keywords": [
+        "estimate",
+        "task size",
+        "how long",
+        "sprint planning",
+        "estimation"
+      ],
+      "a": "Breaks problems into small deliverables. Estimates from <b>actual past experience</b>, not gut feelings. AI projects are hard to estimate — communicates in ranges, updates as he learns."
+    },
+    "══════ ENGINEERING ══════",
+    {
+      "q": "Testing?",
+      "keywords": [
+        "testing",
+        "test",
+        "unit test",
+        "integration test",
+        "TDD",
+        "test coverage"
+      ],
+      "a": "<b>Tests what matters</b> — critical paths, data integrity, production-breaking edge cases. Not dogmatic about TDD but always tests production systems. AI projects get integration tests for model behavior."
+    },
+    {
+      "q": "Code review?",
+      "keywords": [
+        "code review",
+        "review",
+        "PR review",
+        "merge request",
+        "code quality"
+      ],
+      "a": "Reviews for <b>correctness, clarity, production safety.</b> Clear code > clever code. Good reviews teach as well as catch bugs. Systematic approach from military background."
+    },
+    {
+      "q": "Monolith vs microservices?",
+      "keywords": [
+        "monolith",
+        "microservices",
+        "architecture",
+        "system design",
+        "service architecture"
+      ],
+      "a": "<b>Start with well-structured monolith, split when needed.</b> Microservices solve org scaling, not code scaling. Chooses based on the actual problem."
+    },
+    {
+      "q": "Tech debt?",
+      "keywords": [
+        "technical debt",
+        "tech debt",
+        "refactor",
+        "clean code",
+        "debt"
+      ],
+      "a": "<b>Strategic debt</b> (temporary, speeds delivery) vs <b>toxic debt</b> (will cause incidents). Pays toxic debt fast. Refactors as part of normal work, not special projects."
+    },
+    {
+      "q": "Documentation?",
+      "keywords": [
+        "documentation",
+        "docs",
+        "readme",
+        "wiki",
+        "how to document"
+      ],
+      "a": "<b>Executable documentation</b> — READMEs that get you running in 5 min. Code that's self-documenting. Comments explain <i>why</i> not <i>what</i>. Writes for the tired dev at 2 AM."
+    },
+    {
+      "q": "Git workflow?",
+      "keywords": [
+        "git",
+        "branch",
+        "commit",
+        "merge",
+        "rebase",
+        "version control"
+      ],
+      "a": "<b>Feature branches + PR reviews + squash merge.</b> Clean history, meaningful messages, small PRs. Practical — goal is collaboration and traceability."
+    },
+    {
+      "q": "CI/CD?",
+      "keywords": [
+        "ci/cd",
+        "ci",
+        "continuous integration",
+        "deployment pipeline",
+        "github actions"
+      ],
+      "a": "<b>GitHub Actions</b> — lint, test, build, deploy on push. Simple, fast. CI should catch problems in minutes."
+    },
+    {
+      "q": "Error handling?",
+      "keywords": [
+        "error handling",
+        "errors",
+        "exceptions",
+        "try catch",
+        "fault tolerance"
+      ],
+      "a": "<b>Explicit error handling + graceful degradation.</b> Production AI should never crash silently — log, alert, fall back. Swallowed exceptions cause production incidents."
+    },
+    "══════ AI/ML DEPTH ══════",
+    {
+      "q": "LLM experience?",
+      "keywords": [
+        "llm",
+        "transformer",
+        "attention",
+        "language model",
+        "gpt",
+        "architecture"
+      ],
+      "a": "Integrates, fine-tunes, and deploys transformer models in production. Deep understanding of making LLMs work reliably at scale. Not designing new architectures — making existing ones production-ready."
+    },
+    {
+      "q": "RAG?",
+      "keywords": [
+        "rag",
+        "retrieval augmented generation",
+        "vector search",
+        "embeddings",
+        "knowledge base"
+      ],
+      "a": "Builds RAG pipelines for production. Vector databases (Pinecone, Chroma), embedding models, retrieval strategies. Approach: start simple, measure, iterate on retrieval before generation."
+    },
+    {
+      "q": "Fine-tuning?",
+      "keywords": [
+        "fine tuning",
+        "fine-tune",
+        "model training",
+        "lora",
+        "qlora",
+        "custom model"
+      ],
+      "a": "Experienced with LoRA/QLoRA fine-tuning. Focuses on data quality. <b>Most fine-tuning problems are data problems.</b>"
+    },
+    {
+      "q": "Agent architecture?",
+      "keywords": [
+        "agent",
+        "ai agent",
+        "autonomous agent",
+        "agentic",
+        "agent architecture",
+        "react agent"
+      ],
+      "a": "This website runs a ReAct agent. Designs production AI agents: intent routing, tool calling, memory, fallback strategies. Agents should be reliable, not magical."
+    },
+    {
+      "q": "Model deployment?",
+      "keywords": [
+        "deploy",
+        "deployment",
+        "production model",
+        "model serving",
+        "inference server"
+      ],
+      "a": "ONNX Runtime, Docker, AWS. Handled cold starts, model versioning, A/B testing, production monitoring for models."
+    },
+    {
+      "q": "Prompt engineering?",
+      "keywords": [
+        "prompt engineering",
+        "prompting",
+        "prompt design",
+        "system prompt"
+      ],
+      "a": "Treats prompts as <b>code</b> — versioned, tested, iterated. Structured prompts, clear instructions, few-shot examples. Measures by task performance, not vibes."
+    },
+    "══════ TURKISH ══════",
+    {
+      "q": "Türkçe?",
+      "keywords": [
+        "turkish",
+        "türkçe",
+        "turkce",
+        "türk",
+        "merhaba",
+        "türkçe biliyor"
+      ],
+      "a": "Evet! Emin <b>Türk</b>, İngilizce ve Türkçe konuşuyor. Sorularınızı iki dilde de sorabilirsiniz. (Emin is Turkish, speaks both.)"
+    },
+    {
+      "q": "Nereli?",
+      "keywords": [
+        "nereli",
+        "nereden",
+        "türkiye",
+        "turkish",
+        "turk",
+        "milliyet"
+      ],
+      "a": "Emin <b>Türk</b>. Türk Hava Kuvvetleri Akademisi mezunu. Şu anda Vancouver, Kanada'da yaşıyor."
+    },
+    {
+      "q": "Milliyet?",
+      "keywords": [
+        "nationality",
+        "turkish",
+        "turkey",
+        "from",
+        "origin",
+        "where from",
+        "milliyet",
+        "vatandas"
+      ],
+      "a": "<b>Türk vatandaşı.</b> Eğitim Türkiye'de, şimdi Vancouver, BC, Kanada'da çalışıyor."
+    },
+    {
+      "q": "Türkiye'de mi?",
+      "keywords": [
+        "turkey",
+        "türkiye",
+        "istanbul",
+        "ankara",
+        "izmir",
+        "türkiyede mi"
+      ],
+      "a": "Hayır, şu anda <b>Vancouver, BC, Kanada'da</b> yaşıyor. Aslen Türkiye'den."
+    },
+    {
+      "q": "Hangi okul?",
+      "keywords": [
+        "üniversite",
+        "mezun",
+        "okul",
+        "hangi okul",
+        "hava harp"
+      ],
+      "a": "<b>Türk Hava Kuvvetleri Akademisi</b> — Havacılık ve Uzay Mühendisliği (BSc)."
+    },
+    {
+      "q": "Askerlik?",
+      "keywords": [
+        "askerlik",
+        "asker",
+        "subay",
+        "hava kuvvetleri",
+        "military turkish"
+      ],
+      "a": "Evet — <b>Hava Savunma Subayı</b>, Türk Hava Kuvvetleri."
+    },
+    {
+      "q": "Ne iş?",
+      "keywords": [
+        "ne iş",
+        "meslek",
+        "görev",
+        "ne yapıyor",
+        "işi ne"
+      ],
+      "a": "<b>Cresta AI</b> (Vancouver) — Forward Deployed AI Engineer. Müşterilerle çalışarak AI sistemleri geliştiriyor."
+    },
+    {
+      "q": "Projeleri?",
+      "keywords": [
+        "proje",
+        "projeler",
+        "github proje",
+        "neler yaptı",
+        "calismalari"
+      ],
+      "a": "46 GitHub deposu, 174+ yıldız. telegramGPT, llm_adaptive_router, harness-engineering. <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
+    },
+    {
+      "q": "İletişim?",
+      "keywords": [
+        "iletisim",
+        "email",
+        "nasıl ulaşırım",
+        "iletişime geç",
+        "contact turkish"
+      ],
+      "a": "📧 <a href='mailto:emin@emingenc.com'>emin@emingenc.com</a>"
+    },
+    "══════ RANDOM ══════",
+    {
+      "q": "Meaning of life?",
+      "keywords": [
+        "meaning of life",
+        "life meaning",
+        "philosophy",
+        "deep question",
+        "existence",
+        "42"
+      ],
+      "a": "42! (Kidding.) I'm specialized in Emin's work — but I know he finds meaning in building things that help people. Try /about!"
+    },
+    {
+      "q": "Sentient?",
+      "keywords": [
+        "sentient",
+        "conscious",
+        "alive",
+        "thinking",
+        "self aware",
+        "consciousness"
+      ],
+      "a": "No — AI model running locally in your browser. Helpful, not sentient. For human conversation: <a href='mailto:emin@emingenc.com'>email Emin</a>."
+    },
+    {
+      "q": "ChatGPT vs you?",
+      "keywords": [
+        "chatgpt",
+        "claude",
+        "gpt",
+        "better than",
+        "compare",
+        "vs",
+        "versus",
+        "comparison"
+      ],
+      "a": "I'm <b>1.7B params, local/private/offline</b>. ChatGPT/Claude are 1000x larger, cloud-based. Different tools — I'm specialized in Emin, they're generalists."
+    },
+    {
+      "q": "Time?",
+      "keywords": [
+        "time",
+        "date",
+        "day",
+        "today",
+        "what time",
+        "current time"
+      ],
+      "a": "No clock access — I run offline. Check your device! Meanwhile: questions about Emin?"
+    },
+    {
+      "q": "Weather?",
+      "keywords": [
+        "weather",
+        "temperature",
+        "forecast",
+        "rain",
+        "sunny",
+        "climate"
+      ],
+      "a": "No weather data — offline. But Emin's in <b>Vancouver</b>, so it probably just rained 🌧️"
+    },
+    {
+      "q": "Write code?",
+      "keywords": [
+        "write code",
+        "code for me",
+        "generate code",
+        "coding help",
+        "write a function"
+      ],
+      "a": "I'm specialized in Emin's portfolio. For code: <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a> has real Python/TS/Dart/C/Rust examples."
+    },
+    {
+      "q": "Search web?",
+      "keywords": [
+        "search",
+        "google",
+        "internet",
+        "look up",
+        "find",
+        "web search",
+        "browse"
+      ],
+      "a": "No — 100% local, offline. I answer from what I know about Emin. Web search: use a search engine."
+    },
+    {
+      "q": "Your architecture?",
+      "keywords": [
+        "architecture",
+        "how you work",
+        "your code",
+        "your system",
+        "your design",
+        "how built"
+      ],
+      "a": "<b>ReAct agent:</b> ONNX classifier → FAQ matcher → tool router → LLM fallback (SmolLM2-1.7B). All vanilla JS in Web Workers. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
+    },
+    {
+      "q": "Sorry/oops/nvm",
+      "keywords": [
+        "oops",
+        "sorry",
+        "never mind",
+        "nvm",
+        "mistake",
+        "wrong",
+        "apologize",
+        "my bad"
+      ],
+      "a": "No worries! What would you like to know about Emin?"
+    },
+    {
+      "q": "Capabilities?",
+      "keywords": [
+        "what can you do",
+        "help",
+        "commands",
+        "features",
+        "capabilities",
+        "what do you know",
+        "abilities"
+      ],
+      "a": "I answer questions about <b>Emin Gench:</b> career, 46 repos, tech skills, education, military background, blog, contact. Commands: /about, /repos, /contact, /skills, /blog, /help."
+    },
+    "══════ RECRUITER ══════",
+    {
+      "q": "Opportunities?",
+      "keywords": [
+        "opportunity",
+        "job opportunity",
+        "new role",
+        "career opportunity",
+        "looking for role"
+      ],
+      "a": "<b>At Cresta AI</b> — not exploring new roles. Open to open source collaboration. Recruiters: he'll reach out if his situation changes."
+    },
+    {
+      "q": "Send job description?",
+      "keywords": [
+        "job description",
+        "JD",
+        "send job",
+        "job opening",
+        "job posting"
+      ],
+      "a": "Appreciated, but not currently exploring. Open source collaboration ideas welcome: <a href='mailto:emin@emingenc.com'>email</a>."
+    },
+    {
+      "q": "Visa status?",
+      "keywords": [
+        "visa",
+        "work permit",
+        "authorization",
+        "work visa",
+        "legal status"
+      ],
+      "a": "Works in Vancouver, BC, Canada. Specific details not public. Professional inquiries: contact directly."
+    },
+    {
+      "q": "Team management?",
+      "keywords": [
+        "team",
+        "manage",
+        "leadership",
+        "led team",
+        "direct reports",
+        "managing"
+      ],
+      "a": "FDE at Cresta — works collaboratively with customers and internal teams. Leads open source projects with multiple contributors. Leadership style: clear communication, enablement."
+    },
+    {
+      "q": "Salary?",
+      "keywords": [
+        "salary",
+        "compensation",
+        "pay",
+        "rate",
+        "how much",
+        "salary range"
+      ],
+      "a": "Not public. Currently at Cresta AI, not negotiating. Professional inquiries: <a href='mailto:emin@emingenc.com'>email</a>."
+    },
+    {
+      "q": "References?",
+      "keywords": [
+        "reference",
+        "referral",
+        "vouch",
+        "recommendation",
+        "character reference"
+      ],
+      "a": "His work is the reference: 46 repos, 174+ stars, clear career progression. GitHub + LinkedIn are best professional references."
+    },
+    {
+      "q": "Remote?",
+      "keywords": [
+        "remote",
+        "wfh",
+        "work from home",
+        "remote work",
+        "office",
+        "hybrid"
+      ],
+      "a": "Based in Vancouver, BC. Specific arrangement not detailed. Has built a remote-compatible career through open source."
+    },
+    "══════ DESIGN ══════",
+    {
+      "q": "Who designed site?",
+      "keywords": [
+        "design",
+        "designer",
+        "website design",
+        "who designed",
+        "look and feel",
+        "ui design"
+      ],
+      "a": "Emin designed and built it — <b>terminal/developer aesthetic</b>, monospace fonts, teal (#2dd4bf), dark theme. Goal: feel like a coding agent, not a corporate site."
+    },
+    {
+      "q": "Design system?",
+      "keywords": [
+        "design system",
+        "css",
+        "tailwind",
+        "bootstrap",
+        "component library",
+        "design tokens"
+      ],
+      "a": "No framework — <b>plain CSS custom properties</b>. Minimal, fast-loading, no overhead."
+    },
+    {
+      "q": "Is he a designer?",
+      "keywords": [
+        "designer",
+        "design background",
+        "ui/ux",
+        "user experience"
+      ],
+      "a": "Engineer, not designer. But builds usable interfaces. Design is intentionally technical and minimal — function over decoration."
+    },
+    "══════ SECURITY ══════",
+    {
+      "q": "Security practices?",
+      "keywords": [
+        "security",
+        "secure",
+        "vulnerability",
+        "auth",
+        "authentication",
+        "security practices"
+      ],
+      "a": "Secrets in env vars, dependency auditing, input validation, least-privilege access. See harness-engineering for security tooling."
+    },
+    {
+      "q": "Report vuln?",
+      "keywords": [
+        "vulnerability",
+        "bug bounty",
+        "security issue",
+        "report bug",
+        "security report"
+      ],
+      "a": "Email <a href='mailto:emin@emingenc.com'>emin@emingenc.com</a> directly. Takes security seriously, responds promptly."
+    },
+    "══════ PERSONAL ══════",
+    {
+      "q": "Hobbies?",
+      "keywords": [
+        "hobby",
+        "hobbies",
+        "free time",
+        "outside work",
+        "interest",
+        "sport",
+        "fun",
+        "life outside"
+      ],
+      "a": "Building — 46 repos show this is both work and passion. Background suggests interests in aviation, defense tech, and continuous learning. Genuinely enjoys the craft of engineering."
+    },
+    {
+      "q": "Personality?",
+      "keywords": [
+        "personality",
+        "personality type",
+        "character",
+        "what kind of person"
+      ],
+      "a": "<b>Pragmatic, curious, disciplined, builder.</b> Ships things, writes about real experiences, doesn't chase hype. Self-taught path + military background = resilience + independence."
+    },
+    {
+      "q": "Accurate?",
+      "keywords": [
+        "accurate",
+        "true",
+        "real",
+        "correct",
+        "up to date",
+        "current",
+        "outdated",
+        "reliable"
+      ],
+      "a": "Yes — maintained as of <b>2026</b>. Star counts approximate. Latest: <a href='https://github.com/emingenc' target='_blank'>GitHub</a> and <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>."
+    },
+    {
+      "q": "Name meaning?",
+      "keywords": [
+        "name",
+        "emin name",
+        "gench meaning",
+        "name meaning",
+        "why emin",
+        "name origin"
+      ],
+      "a": "<b>Emin</b> is Turkish for <b>'trustworthy, reliable, honest'</b>. Fitting for someone who builds production AI and open source tools."
+    },
+    {
+      "q": "Timezone?",
+      "keywords": [
+        "timezone",
+        "time zone",
+        "pst",
+        "est",
+        "gmt",
+        "utc",
+        "pacific time"
+      ],
+      "a": "<b>Pacific Time</b> (PT, UTC-8 / UTC-7 DST) — Vancouver, BC."
+    },
+    {
+      "q": "Mentorship?",
+      "keywords": [
+        "mentor",
+        "mentorship",
+        "mentoring",
+        "teach",
+        "guide",
+        "coach"
+      ],
+      "a": "Informal mentorship through open source and writing. Code, READMEs, and blog posts help developers learn by example. Thoughtful emails welcome."
+    },
+    "══════ PHILOSOPHY ══════",
+    {
+      "q": "Coding philosophy?",
+      "keywords": [
+        "philosophy",
+        "approach",
+        "mindset",
+        "coding philosophy",
+        "engineering philosophy"
+      ],
+      "a": "<b>Ship working software. Learn from feedback. Iterate.</b> Clear code > clever code. Done > perfect. Build for the tired developer at 2 AM. Test what matters. Refactor continuously. Choose boring technology where possible. AI should be reliable, not magical."
+    },
+    {
+      "q": "What drives Emin?",
+      "keywords": [
+        "motivation",
+        "drive",
+        "why work",
+        "passion",
+        "what drives"
+      ],
+      "a": "Building things that people actually use. His open source projects solve real problems, his AI work ships to production, and his writing shares hard-won lessons. The common thread: <b>making things that work.</b>"
+    },
+    {
+      "q": "Failure story?",
+      "keywords": [
+        "failure",
+        "mistake",
+        "fail",
+        "wrong",
+        "learn from failure",
+        "lesson"
+      ],
+      "a": "Emin's path (aerospace → military → self-taught coder → AI engineer) involved plenty of wrong turns and dead ends. He treats failures as data points — learn what doesn't work, adjust, try again. His self-taught journey means he's comfortable with not knowing and figuring things out."
+    },
+    {
+      "q": "Biggest influence?",
+      "keywords": [
+        "influence",
+        "inspiration",
+        "hero",
+        "role model",
+        "influenced by"
+      ],
+      "a": "While not explicitly stated, his trajectory suggests influences from: open source culture (build in public, share freely), military training (discipline, systems thinking), and the maker/indie hacker ethos (ship first, learn from users)."
+    },
+    {
+      "q": "Cool things / tricks",
+      "keywords": [
+        "cool",
+        "trick",
+        "easter egg",
+        "hidden",
+        "fun",
+        "impress",
+        "surprise",
+        "neat"
+      ],
+      "a": "Try these:<br><br>⚡ <b>/device</b> — see your hardware fingerprint<br>🖥️ <b>/screen</b> — your display specs<br>📶 <b>/network</b> — your connection speed<br>🎲 <b>/lucky</b> — random facts about this site<br>📊 <b>/status</b> — everything at a glance<br>⏰ <b>/time</b> — clock with timezone<br><br>This all runs <b>locally in your browser</b> — no servers involved!"
+    }
+  ],
+  "fallback": {
+    "responses": [
+      "I don't have a specific answer for that, but I can tell you about Emin's work, repos, or tech skills. Try <b>/help</b> for commands.",
+      "Hmm, not sure about that. I'm specialized in Emin's career, projects, and skills. Try asking about Cresta AI, open source, or his self-taught journey.",
+      "That's outside my knowledge. Try: /about, /repos, /contact, /skills, or /blog.",
+      "I don't know that, but I'm great at questions about Emin Gench! Ask about his career, projects, or background.",
+      "Can't help with that, unfortunately. But I can tell you about Emin's 46 repos, his FDE role, or his aerospace-to-AI transition."
+    ]
+  },
+  "welcome": {
+    "agentMessage": "Hello! I'm an AI agent running entirely in your browser. Type <b>/help</b> to see commands, or ask me about Emin's work, repos, or smart glasses."
+  }
+}
