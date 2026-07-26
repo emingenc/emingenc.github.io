@@ -30,7 +30,7 @@ var AlignmentGate = (function() {
       for (var ti = 0; ti < registry.length; ti++) {
         var rt = registry[ti];
         if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
-        var kws = rt.keywords || [];
+        var kws = (rt.scopeWords && rt.scopeWords.length > 0) ? rt.scopeWords : (rt.keywords || []);
         var score = 0;
         for (var ki = 0; ki < kws.length; ki++) {
           if (joined.indexOf(String(kws[ki]).toLowerCase()) !== -1) score++;
@@ -53,7 +53,7 @@ var AlignmentGate = (function() {
       for (var ti = 0; ti < registry.length; ti++) {
         var rt = registry[ti];
         if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
-        var kws = rt.keywords || [];
+        var kws = (rt.scopeWords && rt.scopeWords.length > 0) ? rt.scopeWords : (rt.keywords || []);
         var kwScore = 0;
         for (var ki = 0; ki < kws.length; ki++) {
           if (joined.indexOf(String(kws[ki]).toLowerCase()) !== -1) kwScore++;
@@ -90,7 +90,8 @@ var AlignmentGate = (function() {
     for (var ti = 0; ti < registry.length; ti++) {
       var rt = registry[ti];
       if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
-      var kws = rt.keywords || [];
+      // Prefer scopeWords (narrow) over keywords (broad) to avoid false matches
+      var kws = (rt.scopeWords && rt.scopeWords.length > 0) ? rt.scopeWords : (rt.keywords || []);
       var score = 0;
       for (var ki = 0; ki < kws.length; ki++) {
         if (joined.indexOf(String(kws[ki]).toLowerCase()) !== -1) score++;
