@@ -80,15 +80,37 @@ var AlignmentGate = (function() {
     return null;
   }
 
+  // Broader keyword scan across all tools — used as fallback when LLM unavailable or times out
+  function keywordRedirect(text, defaultTool) {
+    var ws = words(text);
+    var joined = ws.join(' ');
+    var bestTool = null, bestScore = 0;
+    var registry = Tools.TOOL_REGISTRY || [];
+    for (var ti = 0; ti < registry.length; ti++) {
+      var rt = registry[ti];
+      if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
+      var kws = rt.keywords || [];
+      var score = 0;
+      for (var ki = 0; ki < kws.length; ki++) {
+        if (joined.indexOf(String(kws[ki]).toLowerCase()) !== -1) score++;
+      }
+      if (score > bestScore) { bestScore = score; bestTool = rt.name; }
+    }
+    if (bestTool && bestScore >= 1) {
+      return decision('redirect', bestTool, 'keyword fallback after alignment gap', 70, 'fallback');
+    }
+    var fallbackAction = defaultTool === 'chat' ? 'execute' : 'sink';
+    return decision(fallbackAction, defaultTool || 'out_of_scope', 'proposal is ambiguous without alignment model', 40, 'fallback');
+  }
+
   function check(text, intent, opts) {
     var d = deterministic(text, intent || {});
     if (d) return Promise.resolve(d);
     var worker = Classifier._getLLMWorker ? Classifier._getLLMWorker() : null;
     if (!Classifier.isLLMReady || !Classifier.isLLMReady() || !worker) {
-      // If the original proposal was chat, fall back to chat (not out_of_scope) when LLM is unavailable
-      var fallbackTool = (intent && intent.label === 'chat') ? 'chat' : 'out_of_scope';
-      var fallbackAction = fallbackTool === 'chat' ? 'execute' : 'sink';
-      return Promise.resolve(decision(fallbackAction, fallbackTool, 'proposal is ambiguous without alignment model', 40, 'fallback'));
+      // No LLM — try keyword match before sinking
+      var defaultTool = (intent && intent.label === 'chat') ? 'chat' : 'out_of_scope';
+      return Promise.resolve(keywordRedirect(text, defaultTool));
     }
     var id = 'align_' + (++nextId);
     var turnId = opts && opts.turnId;
@@ -97,7 +119,9 @@ var AlignmentGate = (function() {
       setTimeout(function() {
         if (!resolvers[id]) return;
         delete resolvers[id];
-        resolve(decision('sink', 'out_of_scope', 'alignment timed out', 0, 'fallback'));
+        // LLM timed out — try keyword match before sinking
+        var defaultTool = (intent && intent.label === 'chat') ? 'chat' : 'out_of_scope';
+        resolve(keywordRedirect(text, defaultTool));
       }, 6000);
       var scopes = (Tools.TOOL_REGISTRY || []).map(function(t) {
         return { name: t.name, description: t.description, scope: t.scopeWords || t.keywords || [] };
