@@ -317,10 +317,7 @@ var Orchestrator = (function() {
         }
 
         if (result && result.redirect) {
-          store.dispatch({ type: 'MESSAGE_ADD', message: {
-            role: 'agent', type: 'faq', content: 'Opening <a href="' + result.redirect + '">' + result.redirect + '</a>...', ts: ''
-          }});
-          setTimeout(function() { window.location.href = result.redirect; }, 400);
+          window.location.href = result.redirect;
           done();
           return;
         }
