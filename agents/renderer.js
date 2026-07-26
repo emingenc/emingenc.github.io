@@ -3,6 +3,11 @@ var Renderer = (function() {
   "use strict";
 
   var el = {};
+
+  // Force scroll to absolute bottom of page (more reliable than scrollIntoView)
+  function scrollToBottom() {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
   var store = null;
   var unsubscribe = null;
 
@@ -70,7 +75,7 @@ var Renderer = (function() {
     // Auto-scroll after DOM layout settles (double rAF for reliable layout)
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
-        d.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        scrollToBottom();
       });
     });
   }
@@ -85,7 +90,7 @@ var Renderer = (function() {
     }
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
-        msg._domEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        scrollToBottom();
       });
     });
   }
@@ -95,7 +100,7 @@ var Renderer = (function() {
     msg._domEl.removeAttribute('data-streaming');
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
-        msg._domEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        scrollToBottom();
       });
     });
   }
@@ -215,7 +220,7 @@ var Renderer = (function() {
       el.output.appendChild(d);
       var body = d.querySelector('.body'), lines = welcome.split('\n'), i = 0;
       var buf = '';
-      function next() { if (i >= lines.length) { d.scrollIntoView({ behavior:'smooth',block:'end' }); store.dispatch({ type:'WELCOME_DONE' }); return; } buf += lines[i] + (i<lines.length-1?'<br>':''); body.innerHTML = buf; d.scrollIntoView({ behavior:'smooth',block:'end' }); i++; setTimeout(next, 22+Math.random()*12); }
+      function next() { if (i >= lines.length) { scrollToBottom(); store.dispatch({ type:'WELCOME_DONE' }); return; } buf += lines[i] + (i<lines.length-1?'<br>':''); body.innerHTML = buf; scrollToBottom(); i++; setTimeout(next, 22+Math.random()*12); }
       next();
     }, 450);
     setTimeout(function() {
@@ -245,7 +250,7 @@ var Renderer = (function() {
         }
         el.output.appendChild(d);
       }
-      el.output.lastChild && el.output.lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      el.output.lastChild && scrollToBottom();
 
       // Restore context bar
       var pct = state.ui.contextPct || 28;
