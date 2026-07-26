@@ -106,9 +106,9 @@ var ort = null;
 var encoderSession = null, encoderReady = false;
 
 async function initEncoder() {
-  var mod = await import('/vendor/ort.bundle.min.mjs');
+  var mod = await import('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.bundle.min.mjs');
   ort = mod;
-  ort.env.wasm.wasmPaths = '/vendor/';
+  ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
   ort.env.wasm.numThreads = 1;
   encoderSession = await ort.InferenceSession.create('/models/needle-onnx/encoder.onnx', {
     executionProviders: ['wasm']
