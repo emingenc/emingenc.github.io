@@ -43,12 +43,11 @@ var AlignmentGate = (function() {
       return null; // has substantive content — let LLM check against tool scopes
     }
     if (label === 'faq') {
-      if (Tools.faqMatch(text)) return decision('execute', 'faq', 'FAQ match', 100, 'deterministic');
       // Only treat as casual if the query is primarily a greeting (≤3 words or no tool keywords)
       var casualMatch = text.match(/\b(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great)\b/i);
       if (casualMatch && ws.length <= 3) return decision('execute', 'chat', 'casual conversation', 90, 'deterministic');
       if (casualMatch) return null; // has greeting prefix but also substantive content — let LLM align
-      // Two-pass routing: check if FAQ query matches a registered tool's keywords
+      // Two-pass routing: check tool keywords BEFORE FAQ — tools take priority
       var bestTool = null, bestScore = 0;
       var registry = Tools.TOOL_REGISTRY || [];
       for (var ti = 0; ti < registry.length; ti++) {
@@ -64,6 +63,8 @@ var AlignmentGate = (function() {
       if (bestTool && bestScore >= 1) {
         return decision('redirect', bestTool, 'faq proposal redirected via keyword match', 75, 'deterministic');
       }
+      // No tool keyword match — try FAQ, then fall through to LLM
+      if (Tools.faqMatch(text)) return decision('execute', 'faq', 'FAQ match', 100, 'deterministic');
       return null;
     }
     if (!meta) return decision('sink', 'out_of_scope', 'unknown proposed tool', 100, 'deterministic');
