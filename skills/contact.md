@@ -2,7 +2,7 @@
 
 ## How to Reach Emin
 
-- **Email:** emin@emingenc.com
+- **Email:** contact via social links
 - **GitHub:** https://github.com/emingenc
 - **Twitter/X:** https://twitter.com/emingench
 - **LinkedIn:** https://linkedin.com/in/emingench
