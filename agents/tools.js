@@ -118,7 +118,6 @@ var Tools = (function() {
   // ─── Tool: contact (clickable links) ─────────────────────
   function tool_contact() {
     var lines = [
-      link('mailto:emin@emingenc.com', 'emin@emingenc.com'),
       link('https://github.com/emingenc', 'github.com/emingenc'),
       link('https://linkedin.com/in/emingench', 'linkedin.com/in/emingench'),
       link('https://x.com/emingench', 'x.com/emingench')
