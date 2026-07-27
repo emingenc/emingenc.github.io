@@ -229,7 +229,11 @@ var Orchestrator = (function() {
       store.dispatch({ type: 'THINKING', state: 'executing', label: 'step ' + store.getState().workingMemory.steps + '/' + MAX_ITERATIONS + ': ' + toolName });
 
       setTimeout(function() {
-        if (!validTurn(turnId)) { done(turnId); return; } // stale, release lock
+        if (!validTurn(turnId)) { done(turnId); return; }
+
+        // ── THINK: reasoning before action ──
+        var stepPlan = plan.map(function(p) { return p.tool; });
+        trace(turnId, 'think → step ' + (idx + 1) + '/' + plan.length + ' · next: ' + toolName);
 
         // ── Execute: faq, chat, or standard tool ──
         var result;
@@ -342,7 +346,10 @@ var Orchestrator = (function() {
         }
 
         // ── Successful execution → record result ──
-        trace(turnId, 'exec → ' + toolName + ' ✓');
+        trace(turnId, 'act → ' + toolName + ' ✓');
+        // OBSERVE: brief summary of what the tool returned
+        var observeSummary = (result.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+        if (observeSummary) trace(turnId, 'observe → ' + observeSummary + (observeSummary.length >= 120 ? '...' : ''));
         store.dispatch({ type: 'OBSERVE', tool: toolName, data: result.data });
         results.push(result);
         // FAQ responses render as natural chat, tools render as tool blocks
@@ -422,12 +429,18 @@ var Orchestrator = (function() {
             return stopAndSummarize(results, errors, userText, turnId, eval_.summary);
           }
 
-          // ─── REPLAN: LLM wasn't satisfied — try FAQ fallback ───
+          // ─── REPLAN: LLM wasn't satisfied — suggest next tool ───
           var modelNextTool = eval_.nextTool || '';
           var nextMeta = modelNextTool ? Tools.getTool(modelNextTool) : null;
           if (modelNextTool === 'ask_user' && nextMeta && nextMeta.interactive) {
-            trace(turnId, 'replan → ask_user (model decision)');
+            trace(turnId, 'replan → ask_user · model suggested');
             plan.push({ tool: 'ask_user', score: eval_.confidence || 0, modelInput: eval_.next || userText });
+            return step(idx + 1);
+          }
+          // Try keyword-matched tools before falling to FAQ
+          if (modelNextTool && nextMeta && modelNextTool !== 'faq' && modelNextTool !== 'chat' && modelNextTool !== 'stop') {
+            trace(turnId, 'replan → ' + modelNextTool + ' · model suggested');
+            plan.push({ tool: modelNextTool, score: eval_.confidence || 0 });
             return step(idx + 1);
           }
           if (!store.getState().workingMemory.triedFallbacks['faq']) {
