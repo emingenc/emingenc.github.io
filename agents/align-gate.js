@@ -13,6 +13,20 @@ var AlignmentGate = (function() {
     return (text || '').toLowerCase().match(/[a-z][a-z0-9_-]*/g) || [];
   }
 
+  // Match a keyword against text — uses word-boundary for short keywords (≤3 chars)
+  function kwMatch(keyword, joined, ws) {
+    var kw = String(keyword).toLowerCase();
+    if (kw.length <= 3) {
+      // Short keywords: must match a standalone word (avoids "he" in "where")
+      for (var wi = 0; wi < ws.length; wi++) {
+        if (ws[wi] === kw) return true;
+      }
+      return false;
+    }
+    // Longer keywords: substring match is fine
+    return joined.indexOf(kw) !== -1;
+  }
+
   function deterministic(text, intent) {
     var label = intent && intent.label || 'faq';
     var meta = Tools.getTool(label);
@@ -33,7 +47,7 @@ var AlignmentGate = (function() {
         var kws = (rt.scopeWords && rt.scopeWords.length > 0) ? rt.scopeWords : (rt.keywords || []);
         var score = 0;
         for (var ki = 0; ki < kws.length; ki++) {
-          if (joined.indexOf(String(kws[ki]).toLowerCase()) !== -1) score++;
+          if (kwMatch(kws[ki], joined, ws)) score++;
         }
         if (score > bestScore) { bestScore = score; bestTool = rt.name; }
       }
@@ -71,7 +85,7 @@ var AlignmentGate = (function() {
     var domainWords = (meta.scopeWords || meta.keywords || []).map(function(k) { return String(k).toLowerCase(); });
     var matches = 0;
     for (var i = 0; i < domainWords.length; i++) {
-      if (joined.indexOf(domainWords[i]) !== -1) matches++;
+      if (kwMatch(domainWords[i], joined, ws)) matches++;
     }
     if (matches > 0) {
       // Ultra-short queries (e.g. "blog?") are ambiguous — let LLM alignment confirm
@@ -94,7 +108,7 @@ var AlignmentGate = (function() {
       var kws = (rt.scopeWords && rt.scopeWords.length > 0) ? rt.scopeWords : (rt.keywords || []);
       var score = 0;
       for (var ki = 0; ki < kws.length; ki++) {
-        if (joined.indexOf(String(kws[ki]).toLowerCase()) !== -1) score++;
+        if (kwMatch(kws[ki], joined, ws)) score++;
       }
       if (score > bestScore) { bestScore = score; bestTool = rt.name; }
     }

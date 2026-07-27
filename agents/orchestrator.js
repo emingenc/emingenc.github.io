@@ -361,6 +361,7 @@ var Orchestrator = (function() {
         // LLM evaluation adds latency without benefit for these tools.
         if (Evaluator.isSelfContained(toolName)) {
           store.dispatch({ type: 'OBSERVE', tool: toolName, satisfied: true, confidence: 1, reason: 'self-contained' });
+          trace(turnId, 'eval → pass · self-contained');
 
           // Check for skipped planned tools before continuing
           var executedTools = {};
