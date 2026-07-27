@@ -198,8 +198,8 @@ var Renderer = (function() {
       el.output.appendChild(d);
     }, 80);
     setTimeout(function() {
-      var d = welcomeCard('RUNNING LOCALLY', 'A tiny agent stack, in your browser',
-        '<span class="metric"><b>Needle</b> intent routing</span><span class="metric"><b>SmolLM2</b> conversation</span><span class="metric"><b>0</b> API calls</span><span class="metric"><b>100%</b> private</span>', 'welcome-runtime');
+      var d = welcomeCard('RUNNING LOCALLY', 'Tiny models, entirely in your browser',
+        '<span class="metric"><b>Needle</b> 35M params · 60,000× smaller than GLM-5</span><span class="metric"><b>SmolLM2</b> 360M params · 5,000× smaller than GLM-5</span><span class="metric"><b>0</b> API calls · zero servers · zero tracking</span><span class="metric"><b>100%</b> private · your data never leaves</span>', 'welcome-runtime');
       el.output.appendChild(d);
     }, 180);
     setTimeout(function() {
