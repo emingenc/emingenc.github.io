@@ -198,7 +198,7 @@ var Renderer = (function() {
       el.output.appendChild(d);
     }, 80);
     setTimeout(function() {
-      var d = welcomeCard('RUNNING LOCALLY', 'Not the size, it\'s how you use it. (But seriously, 26M params 🫠)',
+      var d = welcomeCard('RUNNING LOCALLY', 'Not the size, it\'s how you use it.<br>(But seriously, 26M params 🫠)',
         '<span class="metric"><b>Needle</b> 26M params · 38,000× smaller than Kimi 3</span><span class="metric"><b>SmolLM2</b> 360M params · 2,800× smaller than Kimi 3</span><span class="metric"><b>0</b> API calls · zero servers · zero tracking</span><span class="metric"><b>100%</b> private · your data never leaves</span>', 'welcome-runtime');
       el.output.appendChild(d);
     }, 180);
