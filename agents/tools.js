@@ -147,6 +147,10 @@ var Tools = (function() {
     var query = (text || '').replace(/^\/blog\s*/i, '').trim();
 
     if (query) {
+      // "last", "latest", "recent", "newest" → redirect to most recent post
+      if (/\b(last|latest|recent|newest|most recent)\b/i.test(query) && BLOG_POSTS.length > 0) {
+        return { toolName: 'blog', redirect: '/blog/' + BLOG_POSTS[0].slug, content: null, data: { matched: BLOG_POSTS[0].title } };
+      }
       // Try exact slug match
       for (var i = 0; i < BLOG_POSTS.length; i++) {
         if (BLOG_POSTS[i].slug === query.toLowerCase().replace(/\s+/g, '-')) {
@@ -604,6 +608,58 @@ var Tools = (function() {
   function parseSlash(text) { return text.slice(1).toLowerCase().split(' ')[0]; }
   function isBlogCommand(text) { return text.toLowerCase().startsWith('/blog'); }
 
+  // ─── Fuzzy tool matching ──────────────────────────────────
+  // Scores user query against tool descriptions + keywords.
+  // Returns {tool, score} for best match above threshold, or null.
+  // This is the SINGLE matching function — no more per-tool keyword patching.
+  var STOP_WORDS = {what:1,where:1,when:1,why:1,how:1,do:1,does:1,did:1,is:1,are:1,was:1,were:1,can:1,could:1,will:1,would:1,shall:1,should:1,tell:1,show:1,give:1,get:1,has:1,have:1,had:1,the:1,a:1,an:1,he:1,she:1,it:1,they:1,me:1,him:1,her:1,them:1,his:1,for:1,to:1,of:1,in:1,on:1,at:1,by:1,with:1,from:1,about:1,any:1,some:1,just:1,please:1,open:1,last:1,latest:1,recent:1,newest:1};
+
+  function fuzzyMatch(text) {
+    var rawWords = (text || '').toLowerCase().match(/[a-z][a-z0-9_-]*/g) || [];
+    var qWords = [];
+    for (var rw = 0; rw < rawWords.length; rw++) {
+      var w = rawWords[rw];
+      if (!STOP_WORDS[w] && w.length > 2) qWords.push(w);
+    }
+    if (!qWords.length) return null;
+    var qText = qWords.join(' ');
+
+    var best = null, bestScore = 0;
+    for (var i = 0; i < TOOL_REGISTRY.length; i++) {
+      var rt = TOOL_REGISTRY[i];
+      if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
+
+      var corpus = (rt.name + ' ' + rt.description + ' ' + (rt.keywords || []).join(' ')).toLowerCase();
+      var cWords = corpus.match(/[a-z][a-z0-9_-]*/g) || [];
+
+      var score = 0;
+      for (var wi = 0; wi < qWords.length; wi++) {
+        var qw = qWords[wi];
+        for (var ci = 0; ci < cWords.length; ci++) {
+          // Exact match or substring (catches "build"→"built", "work"→"worked")
+          if (cWords[ci] === qw || cWords[ci].indexOf(qw) === 0 || qw.indexOf(cWords[ci]) === 0) {
+            score += 1; break;
+          }
+        }
+      }
+      // Phrase bonus: multi-word keyword matches
+      var kws = rt.keywords || [];
+      for (var ki = 0; ki < kws.length; ki++) {
+        var kw = String(kws[ki]).toLowerCase();
+        if (kw.indexOf(' ') !== -1 && text.toLowerCase().indexOf(kw) !== -1) score += 3;
+      }
+      // Tool name match
+      if (qText.indexOf(rt.name) !== -1 || text.toLowerCase().indexOf(rt.name) !== -1) score += 2;
+
+      var normalized = qWords.length > 0 ? score / Math.max(1, Math.sqrt(qWords.length)) : 0;
+      if (normalized > bestScore) { bestScore = normalized; best = rt.name; }
+    }
+
+    // Threshold: need at least 1.0 normalized score for confident match
+    if (best && bestScore >= 0.6) return { tool: best, score: Math.min(95, Math.round(bestScore * 25)) };
+    return null;
+  }
+
   function loadFAQ() {
     return fetch('/data/faq.json')
       .then(function(r) { return r.json(); })
@@ -638,6 +694,7 @@ var Tools = (function() {
     isBlogCommand: isBlogCommand,
     toolNames: Object.keys(TOOL_MAP),
     detectExtraTools: detectExtraTools,
+    fuzzyMatch: fuzzyMatch,
     getTool: getTool,
     validateToolResult: validateToolResult,
     getSelfContainedTools: getSelfContainedTools,

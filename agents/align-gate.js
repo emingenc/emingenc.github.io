@@ -36,46 +36,22 @@ var AlignmentGate = (function() {
       // Only fast-path pure greetings; otherwise check for better tool matches
       var casualOnly = text.match(/^\s*(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great|good\s+(morning|afternoon|evening))[\s!.?,]*$/i);
       if (casualOnly && ws.length <= 3) return decision('execute', 'chat', 'conversational proposal', 80, 'deterministic');
-      // Two-pass routing: check if substantive content matches a registered tool
-      var toolNames = Object.keys(Tools.TOOL_REGISTRY ? Tools.getSelfContainedTools() : {});
-      // Use keyword-based lookup to find a better tool match
-      var bestTool = null, bestScore = 0;
-      var registry = Tools.TOOL_REGISTRY || [];
-      for (var ti = 0; ti < registry.length; ti++) {
-        var rt = registry[ti];
-        if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
-        var kws = (rt.scopeWords && rt.scopeWords.length > 0) ? rt.scopeWords : (rt.keywords || []);
-        var score = 0;
-        for (var ki = 0; ki < kws.length; ki++) {
-          if (kwMatch(kws[ki], joined, ws)) score++;
-        }
-        if (score > bestScore) { bestScore = score; bestTool = rt.name; }
+      // Two-pass routing: use fuzzy match to find best tool
+      var fuzzy = Tools.fuzzyMatch(text);
+      if (fuzzy && fuzzy.tool) {
+        return decision('redirect', fuzzy.tool, 'chat proposal redirected via fuzzy match (' + fuzzy.score + ')', fuzzy.score, 'deterministic');
       }
-      if (bestTool && bestScore >= 1) {
-        return decision('redirect', bestTool, 'chat proposal redirected via keyword match', 75, 'deterministic');
-      }
-      return null; // has substantive content — let LLM check against tool scopes
+      return null; // no good match — let LLM check
     }
     if (label === 'faq') {
       // Only treat as casual if the query is primarily a greeting (≤3 words or no tool keywords)
       var casualMatch = text.match(/\b(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great)\b/i);
       if (casualMatch && ws.length <= 3) return decision('execute', 'chat', 'casual conversation', 90, 'deterministic');
       if (casualMatch) return null; // has greeting prefix but also substantive content — let LLM align
-      // Two-pass routing: check tool keywords BEFORE FAQ — tools take priority
-      var bestTool = null, bestScore = 0;
-      var registry = Tools.TOOL_REGISTRY || [];
-      for (var ti = 0; ti < registry.length; ti++) {
-        var rt = registry[ti];
-        if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
-        var kws = (rt.scopeWords && rt.scopeWords.length > 0) ? rt.scopeWords : (rt.keywords || []);
-        var kwScore = 0;
-        for (var ki = 0; ki < kws.length; ki++) {
-          if (joined.indexOf(String(kws[ki]).toLowerCase()) !== -1) kwScore++;
-        }
-        if (kwScore > bestScore) { bestScore = kwScore; bestTool = rt.name; }
-      }
-      if (bestTool && bestScore >= 1) {
-        return decision('redirect', bestTool, 'faq proposal redirected via keyword match', 75, 'deterministic');
+      // Two-pass routing: fuzzy match tools BEFORE FAQ — tools take priority
+      var fuzzy = Tools.fuzzyMatch(text);
+      if (fuzzy && fuzzy.tool) {
+        return decision('redirect', fuzzy.tool, 'faq proposal redirected via fuzzy match (' + fuzzy.score + ')', fuzzy.score, 'deterministic');
       }
       // No tool keyword match — try FAQ, then fall through to LLM
       if (Tools.faqMatch(text)) return decision('execute', 'faq', 'FAQ match', 100, 'deterministic');
@@ -95,28 +71,14 @@ var AlignmentGate = (function() {
     return null;
   }
 
-  // Broader keyword scan across all tools — used as fallback when LLM unavailable or times out
+  // Fuzzy fallback using unified tool matching — no more keyword patching
   function keywordRedirect(text, defaultTool) {
-    var ws = words(text);
-    var joined = ws.join(' ');
-    var bestTool = null, bestScore = 0;
-    var registry = Tools.TOOL_REGISTRY || [];
-    for (var ti = 0; ti < registry.length; ti++) {
-      var rt = registry[ti];
-      if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
-      // Prefer scopeWords (narrow) over keywords (broad) to avoid false matches
-      var kws = (rt.scopeWords && rt.scopeWords.length > 0) ? rt.scopeWords : (rt.keywords || []);
-      var score = 0;
-      for (var ki = 0; ki < kws.length; ki++) {
-        if (kwMatch(kws[ki], joined, ws)) score++;
-      }
-      if (score > bestScore) { bestScore = score; bestTool = rt.name; }
-    }
-    if (bestTool && bestScore >= 1) {
-      return decision('redirect', bestTool, 'keyword fallback after alignment gap', 70, 'fallback');
+    var fuzzy = Tools.fuzzyMatch(text);
+    if (fuzzy && fuzzy.tool) {
+      return decision('redirect', fuzzy.tool, 'fuzzy match: ' + fuzzy.tool + ' (score ' + fuzzy.score + ')', fuzzy.score, 'fallback');
     }
     var fallbackAction = defaultTool === 'chat' ? 'execute' : 'sink';
-    return decision(fallbackAction, defaultTool || 'out_of_scope', 'proposal is ambiguous without alignment model', 40, 'fallback');
+    return decision(fallbackAction, defaultTool || 'out_of_scope', 'no fuzzy match — sinking', 40, 'fallback');
   }
 
   function check(text, intent, opts) {
