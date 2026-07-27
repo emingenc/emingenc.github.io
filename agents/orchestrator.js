@@ -200,9 +200,8 @@ var Orchestrator = (function() {
       }});
     }
 
-    // Turn recorded in store messages — no separate buffer needed
-
-    trace(turnId, 'stop → summary ready');
+    // Single-step: eval already said pass — skip redundant stop trace
+    if (results.length > 1) trace(turnId, 'stop → ' + results.length + ' results ready');
     store.dispatch({ type: 'PLAN_DONE' });
     done();
   }
@@ -347,9 +346,14 @@ var Orchestrator = (function() {
 
         // ── Successful execution → record result ──
         trace(turnId, 'act → ' + toolName + ' ✓');
-        // OBSERVE: brief summary of what the tool returned
-        var observeSummary = (result.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
-        if (observeSummary) trace(turnId, 'observe → ' + observeSummary + (observeSummary.length >= 120 ? '...' : ''));
+        // OBSERVE: clean one-liner summary (strip HTML, box-drawing, extra whitespace)
+        var observeSummary = (result.content || '')
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/[^\w\s.,;:!?@#&()\[\]{}\/"'-]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 100);
+        if (observeSummary) trace(turnId, 'observe → ' + observeSummary + (observeSummary.length >= 100 ? '...' : ''));
         store.dispatch({ type: 'OBSERVE', tool: toolName, data: result.data });
         results.push(result);
         // FAQ responses render as natural chat, tools render as tool blocks

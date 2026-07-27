@@ -147,9 +147,12 @@ var Tools = (function() {
     var query = (text || '').replace(/^\/blog\s*/i, '').trim();
 
     if (query) {
-      // "last", "latest", "recent", "newest" → redirect to most recent post
+      // Ordinal queries: last/latest/recent/newest → newest, first/oldest → oldest
       if (/\b(last|latest|recent|newest|most recent)\b/i.test(query) && BLOG_POSTS.length > 0) {
         return { toolName: 'blog', redirect: '/blog/' + BLOG_POSTS[0].slug, content: null, data: { matched: BLOG_POSTS[0].title } };
+      }
+      if (/\b(first|oldest|earliest)\b/i.test(query) && BLOG_POSTS.length > 0) {
+        return { toolName: 'blog', redirect: '/blog/' + BLOG_POSTS[BLOG_POSTS.length - 1].slug, content: null, data: { matched: BLOG_POSTS[BLOG_POSTS.length - 1].title } };
       }
       // Try exact slug match
       for (var i = 0; i < BLOG_POSTS.length; i++) {
