@@ -234,6 +234,22 @@ var Orchestrator = (function() {
         var stepPlan = plan.map(function(p) { return p.tool; });
         trace(turnId, 'think → step ' + (idx + 1) + '/' + plan.length + ' · next: ' + toolName);
 
+        // ── Don't re-execute the same tool in conversation ──
+        // If this tool already ran in the last few messages and the user is
+        // asking a follow-up, use LLM with cached context instead.
+        var messages = store.getState().messages;
+        var lastTool = null;
+        for (var mi = messages.length - 1; mi >= 0; mi--) {
+          if (messages[mi].role === 'tool' && messages[mi].toolName) {
+            lastTool = messages[mi].toolName; break;
+          }
+        }
+        if (toolName !== 'chat' && toolName !== 'faq' && toolName !== 'out_of_scope' && toolName === lastTool && results.length === 0) {
+          trace(turnId, 'think → follow-up detected, using context instead of re-running ' + toolName);
+          runFallback(userText, turnId);
+          return;
+        }
+
         // ── Execute: faq, chat, or standard tool ──
         var result;
         if (toolName === 'faq') {
