@@ -1,41 +1,101 @@
 {
+  "name": "Mehmet Emin Gench",
+  "headline": "Forward Deployed Engineer — AI Agents",
+  "location": "Vancouver, BC, Canada",
+  "summary": "AI / Software Engineer with 8+ years of development experience and a B.Sc. in Aerospace Engineering. Builds production-grade systems across AI agents, computer vision, backend, and edge—from RAG/knowledge-graph retrieval and multi-agent orchestration to hardware-to-cloud integrations. Currently deploys enterprise AI agents for Fortune 500 customers, navigating diverse tech stacks and delivering measurable business outcomes.",
   "current": {
-    "title": "Forward Deployed AI Engineer",
-    "company": "Cresta AI",
+    "title": "Forward Deployed Engineer — AI Agents",
+    "company": "Cresta",
     "url": "https://cresta.com",
-    "since": "2026",
-    "location": "Vancouver, BC",
-    "summary": "Builds and deploys AI systems with enterprise customers. Works on real-time AI coaching, agentic systems, and customer-facing AI solutions. Backed by Sequoia and a16z."
+    "since": "March 2026",
+    "location": "Remote (Vancouver, BC)",
+    "highlights": [
+      "Build and deploy production-grade AI agents for enterprise customers, writing bespoke integrations and custom tooling tailored to diverse tech stacks and business requirements.",
+      "Own end-to-end delivery—from scoping and architecture through prompt engineering, rigorous model evaluation, and production monitoring—driving measurable business outcomes.",
+      "Design multi-step agentic workflows with guardrails, knowledge pipelines, and observability, bridging customer needs with core platform capabilities."
+    ]
   },
   "history": [
     {
-      "company": "Goodfintech",
-      "title": "AI Engineer & Software Engineer",
-      "years": "2023–2026",
+      "company": "Goodfintech Ltd.",
+      "title": "AI Engineer",
+      "years": "Sep 2023 – Mar 2026",
+      "location": "Remote",
       "url": "https://goodfintech.ai",
-      "summary": "Built and deployed AI systems for financial technology. Worked on AI agents, LLM integration, and production ML pipelines."
+      "highlights": [
+        "Designed a multi-tenant AI Agent architecture with strict user isolation, enabling reliable execution across microservices.",
+        "Developed a 'Plug-and-Play' Customer Support AI; created a CDN-ready script for clients to deploy custom-trained agents instantly.",
+        "Implemented advanced RAG strategies including Smart-Chunking and Neo4j Knowledge Graphs for complex entity linking.",
+        "Architected document analyzers that process financial data with automated analysis capabilities via LLMs.",
+        "Built the backend infrastructure 5+ microservices using FastAPI and Docker, ensuring Kubernetes-readiness for scalable production loads."
+      ]
     },
     {
       "company": "Vivoo",
-      "title": "ML Engineer & Software Engineer",
-      "years": "2022–2023",
+      "title": "Machine Learning Engineer",
+      "years": "Jun 2022 – Jun 2023",
+      "location": "Remote",
       "url": "https://vivoo.io",
-      "summary": "Worked on machine learning models and data pipelines for health-tech products."
+      "highlights": [
+        "Re-engineered image processing workflows into AWS Step Functions, leveraging parallelism to boost throughput by 300%.",
+        "Built an internal R&D validation tool using React and AWS Lambda for real-time testing and monitoring of CV models.",
+        "Optimized Python-based Lambda functions and integrated SQS/SNS for asynchronous sample processing and notifications.",
+        "Reduced computer vision inference latency from 28s to <7s through pipeline optimization and efficient model serving."
+      ]
     },
     {
       "company": "Novit AI",
-      "title": "ML Engineer & Software Engineer",
-      "years": "2020–2022",
+      "title": "Full-stack AI Engineer",
+      "years": "Oct 2020 – Jun 2022",
+      "location": "Ankara, Turkey",
       "url": "https://novit.ai",
-      "summary": "Early career role building machine learning solutions and AI systems. Company is now known as Archangel Autonomy."
+      "highlights": [
+        "Developed a full-stack satellite imagery platform using Django and Vue.js to detect and track maritime vessels.",
+        "Trained and deployed YOLO-based edge AI models on NVIDIA Jetson Nano for restricted area human detection.",
+        "Modernized legacy C++ pipelines to Python/TensorRT, reducing development cycles by 40% and improving maintainability.",
+        "Managed end-to-end edge device lifecycle: SSH provisioning, hardware flashing, and Docker Compose deployment.",
+        "Led technical interviews for the ML team and mentored 5+ new hires on computer vision and full-stack best practices."
+      ],
+      "aka": "Archangel Autonomy"
     },
     {
-      "company": "Pharmacircle",
-      "title": "Data Analyst",
-      "years": "2019",
-      "url": null,
-      "summary": "First tech role — data analysis and insights for pharmaceutical industry."
+      "company": "E-Kalite Software (PharmaCircle)",
+      "title": "Python Developer / Software QA",
+      "years": "Jan 2020 – Oct 2020",
+      "location": "Ankara, Turkey",
+      "highlights": [
+        "Automated data validation using Selenium, increasing QA efficiency by 70%.",
+        "Performed deep SQL audits for pharmaceutical companies and web-scraping research to ensure 100% data accuracy for regulatory compliance."
+      ]
+    },
+    {
+      "company": "Indie Game Developer (emdi_apps)",
+      "title": "Founder & Lead Developer",
+      "years": "2016 – 2020",
+      "location": "Remote",
+      "highlights": [
+        "Developed and published 10+ hyper-casual games using Unity and C#, reaching thousands of organic users and managing full product lifecycle from design to store deployment."
+      ]
     }
   ],
-  "beforeTech": "Air Defense Officer in the Turkish military. BSc Aerospace Engineering from Turkish Air Force Academy."
+  "education": {
+    "institution": "Turkish Air Force Academy",
+    "degree": "B.Sc. Aerospace Engineering",
+    "location": "Istanbul, Turkey"
+  },
+  "military": "Former Air Defense Officer in the Turkish military.",
+  "technologies": {
+    "AI & Agents": "LangGraph, LangChain, Multi-Agent Orchestration, RAG, Knowledge Graphs, Prompt Engineering, Model Evaluation",
+    "Computer Vision & ML": "YOLO (v5-v11), Detectron2, PyTorch, TensorRT, Satellite Imagery Analytics, Vessel Detection",
+    "Cloud & Backend": "AWS (Step Functions, Lambda, S3, SNS/SQS, DynamoDB), FastAPI, Django REST, Node.js, Docker, Kubernetes",
+    "Edge & Hardware": "NVIDIA Jetson Nano, BLE Reverse Engineering, SSH Provisioning, Edge Containerization, Unity (C#)",
+    "Frontend & DB": "Next.js, React, Vue.js, TypeScript, PostgreSQL, MongoDB, Redis, Supabase, Stripe Integration"
+  },
+  "openSource": {
+    "even_glasses": "Reverse-engineered BLE protocol for G1 Smart Glasses; open-source Python SDK on PyPI. 79 GitHub stars.",
+    "G1 Voice AI": "Redis-based controller + Voice-AI assistant with LangGraph for real-time interaction. Hackathon winner. 25 stars.",
+    "UltraFocus": "End-to-end Next.js productivity platform with canvas tools, Stripe payments, and LangGraph-powered AI agents.",
+    "LLM Adaptive Router": "Python package for dynamic model selection based on query content, using vector search + LLM-based selection. On PyPI.",
+    "Total": "46 repos, 174+ GitHub stars across Python, TypeScript, Dart, C, and more."
+  }
 }

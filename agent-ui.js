@@ -119,7 +119,7 @@
   }
 
   // ─── Boot ──────────────────────────────────────────────────
-  Tools.loadFAQ().then(function() {
+  Promise.all([Tools.loadFAQ(), KnowledgeBase.load()]).then(function() {
     // v2: Try to restore previous session
     var restored = store.restore();
     if (restored) {

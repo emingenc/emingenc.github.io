@@ -91,7 +91,10 @@ var Tools = (function() {
   function tool_about(text) {
     // Try KnowledgeBase first for specific company/role queries
     if (typeof KnowledgeBase !== 'undefined') {
-      var kbResult = KnowledgeBase.search(text || '');
+      // Clean query: strip slash commands, extract meaningful part
+      var cleanQuery = (text || '').replace(/^\/(about|knowledge)\s*/i, '').trim();
+      if (!cleanQuery) cleanQuery = text || '';
+      var kbResult = KnowledgeBase.search(cleanQuery);
       if (kbResult && kbResult.found) {
         var formatted = KnowledgeBase.formatResult(kbResult);
         if (formatted) return formatted;
