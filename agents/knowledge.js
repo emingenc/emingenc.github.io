@@ -100,6 +100,7 @@ var KnowledgeBase = (function() {
         role: target.title || '',
         period: target.years || '',
         location: target.location || '',
+        description: target.description || '',
         highlights: target.highlights || [],
         url: target.url || '',
         aka: target.aka || '',
@@ -156,6 +157,7 @@ var KnowledgeBase = (function() {
         company: career.current.company,
         role: career.current.title,
         period: career.current.since,
+        description: career.current.description || '',
         highlights: career.current.highlights || [],
         isCurrent: true
       };
@@ -176,6 +178,7 @@ var KnowledgeBase = (function() {
       lines.push(result.period || '');
       if (result.location) lines.push('@ ' + result.location);
       if (result.isCurrent) lines.push('📍 CURRENT ROLE');
+      if (result.description) { lines.push(''); lines.push(result.description); }
       lines.push('');
       var highlights = result.highlights || [];
       for (var hi = 0; hi < highlights.length; hi++) {
