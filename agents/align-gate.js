@@ -45,8 +45,13 @@ var AlignmentGate = (function() {
     }
     if (label === 'faq') {
       // Only treat as casual if the query is primarily a greeting (≤3 words or no tool keywords)
-      var casualMatch = text.match(/\b(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great|cool|awesome|sweet|perfect|got it)\b/i);
-      if (casualMatch && ws.length <= 3) return decision('execute', 'chat', 'casual conversation', 90, 'deterministic');
+      var casualMatch = text.match(/\b(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great|cool|awesome|sweet|perfect|got it|alright|goodbye|see you|catch you|later|what's up|sup|howdy|yo)\b/i);
+      if (casualMatch && ws.length <= 4) return decision('execute', 'chat', 'casual conversation', 90, 'deterministic');
+      if (casualMatch && ws.length <= 6) {
+        // Longer casual query — try FAQ first, then chat
+        if (Tools.faqMatch(text)) return decision('execute', 'faq', 'FAQ match for casual query', 90, 'deterministic');
+        return decision('execute', 'chat', 'extended casual conversation', 80, 'deterministic');
+      }
       if (casualMatch) return null; // has greeting prefix but also substantive content — let LLM align
       // Two-pass routing: fuzzy match tools BEFORE FAQ — tools take priority
       var fuzzy = Tools.fuzzyMatch(text);

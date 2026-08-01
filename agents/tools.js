@@ -552,7 +552,9 @@ var Tools = (function() {
       if (score > bestScore) { bestScore = score; best = FAQ.faq[f]; }
     }
 
-    if (best && bestScore >= 2) {
+    // Lower threshold for short queries (single keyword is enough for "bye"/"thanks")
+    var minScore = text.length < 30 ? 1 : 2;
+    if (best && bestScore >= minScore) {
       return { toolName: 'faq', content: '<div class="faq-response">' + best.a + '</div>', data: null };
     }
     return null;
