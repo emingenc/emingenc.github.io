@@ -5,15 +5,18 @@ var KnowledgeBase = (function() {
   "use strict";
 
   var career = null;
+  var blogIndex = null;
   var aliases = {};
   var loaded = false;
 
   function load() {
-    return fetch('/data/knowledge/career.json')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        career = data;
-        // Build aliases from company data
+    return Promise.all([
+      fetch('/data/knowledge/career.json').then(function(r) { return r.json(); }),
+      fetch('/data/knowledge/blog-index.json').then(function(r) { return r.json(); }).catch(function() { return null; })
+    ]).then(function(results) {
+      career = results[0];
+      blogIndex = results[1];
+      if (career) {
         if (career.current && career.current.company) {
           aliases[career.current.company.toLowerCase()] = 'current';
         }
@@ -23,11 +26,12 @@ var KnowledgeBase = (function() {
           aliases[name] = hist[i].company;
           if (hist[i].aka) aliases[hist[i].aka.toLowerCase()] = hist[i].company;
         }
-        loaded = true;
-      }).catch(function(e) {
-        console.warn('Knowledge base load failed:', e.message);
-        loaded = true;
-      });
+      }
+      loaded = true;
+    }).catch(function(e) {
+      console.warn('Knowledge base load failed:', e.message);
+      loaded = true;
+    });
   }
 
   function search(query) {
@@ -120,6 +124,30 @@ var KnowledgeBase = (function() {
       return { type: 'technologies', found: true, technologies: career.technologies };
     }
 
+    // Check blog posts
+    if (blogIndex && blogIndex.posts) {
+      var blogWords = ['blog','post','article','write','read','published','writing','agent','shipping','lessons','guardrails'];
+      var isBlogQuery = false;
+      for (var bi = 0; bi < blogWords.length; bi++) {
+        if (q.indexOf(blogWords[bi]) !== -1) { isBlogQuery = true; break; }
+      }
+      if (isBlogQuery) {
+        var posts = blogIndex.posts;
+        var bestPost = null; var bestPostScore = 0;
+        for (var pi = 0; pi < posts.length; pi++) {
+          var score = 0;
+          var postText = (posts[pi].title + ' ' + posts[pi].description + ' ' + (posts[pi].topics || []).join(' ')).toLowerCase();
+          for (var wi = 0; wi < words.length; wi++) {
+            if (postText.indexOf(words[wi]) !== -1) score++;
+          }
+          if (score > bestPostScore) { bestPostScore = score; bestPost = posts[pi]; }
+        }
+        if (bestPost && bestPostScore >= 1) {
+          return { type: 'blog', found: true, post: bestPost };
+        }
+      }
+    }
+
     // Current role as default
     if (q.indexOf('current') !== -1 || q.indexOf('now') !== -1 || q.indexOf('doing') !== -1) {
       return {
@@ -184,6 +212,25 @@ var KnowledgeBase = (function() {
         result.military || ''
       ];
       return { toolName: 'about', content: box('EDUCATION', elines), data: result };
+    }
+
+    if (result.type === 'blog') {
+      var p = result.post;
+      var blines = [
+        p.title || '',
+        '',
+        p.description || '',
+        'Date: ' + (p.date || ''),
+        'Tags: ' + (p.tags || []).join(', '),
+        '',
+        'Key takeaways:'
+      ];
+      var kt = p.keyTakeaways || [];
+      for (var ki = 0; ki < kt.length; ki++) {
+        blines.push('• ' + kt[ki]);
+      }
+      blines.push('', 'Read: /blog/' + (p.slug || ''));
+      return { toolName: 'about', content: box('BLOG POST', blines), data: result };
     }
 
     if (result.type === 'technologies') {

@@ -329,7 +329,7 @@
     {
       "q": "What is Archangel Autonomy?",
       "keywords": ["archangel","archangel autonomy"],
-      "a": "<b>Archangel Autonomy</b> is an open-source project by Emin focused on autonomous AI agent systems. Check his GitHub for the latest."
+      "a": "<b>Archangel Autonomy</b> is what Novit AI evolved into. Emin worked at Novit AI (2020–2022) as a Full-stack AI Engineer in Ankara, building satellite imagery platforms, YOLO edge AI on Jetson Nano, and migrating C++ pipelines to Python/TensorRT. The company later rebranded to Archangel Autonomy. Check Emin's GitHub and CV for the full story."
     },
     {
       "q": "Why switch from aerospace to software?",

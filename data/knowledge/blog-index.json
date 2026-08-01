@@ -1,0 +1,21 @@
+{
+  "posts": [
+    {
+      "slug": "hello-world",
+      "title": "Building AI agents that ship — lessons from the field",
+      "description": "Lessons learned building and deploying AI systems across four companies — from guardrails and monitoring to shipping fast.",
+      "date": "2026-07-12",
+      "tags": ["ai", "engineering", "agents"],
+      "topics": [
+        "agent deployment", "production AI", "guardrails", "monitoring",
+        "open source", "shipping", "planning", "feature flags"
+      ],
+      "keyTakeaways": [
+        "The agent is 20% of the work — guardrails, monitoring, fallbacks are the other 80%",
+        "Every successful AI feature started with a written plan",
+        "Ship behind a feature flag, watch metrics, iterate fast",
+        "Open source is the best forcing function for quality"
+      ]
+    }
+  ]
+}
