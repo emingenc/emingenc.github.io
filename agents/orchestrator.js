@@ -7,6 +7,8 @@ var Orchestrator = (function() {
   var processingTurnId = 0; // which turn currently holds the isProcessing lock
   var genTimeouts = {}; // {msgId: timeout} for LLM generation timeout safety
   var pendingGenerations = {}; // {msgId: {turnId, question, results}} awaiting grounded evaluation
+  var lastUserQuery = ''; // previous user query — for follow-up detection
+  var lastUserTool = '';  // tool that handled the previous query
 
   function findMessage(id) {
     var messages = store.getState().messages;
@@ -57,7 +59,7 @@ var Orchestrator = (function() {
     for (var i = Math.max(0, msgs.length - 12); i < msgs.length; i++) {
       var m = msgs[i];
       if (m.role === 'user' || m.role === 'agent' || m.role === 'tool') {
-        var clean = (m.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150);
+        var clean = (m.content || '').replace(/<[^>]*>/g, ' ').replace(/[^\w\s.,;:!?@#&()\[\]{}\/"'-]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150);
         if (clean) buf.push({ role: m.role, content: clean });
       }
     }
@@ -234,23 +236,31 @@ var Orchestrator = (function() {
         var stepPlan = plan.map(function(p) { return p.tool; });
         trace(turnId, 'think → step ' + (idx + 1) + '/' + plan.length + ' · next: ' + toolName);
 
-        // ── Don't re-execute the same tool for trivial follow-ups ──
-        // Only skip if: same tool as last, AND query is short (≤3 content words)
-        // Substantive new questions that happen to hit the same tool should run normally.
-        var messages = store.getState().messages;
-        var lastTool = null;
-        for (var mi = messages.length - 1; mi >= 0; mi--) {
-          if (messages[mi].role === 'tool' && messages[mi].toolName) {
-            lastTool = messages[mi].toolName; break;
+        // ── Don't re-execute the same tool for genuine follow-ups ──
+        // Compare current query to the last query using word overlap.
+        // Only skip when: same topic (high similarity), same tool, first step.
+        // Different questions that route to the same tool execute normally.
+        var currentWords = (userText || '').toLowerCase().match(/[a-z]{3,}/g) || [];
+        var lastWords = (lastUserQuery || '').toLowerCase().match(/[a-z]{3,}/g) || [];
+        var sharedCount = 0;
+        for (var ci = 0; ci < currentWords.length; ci++) {
+          for (var li = 0; li < lastWords.length; li++) {
+            if (currentWords[ci] === lastWords[li]) { sharedCount++; break; }
           }
         }
-        var contentWords = (userText || '').toLowerCase().match(/[a-z]{3,}/g) || [];
-        var isShortFollowup = contentWords.length <= 3;
-        if (toolName !== 'chat' && toolName !== 'faq' && toolName !== 'out_of_scope' && toolName === lastTool && results.length === 0 && isShortFollowup) {
-          trace(turnId, 'think → short follow-up, using context instead of re-running ' + toolName);
+        var maxLen = Math.max(currentWords.length, lastWords.length, 1);
+        var querySimilarity = sharedCount / maxLen;
+        var isGenuineFollowup = querySimilarity > 0.4 && toolName === lastUserTool && results.length === 0;
+
+        if (isGenuineFollowup && toolName !== 'chat' && toolName !== 'faq' && toolName !== 'out_of_scope') {
+          trace(turnId, 'think → contextual follow-up (similarity ' + Math.round(querySimilarity*100) + '%), using context');
           runFallback(userText, turnId);
           return;
         }
+
+        // Track what the user asked last — only after guard passes
+        lastUserQuery = userText;
+        lastUserTool = toolName;
 
         // ── Execute: faq, chat, or standard tool ──
         var result;
@@ -278,32 +288,6 @@ var Orchestrator = (function() {
           store.dispatch({ type: 'OBSERVE', tool: 'stop', satisfied: true, confidence: 1, reason: 'stop' });
           return stopAndSummarize(results, errors, userText, turnId, null);
         } else {
-          // ── Keyword sanity check: does user text match this tool's domain? ──
-          var toolMeta = Tools.getTool(toolName);
-          if (toolMeta && toolMeta.keywords && toolMeta.keywords.length > 0 && toolName !== 'faq' && toolName !== 'chat' && toolName !== 'stop' && toolName !== 'ask_user') {
-            var ltext = userText.toLowerCase();
-            var kwMatch = false;
-            // Slash command: tool name itself is in the user text (e.g. "/about")
-            if (ltext.indexOf(toolName) !== -1) { kwMatch = true; }
-            for (var ki = 0; ki < toolMeta.keywords.length; ki++) {
-              if (ltext.indexOf(toolMeta.keywords[ki]) !== -1) { kwMatch = true; break; }
-            }
-            if (!kwMatch) {
-              // Needle misclassified — no keywords match. Cascade to FAQ then chat.
-              store.dispatch({ type: 'OBSERVE', tool: toolName, satisfied: false, confidence: 0, reason: 'no keyword match' });
-              if (!store.getState().workingMemory.triedFallbacks['faq']) {
-                store.dispatch({ type: 'WM_FALLBACK', tool: 'faq' });
-                plan.push({ tool: 'faq', score: 0 });
-                return step(idx + 1);
-              }
-              if (!store.getState().workingMemory.triedFallbacks['chat']) {
-                store.dispatch({ type: 'WM_FALLBACK', tool: 'chat' });
-                plan.push({ tool: 'chat', score: 0 });
-                return step(idx + 1);
-              }
-              return stopAndSummarize(results, errors, userText, turnId, null);
-            }
-          }
           result = Tools.execute(toolName, plan[idx].modelInput || userText);
         }
 
@@ -633,6 +617,11 @@ var Orchestrator = (function() {
     }});
   }
 
+  function resetFollowupState() {
+    lastUserQuery = '';
+    lastUserTool = '';
+  }
+
   function _clearGenTimeout(msgId) {
     if (genTimeouts[msgId]) {
       clearTimeout(genTimeouts[msgId]);
@@ -650,6 +639,7 @@ var Orchestrator = (function() {
     fallback: runFallback,
     done: done,
     cancel: cancel,
+    resetFollowupState: resetFollowupState,
     _getConversationBuffer: getConversationBuffer,
     getCompactErrors: getCompactErrors,
     _clearGenTimeout: _clearGenTimeout,

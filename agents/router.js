@@ -35,8 +35,8 @@ var Router = (function() {
     // Slash command
     if (Tools.isSlash(text)) {
       var cmd = Tools.parseSlash(text);
-      if (cmd === 'clear') { store.dispatch({ type: 'CLEAR' }); Orchestrator.done(); return; }
-      if (cmd === 'new') { store.dispatch({ type: 'NEW_SESSION' }); Renderer.showWelcome(); store.dispatch({ type: 'THINKING', state: 'hide' }); return; }
+      if (cmd === 'clear') { store.dispatch({ type: 'CLEAR' }); Orchestrator.resetFollowupState(); Orchestrator.done(); return; }
+      if (cmd === 'new') { store.dispatch({ type: 'NEW_SESSION' }); Orchestrator.resetFollowupState(); Renderer.showWelcome(); store.dispatch({ type: 'THINKING', state: 'hide' }); return; }
       if (cmd === 'blog') { Orchestrator.singleTool('blog', text, turnId); return; }
       if (cmd === 'ask') { Orchestrator.singleTool('ask_user', text, turnId); return; }
 
