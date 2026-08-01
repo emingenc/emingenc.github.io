@@ -51,10 +51,10 @@ var Orchestrator = (function() {
 
   // ─── Conversation buffer (derived from store messages) ──────
   function getConversationBuffer(maxTokens) {
-    if (maxTokens === undefined) maxTokens = 1500;
+    if (maxTokens === undefined) maxTokens = 2500;
     var msgs = store.getState().messages;
     var buf = [];
-    for (var i = Math.max(0, msgs.length - 6); i < msgs.length; i++) {
+    for (var i = Math.max(0, msgs.length - 12); i < msgs.length; i++) {
       var m = msgs[i];
       if (m.role === 'user' || m.role === 'agent' || m.role === 'tool') {
         var clean = (m.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150);

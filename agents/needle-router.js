@@ -155,7 +155,7 @@ var FC_TOOLS = null;
 function buildFCTools() {
   if (FC_TOOLS) return FC_TOOLS;
   FC_TOOLS = [
-    { name: 'about',   description: 'Emin Gench biography, career background, current role at Cresta AI in Vancouver. Aerospace Engineering degree. Previously at Goodfintech, Vivoo, Novit AI.', parameters: {} },
+    { name: 'about',   description: 'Emin Gench biography, career background, current role at Cresta AI in Vancouver. Previously at Goodfintech, Vivoo, Novit AI. Aerospace Engineering degree.', parameters: {} },
     { name: 'repos',   description: 'GitHub open source repositories by emingenc: even_glasses (79 stars G1 BLE SDK), telegramGPT (52 stars AI bot guide), G1 Voice AI (25 stars), g1_flutter (18 stars), visionlink, llm_adaptive_router.', parameters: {} },
     { name: 'contact', description: 'Contact Emin Gench: GitHub at github.com/emingenc, LinkedIn, Twitter/X. Open to open source collaboration.', parameters: {} },
     { name: 'skills',  description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, PostgreSQL, Docker, AWS, Linux, LLMs, AI agents, RAG systems, smart glasses BLE development.', parameters: {} },

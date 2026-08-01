@@ -42,7 +42,7 @@ var Tools = (function() {
 
   // ─── Keyword routing ─────────────────────────────────────
   var KEYWORDS = {
-    about:   ['emin','gench','bio','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study','he'],
+    about:   ['emin','gench','bio','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study','he'],
     repos:   ['repos','repo','github','project','code','open source','built','star','repository','portfolio','contribution','deploy','deployment','pipeline','infra','devops','ci/cd','docs','documentation','apps','applications','features','PR','pull request','patch','commit'],
     contact: ['email','contact','reach','linkedin','twitter','mail','phone','social','handle','message','connect'],
     skills:  ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','tools','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'],
@@ -93,9 +93,14 @@ var Tools = (function() {
       'Forward Deployed AI Engineer',
       '@ Cresta AI · Vancouver, BC',
       '',
-      'Previously: Goodfintech, Vivoo, Novit AI',
+      'Previously:',
+      '2023–26  Goodfintech — AI Engineer & SWE',
+      '2022–23  Vivoo — ML Engineer & SWE',
+      '2020–22  Novit AI — ML Engineer & SWE',
+      '',
       'BSc Aerospace Engineering',
-      '174+ GitHub stars'
+      '174+ GitHub stars · 46 repos',
+      'Former Air Defense Officer'
     ];
     return { toolName: 'about', content: box('EMIN GENCH', items), data: null };
   }
@@ -477,7 +482,7 @@ var Tools = (function() {
   };
 
   var TOOL_REGISTRY = [
-    { name: 'about', fn: tool_about, description: 'Emin Gench biography, career, current role at Cresta AI', keywords: ['emin','gench','bio','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study'], scopeWords: ['emin','gench','cresta','aerospace','fde','vancouver','career','role','job','work','title','position','company','employer','background','experience','education','degree','school','university','history','past','worked','studied','lead','manage','team','shipped','launched','delivered','built','made','location','based','living','available','opportunities','engineer','resume','cv','bio','his','him','he','yourself','study'], selfContained: true, category: 'discover', params: {} },
+    { name: 'about', fn: tool_about, description: 'Emin Gench biography, career, current role at Cresta AI', keywords: ['emin','gench','bio','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study','he'], scopeWords: ['emin','gench','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','career','role','job','work','title','position','company','employer','background','experience','education','degree','school','university','history','past','worked','studied','lead','manage','team','shipped','launched','delivered','built','made','location','based','living','available','opportunities','engineer','resume','cv','bio','his','him','he','yourself','study'], selfContained: true, category: 'discover', params: {} },
     { name: 'repos', fn: tool_repos, description: 'GitHub open source repositories by emingenc', keywords: ['repos','repo','github','project','code','open source','built','star','repository','portfolio','contribution','deploy','deployment','pipeline','infra','devops','ci/cd','docs','documentation','apps','applications','features','PR','pull request','patch','commit'], selfContained: true, category: 'discover', params: {} },
     { name: 'contact', fn: tool_contact, description: 'Contact Emin Gench: email, GitHub, LinkedIn, Twitter', keywords: ['email','contact','reach','linkedin','twitter','mail','phone','social','handle','message','connect'], selfContained: true, category: 'discover', params: {} },
     { name: 'skills', fn: tool_skills, description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, Docker, AWS', keywords: ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','tools','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'], selfContained: true, category: 'discover', params: {} },

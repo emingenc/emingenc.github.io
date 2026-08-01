@@ -307,6 +307,31 @@
       "a": "<b>2019:</b> Data Analyst @ Pharmacircle<br><b>2020–22:</b> ML/SWE @ Novit AI<br><b>2022–23:</b> ML/SWE @ Vivoo<br><b>2023–26:</b> AI/SWE @ Goodfintech<br><b>2026→:</b> FDE @ Cresta AI<br>Before tech: Air Defense Officer + BSc Aerospace Engineering."
     },
     {
+      "q": "What did you do at Goodfintech?",
+      "keywords": ["goodfintech","good fintech"],
+      "a": "<b>Goodfintech (2023–2026):</b> AI Engineer & Software Engineer. Built and deployed AI systems for financial technology. Worked on AI agents, LLM integration, and production ML pipelines."
+    },
+    {
+      "q": "What about Vivoo?",
+      "keywords": ["vivoo"],
+      "a": "<b>Vivoo (2022–2023):</b> ML Engineer & Software Engineer. Worked on machine learning models and data pipelines for health-tech products."
+    },
+    {
+      "q": "Tell me about Novit AI",
+      "keywords": ["novit","novit ai"],
+      "a": "<b>Novit AI (2020–2022):</b> ML Engineer & Software Engineer. Early career role building machine learning solutions and AI systems."
+    },
+    {
+      "q": "What does Emin do at Cresta?",
+      "keywords": ["cresta","cresta ai","current role","fde","forward deployed"],
+      "a": "<b>Forward Deployed AI Engineer at Cresta AI (2026→):</b> Builds and deploys AI systems with enterprise customers. Works on real-time AI coaching, agentic systems, and customer-facing AI solutions. Backed by Sequoia and a16z."
+    },
+    {
+      "q": "What is Archangel Autonomy?",
+      "keywords": ["archangel","archangel autonomy"],
+      "a": "<b>Archangel Autonomy</b> is an open-source project by Emin focused on autonomous AI agent systems. Check his GitHub for the latest."
+    },
+    {
       "q": "Why switch from aerospace to software?",
       "keywords": [
         "switch",
