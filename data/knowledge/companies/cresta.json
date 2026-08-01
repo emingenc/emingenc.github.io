@@ -1,0 +1,16 @@
+{
+  "name": "Cresta AI",
+  "role": "Forward Deployed AI Engineer",
+  "period": "2026 → present",
+  "url": "https://cresta.com",
+  "description": "AI contact center platform — real-time coaching, analytics, AI agents.",
+  "backers": ["Sequoia", "a16z"],
+  "responsibilities": [
+    "Deploy AI systems with enterprise customers",
+    "Build real-time AI coaching features",
+    "Develop agentic AI systems",
+    "Customer-facing AI solutions"
+  ],
+  "techStack": ["AI agents", "LLMs", "real-time systems", "Python", "TypeScript"],
+  "keywords": ["cresta", "cresta ai", "current role", "current job", "fde", "forward deployed"]
+}

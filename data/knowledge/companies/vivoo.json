@@ -1,0 +1,14 @@
+{
+  "name": "Vivoo",
+  "role": "ML Engineer & Software Engineer",
+  "period": "2022–2023",
+  "url": "https://vivoo.io",
+  "description": "Health-tech company — machine learning models and data pipelines.",
+  "responsibilities": [
+    "Machine learning model development",
+    "Data pipeline engineering",
+    "Health-tech product work"
+  ],
+  "techStack": ["Python", "ML", "data pipelines"],
+  "keywords": ["vivoo", "vivoo.io", "health tech", "previous job"]
+}

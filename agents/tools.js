@@ -88,7 +88,16 @@ var Tools = (function() {
   ];
 
   // ─── Tool: about ─────────────────────────────────────────
-  function tool_about() {
+  function tool_about(text) {
+    // Try KnowledgeBase first for specific company/role queries
+    if (typeof KnowledgeBase !== 'undefined') {
+      var kbResult = KnowledgeBase.search(text || '');
+      if (kbResult && kbResult.found) {
+        var formatted = KnowledgeBase.formatResult(kbResult);
+        if (formatted) return formatted;
+      }
+    }
+    // Fallback: general bio
     var items = [
       'Forward Deployed AI Engineer',
       '@ Cresta AI · Vancouver, BC',

@@ -1,0 +1,41 @@
+{
+  "current": {
+    "title": "Forward Deployed AI Engineer",
+    "company": "Cresta AI",
+    "url": "https://cresta.com",
+    "since": "2026",
+    "location": "Vancouver, BC",
+    "summary": "Builds and deploys AI systems with enterprise customers. Works on real-time AI coaching, agentic systems, and customer-facing AI solutions. Backed by Sequoia and a16z."
+  },
+  "history": [
+    {
+      "company": "Goodfintech",
+      "title": "AI Engineer & Software Engineer",
+      "years": "2023–2026",
+      "url": "https://goodfintech.ai",
+      "summary": "Built and deployed AI systems for financial technology. Worked on AI agents, LLM integration, and production ML pipelines."
+    },
+    {
+      "company": "Vivoo",
+      "title": "ML Engineer & Software Engineer",
+      "years": "2022–2023",
+      "url": "https://vivoo.io",
+      "summary": "Worked on machine learning models and data pipelines for health-tech products."
+    },
+    {
+      "company": "Novit AI",
+      "title": "ML Engineer & Software Engineer",
+      "years": "2020–2022",
+      "url": "https://novit.ai",
+      "summary": "Early career role building machine learning solutions and AI systems. Company is now known as Archangel Autonomy."
+    },
+    {
+      "company": "Pharmacircle",
+      "title": "Data Analyst",
+      "years": "2019",
+      "url": null,
+      "summary": "First tech role — data analysis and insights for pharmaceutical industry."
+    }
+  ],
+  "beforeTech": "Air Defense Officer in the Turkish military. BSc Aerospace Engineering from Turkish Air Force Academy."
+}
