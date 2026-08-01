@@ -47,7 +47,7 @@ var Tools = (function() {
     contact: ['email','contact','reach','linkedin','twitter','mail','phone','social','handle','message','connect'],
     skills:  ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','tools','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'],
     blog:    ['blog','post','article','read','published','writing'],
-    g1:      ['g1','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses']
+    g1:      ['g1','smart glasses','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses']
   };
 
   var ALL_CMDS = ['/about','/repos','/contact','/skills','/blog','/g1','/time','/device','/screen','/network','/lucky','/ask','/status','/session','/help','/clear','/new','/sessions','/resume','/forget'];
@@ -55,6 +55,7 @@ var Tools = (function() {
   // ─── Compound query detection ────────────────────────────
   function detectExtraTools(text, primaryTool) {
     var lower = (text || '').toLowerCase();
+    var words = lower.match(/[a-z][a-z0-9_-]*/g) || [];
     var extra = [];
     var seen = {};
     seen[primaryTool] = true;
@@ -64,7 +65,14 @@ var Tools = (function() {
       if (seen[tool]) continue;
       var kws = KEYWORDS[tool];
       for (var j = 0; j < kws.length; j++) {
-        if (lower.indexOf(kws[j]) !== -1) {
+        var kw = kws[j];
+        // Short keywords (≤3 chars): must match standalone word (avoids "he" in "where")
+        if (kw.length <= 3) {
+          for (var wi = 0; wi < words.length; wi++) {
+            if (words[wi] === kw) { extra.push(tool); seen[tool] = true; break; }
+          }
+          if (seen[tool]) break;
+        } else if (lower.indexOf(kw) !== -1) {
           extra.push(tool);
           seen[tool] = true;
           break;

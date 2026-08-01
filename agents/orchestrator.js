@@ -234,9 +234,9 @@ var Orchestrator = (function() {
         var stepPlan = plan.map(function(p) { return p.tool; });
         trace(turnId, 'think → step ' + (idx + 1) + '/' + plan.length + ' · next: ' + toolName);
 
-        // ── Don't re-execute the same tool in conversation ──
-        // If this tool already ran in the last few messages and the user is
-        // asking a follow-up, use LLM with cached context instead.
+        // ── Don't re-execute the same tool for trivial follow-ups ──
+        // Only skip if: same tool as last, AND query is short (≤3 content words)
+        // Substantive new questions that happen to hit the same tool should run normally.
         var messages = store.getState().messages;
         var lastTool = null;
         for (var mi = messages.length - 1; mi >= 0; mi--) {
@@ -244,8 +244,10 @@ var Orchestrator = (function() {
             lastTool = messages[mi].toolName; break;
           }
         }
-        if (toolName !== 'chat' && toolName !== 'faq' && toolName !== 'out_of_scope' && toolName === lastTool && results.length === 0) {
-          trace(turnId, 'think → follow-up detected, using context instead of re-running ' + toolName);
+        var contentWords = (userText || '').toLowerCase().match(/[a-z]{3,}/g) || [];
+        var isShortFollowup = contentWords.length <= 3;
+        if (toolName !== 'chat' && toolName !== 'faq' && toolName !== 'out_of_scope' && toolName === lastTool && results.length === 0 && isShortFollowup) {
+          trace(turnId, 'think → short follow-up, using context instead of re-running ' + toolName);
           runFallback(userText, turnId);
           return;
         }
