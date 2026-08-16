@@ -264,9 +264,17 @@ var KnowledgeBase = (function() {
     return '<pre class="ascii">' + t + '</pre>';
   }
 
+  function getBlogPosts() {
+    if (!blogIndex || !blogIndex.posts) return [];
+    return blogIndex.posts.map(function(p) {
+      return { slug: p.slug, title: p.title };
+    });
+  }
+
   return {
     load: load,
     search: search,
-    formatResult: formatResult
+    formatResult: formatResult,
+    getBlogPosts: getBlogPosts
   };
 })();

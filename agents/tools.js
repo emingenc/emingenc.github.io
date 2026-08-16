@@ -82,10 +82,8 @@ var Tools = (function() {
     }
     return extra;
   }
-  // ─── Blog posts index (for /blog <text> matching) ─────────
-  var BLOG_POSTS = [
-    { slug: 'hello-world', title: 'Building AI agents that ship — lessons from the field' }
-  ];
+  // ─── Blog posts index — single source of truth is data/knowledge/blog-index.json,
+  //      loaded by KnowledgeBase. No hardcoded list here (read at call time below).
 
   // ─── Tool: about ─────────────────────────────────────────
   function tool_about(text) {
@@ -106,12 +104,14 @@ var Tools = (function() {
       '@ Cresta AI · Vancouver, BC',
       '',
       'Previously:',
-      '2023–26  Goodfintech — AI Engineer & SWE',
-      '2022–23  Vivoo — ML Engineer & SWE',
-      '2020–22  Novit AI — ML Engineer & SWE',
+      '2023–26  Goodfintech — AI Engineer',
+      '2022–23  Vivoo — Machine Learning Engineer',
+      '2020–22  Novit AI — Full-stack AI Engineer',
+      '2020     E-Kalite Software — Python Dev / QA',
+      '2016–20  Indie Game Dev (emdi_apps) — Founder',
       '',
-      'BSc Aerospace Engineering',
-      '174+ GitHub stars · 46 repos',
+      'BSc Aerospace Engineering · Turkish Air Force Academy',
+      '249+ GitHub stars · 47 repos',
       'Former Air Defense Officer'
     ];
     return { toolName: 'about', content: box('EMIN GENCH', items), data: null };
@@ -120,19 +120,19 @@ var Tools = (function() {
   // ─── Tool: repos (clickable links) ───────────────────────
   function tool_repos() {
     var repos = [
-      { name: 'even_glasses', stars: 79, desc: 'G1 BLE SDK (Python)' },
-      { name: 'telegramGPT', stars: 52, desc: 'AI bot building guide' },
-      { name: 'G1 Voice AI', stars: 25, desc: 'Voice assistant' },
-      { name: 'g1_flutter', stars: 18, desc: 'Flutter BLE bridge' },
-      { name: 'visionlink', stars: 11, desc: 'Multi-device OS' },
-      { name: 'llm_adaptive_router', stars: 6, desc: 'LLM routing' }
+      { name: 'even_glasses', slug: 'even_glasses', stars: 78, desc: 'G1 BLE SDK (Python)' },
+      { name: 'telegramGPT', slug: 'telegramGPT', stars: 52, desc: 'AI bot building guide' },
+      { name: 'G1 Voice AI', slug: 'G1_voice_ai_assistant', stars: 25, desc: 'Voice assistant' },
+      { name: 'g1_flutter', slug: 'g1_flutter_blue_plus', stars: 18, desc: 'Flutter BLE bridge' },
+      { name: 'visionlink', slug: 'visionlink', stars: 11, desc: 'Multi-device OS' },
+      { name: 'llm_adaptive_router', slug: 'llm_adaptive_router', stars: 6, desc: 'LLM routing' }
     ];
     var lines = repos.map(function(r) {
-      var url = 'https://github.com/emingenc/' + r.name;
+      var url = 'https://github.com/emingenc/' + r.slug;
       return '★' + r.stars + '  ' + link(url, r.name, 'repo-link') + ' — ' + r.desc;
     });
     lines.push('');
-    lines.push(link('https://github.com/emingenc', 'github.com/emingenc — 46 repos', 'repo-link'));
+    lines.push(link('https://github.com/emingenc', 'github.com/emingenc — 47 repos', 'repo-link'));
     return {
       toolName: 'repos',
       content: box('OPEN SOURCE', lines),
@@ -167,6 +167,10 @@ var Tools = (function() {
 
   // ─── Tool: blog (text-based routing) ─────────────────────
   function tool_blog(text) {
+    // Single source of truth: KnowledgeBase loads blog-index.json (async).
+    var BLOG_POSTS = (typeof KnowledgeBase !== 'undefined' && KnowledgeBase.getBlogPosts)
+      ? KnowledgeBase.getBlogPosts()
+      : [];
     // /blog <slug or text>
     var query = (text || '').replace(/^\/blog\s*/i, '').trim();
 
@@ -225,11 +229,11 @@ var Tools = (function() {
     var items = [
       'G1 Smart Glasses Ecosystem by Emin Gench',
       '',
-      '★79 even_glasses  — BLE driver (Python)',
+      '★78 even_glasses  — BLE driver (Python)',
       '★25 G1 Voice AI   — Voice assistant',
       '★18 g1_flutter    — Mobile bridge (Dart)',
       '★11 visionlink    — Multi-device OS (C)',
-      '★3  smart_glass_mcp — AI agent connector',
+      '★4  smart_glass_mcp — AI agent connector',
       '★7  even_glasses_redis_control',
       '',
       '6 repos · 5 languages · 1 system',
@@ -263,6 +267,16 @@ var Tools = (function() {
   }
 
   // ─── Tool: session ───────────────────────────────────────
+  // Shared LLM state → display label (mirrors renderer.js renderLLMStatus).
+  function llmLabel(models) {
+    var m = models || {};
+    if (m.llmReady) return 'ready';
+    if (m.llmLoading && m.llmDownloadProgress > 0) return 'loading ' + m.llmDownloadProgress + '%';
+    if (m.llmLoading) return 'loading';
+    if (m.llmError) return 'unavailable';
+    return 'idle';
+  }
+
   function tool_session(storeState) {
     var now = Date.now();
     var sessionStart = (storeState && storeState.session && storeState.session.start) || now;
@@ -272,7 +286,7 @@ var Tools = (function() {
     var duration = mins > 0 ? mins + 'm ' + secs + 's' : secs + 's';
     var msgCount = (storeState && storeState.session && storeState.session.messageCount) || 0;
     var sessionId = (storeState && storeState.session && storeState.session.id) || 'unknown';
-    var modelStatus = (storeState && storeState.models && storeState.models.llmReady) ? 'ready' : 'loading';
+    var modelStatus = llmLabel(storeState && storeState.models);
 
     return {
       toolName: 'session',
@@ -353,15 +367,27 @@ var Tools = (function() {
 
   // ─── Tool: lucky — fun random surprises ───────────────────
   function tool_lucky() {
+    // Count answerable FAQ entries only (skip the decorative "═══ SECTION ═══"
+    // header strings that also live in the faq array). Dynamic so it never
+    // drifts out of sync with data/faq.json again.
+    var faqCount = 0;
+    if (FAQ && FAQ.faq) {
+      for (var fi = 0; fi < FAQ.faq.length; fi++) {
+        if (FAQ.faq[fi] && FAQ.faq[fi].q) faqCount++;
+      }
+    }
+    var faqFact = faqCount > 0
+      ? 'This FAQ alone has ' + faqCount + ' entries to answer almost any question instantly.'
+      : 'This FAQ answers questions instantly — no servers, all local.';
     var facts = [
       'This entire website runs AI models locally in your browser. No servers!',
       'Emin taught himself to code while serving as an Air Defense Officer.',
       'The G1 smart glasses ecosystem spans 6 repos across 5 programming languages.',
-      '174+ GitHub stars earned through open source, not marketing.',
+      '249+ GitHub stars earned through open source, not marketing.',
       'Emin has a BSc in Aerospace Engineering — literally rocket science.',
-      'This FAQ alone has 148 entries to answer almost any question instantly.',
-      'The AI model (SmolLM2-1.7B) is ~1GB and runs entirely in your browser.',
-      'Type /matrix for a surprise. Just kidding — or am I?',
+      faqFact,
+      'The AI model (SmolLM2-360M) is ~180MB and runs entirely in your browser.',
+      'Type /status to see every model in this agent report its own health — live.',
       "Emin's first tech role was Data Analyst. Now he's an FDE at Cresta AI.",
       'This site has zero tracking on the agent page. Your chats are 100% private.'
     ];
@@ -380,7 +406,7 @@ var Tools = (function() {
     var elapsed = Math.floor((now - sessionStart) / 1000);
     var mins = Math.floor(elapsed / 60), secs = elapsed % 60;
     var duration = mins > 0 ? mins + 'm ' + secs + 's' : secs + 's';
-    var llm = (storeState && storeState.models && storeState.models.llmReady) ? 'ready' : 'loading';
+    var llm = llmLabel(storeState && storeState.models);
     var nav = typeof navigator !== 'undefined' ? navigator : {};
     var online = nav.onLine ? 'yes' : 'no';
     var cores = nav.hardwareConcurrency || '?';
@@ -393,7 +419,7 @@ var Tools = (function() {
       toolName: 'status',
       content: box('SYSTEM STATUS', [
         'Session:  ' + duration + ' · ' + ((storeState && storeState.session && storeState.session.messageCount) || 0) + ' msgs',
-        'LLM:      ' + llm + ' · SmolLM2-1.7B',
+        'LLM:      ' + llm + ' · SmolLM2-360M',
         'Device:   ' + cores + ' cores · ' + ram + ' GB RAM',
         'Screen:   ' + scr.width + '×' + scr.height + ' @ ' + dpr + 'x',
         'Network:  ' + conn + ' · online: ' + online,
@@ -430,6 +456,8 @@ var Tools = (function() {
         '/contact — get in touch',
         '/skills  — tech stack',
         '/blog    — writing & posts',
+        '/g1      — G1 smart glasses (Even Realities)',
+        '/ask     — pick a topic to explore',
         '',
         '──── your machine ────',
         '/device  — hardware fingerprint',
@@ -445,7 +473,8 @@ var Tools = (function() {
         '/session — uptime & stats',
         '/new      — new session',
         '/sessions — saved history',
-        '/forget   — clear all data',
+        '/resume   — reopen a saved session',
+        '/forget   — clear all data (confirm)',
         '/clear    — reset transcript'
       ]) + '<div style="color:var(--accent);font-size:11px;margin-top:6px;font-family:monospace">Tip: try /status or /lucky ⚡</div>',
       data: null
@@ -472,7 +501,7 @@ var Tools = (function() {
       lines.push('  ' + preview);
     }
     lines.push('');
-    lines.push(cmdLink('/forget', '/forget — clear all saved sessions'));
+    lines.push(cmdLink('/forget', '/forget — clear all saved sessions (confirm)'));
     lines.push('Storage: ' + (storageSize || '?'));
     return {
       toolName: 'sessions',
@@ -585,12 +614,12 @@ var Tools = (function() {
   }
 
   function profileFacts() {
-    return 'TRUSTED PROFILE FACTS: Emin Gench is a Forward Deployed AI Engineer at Cresta AI in Vancouver, BC, Canada. Previously Goodfintech, Vivoo, and Novit AI. He builds open-source AI and smart-glasses projects, including even_glasses, telegramGPT, G1 Voice AI, g1_flutter, and visionlink. He has 46 repositories and 174+ GitHub stars. Do not infer a different residence or employer.';
+    return 'TRUSTED PROFILE FACTS: Emin Gench is a Forward Deployed AI Engineer at Cresta AI in Vancouver, BC, Canada. Previously Goodfintech (AI Engineer), Vivoo (Machine Learning Engineer), Novit AI (Full-stack AI Engineer), E-Kalite Software (Python Developer/QA), and indie game development (Founder, emdi_apps). He builds open-source AI and smart-glasses projects, including even_glasses, telegramGPT, G1 Voice AI, g1_flutter, and visionlink. He has 47 repositories and 249+ GitHub stars. Do not infer a different residence or employer.';
   }
 
   function llm_consentMessage() {
     return faq_getFallback() +
-      '<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:monospace;font-size:11px;cursor:pointer;margin-top:6px" onclick="window._enableLLM()">⚡ Enable on-device AI <span style="opacity:.5;font-size:10px">downloads once · ~80MB</span></span>';
+      '<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:monospace;font-size:11px;cursor:pointer;margin-top:6px" onclick="window._enableLLM()">⚡ Enable on-device AI <span style="opacity:.5;font-size:10px">downloads once · ~180MB</span></span>';
   }
 
   // ─── v2: Multi-intent detection ──────────────────────────
@@ -641,16 +670,36 @@ var Tools = (function() {
   // Scores user query against tool descriptions + keywords.
   // Returns {tool, score} for best match above threshold, or null.
   // This is the SINGLE matching function — no more per-tool keyword patching.
-  var STOP_WORDS = {what:1,where:1,when:1,why:1,how:1,do:1,does:1,did:1,is:1,are:1,was:1,were:1,can:1,could:1,will:1,would:1,shall:1,should:1,tell:1,show:1,give:1,get:1,has:1,have:1,had:1,the:1,a:1,an:1,he:1,she:1,it:1,they:1,me:1,him:1,her:1,them:1,his:1,for:1,to:1,of:1,in:1,on:1,at:1,by:1,with:1,from:1,about:1,any:1,some:1,just:1,please:1,open:1,last:1,latest:1,recent:1,newest:1};
+  var STOP_WORDS = {what:1,where:1,when:1,why:1,how:1,do:1,does:1,did:1,is:1,are:1,was:1,were:1,can:1,could:1,will:1,would:1,shall:1,should:1,tell:1,show:1,give:1,get:1,has:1,have:1,had:1,the:1,a:1,an:1,he:1,she:1,it:1,they:1,me:1,him:1,her:1,them:1,his:1,you:1,your:1,yours:1,for:1,to:1,of:1,in:1,on:1,at:1,by:1,with:1,from:1,about:1,any:1,some:1,just:1,please:1,open:1,last:1,latest:1,recent:1,newest:1};
 
   function fuzzyMatch(text) {
+    // Exact tool-name match (e.g. bare "g1", "blog", "about") — unambiguous, so
+    // it takes priority over the short-word filter (query words ≤2 chars and
+    // stop words are otherwise dropped, which sent a bare "g1" or "about" query
+    // to the out-of-scope sink instead of the tool).
+    var bare = String(text || '').trim().toLowerCase().replace(/[^a-z0-9_-]+$/g, '');
+    for (var tn = 0; tn < TOOL_REGISTRY.length; tn++) {
+      var tnName = TOOL_REGISTRY[tn].name;
+      if (tnName === 'chat' || tnName === 'stop' || tnName === 'faq' || tnName === 'out_of_scope') continue;
+      if (bare === tnName) return { tool: tnName, score: 95 };
+    }
+
     var rawWords = (text || '').toLowerCase().match(/[a-z][a-z0-9_-]*/g) || [];
     var qWords = [];
     for (var rw = 0; rw < rawWords.length; rw++) {
       var w = rawWords[rw];
       if (!STOP_WORDS[w] && w.length > 2) qWords.push(w);
     }
-    if (!qWords.length) return null;
+    if (!qWords.length) {
+      // Every word was a stop word / short word. If the query is a second-person
+      // question, the pronoun was the only signal — resolve it deterministically:
+      //   capability ("what can you do") → help, identity ("what do you do") → about.
+      var bareLower = String(text || '').toLowerCase();
+      if (/\b(you|your|yours)\b/.test(bareLower)) {
+        return /\b(can|could)\b/.test(bareLower) ? { tool: 'help', score: 70 } : { tool: 'about', score: 70 };
+      }
+      return null;
+    }
     var qText = qWords.join(' ');
 
     var best = null, bestScore = 0;
@@ -661,14 +710,31 @@ var Tools = (function() {
       var corpus = (rt.name + ' ' + rt.description + ' ' + (rt.keywords || []).join(' ')).toLowerCase();
       var cWords = corpus.match(/[a-z][a-z0-9_-]*/g) || [];
 
+      // Filter stop words + tiny words from the corpus so common short words
+      // (e.g. "to" in "visitor to choose") don't prefix-match query words
+      // (e.g. "tokyo") and mis-route out-of-scope queries to the wrong tool.
+      var cwFiltered = [];
+      for (var cf = 0; cf < cWords.length; cf++) {
+        var cw = cWords[cf];
+        if (!STOP_WORDS[cw] && cw.length > 2) cwFiltered.push(cw);
+      }
+      cWords = cwFiltered;
+
       var score = 0;
       for (var wi = 0; wi < qWords.length; wi++) {
         var qw = qWords[wi];
         for (var ci = 0; ci < cWords.length; ci++) {
-          // Exact match or substring (catches "build"→"built", "work"→"worked")
-          if (cWords[ci] === qw || cWords[ci].indexOf(qw) === 0 || qw.indexOf(cWords[ci]) === 0) {
-            score += 1; break;
-          }
+          var cw = cWords[ci];
+          // Weight matches by specificity so a real content keyword out-votes a
+          // generic pronoun that merely prefixes a longer keyword:
+          //  - exact word, or corpus keyword is a prefix of the query word
+          //    (e.g. "projects"→"project") = strong (weight 2);
+          //  - query word only prefixes a longer corpus word (e.g. "you"→
+          //    "yourself", "build"→"built") = weak (weight 1). This stops
+          //    "your projects" from tying "your"→"yourself" (about) against
+          //    "projects"→"project" (repos) and mis-routing to about.
+          if (cw === qw || qw.indexOf(cw) === 0) { score += 2; break; }
+          if (cw.indexOf(qw) === 0) { score += 1; break; }
         }
       }
       // Phrase bonus: multi-word keyword matches
