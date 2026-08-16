@@ -1,6 +1,23 @@
 {
   "posts": [
     {
+      "slug": "gauntlet-loops",
+      "title": "The gauntlet loop — stop letting your AI grade its own homework",
+      "description": "A post-deliverable QA ritual: fan out independent critics, compare against real examples, and recurse until zero open critiques.",
+      "date": "2026-08-15",
+      "tags": ["ai", "agents", "engineering", "quality"],
+      "topics": [
+        "agent QA", "self-review", "independent critics", "comparator",
+        "evaluator", "severity triage", "shipping bar", "guardrails"
+      ],
+      "keyTakeaways": [
+        "Self-review fails — an agent grading its own output rubber-stamps and misses real gaps",
+        "Fan out independent critics (Inspector, Comparator, Evaluator); nobody reviews their own work",
+        "Critiques need severity tiers (P0–P3) and a real-world reference, not vague feedback",
+        "Done means zero open P0/P1 and an at-or-above-bar comparison against a real shipped example"
+      ]
+    },
+    {
       "slug": "hello-world",
       "title": "Building AI agents that ship — lessons from the field",
       "description": "Lessons learned building and deploying AI systems across four companies — from guardrails and monitoring to shipping fast.",
