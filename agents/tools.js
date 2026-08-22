@@ -860,6 +860,11 @@ var Tools = (function() {
     }
   }
 
+  // Graceful context-exhaustion message (deterministic, no LLM).
+  function contextExhaustedMessage() {
+    return 'This session\u2019s context window is nearly full, so I can\u2019t reliably recall our earlier chat. Type <b>/new</b> to start fresh — deterministic tools like /repos and /skills still work.';
+  }
+
   return {
     loadFAQ: loadFAQ,
     _store: null,
@@ -890,6 +895,7 @@ var Tools = (function() {
     fuzzyMatch: fuzzyMatch,
     getTool: getTool,
     replyFor: replyFor,
+    contextExhaustedMessage: contextExhaustedMessage,
     validateToolResult: validateToolResult,
     getSelfContainedTools: getSelfContainedTools,
     outOfScopeMessage: outOfScopeMessage,

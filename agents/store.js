@@ -3,10 +3,11 @@
 var SESSIONS_KEY = 'agent-sessions';
 var MAX_SESSIONS = 10;
 var MAX_SESSION_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-var MAX_CONTEXT_TOKENS = 8192;
+var MAX_CONTEXT_TOKENS = 1600; // SmolLM2-360M's real window is 2048; ~450 fixed overhead + output headroom
 
 function createStore(initial) {
   var state = JSON.parse(JSON.stringify(initial));
+  state.summary = state.summary || ''; // rolling session memory (deterministic, persisted)
   var listeners = [];
   var idCounter = 0;
 
@@ -20,6 +21,16 @@ function createStore(initial) {
   // ─── Multi-session persist ──────────────────────────────
   function persist() {
     try {
+      // Guard: never persist an empty session. During init, LLM_CONSENT is
+      // dispatched before any message exists, which would otherwise write a
+      // ghost "0 message" session and clutter /sessions. Drop any prior entry
+      // for this session id so /clear and /new persist correctly (Run 3 fix).
+      if (state.messages.length === 0) {
+        var pruned = loadSessions().filter(function(s) { return s.id !== state.session.id; });
+        localStorage.setItem(SESSIONS_KEY, JSON.stringify(pruned));
+        return;
+      }
+
       var current = {
         id: state.session.id,
         start: state.session.start,
@@ -27,6 +38,7 @@ function createStore(initial) {
         sessionCount: state.session.sessionCount,
         firstMessage: state.messages.length > 0 ? firstUserText() : '',
         messages: state.messages.slice(-30),  // keep last 30 messages
+        summary: state.summary,
         models: { llmConsent: state.models.llmConsent },
         ui: { contextPct: state.ui.contextPct }
       };
@@ -62,10 +74,17 @@ function createStore(initial) {
 
   function getStorageSize() {
     try {
-      var bytes = new Blob([JSON.stringify(localStorage)]).size;
-      if (bytes < 1024) return bytes + 'B';
-      if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + 'KB';
-      return (bytes/(1024*1024)).toFixed(1) + 'MB';
+      // JSON.stringify(localStorage) is always "{}" (Storage isn't a plain
+      // object), so it can't measure usage. Sum each key + value length.
+      var total = 0;
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key == null) continue;
+        total += key.length + (localStorage.getItem(key) || '').length;
+      }
+      if (total < 1024) return total + 'B';
+      if (total < 1024*1024) return (total/1024).toFixed(1) + 'KB';
+      return (total/(1024*1024)).toFixed(1) + 'MB';
     } catch(e) { return '?'; }
   }
 
@@ -73,7 +92,13 @@ function createStore(initial) {
   function computeContextPct() {
     var totalChars = 0;
     for (var i = 0; i < state.messages.length; i++) {
-      totalChars += (state.messages[i].content || '').length;
+      var m = state.messages[i];
+      // Count only what the model actually ingests — the real user/agent
+      // exchange. Hidden react-step traces, tool cards, welcome/system
+      // dividers inflate the meter and peg it at 100% (the fake "session
+      // full" signal).
+      if (m.role !== 'user' && m.role !== 'agent') continue;
+      totalChars += (m.content || '').length;
     }
     // ~4 chars per token, estimate against MAX_CONTEXT_TOKENS
     var pct = Math.round(totalChars / 4 / MAX_CONTEXT_TOKENS * 100);
@@ -96,6 +121,16 @@ function createStore(initial) {
         if (action.status === 'error') state.models[action.model + 'Error'] = action.error;
         if (action.progress !== undefined) state.models.llmDownloadProgress = action.progress;
         if (action.statusText !== undefined) state.models.llmStatusText = action.statusText;
+        // On a hard LLM load failure, reset the transient progress/status
+        // readouts so the store no longer claims the model is "loading model
+        // (wasm)... at 100%" when it actually failed. Every consumer
+        // (renderer #s-model, /status, the orchestrator "downloading..." message)
+        // gates on llmLoading/llmError, so this is a state-truthfulness cleanup
+        // with no UI behavior change.
+        if (action.model === 'llm' && action.status === 'error') {
+          state.models.llmDownloadProgress = 0;
+          state.models.llmStatusText = 'unavailable';
+        }
         // Populate capability registry on model ready
         if (!state.models.capabilities) state.models.capabilities = {};
         if (action.status === 'ready') {
@@ -119,7 +154,14 @@ function createStore(initial) {
       case 'MESSAGE_ADD':
         if (!action.message.id) action.message.id = 'msg_' + (++idCounter);
         state.messages.push(action.message);
-        state.session.messageCount++;
+        // Count user turns only. A single visitor turn fans out into many
+        // internal messages (user echo + plan/think/act/observe/eval react-steps
+        // + tool blocks), so counting every MESSAGE_ADD made /session, /status
+        // and /sessions report "msgs" ~6× the number of things the visitor
+        // actually asked (e.g. 146 "msgs" for 22 real turns). renderer.js
+        // isFirstUserAfter reads this as a per-turn counter (messageCount > 1),
+        // which is also more correct with user-turn semantics.
+        if (action.message.role === 'user') state.session.messageCount++;
         state.ui.contextPct = computeContextPct();
         break;
 
@@ -139,6 +181,7 @@ function createStore(initial) {
 
       case 'CLEAR':
         state.messages = [];
+        state.summary = '';
         state.session.messageCount = 0;
         state.workingMemory = { turnId: null, observations: [], plan: [], planIndex: 0, coveredTools: {}, steps: 0, triedFallbacks: {} };
         state.ui.contextPct = computeContextPct();
@@ -150,6 +193,7 @@ function createStore(initial) {
         state.session.messageCount = 0;
         state.session.sessionCount = (state.session.sessionCount || 0) + 1;
         state.messages = [];
+        state.summary = '';
         state.ui.isProcessing = false;
         state.ui.thinkingState = 'idle';
         state.workingMemory = { turnId: null, observations: [], plan: [], planIndex: 0, coveredTools: {}, steps: 0, triedFallbacks: {} };
@@ -224,11 +268,18 @@ function createStore(initial) {
       // ─── v2: Pause/Resume ──────────────────────────────
       case 'RESTORE':
         var d = action.data;
-        if (d.session) {
-          state.session.id = d.session.id;
-          state.session.start = d.session.start;
-          state.session.messageCount = d.session.messageCount || 0;
-          state.session.sessionCount = d.session.sessionCount || 1;
+        // persist() writes a FLAT session object (id/start/messageCount/… at the
+        // top level, not nested under `session`). The old `d.session` guard was
+        // therefore always false, so session identity, start, and messageCount
+        // were silently dropped on every reload: each refresh minted a new
+        // session id (cluttering /sessions with near-duplicate 30-message rows)
+        // and reset the counter to 0, so /status + /session under-reported the
+        // true message total. Read the flat fields instead (Run 192 fix).
+        if (d.id) {
+          state.session.id = d.id;
+          state.session.start = d.start || state.session.start;
+          state.session.messageCount = d.messageCount || 0;
+          state.session.sessionCount = d.sessionCount || 1;
         }
         if (d.models) {
           state.models.llmConsent = d.models.llmConsent;
@@ -238,6 +289,9 @@ function createStore(initial) {
         }
         if (d.ui) {
           state.ui.contextPct = d.ui.contextPct || 18;
+        }
+        if (typeof d.summary === 'string') {
+          state.summary = d.summary;
         }
         break;
 
@@ -255,6 +309,10 @@ function createStore(initial) {
         // Response handled by router callback
         break;
 
+      case 'SUMMARY_UPDATE':
+        state.summary = action.summary || '';
+        break;
+
       case 'RESUME':
         state.ui.needsHumanInput = false;
         state.ui.isProcessing = false;
@@ -266,7 +324,7 @@ function createStore(initial) {
     reduce(action);
     for (var i = 0; i < listeners.length; i++) listeners[i](state, action);
     // Auto-persist on significant actions
-    if (['MESSAGE_ADD','MESSAGE_STREAM_DONE','CLEAR','NEW_SESSION','LLM_CONSENT','RESTORE'].indexOf(action.type) !== -1) {
+    if (['MESSAGE_ADD','MESSAGE_STREAM_DONE','CLEAR','NEW_SESSION','LLM_CONSENT','RESTORE','SUMMARY_UPDATE'].indexOf(action.type) !== -1) {
       persist();
     }
   }
@@ -294,7 +352,11 @@ function createStore(initial) {
         break;
       }
     }
-    if (recent) {
+    // Only restore sessions that actually have content. An empty session is
+    // persisted during init (LLM_CONSENT fires before the boot sequence checks
+    // for a prior session), which would otherwise make a first-time visitor see
+    // "restored session" instead of "new local session".
+    if (recent && recent.messages && recent.messages.length > 0) {
       dispatch({ type: 'RESTORE', data: recent });
       return true;
     }

@@ -101,7 +101,7 @@ var Evaluator = (function() {
       }, 12000);
 
       var convBuf = (typeof Orchestrator !== 'undefined' && Orchestrator._getConversationBuffer)
-        ? Orchestrator._getConversationBuffer()
+        ? Orchestrator._getConversationBuffer(800)
         : [];
       if (typeof Tools !== 'undefined' && Tools.profileFacts) {
         convBuf.unshift({ role: 'trusted-context', content: Tools.profileFacts() });

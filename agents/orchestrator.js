@@ -56,10 +56,13 @@ var Orchestrator = (function() {
     if (maxTokens === undefined) maxTokens = 2500;
     var msgs = store.getState().messages;
     var buf = [];
-    for (var i = Math.max(0, msgs.length - 12); i < msgs.length; i++) {
+    // ONLY the real user/agent exchange feeds the model. Each turn emits ~8
+    // store messages (user echo + 5 react-steps + tool card + answer), so the
+    // old 12-message window = ~1.5 turns and was mostly trace garbage.
+    for (var i = Math.max(0, msgs.length - 24); i < msgs.length; i++) {
       var m = msgs[i];
-      if (m.role === 'user' || m.role === 'agent' || m.role === 'tool') {
-        var clean = (m.content || '').replace(/<[^>]*>/g, ' ').replace(/[^\w\s.,;:!?@#&()\[\]{}\/"'-]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150);
+      if (m.role === 'user' || m.role === 'agent') {
+        var clean = (m.content || '').replace(/<[^>]*>/g, ' ').replace(/[^\w\s.,;:!?@#&()\[\]{}\/"'-]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
         if (clean) buf.push({ role: m.role, content: clean });
       }
     }
@@ -92,6 +95,29 @@ var Orchestrator = (function() {
     if (turnId !== undefined && turnId !== processingTurnId) return;
     processingTurnId = 0;
     store.dispatch({ type: 'THINKING', state: 'hide' });
+    maybeRebuildSummary();
+  }
+
+  // Rolling session memory: every 4 user turns fold the exchange into a
+  // deterministic summary slot (no LLM — the 360M model must not write memory).
+  // Persisted separately because persist() only keeps the last 30 messages.
+  function maybeRebuildSummary() {
+    var st = store.getState();
+    if (!st.session.messageCount || st.session.messageCount % 4 !== 0) return;
+    var pairs = [];
+    var cur = null;
+    for (var i = 0; i < st.messages.length; i++) {
+      var m = st.messages[i];
+      if (m.role === 'user') {
+        cur = { q: (m.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80) };
+      } else if (m.role === 'agent' && cur) {
+        cur.a = (m.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+        pairs.push('Q: ' + cur.q + ' → A: ' + cur.a);
+        cur = null;
+      }
+    }
+    if (pairs.length === 0) return;
+    store.dispatch({ type: 'SUMMARY_UPDATE', summary: pairs.slice(-4).join(' | ').slice(0, 600) });
   }
 
   // Compound query detection: find intents the user asked for but haven't been covered yet
@@ -112,6 +138,8 @@ var Orchestrator = (function() {
   // Collect compact error strings from workingMemory observations for evaluation context
   function getGenerationContext(results) {
     var parts = [Tools.profileFacts()];
+    var summary = store.getState().summary;
+    if (summary) parts.push('SESSION SUMMARY: ' + summary);
     if (results && results.length) {
       parts.push('CURRENT TOOL RESULTS: ' + results.map(function(r) {
         return (r.toolName || 'tool') + ': ' + (r.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500);
@@ -534,10 +562,15 @@ var Orchestrator = (function() {
             genTimeouts[msgId] = setTimeout(function() {
               if (!validTurn(turnId)) return;
               delete genTimeouts[msgId];
+              // Drop the pending record so the late worker completion is
+              // ignored — otherwise it appends a duplicate answer and keeps
+              // the worker busy for every later query (the "stops working"
+              // cliff: each new query times out while queued behind it).
+              delete pendingGenerations[msgId];
               store.dispatch({ type: 'MESSAGE_STREAM_DONE', id: msgId });
               store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'system', type: 'system', content: '─── generation timed out ───', ts: '', noTs: true }});
               done();
-            }, 45000);
+            }, 90000);
             return;
           }
 
@@ -585,6 +618,11 @@ var Orchestrator = (function() {
       done();
     } else if (Classifier.hasLLMConsent() && Classifier.isLLMReady()) {
       store.dispatch({ type: 'THINKING', state: 'responding', label: 'generating response' });
+      if (store.getState().ui.contextPct >= 90) {
+        store.dispatch({ type: 'THINKING', state: 'hide' });
+        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: Tools.contextExhaustedMessage(), ts: '' }});
+        return done(turnId);
+      }
       var _llmWorker = Classifier._getLLMWorker ? Classifier._getLLMWorker() : null;
       if (!_llmWorker) {
         store.dispatch({ type: 'THINKING', state: 'hide' });
@@ -595,14 +633,28 @@ var Orchestrator = (function() {
       var msgId = 'msg_' + turnId + '_' + Date.now();
       store.dispatch({ type: 'MESSAGE_ADD', message: { id: msgId, role: 'agent', type: 'stream', content: '', ts: '', _streaming: true }});
       pendingGenerations[msgId] = { turnId: turnId, question: text, results: [] };
-      _llmWorker.postMessage({ type: 'generate', text: text, context: getGenerationContext([]), requestId: msgId });
+      // Clamp the context fed to SmolLM2 — its real window is 2048 tokens;
+      // an overshoot makes ONNX throw ("Generation failed" → worker death).
+      var genCtx = getGenerationContext([]);
+      if (genCtx.length > 7500) genCtx = genCtx.slice(0, 7500);
+      try {
+        _llmWorker.postMessage({ type: 'generate', text: text, context: genCtx, requestId: msgId });
+      } catch (e) {
+        delete pendingGenerations[msgId];
+        store.dispatch({ type: 'MESSAGE_STREAM_DONE', id: msgId });
+        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: Tools.faqFallback(), ts: '' }});
+        return done(turnId);
+      }
       genTimeouts[msgId] = setTimeout(function() {
         if (!validTurn(turnId)) return;
         delete genTimeouts[msgId];
+        // See the main-loop timeout: drop the pending record so the late
+        // worker completion can't duplicate the answer or block the queue.
+        delete pendingGenerations[msgId];
         store.dispatch({ type: 'MESSAGE_STREAM_DONE', id: msgId });
         store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'system', type: 'system', content: '─── generation timed out ───', ts: '', noTs: true }});
         done();
-      }, 45000);
+      }, 90000);
     } else if (Classifier.hasLLMConsent() && !Classifier.isLLMReady()) {
       if (!store.getState().models.llmLoading) Classifier.enableLLM(); // lazy init
       if (store.getState().models.llmLoading) {

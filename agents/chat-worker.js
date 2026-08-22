@@ -24,18 +24,27 @@ function buildChatPrompt(userText, sysPrompt) {
   return '<|im_start|>system\n' + sp + '\n<|im_end|>\n<|im_start|>user\n' + userText + '\n<|im_end|>\n<|im_start|>assistant\n';
 }
 
+// Wrap a filled prompt template in the SmolLM2-Instruct chat template.
+// SmolLM2-360M-Instruct expects <|im_start|>/<|im_end|> role framing; without it
+// generation/alignment quality degrades. evaluate was already wrapped; this
+// makes generate and align consistent.
+function wrapChat(content) {
+  var sp = systemPrompt || 'You are Emin\'s portfolio assistant. Keep answers short, friendly, and helpful.';
+  return '<|im_start|>system\n' + sp + '\n<|im_end|>\n<|im_start|>user\n' + content + '\n<|im_end|>\n<|im_start|>assistant\n';
+}
+
 function buildAlignPrompt(question, intent, toolScopes) {
-  var tmpl = alignPromptTemplate || 'Decide if this portfolio query is in scope. Return JSON only: {"inScope":true/false,"suggestedTool":"","confidence":0,"reason":""}\\nQuestion: {{question}}\\nNeedle proposal: {{intent}}\\nTool scopes: {{toolScopes}}';
-  return tmpl.replace(/\{\{question\}\}/g, question || '')
+  var tmpl = alignPromptTemplate || 'Decide if this portfolio query is in scope. Return JSON only: {"inScope":true/false,"suggestedTool":"","confidence":0,"reason":""}\nQuestion: {{question}}\nNeedle proposal: {{intent}}\nTool scopes: {{toolScopes}}';
+  return wrapChat(tmpl.replace(/\{\{question\}\}/g, question || '')
     .replace(/\{\{intent\}\}/g, intent || '')
-    .replace(/\{\{toolScopes\}\}/g, toolScopes || '');
+    .replace(/\{\{toolScopes\}\}/g, toolScopes || ''));
 }
 
 function buildGeneratePrompt(question, context) {
   if (!generatePromptTemplate) return buildChatPrompt(question);
-  return generatePromptTemplate
+  return wrapChat(generatePromptTemplate
     .replace(/\{\{question\}\}/g, question || '')
-    .replace(/\{\{context\}\}/g, context || '');
+    .replace(/\{\{context\}\}/g, context || ''));
 }
 
 function buildEvalPrompt(question, results, context, errors) {
@@ -87,6 +96,11 @@ function stripEnd(text) {
 
 function loadPipeline(device, timeoutMs) {
   timeoutMs = timeoutMs || 45000;
+  // Reset the download-progress readout for this device attempt. Without this,
+  // a failed WebGPU download's progress (e.g. "100%") lingers while we fall back
+  // to WASM, so the header briefly shows a misleading "100%" before dropping to
+  // the WASM download's real progress. Each device attempt owns its own counter.
+  self.postMessage({ type: 'progress', pct: 0 });
   return new Promise(function(resolve, reject) {
     var done = false;
     var timer = setTimeout(function() {
@@ -94,7 +108,11 @@ function loadPipeline(device, timeoutMs) {
     }, timeoutMs);
 
     pipeline('text-generation', 'onnx-community/SmolLM2-360M-Instruct-ONNX', {
-      dtype: 'q4f16',
+      // q4f16 quantization is WebGPU-only. The WASM fallback must use a
+      // WASM-compatible dtype (q8 → model_quantized.onnx), otherwise the
+      // "fallback" re-attempts WebGPU and fails with "no available backend",
+      // leaving the model permanently unavailable on any browser without WebGPU.
+      dtype: device === 'wasm' ? 'q8' : 'q4f16',
       device: device,
       progress_callback: function(p) {
         if (p && p.progress !== undefined) {
@@ -108,6 +126,17 @@ function loadPipeline(device, timeoutMs) {
     });
   });
 }
+
+// ─── Uncaught-error safety net ──────────────────────────────
+// Surface uncaught worker errors as structured messages so the main thread
+// never hangs waiting for a response that never arrives (e.g. a future
+// regression or a synchronous throw in the handler before a try/catch).
+self.onerror = function(e) {
+  self.postMessage({ type: 'error', data: 'Worker crashed: ' + (e.message || e.filename || String(e)) });
+};
+self.onmessageerror = function() {
+  self.postMessage({ type: 'error', data: 'Worker received an unserializable message' });
+};
 
 // ─── Message handler ───────────────────────────────────────
 
@@ -209,7 +238,8 @@ self.onmessage = async function(e) {
       return;
     }
     try {
-      var prompt = buildGeneratePrompt(msg.text, msg.context);
+      var ctx = (msg.context || '').slice(0, 7500); // ~1.7k tokens — SmolLM2's real window is 2048
+      var prompt = buildGeneratePrompt(msg.text, ctx);
       var out = await pipe(prompt, { max_new_tokens: 80, temperature: 0.35 });
       var reply = stripEnd(out[0].generated_text.slice(prompt.length));
       self.postMessage({ type: 'token', requestId: msg.requestId, token: reply });

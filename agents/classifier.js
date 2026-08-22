@@ -5,6 +5,7 @@ var Classifier = (function() {
   var needleWorker = null;
   var llmWorker = null;
   var promptsCache = {}; // cached prompt templates from /agents/prompts/
+  var llmFailedThisSession = false; // stop the re-download loop after a worker crash
 
   // ─── Needle worker ────────────────────────────────────────
   function initNeedle() {
@@ -66,6 +67,7 @@ var Classifier = (function() {
           console.warn('[chat-worker]', m.data);
           store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'error', error: m.data });
           llmWorker = null; // allow retry on next enableLLM call
+          llmFailedThisSession = true; // ...but NOT in this session (avoid 180MB re-download loop)
         } else if (m.type === 'token') {
           store.dispatch({ type: 'MESSAGE_STREAM', id: m.requestId, chunk: m.token });
         } else if (m.type === 'done') {
@@ -94,6 +96,7 @@ var Classifier = (function() {
       llmWorker.onerror = function(e) {
         console.warn('[chat-worker] Worker failed:', e.message);
         store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'error', error: 'Worker failed: ' + e.message });
+        llmFailedThisSession = true;
       };
       llmWorker.postMessage({ type: 'load' });
     } catch(e) {
@@ -123,16 +126,19 @@ var Classifier = (function() {
   }
 
   function enableLLM() {
+    if (llmFailedThisSession) return; // worker crashed — fall back to FAQ, never re-download in-session
     store.dispatch({ type: 'LLM_CONSENT', value: true });
-    initDecoder(); // Falcon H1 text generation
+    initDecoder(); // SmolLM2-360M text generation (chat-worker)
     // Also init Needle decoder for function-calling classification
     if (needleWorker && store.getState().models.needleReady) {
       needleWorker.postMessage({ type: 'initDecoder' });
     }
   }
 
-  function checkStoredConsent() {
-    // Auto-enable on-device AI by default — no opt-in needed
+  function autoEnableLLM() {
+    // Auto-enable on-device AI by default — no opt-in needed. Note: this does
+    // NOT read a stored consent value; it always enables (consent persistence
+    // via the 'llm-consent' key is vestigial and never read back).
     store.dispatch({ type: 'LLM_CONSENT', value: true });
     initDecoder();
   }
@@ -144,7 +150,7 @@ var Classifier = (function() {
 
   function _getLLMWorker() { return llmWorker; }
 
-  function init(_store) { store = _store; initNeedle(); checkStoredConsent(); }
+  function init(_store) { store = _store; initNeedle(); autoEnableLLM(); }
 
   return {
     init: init,
