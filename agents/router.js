@@ -9,15 +9,24 @@ var Router = (function() {
   function handleInput(text) {
     // An ask_user pause intentionally keeps the turn alive while accepting a choice.
     if (store.getState().ui.needsHumanInput) {
-      if (humanCallback) {
-        var answer = parseInt(text, 10);
-        if (isNaN(answer)) answer = 0;
-        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'user', type: 'text', content: text, ts: '' }});
-        store.dispatch({ type: 'USER_RESPONSE', answer: answer });
-        humanCallback(answer);
-        humanCallback = null;
+      // A slash command typed while the chooser is open must be honored as a
+      // command, not swallowed as a (numeric) answer. Cancel the pending
+      // ask_user turn cleanly, then fall through to normal command processing.
+      if (Tools.isSlash(text)) {
+        store.dispatch({ type: 'RESUME' });   // clear the needsHumanInput modal
+        humanCallback = null;                 // drop the pending ask_user callback
+        Orchestrator.done();                  // release the isProcessing lock
+      } else {
+        if (humanCallback) {
+          var answer = parseInt(text, 10);
+          if (isNaN(answer)) answer = 0;
+          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'user', type: 'text', content: text, ts: '' }});
+          store.dispatch({ type: 'USER_RESPONSE', answer: answer });
+          humanCallback(answer);
+          humanCallback = null;
+        }
+        return;
       }
-      return;
     }
     if (store.getState().ui.isProcessing) return;
     Orchestrator.currentTurnId++; // invalidate any stale async callbacks
@@ -71,13 +80,41 @@ var Router = (function() {
         return;
       }
       if (cmd === 'forget') {
-        store.forgetAll();
-        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: 'All saved sessions cleared. Storage freed.', ts: '' }});
+        // Safety: /forget irreversibly wipes all saved sessions, so require an
+        // explicit confirm token. Without it, show a warning and do NOT wipe.
+        // Also prevents the URL-trigger /#/forget from auto-wiping on load.
+        var arg = (text.slice(7) || '').trim().toLowerCase().replace(/^[-]+/, '');
+        if (arg === 'confirm' || arg === 'yes' || arg === 'y') {
+          // Order matters: dispatch the confirmation FIRST, then forgetAll()
+          // LAST. MESSAGE_ADD auto-persists the current session, so calling
+          // forgetAll() first was immediately undone — the "cleared" message
+          // re-wrote the current session to storage, leaving /forget --confirm
+          // with 1 session still saved (and a misleading "Storage freed" note).
+          // Reversing the order empties storage after the message is persisted.
+          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: 'All saved sessions cleared. Storage freed.', ts: '' }});
+          store.forgetAll();
+        } else {
+          var n = 0;
+          try { n = store.listSessions().length; } catch(e) { n = 0; }
+          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: 'This will permanently delete ' + (n > 0 ? (n + ' saved session' + (n === 1 ? '' : 's')) : 'all saved sessions') + '. Type <b>/forget --confirm</b> to proceed, or <b>/sessions</b> to review first.', ts: '' }});
+        }
         Orchestrator.done();
         return;
       }
 
       Orchestrator.singleTool(cmd, text, turnId);
+      return;
+    }
+
+    // ── Deterministic knowledge fast-path ───────────────────
+    // Well-known site questions ('tools on this site', 'how does this chat
+    // work', 'learning hub', 'is there a blog?') are answered from FAQ
+    // directly — the Needle classifier misroutes them to skills/chat/LLM,
+    // producing wrong answers or stalls when the local model is unavailable.
+    var fastTool = Tools.detectKnowledgeFastPath(text);
+    if (fastTool) {
+      store.dispatch({ type: 'THINKING', state: 'classifying', label: 'routing' });
+      Orchestrator.runLoop([{ tool: fastTool, score: 100, reason: 'knowledge fast-path' }], text, turnId);
       return;
     }
 
@@ -149,7 +186,10 @@ var Router = (function() {
     isProcessing: function() { return store.getState().ui.isProcessing; },
     _clearHumanCallback: _clearHumanCallback,
     _setHumanCallback: _setHumanCallback,
-    _store: store
+    // Live getter — a plain `_store: store` captures the initial `null` at IIFE
+    // eval time (before init() assigns the closure var), so the debugging hook
+    // always returned null. A getter resolves the current store on each access.
+    get _store() { return store; }
   };
 
 })();

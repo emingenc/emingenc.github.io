@@ -45,7 +45,7 @@ var Tools = (function() {
     about:   ['emin','gench','bio','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study','he'],
     repos:   ['repos','repo','github','project','code','open source','built','star','repository','portfolio','contribution','deploy','deployment','pipeline','infra','devops','ci/cd','docs','documentation','apps','applications','features','PR','pull request','patch','commit'],
     contact: ['email','contact','reach','linkedin','twitter','mail','phone','social','handle','message','connect'],
-    skills:  ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','tools','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'],
+    skills:  ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'],
     blog:    ['blog','post','article','read','published','writing'],
     g1:      ['g1','smart glasses','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses'],
     game:    ['game','play','playable','games','arcade','platformer','hack-overflow','overflow','blind 75','run game','launch']
@@ -570,6 +570,32 @@ var Tools = (function() {
     return 'I can help with Emin\'s portfolio: his work, projects, skills, smart glasses, blog, or contact details. I don\'t have verified information about that topic. Try <b>/help</b> to see what I can explore.';
   }
 
+  function reducedModeMessage() {
+    return 'I\'m running in <b>reduced mode</b> — the on-device language model couldn\'t load in this browser, so I can\'t write free-form answers. I can still help with Emin\'s work, projects, skills, smart glasses, blog, and commands — try <b>/help</b> or ask about a specific topic.';
+  }
+
+  // Deterministic fast-path for well-known site questions. The Needle
+  // classifier misroutes these ('tools on this site' → skills, 'learning hub'
+  // → chat/LLM, 'is there a blog?' → chat/LLM), which produces wrong answers
+  // or stalls. Matching these BEFORE classification guarantees the FAQ answer.
+  function detectKnowledgeFastPath(text) {
+    var l = (text || '').toLowerCase();
+    var patterns = [
+      // Site tools (NOT Emin's tech stack — those still go to skills)
+      /tools (on|are|here|available|does this)|site tools|list of tools|tool list|what tools are/,
+      // Site mechanics / local agent
+      /how does this (chat|site|agent)|how do you work|how are you built|how is this (site|built|agent built)|100% local|run(s)? (entirely )?locally|runs (entirely )?in your browser|on-?device|local model|privacy|data (leaves|stays)|no servers|no api calls|zero (servers|tracking)/,
+      // Learning hub (Emin's ultrafocus.space project)
+      /learning hub|learning-hub|learning library|learn hub|learning center/,
+      // Blog existence/overview (topic queries still go to the /blog tool)
+      /is there a blog|does (he|emin) have a blog|has a blog|blog posts|blog articles|does emin write/
+    ];
+    for (var i = 0; i < patterns.length; i++) {
+      if (patterns[i].test(l)) return 'faq';
+    }
+    return null;
+  }
+
   var TOOL_MAP = {
     about: tool_about, repos: tool_repos, contact: tool_contact,
     skills: tool_skills, blog: tool_blog, g1: tool_g1, game: tool_game, help: tool_help,
@@ -582,7 +608,7 @@ var Tools = (function() {
     { name: 'about', fn: tool_about, description: 'Emin Gench biography, career, current role at Cresta AI', keywords: ['emin','gench','bio','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study','he'], scopeWords: ['emin','gench','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','career','role','job','work','title','position','company','employer','background','experience','education','degree','school','university','history','past','worked','studied','lead','manage','team','shipped','launched','delivered','built','made','location','based','living','available','opportunities','engineer','resume','cv','bio','his','him','he','yourself','study'], selfContained: true, category: 'discover', params: {} },
     { name: 'repos', fn: tool_repos, description: 'GitHub open source repositories by emingenc', keywords: ['repos','repo','github','project','code','open source','built','star','repository','portfolio','contribution','deploy','deployment','pipeline','infra','devops','ci/cd','docs','documentation','apps','applications','features','PR','pull request','patch','commit'], selfContained: true, category: 'discover', params: {} },
     { name: 'contact', fn: tool_contact, description: 'Contact Emin Gench: email, GitHub, LinkedIn, Twitter', keywords: ['email','contact','reach','linkedin','twitter','mail','phone','social','handle','message','connect'], selfContained: true, category: 'discover', params: {} },
-    { name: 'skills', fn: tool_skills, description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, Docker, AWS', keywords: ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','tools','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'], selfContained: true, category: 'discover', params: {} },
+    { name: 'skills', fn: tool_skills, description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, Docker, AWS', keywords: ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'], selfContained: true, category: 'discover', params: {} },
     { name: 'blog', fn: tool_blog, description: 'Blog posts about building AI agents', keywords: ['blog','post','article','write','read','published'], selfContained: true, category: 'discover', params: {} },
     { name: 'g1', fn: tool_g1, description: 'G1 smart glasses by Even Realities: BLE SDK, voice assistant, mobile bridge', keywords: ['g1','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses'], selfContained: true, category: 'discover', params: {} },
     { name: 'game', fn: tool_game, description: 'Play games Emin deployed to GitHub Pages (selectable, launches on choice)', keywords: ['game','play','playable','games','arcade','platformer','hack-overflow','overflow','blind 75'], selfContained: true, category: 'fun', params: {} },
@@ -899,6 +925,8 @@ var Tools = (function() {
     validateToolResult: validateToolResult,
     getSelfContainedTools: getSelfContainedTools,
     outOfScopeMessage: outOfScopeMessage,
+    reducedModeMessage: reducedModeMessage,
+    detectKnowledgeFastPath: detectKnowledgeFastPath,
     TOOL_REGISTRY: TOOL_REGISTRY
   };
 

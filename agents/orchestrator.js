@@ -187,9 +187,15 @@ var Orchestrator = (function() {
     // Skip for single self-contained tool results — the tool block already shows the data.
     var isSingleSelfContained = results.length === 1 && Evaluator.isSelfContained(results[0].toolName);
 
-    // Persona prose for self-contained single tool results: the card is the
+    // Persona prose for self-contained tool results: the card is the
     // data appendix, but the chat needs a spoken answer. Deterministic
     // templates (the 360M model must never be the voice for facts).
+    // Render for the PRIMARY tool even in multi-tool turns — otherwise a
+    // compound query ("how many stars does Emin have?") answers with cards
+    // only and the spoken reply silently disappears.
+    var primary = results.length ? results[0] : null;
+    var primaryProse = primary && Evaluator.isSelfContained(primary.toolName)
+      ? Tools.replyFor(primary.toolName, false) : null;
     if (isSingleSelfContained && results.length === 1) {
       var prose = Tools.replyFor(results[0].toolName, false);
       if (prose) {
@@ -198,6 +204,12 @@ var Orchestrator = (function() {
           content: '<div class="llm-summary">' + prose + '</div>', ts: ''
         }});
       }
+    } else if (primaryProse && results.length > 1) {
+      // Multi-tool turn: still give the spoken answer for the primary tool.
+      store.dispatch({ type: 'MESSAGE_ADD', message: {
+        role: 'agent', type: 'llm-summary',
+        content: '<div class="llm-summary">' + primaryProse + '</div>', ts: ''
+      }});
     }
     var finalSummary = null;
     if (summary && summary.length > 10) {
@@ -668,10 +680,11 @@ var Orchestrator = (function() {
         }
         done();
       } else {
-        // Decoder failed to load — try FAQ first, then fallback
+        // Decoder failed to load — reduced mode: say so clearly instead of a
+        // generic "I don't know" that hides why free-form answers are gone.
         store.dispatch({ type: 'THINKING', state: 'hide' });
         var faqTry = Tools.faqMatch(text);
-        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: faqTry ? faqTry.content : Tools.faqFallback(), ts: '' }});
+        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: faqTry ? faqTry.content : Tools.reducedModeMessage(), ts: '' }});
         done();
       }
     } else {

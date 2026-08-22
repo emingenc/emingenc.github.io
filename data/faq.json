@@ -25,7 +25,7 @@
             "BSc Aerospace Engineering",
             "Self-taught developer",
             "Former Air Defense Officer",
-            "174+ GitHub stars · 46 repos"
+            "249+ GitHub stars · 47 repos"
           ]
         }
       ]
@@ -33,15 +33,15 @@
     "repos": {
       "title": "OPEN SOURCE",
       "items": [
-        "★79  even_glasses — G1 BLE SDK (Python)",
+        "★78  even_glasses — G1 BLE SDK (Python)",
         "★52  telegramGPT — AI bot guide",
         "★25  G1 Voice AI — Voice assistant",
         "★18  g1_flutter — Flutter BLE bridge",
         "★11  visionlink — Multi-device OS",
         "★6   llm_adaptive_router — LLM routing",
-        "★3   smart_glass_mcp — AI connector"
+        "★4   smart_glass_mcp — AI connector"
       ],
-      "footer": "github.com/emingenc — 46 repos"
+      "footer": "github.com/emingenc — 47 repos"
     },
     "contact": {
       "title": "CONNECT",
@@ -90,6 +90,7 @@
     "blog": {
       "title": "WRITING",
       "items": [
+        "The gauntlet loop — stop letting your AI grade its own homework",
         "Building AI agents that ship — lessons from the field"
       ],
       "link": "/blog",
@@ -211,7 +212,7 @@
         "chatbot",
         "are you ai"
       ],
-      "a": "Yes! I'm an AI agent running <b>100% on-device in your browser</b> using ONNX Runtime Web + WebGPU with SmolLM2-1.7B. No cloud, no tracking, no API calls."
+      "a": "Yes! I'm an AI agent running <b>100% on-device in your browser</b> using ONNX Runtime Web + WebGPU with SmolLM2-360M. No cloud, no tracking, no API calls."
     },
     {
       "q": "What's your name?",
@@ -235,7 +236,7 @@
         "tell me about emin",
         "who is emin gench"
       ],
-      "a": "<b>Emin Gench</b> — Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a> in Vancouver, BC. Self-taught developer, BSc Aerospace Engineering, former Air Defense Officer. 46 open source repos, 174+ GitHub stars."
+      "a": "<b>Emin Gench</b> — Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a> in Vancouver, BC. Self-taught developer, BSc Aerospace Engineering, former Air Defense Officer. 47 open source repos, 249+ GitHub stars."
     },
     {
       "q": "What does Emin do?",
@@ -419,7 +420,7 @@
         "all repos",
         "all projects"
       ],
-      "a": "<b>46 repos, 174+ GitHub stars.</b> Top: telegramGPT (★52), llm_adaptive_router (★6), harness-engineering, tomatodo (★11), agent-mastery. Full list: <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
+      "a": "<b>47 repos, 249+ GitHub stars.</b> Top: even_glasses (★78), telegramGPT (★52), G1 Voice AI (★25), g1_flutter (★18), visionlink (★11). Full list: <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
     },
     {
       "q": "Most popular project?",
@@ -431,7 +432,7 @@
         "best repo",
         "popular repo"
       ],
-      "a": "<b>telegramGPT</b> (★52) — step-by-step AI Telegram bot guide, widely referenced in the AI bot development community. See all: /repos."
+      "a": "<b>even_glasses</b> (★78) — reverse-engineered BLE SDK for G1 smart glasses, the most-starred open-source project. See all: /repos."
     },
     {
       "q": "GitHub link?",
@@ -443,7 +444,7 @@
         "code",
         "github profile"
       ],
-      "a": "<a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a> — 46 repos, 174+ stars."
+      "a": "<a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a> — 47 repos, 249+ stars."
     },
     {
       "q": "Star count?",
@@ -454,7 +455,7 @@
         "total stars",
         "star count"
       ],
-      "a": "<b>174+ total</b> across 46 repositories."
+      "a": "<b>249+ total</b> across 47 repositories."
     },
     {
       "q": "telegramGPT?",
@@ -817,7 +818,7 @@
         "contribute open source",
         "github career"
       ],
-      "a": "<b>Very important.</b> Emin's 46 repos are his portfolio. Open source demonstrates skills, attracts opportunities, builds reputation. Even small contributions show you can read code and collaborate."
+      "a": "<b>Very important.</b> Emin's 47 repos are his portfolio. Open source demonstrates skills, attracts opportunities, builds reputation. Even small contributions show you can read code and collaborate."
     },
     "══════ BLOG ══════",
     {
@@ -830,7 +831,7 @@
         "writing",
         "published"
       ],
-      "a": "Yes — <b>AI engineering, agents, production systems</b> at <a href='/blog'>/blog</a>. Latest: \"Building AI agents that ship — lessons from the field.\""
+      "a": "Yes — <b>AI engineering, agents, production systems</b> at <a href='/blog'>/blog</a>. Latest: \"The gauntlet loop — stop letting your AI grade its own homework.\""
     },
     {
       "q": "Blog topics?",
@@ -970,7 +971,7 @@
         "your portfolio site",
         "emin website"
       ],
-      "a": "<b>Emin's AI agent portfolio.</b> Runs 100% locally in your browser — ONNX Runtime Web + WebGPU + SmolLM2-1.7B. No servers, no API calls. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
+      "a": "<b>Emin's AI agent portfolio.</b> Runs 100% locally in your browser — ONNX Runtime Web + WebGPU + SmolLM2-360M. No servers, no API calls. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
     },
     {
       "q": "How built?",
@@ -995,7 +996,7 @@
         "llm model",
         "ai engine"
       ],
-      "a": "<b>SmolLM2-1.7B-Instruct</b> (WebGPU) + custom ONNX encoder for intent routing. Both local. Model ~1GB, cached after first download."
+      "a": "<b>SmolLM2-360M-Instruct</b> (WebGPU) + custom ONNX encoder for intent routing. Both local. Model ~180MB, cached after first download."
     },
     {
       "q": "Privacy?",
@@ -1033,7 +1034,7 @@
         "airplane mode",
         "without internet"
       ],
-      "a": "After first visit: <b>yes</b>. Model cached in browser (~1GB). AI works without internet once cached."
+      "a": "After first visit: <b>yes</b>. Model cached in browser (~180MB). AI works without internet once cached."
     },
     {
       "q": "Downloading message?",
@@ -1568,7 +1569,7 @@
         "neler yaptı",
         "calismalari"
       ],
-      "a": "46 GitHub deposu, 174+ yıldız. telegramGPT, llm_adaptive_router, harness-engineering. <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
+      "a": "47 GitHub deposu, 249+ yıldız. telegramGPT, llm_adaptive_router, harness-engineering. <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
     },
     {
       "q": "İletişim?",
@@ -1618,7 +1619,7 @@
         "versus",
         "comparison"
       ],
-      "a": "I'm <b>1.7B params, local/private/offline</b>. ChatGPT/Claude are 1000x larger, cloud-based. Different tools — I'm specialized in Emin, they're generalists."
+      "a": "I'm <b>360M params, local/private/offline</b>. ChatGPT/Claude are 1000x larger, cloud-based. Different tools — I'm specialized in Emin, they're generalists."
     },
     {
       "q": "Time?",
@@ -1678,7 +1679,7 @@
         "your design",
         "how built"
       ],
-      "a": "<b>ReAct agent:</b> ONNX classifier → FAQ matcher → tool router → LLM fallback (SmolLM2-1.7B). All vanilla JS in Web Workers. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
+      "a": "<b>ReAct agent:</b> ONNX classifier → FAQ matcher → tool router → LLM fallback (SmolLM2-360M). All vanilla JS in Web Workers. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
     },
     {
       "q": "Sorry/oops/nvm",
@@ -1705,7 +1706,7 @@
         "what do you know",
         "abilities"
       ],
-      "a": "I answer questions about <b>Emin Gench:</b> career, 46 repos, tech skills, education, military background, blog, contact. Commands: /about, /repos, /contact, /skills, /blog, /help."
+      "a": "I answer questions about <b>Emin Gench:</b> career, 47 repos, tech skills, education, military background, blog, contact. Commands: /about, /repos, /contact, /skills, /blog, /help."
     },
     "══════ RECRUITER ══════",
     {
@@ -1774,7 +1775,7 @@
         "recommendation",
         "character reference"
       ],
-      "a": "His work is the reference: 46 repos, 174+ stars, clear career progression. GitHub + LinkedIn are best professional references."
+      "a": "His work is the reference: 47 repos, 249+ stars, clear career progression. GitHub + LinkedIn are best professional references."
     },
     {
       "q": "Remote?",
@@ -1860,7 +1861,7 @@
         "fun",
         "life outside"
       ],
-      "a": "Building — 46 repos show this is both work and passion. Background suggests interests in aviation, defense tech, and continuous learning. Genuinely enjoys the craft of engineering."
+      "a": "Building — 47 repos show this is both work and passion. Background suggests interests in aviation, defense tech, and continuous learning. Genuinely enjoys the craft of engineering."
     },
     {
       "q": "Personality?",
@@ -1982,6 +1983,79 @@
         "neat"
       ],
       "a": "Try these:<br><br>⚡ <b>/device</b> — see your hardware fingerprint<br>🖥️ <b>/screen</b> — your display specs<br>📶 <b>/network</b> — your connection speed<br>🎲 <b>/lucky</b> — random facts about this site<br>📊 <b>/status</b> — everything at a glance<br>⏰ <b>/time</b> — clock with timezone<br><br>This all runs <b>locally in your browser</b> — no servers involved!"
+    },
+    {
+      "q": "What tools are on this site?",
+      "keywords": [
+        "tools on this site",
+        "what tools are",
+        "what tools",
+        "site tools",
+        "list of tools",
+        "tool list",
+        "tools here",
+        "available tools",
+        "tools are"
+      ],
+      "a": "On this site you can:<br><br>💬 <b>Chat with me</b> — this agent runs 100% locally in your browser<br>🎮 <b>Play HACK://OVERFLOW</b> — a Blind-75 platformer (<b>/game</b>)<br>📖 <b>Read the blog</b> — AI engineering posts (<b>/blog</b>)<br>🛠️ <b>Device commands</b> — <b>/time</b>, <b>/device</b>, <b>/screen</b>, <b>/network</b>, <b>/status</b>, <b>/lucky</b><br><br>Ask me about Emin's career, projects, or skills anytime."
+    },
+    {
+      "q": "What is the learning hub?",
+      "keywords": [
+        "learning hub",
+        "learning-hub",
+        "learning library",
+        "learn hub",
+        "hub",
+        "learning center",
+        "articles",
+        "guides"
+      ],
+      "a": "Emin's <b>learning hub</b> lives on <b>ultrafocus.space</b> — 25 bilingual (EN/TR) ADHD-focus articles with science-backed techniques like body doubling, box breathing, and deep work protocols. This portfolio site focuses on his career + projects, but ask me about ultrafocus and I'll tell you more."
+    },
+    {
+      "q": "How does this chat work / is it local?",
+      "keywords": [
+        "how does this chat",
+        "how does this site",
+        "how do you work",
+        "how are you built",
+        "how is this site",
+        "how is this built",
+        "100% local",
+        "run locally",
+        "runs locally",
+        "in your browser",
+        "on-device",
+        "on device",
+        "local model",
+        "privacy",
+        "data leaves",
+        "data stays",
+        "data leave",
+        "tracking",
+        "no servers",
+        "no api",
+        "zero servers",
+        "zero tracking",
+        "webgpu",
+        "wasm"
+      ],
+      "a": "This chat runs <b>100% locally in your browser</b> — the models (Needle 26M for routing + SmolLM2 360M for text) download once and run on your machine via WebGPU/WASM. <b>Zero servers, zero API calls, zero tracking.</b> Your data never leaves your browser."
+    },
+    {
+      "q": "Is there a blog?",
+      "keywords": [
+        "is there a blog",
+        "does he have a blog",
+        "does emin have a blog",
+        "has a blog",
+        "blog posts",
+        "blog articles",
+        "does emin write",
+        "where are the posts"
+      ],
+      "a": "Yes! Emin writes about <b>AI engineering and shipping software</b> — from the gauntlet loop (QA with independent critics) to lessons building AI agents in production. Open <b>/blog</b> or type <b>/blog</b> + a topic to see the posts."
     }
   ],
   "fallback": {
@@ -1990,7 +2064,7 @@
       "Hmm, not sure about that. I'm specialized in Emin's career, projects, and skills. Try asking about Cresta AI, open source, or his self-taught journey.",
       "That's outside my knowledge. Try: /about, /repos, /contact, /skills, or /blog.",
       "I don't know that, but I'm great at questions about Emin Gench! Ask about his career, projects, or background.",
-      "Can't help with that, unfortunately. But I can tell you about Emin's 46 repos, his FDE role, or his aerospace-to-AI transition."
+      "Can't help with that, unfortunately. But I can tell you about Emin's 47 repos, his FDE role, or his aerospace-to-AI transition."
     ]
   },
   "welcome": {
