@@ -72,6 +72,11 @@ var Renderer = (function() {
     }
 
     el.output.appendChild(d);
+    // Cap the live transcript — long sessions shouldn't bloat the DOM
+    // (unbounded message nodes make scroll/render stutter).
+    while (el.output.children.length > 60) {
+      el.output.removeChild(el.output.children[0]);
+    }
     // Auto-scroll after DOM layout settles (double rAF for reliable layout)
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
@@ -184,6 +189,20 @@ var Renderer = (function() {
   function showHeader(sessionId, isRestore, ago) {
     el.output.innerHTML = '';
 
+    // Reset the context readout to the true value on boot. index.html ships a
+    // hardcoded "28%" placeholder and renderContextBar only fires on
+    // CONTEXT_UPDATE/SESSION_START/MESSAGE_ADD, none of which run on a fresh
+    // (non-restore) boot — so an empty session previously showed "28%" text
+    // next to an empty fill bar. Render the computed pct (0% when empty).
+    renderContextBar(store.getState());
+
+    // Sync the header HUD session id with the actual session. On a fresh load
+    // this element is a hardcoded placeholder in index.astro and renderSession
+    // only fires on SESSION_START/NEW_SESSION (never during initial boot), so
+    // the header would otherwise show a stale id that mismatches the welcome
+    // message ("new local session · agent-XXXX").
+    if (el.hSession) el.hSession.textContent = sessionId;
+
     var sys = document.createElement('div');
     sys.className = 'msg system session-start';
     sys.innerHTML = '<span class="body"><span class="session-pulse"></span>' +
@@ -270,11 +289,19 @@ var Renderer = (function() {
   function renderLLMStatus(state) {
     var m = state.models;
     if (m.llmReady) {
-      if (el.sSession) el.sSession.textContent = 'smollm2: ready';
+      if (el.sModel) el.sModel.textContent = 'smollm2: ready';
     } else if (m.llmLoading && m.llmDownloadProgress > 0) {
-      if (el.sSession) el.sSession.textContent = 'smollm2: ' + m.llmDownloadProgress + '%';
+      if (el.sModel) el.sModel.textContent = 'smollm2: ' + m.llmDownloadProgress + '%';
     } else if (m.llmLoading && m.llmStatusText) {
-      if (el.sSession) el.sSession.textContent = 'smollm2: ' + m.llmStatusText;
+      if (el.sModel) el.sModel.textContent = 'smollm2: ' + m.llmStatusText;
+    } else if (m.llmLoading) {
+      // Loading has begun but no status text/progress yet (e.g. the brief window
+      // between initDecoder()'s "loading" dispatch and the chat-worker's first
+      // status message, which waits on the Transformers.js CDN import). Show a
+      // generic loading state instead of leaving #s-model blank.
+      if (el.sModel) el.sModel.textContent = 'smollm2: loading...';
+    } else if (m.llmError) {
+      if (el.sModel) el.sModel.textContent = 'smollm2: unavailable';
     }
   }
 
