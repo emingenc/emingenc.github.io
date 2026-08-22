@@ -1,7 +1,7 @@
 {
   "name": "Emin Gench — Portfolio Agent",
   "version": "2.0.0",
-  "description": "Browser-based AI agent representing Emin Gench, Forward Deployed AI Engineer at Cresta AI. ReAct agent loop, multi-tool chains, needle-onnx intent classification + text generation. 100% client-side, 134MB ONNX models.",
+  "description": "Browser-based AI agent representing Emin Gench, Forward Deployed AI Engineer at Cresta AI. ReAct agent loop, multi-tool chains, needle-onnx intent classification + SmolLM2-360M text generation. 100% client-side, ~315MB ONNX models.",
   "base_url": "https://emingenc.github.io",
 
   "endpoints": {
@@ -22,6 +22,14 @@
       "/#/skills": "Auto-run /skills on load",
       "/#/help": "Auto-run /help on load",
       "/#/blog": "Navigate to /blog",
+      "/#/status": "Auto-run /status on load",
+      "/#/session": "Auto-run /session on load",
+      "/#/time": "Auto-run /time on load",
+      "/#/device": "Auto-run /device on load",
+      "/#/screen": "Auto-run /screen on load",
+      "/#/network": "Auto-run /network on load",
+      "/#/lucky": "Auto-run /lucky on load",
+      "/#/game": "Auto-run /game on load",
       "/#/q/{question}": "Auto-submit natural language query on load"
     },
     "query_params": {
@@ -44,8 +52,16 @@
     {"name": "skills", "description": "Tech stack and domains", "deterministic": true},
     {"name": "blog", "description": "Latest blog posts and links", "deterministic": true},
     {"name": "g1", "description": "Smart glasses ecosystem architecture", "deterministic": true},
+    {"name": "game", "description": "Play games deployed to GitHub Pages (selectable list, launches on choice)", "deterministic": true},
     {"name": "help", "description": "List all available commands", "deterministic": true},
-    {"name": "ask_user", "description": "Pause agent loop for human input (consent, clarification)", "deterministic": true}
+    {"name": "ask_user", "description": "Pause agent loop for human input (consent, clarification)", "deterministic": true},
+    {"name": "status", "description": "System status at a glance (session, LLM, device, network)", "deterministic": true},
+    {"name": "session", "description": "Current session uptime, message count, storage", "deterministic": true},
+    {"name": "time", "description": "Current local time and timezone", "deterministic": true},
+    {"name": "device", "description": "Browser and hardware fingerprint", "deterministic": true},
+    {"name": "screen", "description": "Display resolution, viewport, color depth", "deterministic": true},
+    {"name": "network", "description": "Network connection type and speed", "deterministic": true},
+    {"name": "lucky", "description": "Random fun fact about the site", "deterministic": true}
   ],
 
   "routing": {
@@ -56,11 +72,11 @@
   },
 
   "llm": {
-    "model": "needle-onnx decoder (decoder_step.onnx, 81MB)",
-    "runtime": "ONNX Runtime Web (WASM)",
-    "architecture": "Character-level encoder-decoder transformer",
-    "load": "Lazy on user consent (opt-in, 81MB download)",
-    "total_models": "134MB (53MB encoder + 81MB decoder)"
+    "model": "SmolLM2-360M-Instruct (ONNX, ~180MB)",
+    "runtime": "Transformers.js v4 (WebGPU, WASM fallback)",
+    "architecture": "360M-param instruction-tuned transformer",
+    "load": "Auto-enabled on first visit (~180MB download, browser-cached)",
+    "total_models": "~315MB (134MB needle encoder+decoder + 180MB SmolLM2)"
   },
 
   "architecture": {

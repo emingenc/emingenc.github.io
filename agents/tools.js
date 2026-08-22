@@ -47,10 +47,11 @@ var Tools = (function() {
     contact: ['email','contact','reach','linkedin','twitter','mail','phone','social','handle','message','connect'],
     skills:  ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','tools','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'],
     blog:    ['blog','post','article','read','published','writing'],
-    g1:      ['g1','smart glasses','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses']
+    g1:      ['g1','smart glasses','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses'],
+    game:    ['game','play','playable','games','arcade','platformer','hack-overflow','overflow','blind 75','run game','launch']
   };
 
-  var ALL_CMDS = ['/about','/repos','/contact','/skills','/blog','/g1','/time','/device','/screen','/network','/lucky','/ask','/status','/session','/help','/clear','/new','/sessions','/resume','/forget'];
+  var ALL_CMDS = ['/about','/repos','/contact','/skills','/blog','/g1','/game','/time','/device','/screen','/network','/lucky','/ask','/status','/session','/help','/clear','/new','/sessions','/resume','/forget'];
 
   // ─── Compound query detection ────────────────────────────
   function detectExtraTools(text, primaryTool) {
@@ -252,8 +253,16 @@ var Tools = (function() {
     var h12 = h % 12 || 12;
     var timeStr = h12 + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0') + ' ' + ampm;
     var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
-    var tzOffset = -now.getTimezoneOffset() / 60;
-    var tzStr = 'UTC' + (tzOffset >= 0 ? '+' : '') + tzOffset;
+    // getTimezoneOffset() is minutes WEST of UTC; negate to get minutes EAST.
+    var offMin = -now.getTimezoneOffset();
+    var offSign = offMin >= 0 ? '+' : '-';
+    var offAbs = Math.abs(offMin);
+    var offH = Math.floor(offAbs / 60);
+    var offM = offAbs % 60;
+    // Whole-hour offsets render compactly (UTC-7). Fractional offsets (India
+    // +5:30, Nepal +5:45, Newfoundland -3:30) render with a minute component so
+    // they don't surface as misleading decimals like "UTC+5.5".
+    var tzStr = 'UTC' + offSign + offH + (offM ? ':' + String(offM).padStart(2, '0') : '');
 
     return {
       toolName: 'time',
@@ -262,7 +271,7 @@ var Tools = (function() {
         timeStr + ' · ' + tzStr,
         tz
       ]),
-      data: { iso: now.toISOString(), tz: tz, offset: tzOffset }
+      data: { iso: now.toISOString(), tz: tz, offset: offMin }
     };
   }
 
@@ -275,6 +284,22 @@ var Tools = (function() {
     if (m.llmLoading) return 'loading';
     if (m.llmError) return 'unavailable';
     return 'idle';
+  }
+
+  // Accurate localStorage usage: JSON.stringify(localStorage) is always "{}"
+  // (Storage isn't a plain object), so sum each key + value length instead.
+  function storageSizeLabel() {
+    try {
+      var total = 0;
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key == null) continue;
+        total += key.length + (localStorage.getItem(key) || '').length;
+      }
+      if (total < 1024) return total + 'B';
+      if (total < 1024 * 1024) return (total / 1024).toFixed(1) + 'KB';
+      return (total / (1024 * 1024)).toFixed(1) + 'MB';
+    } catch(e) { return 'N/A'; }
   }
 
   function tool_session(storeState) {
@@ -295,7 +320,7 @@ var Tools = (function() {
         'Uptime:  ' + duration,
         'Messages:' + msgCount,
         'LLM:     ' + modelStatus,
-        'Storage: ' + (typeof localStorage !== 'undefined' ? (JSON.stringify(localStorage).length / 1024).toFixed(1) + ' KB' : 'N/A')
+        'Storage: ' + storageSizeLabel()
       ]),
       data: { sessionId: sessionId, duration: duration, msgCount: msgCount, llm: modelStatus }
     };
@@ -332,7 +357,7 @@ var Tools = (function() {
     return {
       toolName: 'screen',
       content: box('YOUR SCREEN', [
-        'Resolution: ' + scr.width + '×' + scr.height + ' @ ' + dpr + 'x (' + (scr.width * dpr) + '×' + (scr.height * dpr) + ' logical)',
+        'Resolution: ' + scr.width + '×' + scr.height + ' @ ' + dpr + 'x (' + (scr.width * dpr) + '×' + (scr.height * dpr) + ' physical)',
         'Viewport:   ' + vw + '×' + vh,
         'Color:      ' + colorDepth + '-bit',
         'Orientation:' + (scr.orientation ? scr.orientation.type : 'N/A'),
@@ -363,6 +388,36 @@ var Tools = (function() {
       content: box('YOUR NETWORK', lines),
       data: conn ? { type: conn.effectiveType, downlink: conn.downlink, rtt: conn.rtt } : null
     };
+  }
+
+  // ─── Tool: game — run games deployed to GitHub Pages ─────
+  // Add new games by appending to GAMES (id + gh-pages url). Selectable:
+  // /game shows the list, /game <id> redirects to launch it.
+  var GAMES = [
+    { id: 'hack-overflow', name: 'HACK://OVERFLOW', url: 'https://emingenc.github.io/hack-overflow/', desc: 'Blind-75 learning platformer — walk the route, hack firewalls' }
+  ];
+
+  function tool_game(text) {
+    var query = (text || '').replace(/^\/game\s*/i, '').trim().toLowerCase();
+    if (query) {
+      var g = null;
+      for (var i = 0; i < GAMES.length; i++) {
+        if (GAMES[i].id === query || GAMES[i].name.toLowerCase().indexOf(query) !== -1) {
+          g = GAMES[i]; break;
+        }
+      }
+      if (g) {
+        return { toolName: 'game', redirect: g.url, content: null, data: { matched: g.name } };
+      }
+      var noLines = ['No game matching "' + query + '"', '', 'Pick one:'];
+      for (var ni = 0; ni < GAMES.length; ni++) noLines.push(cmdLink('/game ' + GAMES[ni].id, '▶ ' + GAMES[ni].name + ' — ' + GAMES[ni].desc));
+      return { toolName: 'game', content: box('GAMES', noLines), data: null };
+    }
+    var lines = [];
+    for (var gi = 0; gi < GAMES.length; gi++) lines.push(cmdLink('/game ' + GAMES[gi].id, '▶ ' + GAMES[gi].name + ' — ' + GAMES[gi].desc));
+    lines.push('');
+    lines.push('Select a game to launch it →');
+    return { toolName: 'game', content: box('GAMES', lines), data: { games: GAMES } };
   }
 
   // ─── Tool: lucky — fun random surprises ───────────────────
@@ -457,6 +512,7 @@ var Tools = (function() {
         '/skills  — tech stack',
         '/blog    — writing & posts',
         '/g1      — G1 smart glasses (Even Realities)',
+        '/game    — play deployed games (pick one)',
         '/ask     — pick a topic to explore',
         '',
         '──── your machine ────',
@@ -516,7 +572,7 @@ var Tools = (function() {
 
   var TOOL_MAP = {
     about: tool_about, repos: tool_repos, contact: tool_contact,
-    skills: tool_skills, blog: tool_blog, g1: tool_g1, help: tool_help,
+    skills: tool_skills, blog: tool_blog, g1: tool_g1, game: tool_game, help: tool_help,
     time: tool_time, device: tool_device, screen: tool_screen,
     network: tool_network, lucky: tool_lucky, ask_user: tool_ask_user, out_of_scope: null, status: null, session: null,
     sessions: null, resume: null, forget: null
@@ -529,6 +585,7 @@ var Tools = (function() {
     { name: 'skills', fn: tool_skills, description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, Docker, AWS', keywords: ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','tools','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'], selfContained: true, category: 'discover', params: {} },
     { name: 'blog', fn: tool_blog, description: 'Blog posts about building AI agents', keywords: ['blog','post','article','write','read','published'], selfContained: true, category: 'discover', params: {} },
     { name: 'g1', fn: tool_g1, description: 'G1 smart glasses by Even Realities: BLE SDK, voice assistant, mobile bridge', keywords: ['g1','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses'], selfContained: true, category: 'discover', params: {} },
+    { name: 'game', fn: tool_game, description: 'Play games Emin deployed to GitHub Pages (selectable, launches on choice)', keywords: ['game','play','playable','games','arcade','platformer','hack-overflow','overflow','blind 75'], selfContained: true, category: 'fun', params: {} },
     { name: 'help', fn: tool_help, description: 'List all available commands', keywords: ['help','commands','what can you do','options'], selfContained: true, category: 'meta', params: {} },
     { name: 'time', fn: tool_time, description: 'Current local time and timezone', keywords: ['time','date','clock','timezone','what time'], selfContained: true, category: 'device', params: {} },
     { name: 'device', fn: tool_device, description: 'Browser and hardware fingerprint', keywords: ['device','browser','hardware','cores','memory'], selfContained: true, category: 'device', params: {} },
@@ -626,7 +683,22 @@ var Tools = (function() {
   function getTopIntents(text) {
     var l = text.toLowerCase();
     var scores = {};
-    for (var t in KEYWORDS) { scores[t] = 0; for (var i = 0; i < KEYWORDS[t].length; i++) { if (l.indexOf(KEYWORDS[t][i]) !== -1) scores[t]++; } }
+    for (var t in KEYWORDS) {
+      scores[t] = 0;
+      for (var i = 0; i < KEYWORDS[t].length; i++) {
+        var kw = KEYWORDS[t][i];
+        // Short keywords (≤3 chars) must match a standalone word, otherwise
+        // common pronouns like "he"/"his"/"him" substring-match "the"/"this"/
+        // "them" and inflate `about` on unrelated compound queries (mirrors the
+        // word-boundary handling already in detectExtraTools and faq_match).
+        if (kw.length <= 3) {
+          var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (new RegExp('\\b' + escaped + '\\b').test(l)) scores[t]++;
+        } else if (l.indexOf(kw) !== -1) {
+          scores[t]++;
+        }
+      }
+    }
     var results = [];
     for (var name in scores) { if (scores[name] > 0) results.push({ tool: name, score: scores[name] }); }
     results.sort(function(a, b) { return b.score - a.score; });
