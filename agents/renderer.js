@@ -4,6 +4,18 @@ var Renderer = (function() {
 
   var el = {};
 
+  // Escape untrusted text (user input, error strings embedding user input)
+  // before it reaches innerHTML. Without this, typing `<b>x</b>` or `<img
+  // onerror=…>` rendered the raw HTML — mangling plain text like "5 < 3" and
+  // enabling self-XSS. Trusted content (tool cards, FAQ bodies) is authored
+  // with intentional HTML and flows through the other branches untouched.
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   // Force scroll to absolute bottom of page (more reliable than scrollIntoView)
   function scrollToBottom() {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -17,16 +29,11 @@ var Renderer = (function() {
   }
 
   function buildToolBlock(name, innerHTML, duration, isError) {
-    var dur = duration || Math.round(Math.random() * 8 + 4);
     var cls = isError ? 'tool-block tool-block-error' : 'tool-block';
-    var icon = isError ? '✗' : '▶';
-    var statusIcon = isError ? '✗' : '✓';
-    var statusClass = isError ? 'err' : 'ok';
-    var execLabel = isError ? 'error' : 'exec';
+    // Bare data card: no fake exec timings, no "tool:" header — the card is
+    // the data appendix under the prose answer, not debug chrome.
     return '<div class="' + cls + '">' +
-      '<div class="tool-block-header"><span class="tool-icon">' + icon + '</span> tool:' + name + '</div>' +
       '<div class="tool-block-body">' + innerHTML + '</div>' +
-      '<div class="tool-block-footer"><span class="' + statusClass + '">' + statusIcon + '</span> ' + execLabel + ' · ' + dur + 'ms</div>' +
       '</div>';
   }
 
@@ -58,8 +65,9 @@ var Renderer = (function() {
       msg._raw = msg.content || '';
       msg._domEl = d;
     } else if (msg.type === 'react-step') {
-      d.className = 'msg react-step';
-      d.innerHTML = '<span class="body">' + msg.content + '</span>';
+      // Internal ReAct trace (plan/think/act/observe/eval) — NEVER render in
+      // the transcript. Kept in state for eval context + debugging.
+      return;
     } else if (msg.type === 'welcome') {
       d.innerHTML = '<span class="body">' + msg.content + '</span>';
     } else if (msg.type === 'restored') {
@@ -68,7 +76,9 @@ var Renderer = (function() {
     } else if (msg.role === 'agent') {
       d.innerHTML = prefixHtml + '<span class="body"><div class="faq-response">' + msg.content + '</div></span>';
     } else {
-      d.innerHTML = prefixHtml + '<span class="body">' + msg.content + '</span>';
+      // Untrusted plain text (user messages, error messages). Everything else
+      // (tool cards, FAQ bodies, restored markers) is trusted, authored HTML.
+      d.innerHTML = prefixHtml + '<span class="body">' + escapeHtml(msg.content) + '</span>';
     }
 
     el.output.appendChild(d);
@@ -257,7 +267,7 @@ var Renderer = (function() {
       for (var i = 0; i < msgs.length; i++) {
         var m = msgs[i];
         // Welcome cards are rebuilt by showHeader; never restore legacy ASCII welcome DOM.
-        if (m.type === 'welcome' || m.type === 'welcome-card') continue;
+        if (m.type === 'welcome' || m.type === 'welcome-card' || m.type === 'react-step') continue;
         var d = document.createElement('div');
         d.className = 'msg ' + (m.role || 'agent');
         if (m.type === 'tool-call') {

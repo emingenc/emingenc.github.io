@@ -834,6 +834,32 @@ var Tools = (function() {
       .catch(function(e) { console.warn('FAQ load failed:', e.message); FAQ = { faq: [], fallback: { responses: ['I don\'t have an answer for that. Try <b>/help</b> to see commands!'] } }; });
   }
 
+  // ─── Persona prose layer ─────────────────────────────────
+  // Deterministic hand-written replies so the chat SOUNDS like a person.
+  // The 360M model is never the voice for factual answers — these templates
+  // are the voice (facts are slots, prose is Emin's own site copy).
+  function replyFor(toolName, isFollowUp) {
+    var open = isFollowUp ? 'Happy to dig deeper. ' : '';
+    switch (toolName) {
+      case 'about':
+        return open + 'Emin Gench is a <b>Forward Deployed AI Engineer at Cresta AI</b> in Vancouver, BC — aerospace engineer turned AI builder; he works where systems thinking meets large language models. Before Cresta: Goodfintech (AI engineer), Vivoo (ML engineer), Novit AI (full-stack AI engineer), and indie game dev. BSc Aerospace Engineering, Turkish Air Force Academy; former Air Defense Officer. He also builds open source — 249+ GitHub stars across 47 repos.';
+      case 'repos':
+        return open + 'He has <b>47 repositories</b> and <b>249+ GitHub stars</b>. The one people find first: <b>even_glasses</b> — a smart-glasses integration platform (79★ and counting), plus <b>telegramGPT</b> (52★) and a voice AI assistant (25★).';
+      case 'skills':
+        return open + 'Day-to-day it\u2019s <b>Python, TypeScript, and Dart</b> — FastAPI and Next.js on the web side, Docker + AWS to ship it, and LLMs / agents / RAG on the AI side.';
+      case 'contact':
+        return open + 'You can reach Emin by email, or connect on <b>GitHub</b> or <b>LinkedIn</b> — all the links are below.';
+      case 'blog':
+        return open + 'Emin writes about AI engineering and building things — the posts are below.';
+      case 'g1':
+        return open + 'The G1 project is his flagship open-source build: <b>even_glasses</b> — a BLE SDK + Flutter integration for the Even Realities G1 smart glasses, 79★ and counting.';
+      case 'game':
+        return open + 'He made <b>HACK://OVERFLOW</b> — a platformer that teaches Blind-75 algorithms by playing. It runs right in this page.';
+      default:
+        return null;
+    }
+  }
+
   return {
     loadFAQ: loadFAQ,
     _store: null,
@@ -863,6 +889,7 @@ var Tools = (function() {
     detectExtraTools: detectExtraTools,
     fuzzyMatch: fuzzyMatch,
     getTool: getTool,
+    replyFor: replyFor,
     validateToolResult: validateToolResult,
     getSelfContainedTools: getSelfContainedTools,
     outOfScopeMessage: outOfScopeMessage,

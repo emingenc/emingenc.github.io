@@ -158,6 +158,19 @@ var Orchestrator = (function() {
     // Render LLM-polished summary as the final answer.
     // Skip for single self-contained tool results — the tool block already shows the data.
     var isSingleSelfContained = results.length === 1 && Evaluator.isSelfContained(results[0].toolName);
+
+    // Persona prose for self-contained single tool results: the card is the
+    // data appendix, but the chat needs a spoken answer. Deterministic
+    // templates (the 360M model must never be the voice for facts).
+    if (isSingleSelfContained && results.length === 1) {
+      var prose = Tools.replyFor(results[0].toolName, false);
+      if (prose) {
+        store.dispatch({ type: 'MESSAGE_ADD', message: {
+          role: 'agent', type: 'llm-summary',
+          content: '<div class="llm-summary">' + prose + '</div>', ts: ''
+        }});
+      }
+    }
     var finalSummary = null;
     if (summary && summary.length > 10) {
       // Clean the summary: strip box-drawing chars and unicode decorations
@@ -250,7 +263,17 @@ var Orchestrator = (function() {
         }
         var maxLen = Math.max(currentWords.length, lastWords.length, 1);
         var querySimilarity = sharedCount / maxLen;
-        var isGenuineFollowup = querySimilarity > 0.4 && toolName === lastUserTool && results.length === 0;
+        // An exact repeat of the previous input is a deliberate re-ask, not a
+        // follow-up — re-execute deterministically instead of hijacking into the
+        // chat/LLM fallback (which surfaced "model downloading…" on a repeated
+        // /about or a repeated unknown command like /foobar).
+        var isExactRepeat = (userText || '').trim().toLowerCase() === (lastUserQuery || '').trim().toLowerCase();
+        // Slash commands are explicit directives, never conversational follow-ups.
+        // Two consecutive slash commands that route to the same tool (e.g. /game
+        // hack-overflow then /game <unknown-id>) must each execute deterministically;
+        // high word-overlap must not hijack them into the chat/LLM fallback.
+        var isSlashCmd = Tools.isSlash(userText);
+        var isGenuineFollowup = !isSlashCmd && !isExactRepeat && querySimilarity > 0.4 && toolName === lastUserTool && results.length === 0;
 
         if (isGenuineFollowup && toolName !== 'chat' && toolName !== 'faq' && toolName !== 'out_of_scope') {
           trace(turnId, 'think → contextual follow-up (similarity ' + Math.round(querySimilarity*100) + '%), using context');
@@ -288,7 +311,20 @@ var Orchestrator = (function() {
           store.dispatch({ type: 'OBSERVE', tool: 'stop', satisfied: true, confidence: 1, reason: 'stop' });
           return stopAndSummarize(results, errors, userText, turnId, null);
         } else {
-          result = Tools.execute(toolName, plan[idx].modelInput || userText);
+          try {
+            result = Tools.execute(toolName, plan[idx].modelInput || userText);
+          } catch (execErr) {
+            trace(turnId, 'act → ' + toolName + ' ✗ ' + (execErr.message || 'tool error'));
+            errors.push({ tool: toolName, error: 'Tool error: ' + (execErr.message || String(execErr)) });
+            store.dispatch({ type: 'MESSAGE_ADD', message: {
+              role: 'tool', type: 'tool-call', toolName: toolName,
+              content: 'Command /' + toolName + ' failed: ' + (execErr.message || 'unknown error'), ts: '', noTs: false
+            }});
+            store.dispatch({ type: 'OBSERVE', tool: toolName, satisfied: true, confidence: 1, reason: 'tool-error' });
+            store.dispatch({ type: 'PLAN_DONE' });
+            done(turnId);
+            return;
+          }
         }
 
         if (result && result.interactive && result.toolName === 'ask_user') {
@@ -336,14 +372,19 @@ var Orchestrator = (function() {
             plan.push({ tool: 'chat', score: 0 });
             return step(idx + 1);
           }
-          // Unknown tool (slash command typo) — show error
+          // Unknown tool (slash command typo) — show error and stop cleanly.
+          // Do NOT route through stopAndSummarize: it would append a redundant
+          // generic FAQ fallback after the "not found" message. Mirrors the
+          // tool-error path above (PLAN_DONE + done()).
           errors.push({ tool: toolName, error: 'Tool not found' });
           store.dispatch({ type: 'MESSAGE_ADD', message: {
             role: 'tool', type: 'tool-call', toolName: toolName,
             content: 'Command /' + toolName + ' not found. Try /help.', ts: '', noTs: false
           }});
           store.dispatch({ type: 'OBSERVE', tool: toolName, satisfied: true, confidence: 1, reason: 'unknown-command' });
-          return stopAndSummarize(results, errors, userText, turnId, null);
+          store.dispatch({ type: 'PLAN_DONE' });
+          done(turnId);
+          return;
         }
 
         // ── Successful execution → record result ──
