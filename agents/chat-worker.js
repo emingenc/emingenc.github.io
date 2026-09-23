@@ -131,11 +131,14 @@ function loadPipeline(device, timeoutMs) {
 // Surface uncaught worker errors as structured messages so the main thread
 // never hangs waiting for a response that never arrives (e.g. a future
 // regression or a synchronous throw in the handler before a try/catch).
-self.onerror = function(e) {
-  self.postMessage({ type: 'error', data: 'Worker crashed: ' + (e.message || e.filename || String(e)) });
+// fatal:true marks errors that mean the resident model/worker is gone (crash,
+// load failure) — as opposed to a single bad generate/evaluate request, which
+// carries its own requestId/evalId instead and must not disable the model.
+self.onerror = function(err) {
+  self.postMessage({ type: 'error', data: 'Worker crashed: ' + (err.message || err.filename || String(err)), fatal: true });
 };
 self.onmessageerror = function() {
-  self.postMessage({ type: 'error', data: 'Worker received an unserializable message' });
+  self.postMessage({ type: 'error', data: 'Worker received an unserializable message', fatal: true });
 };
 
 // ─── Message handler ───────────────────────────────────────
@@ -204,10 +207,10 @@ self.onmessage = async function(e) {
       if (loaded) {
         self.postMessage({ type: 'status', data: 'ready' });
       } else {
-        self.postMessage({ type: 'error', data: 'LLM load failed: ' + (lastError ? lastError.message : 'All backends exhausted') });
+        self.postMessage({ type: 'error', data: 'LLM load failed: ' + (lastError ? lastError.message : 'All backends exhausted'), fatal: true });
       }
     } catch(err) {
-      self.postMessage({ type: 'error', data: 'LLM load failed: ' + (err.message || String(err)) });
+      self.postMessage({ type: 'error', data: 'LLM load failed: ' + (err.message || String(err)), fatal: true });
     }
     return;
   }
@@ -233,7 +236,9 @@ self.onmessage = async function(e) {
   // ── generate (streaming chat) ──────────────────────────
   if (msg.type === 'generate') {
     if (!pipe) {
-      self.postMessage({ type: 'error', data: 'Model not loaded' });
+      // Per-request: carries requestId, so classifier.js fails only this
+      // turn and keeps the (never-loaded) model for the next request to retry.
+      self.postMessage({ type: 'error', data: 'Model not loaded', requestId: msg.requestId });
       self.postMessage({ type: 'done', requestId: msg.requestId });
       return;
     }
@@ -245,7 +250,9 @@ self.onmessage = async function(e) {
       self.postMessage({ type: 'token', requestId: msg.requestId, token: reply });
       self.postMessage({ type: 'done', requestId: msg.requestId });
     } catch(err) {
-      self.postMessage({ type: 'error', data: 'Generation failed: ' + (err.message || String(err)) });
+      // Per-request: a bad generation (e.g. a malformed prompt) must not cost
+      // the whole session the model — only this turn fails.
+      self.postMessage({ type: 'error', data: 'Generation failed: ' + (err.message || String(err)), requestId: msg.requestId });
       self.postMessage({ type: 'done', requestId: msg.requestId });
     }
     return;
@@ -265,7 +272,8 @@ self.onmessage = async function(e) {
       self.postMessage({ type: 'evalResult', evalId: msg.evalId, data: parsed || { stop: true, summary: et.slice(0, 200), confidence: 60, next: '' } });
     } catch(err) {
       self.postMessage({ type: 'evalResult', evalId: msg.evalId, data: { stop: true, summary: null, confidence: 50, next: '' } });
-      self.postMessage({ type: 'error', data: 'Eval failed: ' + (err.message || String(err)) });
+      // Per-request: carries evalId, so this logs without disabling the model.
+      self.postMessage({ type: 'error', data: 'Eval failed: ' + (err.message || String(err)), evalId: msg.evalId });
     }
     return;
   }

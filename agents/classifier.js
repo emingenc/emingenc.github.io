@@ -48,7 +48,27 @@ var Classifier = (function() {
     });
   }
 
-  // ─── LLM text generation (via Needle decoder when loaded) ──
+  // A fatal worker failure (crash or load failure — never a single bad
+  // request) drops the resident worker so the session falls back to reduced
+  // mode instead of leaving an orphaned worker that no future turn can reach.
+  function dropLLMWorker(reason) {
+    console.warn('[chat-worker]', reason);
+    store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'error', error: reason });
+    if (llmWorker) { try { llmWorker.terminate(); } catch(ignored) { /* already gone — nothing to clean up */ } }
+    llmWorker = null; // allow retry on next enableLLM call
+    llmFailedThisSession = true; // ...but NOT in this session (avoid 180MB re-download loop)
+  }
+
+  // Fatal (crash/load failure — chat-worker.js marks fatal:true) drops the
+  // worker; a per-request error (bad generate/evaluate, carries
+  // requestId/evalId instead) only fails that turn — the model stays loaded
+  // and the next request uses it again.
+  function handleLLMWorkerError(payload) {
+    if (payload.fatal) { dropLLMWorker(payload.data); return; }
+    console.warn('[chat-worker]', payload.data);
+  }
+
+  // ─── LLM text generation (SmolLM2-360M in chat-worker.js) ──
   function initDecoder() {
     if (llmWorker) return; // already loading or loaded
     store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading' });
@@ -64,10 +84,7 @@ var Classifier = (function() {
         } else if (m.type === 'progress') {
           store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading', progress: m.pct });
         } else if (m.type === 'error') {
-          console.warn('[chat-worker]', m.data);
-          store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'error', error: m.data });
-          llmWorker = null; // allow retry on next enableLLM call
-          llmFailedThisSession = true; // ...but NOT in this session (avoid 180MB re-download loop)
+          handleLLMWorkerError(m);
         } else if (m.type === 'token') {
           store.dispatch({ type: 'MESSAGE_STREAM', id: m.requestId, chunk: m.token });
         } else if (m.type === 'done') {
@@ -94,14 +111,13 @@ var Classifier = (function() {
         }
       };
       llmWorker.onerror = function(e) {
-        console.warn('[chat-worker] Worker failed:', e.message);
-        store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'error', error: 'Worker failed: ' + e.message });
-        llmFailedThisSession = true;
+        // Uncaught worker-level failure (e.g. a script error) — same fatal
+        // handling as an in-worker crash: drop it, never leave it orphaned.
+        dropLLMWorker('Worker failed: ' + e.message);
       };
       llmWorker.postMessage({ type: 'load' });
     } catch(e) {
-      console.warn('Chat worker failed:', e.message);
-      store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'error', error: e.message });
+      dropLLMWorker(e.message);
     }
   }
 

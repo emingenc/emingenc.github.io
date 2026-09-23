@@ -5,6 +5,15 @@ var Tools = (function() {
   var FAQ = null;
 
   // ─── HTML helpers ────────────────────────────────────────
+  // Escape untrusted text (slash-command args, search queries) before it is
+  // interpolated into a card string that renderer.js sends to innerHTML.
+  // Mirrors renderer.js/orchestrator.js's escapeHtml — each module keeps its
+  // own copy rather than sharing a require, matching this codebase's plain
+  // <script>-tag loading (no module system).
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   function vlen(s) {
     // Visible length: strip HTML tags and decode entities for ASCII box alignment
     return s.replace(/<[^>]*>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").length;
@@ -35,28 +44,38 @@ var Tools = (function() {
 
   function askBox(question, options) {
     var btns = options.map(function(o, i) {
-      return '<span class="ask-btn" onclick="window._answerAsk(' + i + ')">' + o + '</span>';
+      return '<span class="ask-btn" onclick="window._answerAsk(' + i + ')">' + escapeHtml(o) + '</span>';
     }).join('');
-    return '<div class="ask-user"><div class="ask-user-q">' + question + '</div><div class="ask-user-opts">' + btns + '</div></div>';
+    return '<div class="ask-user"><div class="ask-user-q">' + escapeHtml(question) + '</div><div class="ask-user-opts">' + btns + '</div></div>';
   }
 
   // ─── Keyword routing ─────────────────────────────────────
   var KEYWORDS = {
     about:   ['emin','gench','bio','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study','he'],
     repos:   ['repos','repo','github','project','code','open source','built','star','repository','portfolio','contribution','deploy','deployment','pipeline','infra','devops','ci/cd','docs','documentation','apps','applications','features','PR','pull request','patch','commit'],
-    contact: ['email','contact','reach','linkedin','twitter','mail','phone','social','handle','message','connect'],
-    skills:  ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'],
+    contact: ['email','contact','reach','reach out','touch','hire','collaborate','linkedin','twitter','mail','phone','social','handle','message','connect'],
+    skills:  ['skills','skill','tech','tool','tools','stack','know','language','python','typescript','docker','programming','framework','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'],
     blog:    ['blog','post','article','read','published','writing'],
     g1:      ['g1','smart glasses','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses'],
-    game:    ['game','play','playable','games','arcade','platformer','hack-overflow','overflow','blind 75','run game','launch']
+    game:    ['game','play','playable','games','arcade','platformer','hack-overflow','hack overflow','hack://overflow','blind 75','run game','launch']
   };
 
   var ALL_CMDS = ['/about','/repos','/contact','/skills','/blog','/g1','/game','/time','/device','/screen','/network','/lucky','/ask','/status','/session','/help','/clear','/new','/sessions','/resume','/forget'];
 
+  // Matches a keyword against text as a whole word or phrase, its plural
+  // included ('projects', 'stars', 'patches') — never a raw substring — so a
+  // keyword doesn't fire inside an unrelated longer word ('tech' inside
+  // "Goodfintech", 'play' inside "display", 'launch' inside "launched").
+  // \b anchors both ends, so multi-word phrases and hyphenated compounds
+  // ('hack-overflow') work the same way as single words.
+  function kwBoundaryHit(lower, kw) {
+    var escaped = String(kw).toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('\\b' + escaped + '(?:e?s)?\\b').test(lower);
+  }
+
   // ─── Compound query detection ────────────────────────────
   function detectExtraTools(text, primaryTool) {
     var lower = (text || '').toLowerCase();
-    var words = lower.match(/[a-z][a-z0-9_-]*/g) || [];
     var extra = [];
     var seen = {};
     seen[primaryTool] = true;
@@ -66,18 +85,7 @@ var Tools = (function() {
       if (seen[tool]) continue;
       var kws = KEYWORDS[tool];
       for (var j = 0; j < kws.length; j++) {
-        var kw = kws[j];
-        // Short keywords (≤3 chars): must match standalone word (avoids "he" in "where")
-        if (kw.length <= 3) {
-          for (var wi = 0; wi < words.length; wi++) {
-            if (words[wi] === kw) { extra.push(tool); seen[tool] = true; break; }
-          }
-          if (seen[tool]) break;
-        } else if (lower.indexOf(kw) !== -1) {
-          extra.push(tool);
-          seen[tool] = true;
-          break;
-        }
+        if (kwBoundaryHit(lower, kws[j])) { extra.push(tool); seen[tool] = true; break; }
       }
       if (extra.length >= 2) break; // max 2 extra tools
     }
@@ -87,6 +95,20 @@ var Tools = (function() {
   //      loaded by KnowledgeBase. No hardcoded list here (read at call time below).
 
   // ─── Tool: about ─────────────────────────────────────────
+  // Whether the question names the company card's company itself: the first
+  // word of its name ("Goodfintech", "E-Kalite"), its bracketed name or its
+  // aka, as a whole word. KnowledgeBase.search() also matches words that
+  // name no company ("software", "developer", "now").
+  function namesCompany(question, data) {
+    if (data.type !== 'company') return false;
+    var parts = String(data.company || '').split(/[()]/);
+    var names = [parts[0].trim().split(/\s+/)[0], parts[1], data.aka];
+    var lower = String(question || '').toLowerCase();
+    return names.some(function(name) {
+      return Boolean(name) && kwBoundaryHit(lower, name.trim());
+    });
+  }
+
   function tool_about(text) {
     // Try KnowledgeBase first for specific company/role queries
     if (typeof KnowledgeBase !== 'undefined') {
@@ -95,6 +117,7 @@ var Tools = (function() {
       if (!cleanQuery) cleanQuery = text || '';
       var kbResult = KnowledgeBase.search(cleanQuery);
       if (kbResult && kbResult.found) {
+        kbResult.namedInQuestion = namesCompany(cleanQuery, kbResult);
         var formatted = KnowledgeBase.formatResult(kbResult);
         if (formatted) return formatted;
       }
@@ -151,7 +174,7 @@ var Tools = (function() {
     var html = box('CONNECT', lines);
     var footer = 'Open to: open source collaboration';
     if (FAQ && FAQ.tools && FAQ.tools.contact && FAQ.tools.contact.footer) footer = FAQ.tools.contact.footer;
-    html += '<div style="color:var(--muted);font-size:11px;margin-top:6px">' + footer + '</div>';
+    html += '<div style="color:var(--muted);font-size:var(--text-2xs);margin-top:6px">' + footer + '</div>';
     return { toolName: 'contact', content: html, data: null };
   }
 
@@ -172,8 +195,16 @@ var Tools = (function() {
     var BLOG_POSTS = (typeof KnowledgeBase !== 'undefined' && KnowledgeBase.getBlogPosts)
       ? KnowledgeBase.getBlogPosts()
       : [];
-    // /blog <slug or text>
-    var query = (text || '').replace(/^\/blog\s*/i, '').trim();
+    // /blog <slug or text> — accept both space form ('/blog hello-world') and
+    // URL form ('/blog/hello-world', as copied from the blog post URLs), with or
+    // without a trailing slash ('/blog/hello-world/' — browsers display the
+    // trailing-slash form of the post URL).
+    // Only a real '/blog ...' command names a post, as in tool_game: a
+    // natural-language question ("what does he write about?") would
+    // otherwise fuzzy-match a title and navigate the whole page away.
+    var raw = text || '';
+    var isCommand = /^\/blog(\/|\s|$)/i.test(raw);
+    var query = isCommand ? raw.replace(/^\/blog[\/\s]*/i, '').trim().replace(/^\/+/, '').replace(/\/+$/, '') : '';
 
     if (query) {
       // Ordinal queries: last/latest/recent/newest → newest, first/oldest → oldest
@@ -203,11 +234,12 @@ var Tools = (function() {
       if (best && bestScore > 0) {
         return { toolName: 'blog', redirect: '/blog/' + best.slug, content: null, data: { matched: best.title } };
       }
-      // No match — show blog listing
+      // No match — show blog listing. Escape the echoed query: it reaches this
+      // card verbatim from the URL/typed input (e.g. ?q=/blog+<img onerror=…>).
       return {
         toolName: 'blog',
         content: box('BLOG', [
-          'No post matching "' + query + '"',
+          'No post matching "' + escapeHtml(query) + '"',
           '',
           'Available posts:'
         ].concat(BLOG_POSTS.map(function(p) { return cmdLink('/blog ' + p.slug, p.title); }))),
@@ -390,15 +422,27 @@ var Tools = (function() {
     };
   }
 
-  // ─── Tool: game — run games deployed to GitHub Pages ─────
-  // Add new games by appending to GAMES (id + gh-pages url). Selectable:
+  // ─── Tool: game — playable builds published on this site ─────
+  // Add new games by appending to GAMES. `path` is the same-origin route to
+  // navigate to (works on the live site and any local/preview host); `url`
+  // is the public address kept for display/reference only. Selectable:
   // /game shows the list, /game <id> redirects to launch it.
   var GAMES = [
-    { id: 'hack-overflow', name: 'HACK://OVERFLOW', url: 'https://emingenc.github.io/hack-overflow/', desc: 'Blind-75 learning platformer — walk the route, hack firewalls' }
+    { id: 'hack-overflow', name: 'HACK://OVERFLOW', path: '/hack-overflow/', url: 'https://emingenc.github.io/hack-overflow/', desc: 'Blind-75 learning platformer — walk the route, hack firewalls' }
   ];
 
   function tool_game(text) {
-    var query = (text || '').replace(/^\/game\s*/i, '').trim().toLowerCase();
+    // Only a real '/game ...' command names a game id. Keyword routing can
+    // hand this tool a whole natural-language question ("What games has
+    // Emin made?", "play a game") — that must fall through to the default
+    // list below, not be treated as an (unmatched) game id.
+    var raw = text || '';
+    var isCommand = /^\/game(\/|\s|$)/i.test(raw);
+    // Accept both space form ('/game hack-overflow') and URL form
+    // ('/game/hack-overflow', as copied from the game's URL) — mirrors the
+    // /blog URL-form fix so both slash commands behave identically. Trailing
+    // slashes are stripped too ('/game/hack-overflow/').
+    var query = isCommand ? raw.replace(/^\/game[\/\s]*/i, '').trim().replace(/^\/+/, '').replace(/\/+$/, '').toLowerCase() : '';
     if (query) {
       var g = null;
       for (var i = 0; i < GAMES.length; i++) {
@@ -407,11 +451,12 @@ var Tools = (function() {
         }
       }
       if (g) {
-        return { toolName: 'game', redirect: g.url, content: null, data: { matched: g.name } };
+        return { toolName: 'game', redirect: g.path || g.url, content: null, data: { matched: g.name } };
       }
-      var noLines = ['No game matching "' + query + '"', '', 'Pick one:'];
+      // Escape the echoed query — same crafted-link vector as the /blog "no match" card.
+      var noLines = ['No game matching "' + escapeHtml(query) + '"', '', 'Pick one:'];
       for (var ni = 0; ni < GAMES.length; ni++) noLines.push(cmdLink('/game ' + GAMES[ni].id, '▶ ' + GAMES[ni].name + ' — ' + GAMES[ni].desc));
-      return { toolName: 'game', content: box('GAMES', noLines), data: null };
+      return { toolName: 'game', content: box('GAMES', noLines), data: { notFound: true } };
     }
     var lines = [];
     for (var gi = 0; gi < GAMES.length; gi++) lines.push(cmdLink('/game ' + GAMES[gi].id, '▶ ' + GAMES[gi].name + ' — ' + GAMES[gi].desc));
@@ -449,7 +494,7 @@ var Tools = (function() {
     var pick = facts[Math.floor(Math.random() * facts.length)];
     return {
       toolName: 'lucky',
-      content: box('DID YOU KNOW?', ['★ ' + pick]) + '<div style="color:var(--muted);font-size:10px;margin-top:6px">Try /lucky again for another random fact</div>',
+      content: box('DID YOU KNOW?', ['★ ' + pick]) + '<div style="color:var(--muted);font-size:var(--text-2xs);margin-top:6px">Try /lucky again for another random fact</div>',
       data: { fact: pick }
     };
   }
@@ -532,7 +577,7 @@ var Tools = (function() {
         '/resume   — reopen a saved session',
         '/forget   — clear all data (confirm)',
         '/clear    — reset transcript'
-      ]) + '<div style="color:var(--accent);font-size:11px;margin-top:6px;font-family:monospace">Tip: try /status or /lucky ⚡</div>',
+      ]) + '<div style="color:var(--accent);font-size:var(--text-2xs);margin-top:6px;font-family:monospace">Tip: try /status or /lucky ⚡</div>',
       data: null
     };
   }
@@ -554,10 +599,14 @@ var Tools = (function() {
       var preview = (s.firstMessage || 'empty').slice(0, 50);
       if (s.firstMessage && s.firstMessage.length > 50) preview += '...';
       lines.push(cmdLink('/resume ' + s.id, '/resume ' + s.id) + '  — ' + agoStr + ' · ' + s.messageCount + ' msgs');
-      lines.push('  ' + preview);
+      // s.firstMessage is the visitor's own raw first message (store.js
+      // firstUserText, persisted unescaped) — escape it here, same as the
+      // /blog and /game "no match" echoes, so a saved session can't plant
+      // live markup (or an authored-looking onclick gadget) in this card.
+      lines.push('  ' + escapeHtml(preview));
     }
     lines.push('');
-    lines.push(cmdLink('/forget', '/forget — clear all saved sessions (confirm)'));
+    lines.push('/forget — clear all saved sessions (confirm)');
     lines.push('Storage: ' + (storageSize || '?'));
     return {
       toolName: 'sessions',
@@ -571,7 +620,10 @@ var Tools = (function() {
   }
 
   function reducedModeMessage() {
-    return 'I\'m running in <b>reduced mode</b> — the on-device language model couldn\'t load in this browser, so I can\'t write free-form answers. I can still help with Emin\'s work, projects, skills, smart glasses, blog, and commands — try <b>/help</b> or ask about a specific topic.';
+    // Reached both when the model never loaded and when it loaded but then
+    // hit a fatal error mid-session (worker crash) — word it so neither case
+    // reads as wrong.
+    return 'I\'m running in <b>reduced mode</b> — the on-device language model isn\'t available in this session (it either couldn\'t load or stopped responding), so I can\'t write free-form answers. I can still help with Emin\'s work, projects, skills, smart glasses, blog, and commands — try <b>/help</b> or ask about a specific topic.';
   }
 
   // Deterministic fast-path for well-known site questions. The Needle
@@ -581,10 +633,18 @@ var Tools = (function() {
   function detectKnowledgeFastPath(text) {
     var l = (text || '').toLowerCase();
     var patterns = [
-      // Site tools (NOT Emin's tech stack — those still go to skills)
-      /tools (on|are|here|available|does this)|site tools|list of tools|tool list|what tools are/,
-      // Site mechanics / local agent
-      /how does this (chat|site|agent)|how do you work|how are you built|how is this (site|built|agent built)|100% local|run(s)? (entirely )?locally|runs (entirely )?in your browser|on-?device|local model|privacy|data (leaves|stays)|no servers|no api calls|zero (servers|tracking)/,
+      // Site tools (NOT Emin's tech stack — those still go to skills). A bare
+      // "tools are" also matches the tech-stack questions "what tools are in
+      // his stack" and "what tools are you best at", so "tools are" counts
+      // only before "on this site/page/website" or "here".
+      /tools (on|here|available|does this)|tools are (available )?(on this (site|page|website)|here)\b|site tools|list of tools|tool list/,
+      // Site mechanics / local agent. "how do you work" is scoped to the
+      // agent's own mechanism (no trailing "with" — "how do you work with
+      // clients" is a role question, not a chat-mechanics one), and
+      // "data leaves/stays" requires a device/browser anchor so a bare
+      // "where does my data stay" (no destination named) falls through to
+      // normal classification instead of forcing this fast path.
+      /how does this (chat|site|agent)|how do you work(?!\s+with)|how are you built|how is this (site|built|agent built)|100% local|run(s)? (entirely )?locally|runs (entirely )?in your browser|on-?device|local model|privacy|private|data (leaves?|stays?)( (on|in))? (my|your|the) (device|browser)|no servers|no api calls|zero (servers|tracking)/,
       // Learning hub (Emin's ultrafocus.space project)
       /learning hub|learning-hub|learning library|learn hub|learning center/,
       // Blog existence/overview (topic queries still go to the /blog tool)
@@ -607,11 +667,11 @@ var Tools = (function() {
   var TOOL_REGISTRY = [
     { name: 'about', fn: tool_about, description: 'Emin Gench biography, career, current role at Cresta AI', keywords: ['emin','gench','bio','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study','he'], scopeWords: ['emin','gench','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','career','role','job','work','title','position','company','employer','background','experience','education','degree','school','university','history','past','worked','studied','lead','manage','team','shipped','launched','delivered','built','made','location','based','living','available','opportunities','engineer','resume','cv','bio','his','him','he','yourself','study'], selfContained: true, category: 'discover', params: {} },
     { name: 'repos', fn: tool_repos, description: 'GitHub open source repositories by emingenc', keywords: ['repos','repo','github','project','code','open source','built','star','repository','portfolio','contribution','deploy','deployment','pipeline','infra','devops','ci/cd','docs','documentation','apps','applications','features','PR','pull request','patch','commit'], selfContained: true, category: 'discover', params: {} },
-    { name: 'contact', fn: tool_contact, description: 'Contact Emin Gench: email, GitHub, LinkedIn, Twitter', keywords: ['email','contact','reach','linkedin','twitter','mail','phone','social','handle','message','connect'], selfContained: true, category: 'discover', params: {} },
-    { name: 'skills', fn: tool_skills, description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, Docker, AWS', keywords: ['skills','skill','tech','stack','know','language','python','typescript','docker','programming','framework','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'], selfContained: true, category: 'discover', params: {} },
+    { name: 'contact', fn: tool_contact, description: 'Contact Emin Gench: email, GitHub, LinkedIn, Twitter', keywords: ['email','contact','reach','reach out','touch','hire','collaborate','linkedin','twitter','mail','phone','social','handle','message','connect'], selfContained: true, category: 'discover', params: {} },
+    { name: 'skills', fn: tool_skills, description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, Docker, AWS', keywords: ['skills','skill','tech','tool','tools','stack','know','language','python','typescript','docker','programming','framework','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'], selfContained: true, category: 'discover', params: {} },
     { name: 'blog', fn: tool_blog, description: 'Blog posts about building AI agents', keywords: ['blog','post','article','write','read','published'], selfContained: true, category: 'discover', params: {} },
     { name: 'g1', fn: tool_g1, description: 'G1 smart glasses by Even Realities: BLE SDK, voice assistant, mobile bridge', keywords: ['g1','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses'], selfContained: true, category: 'discover', params: {} },
-    { name: 'game', fn: tool_game, description: 'Play games Emin deployed to GitHub Pages (selectable, launches on choice)', keywords: ['game','play','playable','games','arcade','platformer','hack-overflow','overflow','blind 75'], selfContained: true, category: 'fun', params: {} },
+    { name: 'game', fn: tool_game, description: 'Emin\'s playable games (platformers)', keywords: ['game','play','playable','games','arcade','platformer','hack-overflow','hack overflow','hack://overflow','blind 75'], selfContained: true, category: 'fun', params: {} },
     { name: 'help', fn: tool_help, description: 'List all available commands', keywords: ['help','commands','what can you do','options'], selfContained: true, category: 'meta', params: {} },
     { name: 'time', fn: tool_time, description: 'Current local time and timezone', keywords: ['time','date','clock','timezone','what time'], selfContained: true, category: 'device', params: {} },
     { name: 'device', fn: tool_device, description: 'Browser and hardware fingerprint', keywords: ['device','browser','hardware','cores','memory'], selfContained: true, category: 'device', params: {} },
@@ -661,29 +721,45 @@ var Tools = (function() {
     // This is a safety-net fallback — Needle ONNX is the primary classifier.
     if (!FAQ || !FAQ.faq) return null;
     var l = text.toLowerCase();
-    var best = null, bestScore = 0;
+    var best = null, bestScore = 0, bestSpecific = false;
 
     for (var f = 0; f < FAQ.faq.length; f++) {
       var kws = FAQ.faq[f].keywords;
       if (!kws) continue;
-      var score = 0;
+      var score = 0, specific = false;
       for (var k = 0; k < kws.length; k++) {
         var kw = kws[k];
+        var hit = false;
         if (kw.length <= 3) {
           // Word-boundary match for short keywords (avoids "old" matching "told")
           var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           var re = new RegExp('\\b' + escaped + '\\b');
-          if (re.test(l)) score += 3; // strong signal for exact short-word match
+          if (re.test(l)) { score += 3; hit = true; } // strong signal for exact short-word match
         } else if (l.indexOf(kw) !== -1) {
           score += kw.split(' ').length; // multi-word bonus
+          hit = true;
         }
+        // A keyword outside fuzzyMatch's generic filler list (STOP_WORDS) names
+        // something specific — used below to break ties between two entries
+        // that scored equally (e.g. "today" vs "weather" for a weather question).
+        if (hit && !STOP_WORDS[kw]) specific = true;
       }
-      if (score > bestScore) { bestScore = score; best = FAQ.faq[f]; }
+      // On a tie the entry with a specific-keyword hit wins, instead of
+      // whichever entry happens to sit earlier in the array.
+      if (score > bestScore || (score === bestScore && score > 0 && specific && !bestSpecific)) {
+        bestScore = score; best = FAQ.faq[f]; bestSpecific = specific;
+      }
     }
 
     // Lower threshold for short queries (single keyword is enough for "bye"/"thanks")
     var minScore = text.length < 30 ? 1 : 2;
-    if (best && bestScore >= minScore) {
+    // A match built entirely out of generic filler words (e.g. a bare "who" or
+    // "you" hitting "Who are you?") isn't a real signal — same reasoning as
+    // fuzzyMatch's solo-signal guard. Without this, an off-topic question like
+    // "Who won the last Super Bowl?" cleared the score threshold on "who" alone
+    // and got answered as if it were about Emin. Requiring one specific-keyword
+    // hit still allows every existing entry (none rely purely on filler words).
+    if (best && bestScore >= minScore && bestSpecific) {
       return { toolName: 'faq', content: '<div class="faq-response">' + best.a + '</div>', data: null };
     }
     return null;
@@ -702,7 +778,7 @@ var Tools = (function() {
 
   function llm_consentMessage() {
     return faq_getFallback() +
-      '<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:monospace;font-size:11px;cursor:pointer;margin-top:6px" onclick="window._enableLLM()">⚡ Enable on-device AI <span style="opacity:.5;font-size:10px">downloads once · ~180MB</span></span>';
+      '<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:monospace;font-size:var(--text-2xs);cursor:pointer;margin-top:6px" onclick="window._enableLLM()">⚡ Enable on-device AI <span style="opacity:.5;font-size:var(--text-2xs)">downloads once · ~180MB</span></span>';
   }
 
   // ─── v2: Multi-intent detection ──────────────────────────
@@ -712,17 +788,10 @@ var Tools = (function() {
     for (var t in KEYWORDS) {
       scores[t] = 0;
       for (var i = 0; i < KEYWORDS[t].length; i++) {
-        var kw = KEYWORDS[t][i];
-        // Short keywords (≤3 chars) must match a standalone word, otherwise
-        // common pronouns like "he"/"his"/"him" substring-match "the"/"this"/
-        // "them" and inflate `about` on unrelated compound queries (mirrors the
-        // word-boundary handling already in detectExtraTools and faq_match).
-        if (kw.length <= 3) {
-          var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          if (new RegExp('\\b' + escaped + '\\b').test(l)) scores[t]++;
-        } else if (l.indexOf(kw) !== -1) {
-          scores[t]++;
-        }
+        // Word-boundary match for every keyword (kwBoundaryHit, shared with
+        // detectExtraTools) — otherwise e.g. "play" substring-matches "display"
+        // and "tech" substring-matches "Goodfintech", inflating unrelated tools.
+        if (kwBoundaryHit(l, KEYWORDS[t][i])) scores[t]++;
       }
     }
     var results = [];
@@ -733,42 +802,40 @@ var Tools = (function() {
 
   function isCompound(text) { return /\band\b|\balso\b|\bplus\b|\bas well\b/i.test(text); }
 
-  function keywordRoute(text) {
-    // Best-match for FAQ, then tools
-    if (FAQ && FAQ.faq) {
-      var l = text.toLowerCase();
-      var best = null, bestScore = 0;
-      for (var f = 0; f < FAQ.faq.length; f++) {
-        var kws = FAQ.faq[f].keywords; if (!kws) continue;
-        var score = 0;
-        for (var k = 0; k < kws.length; k++) {
-          var kw = kws[k];
-          if (kw.length <= 3) {
-            var escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            if (new RegExp('\\b' + escaped + '\\b').test(l)) score += 3;
-          } else if (l.indexOf(kw) !== -1) {
-            score += kw.split(' ').length;
-          }
-        }
-        if (score > bestScore) { bestScore = score; best = { type: 'faq', index: f }; }
-      }
-      if (best) return best;
-    }
-    var lt = text.toLowerCase();
-    for (var t in KEYWORDS) { for (var i = 0; i < KEYWORDS[t].length; i++) { if (lt.indexOf(KEYWORDS[t][i]) !== -1) return { type: 'tool', name: t }; } }
-    return null;
-  }
-
   function getCommands() { return ALL_CMDS; }
   function isSlash(text) { return text.startsWith('/'); }
-  function parseSlash(text) { return text.slice(1).toLowerCase().split(' ')[0]; }
+  // Split on ANY whitespace (not just the literal space char), so a crafted
+  // command like "/<img\tonerror=...>" (tab instead of space) can't survive
+  // parsing as a single command token and reach a card as one intact tag.
+  function parseSlash(text) { return text.slice(1).toLowerCase().split(/[\s\/]/)[0]; }
   function isBlogCommand(text) { return text.toLowerCase().startsWith('/blog'); }
+
+  // /forget and /clear delete saved sessions or the transcript, so only the
+  // visitor's own typing may run them: router.js refuses them from a URL and
+  // renderer.js refuses them as a one-click card link.
+  function isDestructiveCommand(text) {
+    if (!isSlash(text)) return false;
+    var cmd = parseSlash(text);
+    return cmd === 'forget' || cmd === 'clear';
+  }
 
   // ─── Fuzzy tool matching ──────────────────────────────────
   // Scores user query against tool descriptions + keywords.
   // Returns {tool, score} for best match above threshold, or null.
   // This is the SINGLE matching function — no more per-tool keyword patching.
-  var STOP_WORDS = {what:1,where:1,when:1,why:1,how:1,do:1,does:1,did:1,is:1,are:1,was:1,were:1,can:1,could:1,will:1,would:1,shall:1,should:1,tell:1,show:1,give:1,get:1,has:1,have:1,had:1,the:1,a:1,an:1,he:1,she:1,it:1,they:1,me:1,him:1,her:1,them:1,his:1,you:1,your:1,yours:1,for:1,to:1,of:1,in:1,on:1,at:1,by:1,with:1,from:1,about:1,any:1,some:1,just:1,please:1,open:1,last:1,latest:1,recent:1,newest:1};
+  var STOP_WORDS = {what:1,where:1,when:1,why:1,who:1,how:1,do:1,does:1,did:1,is:1,are:1,was:1,were:1,can:1,could:1,will:1,would:1,shall:1,should:1,tell:1,show:1,give:1,get:1,has:1,have:1,had:1,the:1,a:1,an:1,he:1,she:1,it:1,they:1,me:1,him:1,her:1,them:1,his:1,you:1,your:1,yours:1,for:1,to:1,of:1,in:1,on:1,at:1,by:1,with:1,from:1,about:1,any:1,some:1,just:1,please:1,open:1,last:1,latest:1,recent:1,newest:1};
+
+  // A lone hit on one of these must not carry a tool over the threshold by
+  // itself (a bare place name says nothing about intent — "pizza in
+  // Vancouver" isn't a question about Emin). Requires a second corroborating
+  // keyword hit, a phrase match, or a tool-name mention instead. 'who' isn't
+  // listed here because it's a pure filler question word (STOP_WORDS above),
+  // not a signal at all.
+  var SOLO_INSUFFICIENT = { vancouver: 1 };
+
+  // Keywords matched whole: a phrase ("hack overflow") or the game's URL-style
+  // name ("hack://overflow"). Tokenized, either would leak a bare "overflow".
+  var PHRASE_KEYWORD = /\s|:\/\//;
 
   function fuzzyMatch(text) {
     // Exact tool-name match (e.g. bare "g1", "blog", "about") — unambiguous, so
@@ -805,7 +872,13 @@ var Tools = (function() {
       var rt = TOOL_REGISTRY[i];
       if (rt.name === 'chat' || rt.name === 'stop' || rt.name === 'faq' || rt.name === 'out_of_scope') continue;
 
-      var corpus = (rt.name + ' ' + rt.description + ' ' + (rt.keywords || []).join(' ')).toLowerCase();
+      // Phrase keywords stay out of the corpus; the phrase bonus below matches them whole.
+      var singleWordKws = [];
+      var allKws = rt.keywords || [];
+      for (var swk = 0; swk < allKws.length; swk++) {
+        if (!PHRASE_KEYWORD.test(allKws[swk])) singleWordKws.push(allKws[swk]);
+      }
+      var corpus = (rt.name + ' ' + rt.description + ' ' + singleWordKws.join(' ')).toLowerCase();
       var cWords = corpus.match(/[a-z][a-z0-9_-]*/g) || [];
 
       // Filter stop words + tiny words from the corpus so common short words
@@ -819,30 +892,42 @@ var Tools = (function() {
       cWords = cwFiltered;
 
       var score = 0;
+      var hitWords = {}; // distinct query words that scored — see solo-signal guard below
       for (var wi = 0; wi < qWords.length; wi++) {
         var qw = qWords[wi];
         for (var ci = 0; ci < cWords.length; ci++) {
           var cw = cWords[ci];
-          // Weight matches by specificity so a real content keyword out-votes a
-          // generic pronoun that merely prefixes a longer keyword:
-          //  - exact word, or corpus keyword is a prefix of the query word
-          //    (e.g. "projects"→"project") = strong (weight 2);
-          //  - query word only prefixes a longer corpus word (e.g. "you"→
-          //    "yourself", "build"→"built") = weak (weight 1). This stops
-          //    "your projects" from tying "your"→"yourself" (about) against
-          //    "projects"→"project" (repos) and mis-routing to about.
-          if (cw === qw || qw.indexOf(cw) === 0) { score += 2; break; }
-          if (cw.indexOf(qw) === 0) { score += 1; break; }
+          // Exact word, or the corpus keyword is a prefix of a longer query
+          // word with a short leftover suffix (e.g. "projects"→"project", a
+          // 1-letter plural). Capping the leftover at 3 chars still covers
+          // regular plurals/-ing/-ed while rejecting an unrelated word that
+          // merely happens to start the same way, e.g. "playwright"→"play"
+          // (leftover "wright", 6 chars) — that used to wrongly score a game
+          // hit for a testing-tool question. The inverse (a short query word
+          // prefixing a longer corpus word, e.g. "good"→"goodfintech") used to
+          // also score but let generic filler words piggyback on unrelated
+          // company/project names, so that direction was removed outright.
+          if (cw === qw || (qw.indexOf(cw) === 0 && qw.length - cw.length <= 3)) { score += 2; hitWords[qw] = true; break; }
         }
       }
-      // Phrase bonus: multi-word keyword matches
+      // Phrase bonus: phrase keywords found whole in the raw text
+      var phraseHit = false;
       var kws = rt.keywords || [];
       for (var ki = 0; ki < kws.length; ki++) {
         var kw = String(kws[ki]).toLowerCase();
-        if (kw.indexOf(' ') !== -1 && text.toLowerCase().indexOf(kw) !== -1) score += 3;
+        if (PHRASE_KEYWORD.test(kw) && text.toLowerCase().indexOf(kw) !== -1) { score += 3; phraseHit = true; }
       }
       // Tool name match
-      if (qText.indexOf(rt.name) !== -1 || text.toLowerCase().indexOf(rt.name) !== -1) score += 2;
+      var nameHit = qText.indexOf(rt.name) !== -1 || text.toLowerCase().indexOf(rt.name) !== -1;
+      if (nameHit) score += 2;
+
+      // A lone incidental keyword (pronoun, question word, place name) must
+      // not carry a tool over the threshold on its own — require either a
+      // second corroborating hit, a phrase/tool-name match, or a keyword
+      // that isn't in the generic/incidental SOLO_INSUFFICIENT list.
+      var hitCount = 0, onlyHit = null;
+      for (var hw in hitWords) { hitCount++; onlyHit = hw; }
+      if (hitCount === 1 && !phraseHit && !nameHit && SOLO_INSUFFICIENT[onlyHit]) continue;
 
       var normalized = qWords.length > 0 ? score / Math.max(1, Math.sqrt(qWords.length)) : 0;
       if (normalized > bestScore) { bestScore = normalized; best = rt.name; }
@@ -864,13 +949,40 @@ var Tools = (function() {
   // Deterministic hand-written replies so the chat SOUNDS like a person.
   // The 360M model is never the voice for factual answers — these templates
   // are the voice (facts are slots, prose is Emin's own site copy).
-  function replyFor(toolName, isFollowUp) {
+
+  // Company/role-specific prose for a KnowledgeBase-matched 'about' result
+  // (tool_about → KnowledgeBase.search/formatResult). Built only from the
+  // same fields the card above it already shows — company, role, dates,
+  // one highlight — so the spoken line never says something the card
+  // doesn't back up, and never drifts to a different employer.
+  function aboutCompanyProse(data, isFollowUp) {
+    var open = isFollowUp ? 'Happy to dig deeper. ' : '';
+    var company = data.aka ? data.company + ' (' + data.aka + ')' : data.company;
+    var role = data.role || 'a role there';
+    var dates = data.period ? ' (' + data.period + ')' : '';
+    var verb = data.isCurrent ? 'works as' : 'worked as';
+    var line = open + 'At <b>' + company + '</b>' + dates + ', Emin ' + verb + ' <b>' + role + '</b>.';
+    var highlight = (data.highlights || [])[0];
+    if (highlight) line += ' ' + highlight;
+    return line;
+  }
+
+  // data: the matched tool result's data, if any. 'about' reads its
+  // KnowledgeBase match, 'game' its notFound flag.
+  function replyFor(toolName, isFollowUp, data) {
     var open = isFollowUp ? 'Happy to dig deeper. ' : '';
     switch (toolName) {
       case 'about':
+        // Company prose replaces the generic bio only when the question named
+        // that company (namesCompany above). Every other card is followed by
+        // the generic bio: timeline, education, tech stack, blog post, or a
+        // company KnowledgeBase.search() matched on a word that names none.
+        if (data && data.namedInQuestion) {
+          return aboutCompanyProse(data, isFollowUp);
+        }
         return open + 'Emin Gench is a <b>Forward Deployed AI Engineer at Cresta AI</b> in Vancouver, BC — aerospace engineer turned AI builder; he works where systems thinking meets large language models. Before Cresta: Goodfintech (AI engineer), Vivoo (ML engineer), Novit AI (full-stack AI engineer), and indie game dev. BSc Aerospace Engineering, Turkish Air Force Academy; former Air Defense Officer. He also builds open source — 249+ GitHub stars across 47 repos.';
       case 'repos':
-        return open + 'He has <b>47 repositories</b> and <b>249+ GitHub stars</b>. The one people find first: <b>even_glasses</b> — a smart-glasses integration platform (79★ and counting), plus <b>telegramGPT</b> (52★) and a voice AI assistant (25★).';
+        return open + 'He has <b>47 repositories</b> and <b>249+ GitHub stars</b>. The one people find first: <b>even_glasses</b> — a smart-glasses integration platform (78★ and counting), plus <b>telegramGPT</b> (52★) and a voice AI assistant (25★).';
       case 'skills':
         return open + 'Day-to-day it\u2019s <b>Python, TypeScript, and Dart</b> — FastAPI and Next.js on the web side, Docker + AWS to ship it, and LLMs / agents / RAG on the AI side.';
       case 'contact':
@@ -878,17 +990,23 @@ var Tools = (function() {
       case 'blog':
         return open + 'Emin writes about AI engineering and building things — the posts are below.';
       case 'g1':
-        return open + 'The G1 project is his flagship open-source build: <b>even_glasses</b> — a BLE SDK + Flutter integration for the Even Realities G1 smart glasses, 79★ and counting.';
+        return open + 'The G1 project is his flagship open-source build: <b>even_glasses</b> — a BLE SDK + Flutter integration for the Even Realities G1 smart glasses, 78★ and counting.';
       case 'game':
-        return open + 'He made <b>HACK://OVERFLOW</b> — a platformer that teaches Blind-75 algorithms by playing. It runs right in this page.';
+        // Never echo the unmatched id here: the card above already shows it, escaped.
+        if (data && data.notFound) {
+          return open + 'No game goes by that name. The one Emin has published is <b>HACK://OVERFLOW</b>, a platformer that teaches Blind-75 algorithms by playing. Pick it below to launch it.';
+        }
+        return open + 'He made <b>HACK://OVERFLOW</b> — a platformer that teaches Blind-75 algorithms by playing. Pick it below and it opens at /hack-overflow.';
       default:
         return null;
     }
   }
 
-  // Graceful context-exhaustion message (deterministic, no LLM).
+  // Soft heads-up shown alongside (never instead of) a real answer: the
+  // prompt itself is always clamped, so this never blocks a turn -- it just
+  // flags that older turns may be fading from what the model can see.
   function contextExhaustedMessage() {
-    return 'This session\u2019s context window is nearly full, so I can\u2019t reliably recall our earlier chat. Type <b>/new</b> to start fresh — deterministic tools like /repos and /skills still work.';
+    return 'This session\u2019s context is getting long, so earlier turns may be fading from what I can recall. Type <b>/new</b> for a completely fresh start if my answers seem to lose track — deterministic tools like /repos and /skills always work regardless.';
   }
 
   return {
@@ -909,13 +1027,13 @@ var Tools = (function() {
     faqFallback: faq_getFallback,
     profileFacts: profileFacts,
     llmConsentMessage: llm_consentMessage,
-    keywordRoute: keywordRoute,
     getTopIntents: getTopIntents,
     isCompound: isCompound,
     getCommands: getCommands,
     isSlash: isSlash,
     parseSlash: parseSlash,
     isBlogCommand: isBlogCommand,
+    isDestructiveCommand: isDestructiveCommand,
     toolNames: Object.keys(TOOL_MAP),
     detectExtraTools: detectExtraTools,
     fuzzyMatch: fuzzyMatch,

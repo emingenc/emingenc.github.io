@@ -165,6 +165,24 @@ var Orchestrator = (function() {
     return errors;
   }
 
+  // Spoken line for a turn's tool card(s). One distinct self-contained tool
+  // → its own prose (entity-aware for 'about', via its result.data). Two+
+  // results (a compound turn) → one short line per distinct card shown, in
+  // order — a "skills and contact" turn must speak to both, not just the
+  // first tool the plan happened to run.
+  function buildResultsProse(results) {
+    var seen = {};
+    var parts = [];
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i];
+      if (seen[r.toolName] || !Evaluator.isSelfContained(r.toolName)) continue;
+      seen[r.toolName] = true;
+      var line = Tools.replyFor(r.toolName, false, r.data);
+      if (line) parts.push(line);
+    }
+    return parts.length ? parts.join(' ') : null;
+  }
+
   // Stop: synthesize final answer. summary = LLM-polished text (optional)
   function stopAndSummarize(results, errors, userText, turnId, summary) {
     if (turnId && !validTurn(turnId)) return; // stale callback, discard
@@ -184,32 +202,33 @@ var Orchestrator = (function() {
     }
 
     // Render LLM-polished summary as the final answer.
-    // Skip for single self-contained tool results — the tool block already shows the data.
-    var isSingleSelfContained = results.length === 1 && Evaluator.isSelfContained(results[0].toolName);
+    // Skip when every result is self-contained: the tool blocks already show
+    // the data and the persona prose below speaks for all of them, so a
+    // cleaned-up dump of the last card would only repeat it.
+    var allSelfContained = results.length > 0 && results.every(function(r) { return Evaluator.isSelfContained(r.toolName); });
+    var isSingleSelfContained = results.length === 1 && allSelfContained;
 
     // Persona prose for self-contained tool results: the card is the
-    // data appendix, but the chat needs a spoken answer. Deterministic
-    // templates (the 360M model must never be the voice for facts).
-    // Render for the PRIMARY tool even in multi-tool turns — otherwise a
-    // compound query ("how many stars does Emin have?") answers with cards
-    // only and the spoken reply silently disappears.
-    var primary = results.length ? results[0] : null;
-    var primaryProse = primary && Evaluator.isSelfContained(primary.toolName)
-      ? Tools.replyFor(primary.toolName, false) : null;
-    if (isSingleSelfContained && results.length === 1) {
-      var prose = Tools.replyFor(results[0].toolName, false);
+    // data appendix, but the chat needs a spoken answer that matches it.
+    // Deterministic templates only (the 360M model must never be the voice
+    // for facts) — entity-aware for 'about' and covering every card on a
+    // multi-tool turn (see buildResultsProse), not just the first tool.
+    if (isSingleSelfContained) {
+      var prose = Tools.replyFor(results[0].toolName, false, results[0].data);
       if (prose) {
         store.dispatch({ type: 'MESSAGE_ADD', message: {
           role: 'agent', type: 'llm-summary',
           content: '<div class="llm-summary">' + prose + '</div>', ts: ''
         }});
       }
-    } else if (primaryProse && results.length > 1) {
-      // Multi-tool turn: still give the spoken answer for the primary tool.
-      store.dispatch({ type: 'MESSAGE_ADD', message: {
-        role: 'agent', type: 'llm-summary',
-        content: '<div class="llm-summary">' + primaryProse + '</div>', ts: ''
-      }});
+    } else if (results.length > 1) {
+      var compoundProse = buildResultsProse(results);
+      if (compoundProse) {
+        store.dispatch({ type: 'MESSAGE_ADD', message: {
+          role: 'agent', type: 'llm-summary',
+          content: '<div class="llm-summary">' + compoundProse + '</div>', ts: ''
+        }});
+      }
     }
     var finalSummary = null;
     if (summary && summary.length > 10) {
@@ -220,8 +239,8 @@ var Orchestrator = (function() {
         .trim();
       if (finalSummary.length <= 10) finalSummary = null;
     }
-    // Only extract fallback summary for multi-result or non-self-contained tools
-    if (!finalSummary && results.length > 0 && !isSingleSelfContained) {
+    // Only extract a fallback summary when some result isn't self-contained
+    if (!finalSummary && results.length > 0 && !allSelfContained) {
       // Fallback: extract clean text from last tool result
       var lastContent = results[results.length - 1].content || '';
       finalSummary = lastContent
@@ -232,7 +251,7 @@ var Orchestrator = (function() {
         .slice(0, 400);
       if (finalSummary.length <= 10) finalSummary = null;
     }
-    if (finalSummary && !isSingleSelfContained) {
+    if (finalSummary && !allSelfContained) {
       var sourceText = results.map(function(r) { return r.content || ''; }).join(' ');
       var summaryAccepted = !Evaluator.entityPreserved || Evaluator.entityPreserved(sourceText, finalSummary);
       if (summaryAccepted) {
@@ -246,13 +265,12 @@ var Orchestrator = (function() {
       }
     }
 
-    // Multi-step summary
+    // Multi-step marker: internal trace only. Visitors never asked to see a
+    // raw step-count line, and it isn't a spoken answer — trace() files it
+    // as a react-step, the same hidden type the plan/think/act/eval lines
+    // above already use, so debugging still has it without leaking to chat.
     if (results.length > 1) {
-      store.dispatch({ type: 'MESSAGE_ADD', message: {
-        role: 'system', type: 'system',
-        content: '── ' + results.length + ' result' + (results.length > 1 ? 's' : '') + ' · ' + store.getState().workingMemory.steps + ' step' + (store.getState().workingMemory.steps > 1 ? 's' : '') + ' ──',
-        ts: '', noTs: true
-      }});
+      trace(turnId, '── ' + results.length + ' results · ' + store.getState().workingMemory.steps + ' steps ──');
     }
 
     // Single-step: eval already said pass — skip redundant stop trace
@@ -356,9 +374,11 @@ var Orchestrator = (function() {
           } catch (execErr) {
             trace(turnId, 'act → ' + toolName + ' ✗ ' + (execErr.message || 'tool error'));
             errors.push({ tool: toolName, error: 'Tool error: ' + (execErr.message || String(execErr)) });
+            // toolName/message reach this card verbatim from parseSlash's command
+            // token — escape before it lands in the innerHTML sink (renderer.js).
             store.dispatch({ type: 'MESSAGE_ADD', message: {
               role: 'tool', type: 'tool-call', toolName: toolName,
-              content: 'Command /' + toolName + ' failed: ' + (execErr.message || 'unknown error'), ts: '', noTs: false
+              content: 'Command /' + escapeHtml(toolName) + ' failed: ' + escapeHtml(execErr.message || 'unknown error'), ts: '', noTs: false
             }});
             store.dispatch({ type: 'OBSERVE', tool: toolName, satisfied: true, confidence: 1, reason: 'tool-error' });
             store.dispatch({ type: 'PLAN_DONE' });
@@ -416,10 +436,13 @@ var Orchestrator = (function() {
           // Do NOT route through stopAndSummarize: it would append a redundant
           // generic FAQ fallback after the "not found" message. Mirrors the
           // tool-error path above (PLAN_DONE + done()).
+          // toolName is the raw parseSlash token from user/URL input (e.g.
+          // "?q=/<img onerror=…>") — escape it before it reaches the
+          // innerHTML sink in renderer.js, or the card becomes live markup.
           errors.push({ tool: toolName, error: 'Tool not found' });
           store.dispatch({ type: 'MESSAGE_ADD', message: {
             role: 'tool', type: 'tool-call', toolName: toolName,
-            content: 'Command /' + toolName + ' not found. Try /help.', ts: '', noTs: false
+            content: 'Command /' + escapeHtml(toolName) + ' not found. Try /help.', ts: '', noTs: false
           }});
           store.dispatch({ type: 'OBSERVE', tool: toolName, satisfied: true, confidence: 1, reason: 'unknown-command' });
           store.dispatch({ type: 'PLAN_DONE' });
@@ -630,10 +653,14 @@ var Orchestrator = (function() {
       done();
     } else if (Classifier.hasLLMConsent() && Classifier.isLLMReady()) {
       store.dispatch({ type: 'THINKING', state: 'responding', label: 'generating response' });
-      if (store.getState().ui.contextPct >= 90) {
-        store.dispatch({ type: 'THINKING', state: 'hide' });
+      // Soft hint only, never a hard stop: the prompt actually sent to the
+      // model (buffer + summary + tool results) is clamped independently of
+      // this session meter, so a high reading here does not mean the next
+      // generation would overflow — refusing the whole turn was never
+      // necessary and blocked every exchange past ~10-15 turns.
+      var contextHintPct = 90; // soft-hint threshold, not a hard cap
+      if (store.getState().ui.contextPct >= contextHintPct) {
         store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: Tools.contextExhaustedMessage(), ts: '' }});
-        return done(turnId);
       }
       var _llmWorker = Classifier._getLLMWorker ? Classifier._getLLMWorker() : null;
       if (!_llmWorker) {
@@ -695,7 +722,17 @@ var Orchestrator = (function() {
         var msgId = 'msg_' + Date.now();
         var words = Tools.faqFallback().split(' '), i = 0;
         store.dispatch({ type: 'MESSAGE_ADD', message: { id: msgId, role: 'agent', type: 'stream', content: '', ts: '', _streaming: true }});
-        function nxt() { if (!validTurn(turnId)) return; if (i>=words.length) { store.dispatch({ type:'MESSAGE_STREAM_DONE', id:msgId }); done(); return; } store.dispatch({ type:'MESSAGE_STREAM', id:msgId, chunk:words[i]+' ' }); i++; setTimeout(nxt, 30+Math.random()*20); }
+        function nxt() {
+          var superseded = !validTurn(turnId);
+          if (superseded || i >= words.length) {
+            store.dispatch({ type: 'MESSAGE_STREAM_DONE', id: msgId });
+            if (!superseded) done();
+            return;
+          }
+          store.dispatch({ type: 'MESSAGE_STREAM', id: msgId, chunk: words[i] + ' ' });
+          i++;
+          setTimeout(nxt, 30 + Math.random() * 20);
+        }
         nxt();
       }, 400 + Math.random() * 300);
     }
@@ -705,13 +742,14 @@ var Orchestrator = (function() {
     if (!store.getState().ui.isProcessing) return;
     currentTurnId++; // invalidate ALL in-flight async callbacks
     processingTurnId = 0; // release lock ownership
-    // Clean up generation timeouts and pending generations
+    // Clean up generation timeouts, and end each pending generation's stream
     for (var gid in genTimeouts) {
       clearTimeout(genTimeouts[gid]);
       delete genTimeouts[gid];
     }
     for (var pid in pendingGenerations) {
       delete pendingGenerations[pid];
+      store.dispatch({ type: 'MESSAGE_STREAM_DONE', id: pid });
     }
     Evaluator._cancelAllEvals();
     if (typeof AlignmentGate !== 'undefined' && AlignmentGate._cancelAllAligns) AlignmentGate._cancelAllAligns();
