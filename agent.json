@@ -52,7 +52,7 @@
     {"name": "skills", "description": "Tech stack and domains", "deterministic": true},
     {"name": "blog", "description": "Latest blog posts and links", "deterministic": true},
     {"name": "g1", "description": "Smart glasses ecosystem architecture", "deterministic": true},
-    {"name": "game", "description": "Play games deployed to GitHub Pages (selectable list, launches on choice)", "deterministic": true},
+    {"name": "game", "description": "Play Emin's games, hosted on this site (selectable list, launches on choice)", "deterministic": true},
     {"name": "help", "description": "List all available commands", "deterministic": true},
     {"name": "ask_user", "description": "Pause agent loop for human input (consent, clarification)", "deterministic": true},
     {"name": "status", "description": "System status at a glance (session, LLM, device, network)", "deterministic": true},

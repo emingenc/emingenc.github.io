@@ -18,7 +18,7 @@ Emin Gench is a Forward Deployed AI Engineer at Cresta AI, based in Vancouver, B
 
 ## Open Source Portfolio
 
-### even_glasses (★79)
+### even_glasses (★78)
 Python package for controlling Even Realities G1 smart glasses via Bluetooth Low Energy. The most starred project in the G1 ecosystem. Used by developers building applications for smart glasses hardware.
 
 ### telegramGPT (★52)
@@ -52,7 +52,7 @@ MCP (Model Context Protocol) server enabling any AI agent to interact with smart
 
 ## What Makes Emin Stand Out
 
-- 79★ open source package used by real developers
+- 78★ open source package used by real developers
 - 4-company AI engineering track record (Cresta, Goodfintech, Vivoo, Novit)
 - Self-taught transition from aerospace to AI — proven ability to learn and adapt
 - Ships production AI systems with guardrails and safety built in

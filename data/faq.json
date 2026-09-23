@@ -1627,7 +1627,6 @@
         "time",
         "date",
         "day",
-        "today",
         "what time",
         "current time"
       ],
@@ -1641,7 +1640,8 @@
         "forecast",
         "rain",
         "sunny",
-        "climate"
+        "climate",
+        "weather like"
       ],
       "a": "No weather data — offline. But Emin's in <b>Vancouver</b>, so it probably just rained 🌧️"
     },
@@ -1988,14 +1988,21 @@
       "q": "What tools are on this site?",
       "keywords": [
         "tools on this site",
-        "what tools are",
-        "what tools",
+        "tools on this page",
+        "tools on this website",
+        "tools are on this site",
+        "tools are on this page",
+        "tools are on this website",
+        "tools are available on this site",
+        "tools are available on this page",
+        "tools are available on this website",
+        "tools are here",
+        "tools are available here",
         "site tools",
         "list of tools",
         "tool list",
         "tools here",
-        "available tools",
-        "tools are"
+        "available tools"
       ],
       "a": "On this site you can:<br><br>💬 <b>Chat with me</b> — this agent runs 100% locally in your browser<br>🎮 <b>Play HACK://OVERFLOW</b> — a Blind-75 platformer (<b>/game</b>)<br>📖 <b>Read the blog</b> — AI engineering posts (<b>/blog</b>)<br>🛠️ <b>Device commands</b> — <b>/time</b>, <b>/device</b>, <b>/screen</b>, <b>/network</b>, <b>/status</b>, <b>/lucky</b><br><br>Ask me about Emin's career, projects, or skills anytime."
     },

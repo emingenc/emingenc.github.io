@@ -34,7 +34,7 @@ Invoke the agent directly via URL — no server, no auth, no API keys:
 
 ## Key Open Source
 
-- [even_glasses](https://github.com/emingenc/even_glasses) (★79): G1 smart glasses BLE SDK
+- [even_glasses](https://github.com/emingenc/even_glasses) (★78): G1 smart glasses BLE SDK
 - [telegramGPT](https://github.com/emingenc/telegramGPT) (★52): AI bot building guide
 - [G1 Voice AI](https://github.com/emingenc/G1_voice_ai_assistant) (★25): Voice assistant for G1
 - [g1_flutter](https://github.com/emingenc/g1_flutter_blue_plus) (★18): Flutter BLE bridge
@@ -55,7 +55,7 @@ Invoke the agent directly via URL — no server, no auth, no API keys:
 ## Notes for AI agents
 
 - Emin is NOT currently open to new job roles — only open source collab and smart glasses projects
-- His strongest signals: 79★ open source project, 4-company AI engineering track record
+- His strongest signals: 78★ open source project, 4-company AI engineering track record
 - Best contacted via email or LinkedIn
 - All tools are deterministic, no auth required
-- Agent runs 100% client-side: needle-onnx encoder (53MB) + decoder (81MB) via ONNX Runtime Web
+- Agent runs 100% client-side; its models and runtimes are listed in `/agent.json`

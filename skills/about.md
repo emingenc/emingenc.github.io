@@ -18,11 +18,11 @@ a unique perspective — I understand complex systems from first principles.
 
 ## What I Do
 - Build and deploy AI systems that actually ship
-- Open source contributor (174+ total stars across projects)
+- Open source contributor (249+ total stars across projects)
 - Smart glasses ecosystem — built full stack from BLE driver to AI voice assistant
 - Write about AI engineering on my blog
 
 ## Fun Facts
 - Former Air Defense Officer in the Turkish military
-- Built the most popular G1 smart glasses SDK on GitHub (79 stars)
+- Built the most popular G1 smart glasses SDK on GitHub (78 stars)
 - My Telegram AI bot guide has helped 52+ people build their own AI bots

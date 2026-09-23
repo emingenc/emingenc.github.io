@@ -6,7 +6,11 @@ var Router = (function() {
   var humanCallback = null; // for ask_user resume
 
   // ─── v2: Main entry ──────────────────────────────────────
-  function handleInput(text) {
+  // opts.source === 'url' marks input that arrived from a query param or hash
+  // route (agent-ui.js checkURLTriggers) rather than something the visitor
+  // typed or clicked in-app — see the isSlash block below.
+  function handleInput(text, opts) {
+    opts = opts || {};
     // An ask_user pause intentionally keeps the turn alive while accepting a choice.
     if (store.getState().ui.needsHumanInput) {
       // A slash command typed while the chooser is open must be honored as a
@@ -44,6 +48,24 @@ var Router = (function() {
     // Slash command
     if (Tools.isSlash(text)) {
       var cmd = Tools.parseSlash(text);
+
+      // A URL (query param or hash route, on load or on hashchange) can drive
+      // any slash command — that's the whole point of Factor #11 deep links.
+      // But /forget and /clear are destructive/stateful, so a link a visitor
+      // didn't type must not be able to run them (crafted-link data-loss —
+      // e.g. ?q=/forget%20--confirm, or ?q=/clear right after the <30min
+      // auto-restore, which would prune the just-restored session as "empty").
+      // /new and /resume are left reachable from a URL: neither deletes a
+      // saved session (see store.js persist()/restoreById) — /new persists
+      // under a fresh, never-before-seen id, and /resume only re-saves the
+      // session it loads, so at worst a link changes what's on screen, not
+      // what's in storage.
+      if (opts.source === 'url' && Tools.isDestructiveCommand(text)) {
+        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'error', type: 'text', content: 'Type /' + cmd + ' yourself in the chat box — a link can\'t ' + (cmd === 'clear' ? 'clear the transcript' : 'delete saved sessions') + '.', ts: '' }});
+        Orchestrator.done();
+        return;
+      }
+
       if (cmd === 'clear') { store.dispatch({ type: 'CLEAR' }); Orchestrator.resetFollowupState(); Orchestrator.done(); return; }
       if (cmd === 'new') { store.dispatch({ type: 'NEW_SESSION' }); Orchestrator.resetFollowupState(); Renderer.showWelcome(); store.dispatch({ type: 'THINKING', state: 'hide' }); return; }
       if (cmd === 'blog') { Orchestrator.singleTool('blog', text, turnId); return; }
@@ -53,6 +75,9 @@ var Router = (function() {
       if (cmd === 'sessions') {
         store.dispatch({ type: 'THINKING', state: 'executing', label: 'listing sessions' });
         setTimeout(function() {
+          // Cancelled meanwhile: adding the card would persist a session
+          // again, even one a later /forget --confirm just deleted.
+          if (turnId !== Orchestrator.currentTurnId) return;
           store.dispatch({ type: 'THINKING', state: 'hide' });
           var sessions = store.listSessions();
           var result = Tools.sessions(sessions, store.getSize());
@@ -62,7 +87,7 @@ var Router = (function() {
         return;
       }
       if (cmd === 'resume' || cmd === 'r') {
-        var sid = text.slice(cmd === 'resume' ? 8 : 3).trim();
+        var sid = text.slice(cmd === 'resume' ? 8 : 3).trim().replace(/^\//, '');
         if (!sid) {
           store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'error', type: 'text', content: 'Usage: /resume <session-id>  (use /sessions to list)', ts: '' }});
           Orchestrator.done(); return;
@@ -73,6 +98,11 @@ var Router = (function() {
           store.dispatch({ type: 'THINKING', state: 'hide' });
           document.getElementById('input').focus();
         } else {
+          // sid is raw user/URL text, but no escaping needed here: renderer.js
+          // renders this role:'error' message as plain text, running it
+          // through escapeHtml once, live and when a saved session is
+          // restored. Escaping it again here double-encodes (verified live:
+          // a crafted sid rendered as literal "&amp;lt;...").
           store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'error', type: 'text', content: 'Session ' + sid + ' not found. Use /sessions to list.', ts: '' }});
           store.dispatch({ type: 'THINKING', state: 'hide' });
           Orchestrator.done();
@@ -82,8 +112,8 @@ var Router = (function() {
       if (cmd === 'forget') {
         // Safety: /forget irreversibly wipes all saved sessions, so require an
         // explicit confirm token. Without it, show a warning and do NOT wipe.
-        // Also prevents the URL-trigger /#/forget from auto-wiping on load.
-        var arg = (text.slice(7) || '').trim().toLowerCase().replace(/^[-]+/, '');
+        // (URL-sourced /forget of any shape is already refused above.)
+        var arg = (text.slice(7) || '').trim().toLowerCase().replace(/^[\/-]+/, '').replace(/\/+$/, '');
         if (arg === 'confirm' || arg === 'yes' || arg === 'y') {
           // Order matters: dispatch the confirmation FIRST, then forgetAll()
           // LAST. MESSAGE_ADD auto-persists the current session, so calling
@@ -152,8 +182,6 @@ var Router = (function() {
       Orchestrator.runLoop([{ tool: 'out_of_scope', score: 0, reason: 'classification error' }], text, turnId);
     });
   }
-
-  function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function init(_store) {
     store = _store;

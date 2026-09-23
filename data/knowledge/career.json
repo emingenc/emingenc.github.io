@@ -93,10 +93,10 @@
     "Frontend & DB": "Next.js, React, Vue.js, TypeScript, PostgreSQL, MongoDB, Redis, Supabase, Stripe Integration"
   },
   "openSource": {
-    "even_glasses": "Reverse-engineered BLE protocol for G1 Smart Glasses; open-source Python SDK on PyPI. 79 GitHub stars.",
+    "even_glasses": "Reverse-engineered BLE protocol for G1 Smart Glasses; open-source Python SDK on PyPI. 78 GitHub stars.",
     "G1 Voice AI": "Redis-based controller + Voice-AI assistant with LangGraph for real-time interaction. Hackathon winner. 25 stars.",
     "UltraFocus": "End-to-end Next.js productivity platform with canvas tools, Stripe payments, and LangGraph-powered AI agents.",
     "LLM Adaptive Router": "Python package for dynamic model selection based on query content, using vector search + LLM-based selection. On PyPI.",
-    "Total": "46 repos, 174+ GitHub stars across Python, TypeScript, Dart, C, and more."
+    "Total": "47 repos, 249 GitHub stars across Python, TypeScript, Dart, C, and more."
   }
 }

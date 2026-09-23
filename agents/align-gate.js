@@ -4,6 +4,12 @@ var AlignmentGate = (function() {
   var store = null;
   var resolvers = {};
   var nextId = 0;
+  // Budget for an LLM alignment rescue once the model IS ready. Was 6000ms —
+  // a single unmatched off-topic turn ("what's the weather like today?")
+  // blocked for the full 6s whenever the align call was slow to resolve
+  // (measured 7168ms end-to-end). The not-ready case below already resolves
+  // with no wait at all, so this only bounds a ready-but-slow worker.
+  var ALIGN_TIMEOUT_MS = 1200;
 
   function decision(action, tool, reason, confidence, source) {
     return { action: action, tool: tool, sink: action === 'sink' ? 'out_of_scope' : null, reason: reason, confidence: confidence || 0, source: source || 'fallback' };
@@ -105,7 +111,7 @@ var AlignmentGate = (function() {
         // LLM timed out — try keyword match before sinking
         var defaultTool = (intent && intent.label === 'chat') ? 'chat' : 'out_of_scope';
         resolve(keywordRedirect(text, defaultTool));
-      }, 6000);
+      }, ALIGN_TIMEOUT_MS);
       var scopes = (Tools.TOOL_REGISTRY || []).map(function(t) {
         return { name: t.name, description: t.description, scope: t.scopeWords || t.keywords || [] };
       });
