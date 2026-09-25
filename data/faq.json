@@ -996,7 +996,7 @@
         "llm model",
         "ai engine"
       ],
-      "a": "<b>SmolLM2-360M-Instruct</b> (WebGPU) + custom ONNX encoder for intent routing. Both local. Model ~180MB, cached after first download."
+      "a": "<b>SmolLM2-360M-Instruct</b> (WebGPU) + custom ONNX encoder for intent routing. Both local. Model 272MB (363MB without WebGPU), cached after first download."
     },
     {
       "q": "Privacy?",
@@ -1034,7 +1034,7 @@
         "airplane mode",
         "without internet"
       ],
-      "a": "After first visit: <b>yes</b>. Model cached in browser (~180MB). AI works without internet once cached."
+      "a": "After first visit: <b>yes</b>. Model cached in browser (272MB, or 363MB without WebGPU). AI works without internet once cached."
     },
     {
       "q": "Downloading message?",
@@ -1800,7 +1800,7 @@
         "look and feel",
         "ui design"
       ],
-      "a": "Emin designed and built it — <b>terminal/developer aesthetic</b>, monospace fonts, teal (#2dd4bf), dark theme. Goal: feel like a coding agent, not a corporate site."
+      "a": "Emin designed and built it. The home page is a <b>warm-paper résumé</b> that doubles as the agent's context window: rows light up as its tools read them. The blog and the static résumé page keep the dark terminal look (teal #2dd4bf). Goal: feel like a coding agent at work, not a corporate site."
     },
     {
       "q": "Design system?",

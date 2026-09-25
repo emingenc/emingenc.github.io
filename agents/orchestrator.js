@@ -1,4 +1,5 @@
 // orchestrator.js — ReAct agent loop: execute → evaluate → replan → stop
+// eslint-disable-next-line max-lines-per-function -- legacy module wrapper (IIFE); out of scope for this UI change
 var Orchestrator = (function() {
   "use strict";
   var store = null;
@@ -82,10 +83,14 @@ var Orchestrator = (function() {
     return turnId === currentTurnId;
   }
 
+  // verb ("plan", "act", …) and the raw text feed agent-ui's step list,
+  // which renders them as text; content stays escaped.
   function trace(turnId, text) {
     if (turnId && !validTurn(turnId)) return;
+    var arrow = text.indexOf(' → ');
     store.dispatch({ type: 'MESSAGE_ADD', message: {
-      role: 'system', type: 'react-step', content: escapeHtml(text), ts: '', noTs: true
+      role: 'system', type: 'react-step', content: escapeHtml(text), ts: '', noTs: true,
+      verb: arrow > 0 ? text.slice(0, arrow) : '', text: text
     }});
   }
 
@@ -94,7 +99,8 @@ var Orchestrator = (function() {
     // Only release the lock if this turn still owns it
     if (turnId !== undefined && turnId !== processingTurnId) return;
     processingTurnId = 0;
-    store.dispatch({ type: 'THINKING', state: 'hide' });
+    // turnEnd: other THINKING hides happen mid-turn; this one ends the turn.
+    store.dispatch({ type: 'THINKING', state: 'hide', turnEnd: true });
     maybeRebuildSummary();
   }
 
@@ -754,7 +760,7 @@ var Orchestrator = (function() {
     Evaluator._cancelAllEvals();
     if (typeof AlignmentGate !== 'undefined' && AlignmentGate._cancelAllAligns) AlignmentGate._cancelAllAligns();
     if (typeof Router !== 'undefined' && Router._clearHumanCallback) Router._clearHumanCallback();
-    store.dispatch({ type: 'THINKING', state: 'hide' });
+    store.dispatch({ type: 'THINKING', state: 'hide', turnEnd: true, cancelled: true });
     store.dispatch({ type: 'RESUME' }); // dismiss any ask_user modal
     store.dispatch({ type: 'MESSAGE_ADD', message: {
       role: 'system', type: 'system', content: '─── cancelled ───', ts: '', noTs: true

@@ -1,4 +1,5 @@
 // renderer.js v2 — DOM rendering with error blocks, ask_user, restored sessions
+// eslint-disable-next-line max-lines-per-function -- legacy module wrapper (IIFE); out of scope for this UI change
 var Renderer = (function() {
   "use strict";
 
@@ -58,8 +59,8 @@ var Renderer = (function() {
     // NOT covered by router.js's URL-source guard on /forget and /clear.
     // Refuse the same commands here: if a future missed escape ever let
     // attacker text reach an authored-HTML sink, it still couldn't be turned
-    // into a one-click data wipe. quickCmd()'s own Enter-key dispatch trims
-    // the input value before Router.handleInput sees it, so a leading/
+    // into a one-click data wipe. quickCmd() goes through agent-ui's submit(),
+    // which trims its argument before Router.handleInput sees it, so a leading/
     // trailing-space payload like quickCmd(' /forget confirm') is just as
     // destructive as the untrimmed form — test the trimmed argument.
     if (quickCmdArg && Tools.isDestructiveCommand(quickCmdArg[1].trim())) return false;
@@ -108,11 +109,14 @@ var Renderer = (function() {
     return out.innerHTML;
   }
 
-  // Force scroll to absolute bottom of page (more reliable than scrollIntoView)
-  function scrollToBottom() {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-  }
   var store = null;
+  // options.containerFor(msg) → node to append to, or null to skip (agent-ui
+  // renders user queries and the cancel line itself). Default: el.output.
+  var options = {};
+  // Cap the live transcript — long sessions shouldn't bloat the DOM.
+  var MAX_TRANSCRIPT_NODES = 60;
+  var MINUTE_MS = 60000;
+  var RESTORE_PAINT_DELAY_MS = 50;
   var unsubscribe = null;
 
   function ts() {
@@ -158,31 +162,36 @@ var Renderer = (function() {
 
   function renderMessage(msg, isNew) {
     // Internal ReAct trace (plan/think/act/observe/eval) — NEVER render in
-    // the transcript. Kept in state for eval context + debugging.
+    // the transcript. Kept in state for eval context + debugging; run-view.js
+    // draws it as a row of the turn's step list.
     if (!isNew || msg.type === 'react-step') return;
+    var target = containerFor(msg);
+    if (!target) return;
     var state = store.getState();
     var isFirstUserAfter = msg.role === 'user' && state.session.messageCount > 1;
 
-    var d = document.createElement('div');
-    d.className = 'msg ' + msg.role;
-    if (isFirstUserAfter && !msg.noSeparator) d.classList.add('separated');
-    if (isSlashEcho(msg)) d.classList.add('slash-cmd');
-    d.setAttribute('data-msg-id', msg.id);
-    d.innerHTML = messageHtml(msg, ts());
-    if (msg.type === 'stream') startStream(msg, d);
+    var node = document.createElement('div');
+    node.className = 'msg ' + msg.role;
+    if (isFirstUserAfter && !msg.noSeparator) node.classList.add('separated');
+    if (isSlashEcho(msg)) node.classList.add('slash-cmd');
+    node.setAttribute('data-msg-id', msg.id);
+    node.innerHTML = messageHtml(msg, ts());
+    if (msg.type === 'stream') startStream(msg, node);
 
-    el.output.appendChild(d);
-    // Cap the live transcript — long sessions shouldn't bloat the DOM
-    // (unbounded message nodes make scroll/render stutter).
-    while (el.output.children.length > 60) {
+    target.appendChild(node);
+    trimTranscript(target);
+  }
+
+  function containerFor(msg) {
+    return options.containerFor ? options.containerFor(msg) : el.output;
+  }
+
+  // Unbounded message nodes make scroll/render stutter.
+  function trimTranscript(target) {
+    if (target !== el.output) return;
+    while (el.output.children.length > MAX_TRANSCRIPT_NODES) {
       el.output.removeChild(el.output.children[0]);
     }
-    // Auto-scroll after DOM layout settles (double rAF for reliable layout)
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        scrollToBottom();
-      });
-    });
   }
 
   function startStream(msg, node) {
@@ -197,42 +206,23 @@ var Renderer = (function() {
     var body = msg._domEl.querySelector('.body');
     msg._raw = (msg._raw || '') + chunk;
     if (body) body.textContent = msg._raw;
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        scrollToBottom();
-      });
-    });
   }
 
   function finishStream(id) {
     var node = el.output.querySelector('[data-msg-id="' + id + '"]');
-    if (node) {
-      node.removeAttribute('data-streaming');
-      requestAnimationFrame(function() {
-        requestAnimationFrame(function() {
-          scrollToBottom();
-        });
-      });
-    }
+    if (node) node.removeAttribute('data-streaming');
     if (!el.output.querySelector('[data-streaming]')) el.output.removeAttribute('aria-busy');
   }
 
+  // agent-ui owns the input (it queues typing while a turn runs), so this
+  // only drives the optional thinking row and never disables or focuses it.
   function renderThinking(state, action) {
-    if (action.type !== 'THINKING') return;
+    if (action.type !== 'THINKING' || !el.thinking) return;
     var ui = state.ui;
-    if (!ui.isProcessing || ui.thinkingState === 'idle') {
-      el.thinking.style.display = 'none';
-      el.thinking.className = 'thinking';
-      el.prompt.classList.add('ready');
-      el.input.disabled = false;
-      el.input.focus();
-    } else {
-      el.thinking.style.display = 'flex';
-      el.thinking.className = 'thinking' + (ui.thinkingState === 'executing' ? ' executing' : '');
-      el.thinkingLabel.textContent = ui.thinkingLabel || 'thinking';
-      el.prompt.classList.remove('ready');
-      el.input.disabled = true;
-    }
+    var busy = ui.isProcessing && ui.thinkingState !== 'idle';
+    el.thinking.style.display = busy ? 'flex' : 'none';
+    el.thinking.className = 'thinking' + (busy && ui.thinkingState === 'executing' ? ' executing' : '');
+    if (busy && el.thinkingLabel) el.thinkingLabel.textContent = ui.thinkingLabel || 'thinking';
   }
 
   function renderContextBar(state) {
@@ -323,53 +313,36 @@ var Renderer = (function() {
       document.getElementById('ask-user-q').textContent = state.ui.humanQuestion || '';
       fillAskUserOptions(state.ui.humanOptions || []);
       existing.style.display = 'flex';
-      el.input.disabled = true;
       // Move focus into the dialog — was left on whatever had focus before
       // (usually <body>), so a keyboard/screen-reader user got no signal a
       // modal had opened at all.
       var firstBtn = askUserOptButtons()[0];
       if (firstBtn) firstBtn.focus();
-    } else {
-      if (existing) existing.style.display = 'none';
-      el.input.disabled = false;
-      el.input.focus();
+    } else if (existing) {
+      hideAskUser(existing);
     }
   }
 
-  // ─── Welcome header (always shown on page load/refresh) ────
-  // opts.tag ('h1'/'h2'): index.astro's static markup has no heading at
-  // all for this page — every other page in the repo does — so a
-  // screen-reader user navigating by heading found nothing to jump to,
-  // including the page's actual identity line. Defaults to a plain div
-  // (no card should silently become a heading just by calling this).
-  // opts folds the old bare extraClass string into one object so this
-  // stays a 4-param function instead of growing a 5th positional arg.
-  function welcomeCard(eyebrow, title, body, opts) {
-    opts = opts || {};
-    var d = document.createElement('div');
-    d.className = 'welcome-card ' + (opts.cls || '');
-    var tag = opts.tag || 'div';
-    d.innerHTML = '<div class="welcome-eyebrow">' + eyebrow + '</div>' +
-      '<' + tag + ' class="welcome-title">' + title + '</' + tag + '>' +
-      '<div class="welcome-body">' + body + '</div>';
-    return d;
+  // Return focus to the composer only if it was inside the dialog.
+  function hideAskUser(modal) {
+    var hadFocus = modal.contains && modal.contains(document.activeElement);
+    modal.style.display = 'none';
+    if (hadFocus && el.input) el.input.focus({ preventScroll: true });
   }
 
+  // ─── Session header (always shown on page load/refresh) ────
+  // index.astro carries the page identity (hero h1, profile files), so the
+  // transcript only opens with the session line.
   function showHeader(sessionId, isRestore, ago) {
     el.output.innerHTML = '';
 
-    // Reset the context readout to the true value on boot. index.html ships a
-    // hardcoded "28%" placeholder and renderContextBar only fires on
-    // CONTEXT_UPDATE/SESSION_START/MESSAGE_ADD, none of which run on a fresh
-    // (non-restore) boot — so an empty session previously showed "28%" text
-    // next to an empty fill bar. Render the computed pct (0% when empty).
+    // Reset the context readout to the true value on boot: renderContextBar
+    // only fires on CONTEXT_UPDATE/SESSION_START/MESSAGE_ADD, none of which
+    // run on a fresh (non-restore) boot.
     renderContextBar(store.getState());
 
-    // Sync the header HUD session id with the actual session. On a fresh load
-    // this element is a hardcoded placeholder in index.astro and renderSession
-    // only fires on SESSION_START/NEW_SESSION (never during initial boot), so
-    // the header would otherwise show a stale id that mismatches the welcome
-    // message ("new local session · agent-XXXX").
+    // Sync the session id readout with the actual session (renderSession only
+    // fires on SESSION_START/NEW_SESSION, never during initial boot).
     if (el.hSession) el.hSession.textContent = sessionId;
 
     // The id comes from localStorage on restore and /resume, so escape it.
@@ -380,99 +353,40 @@ var Renderer = (function() {
       (isRestore ? 'restored session · ' + safeId + ' · ' + ago + 'm ago' : 'new local session · ' + safeId) +
       '</span>';
     el.output.appendChild(sys);
-
-    // Card lands in one paint (was three staggered setTimeouts at
-    // 80/180/280ms) — each late arrival was a Lighthouse-measured layout
-    // shift (CLS 0.113 desktop / 0.351 mobile, "poor"). The existing CSS
-    // `.welcome-card:nth-child` animation-delay still staggers the *visual*
-    // reveal via opacity/transform, which is compositor-only and costs ~0 CLS.
-    // titleTag 'h1': the one true page heading — see welcomeCard's own
-    // comment on why this page needed a real heading at all.
-    el.output.appendChild(welcomeCard('EMIN GENCH', 'Forward Deployed AI Engineer',
-      '<span class="welcome-highlight">Cresta AI</span><span class="welcome-separator">·</span> Vancouver, BC<br>' +
-      '<span class="welcome-muted">Ask me anything — I run entirely in your browser.</span><br>' +
-      '<span class="welcome-proof">Cresta AI · Goodfintech · Vivoo · Novit AI</span>',
-      { cls: 'welcome-identity', tag: 'h1' }));
-    el.output.appendChild(specsStrip());
-    // A one-line text pointer, not a second row of command buttons: the
-    // #suggestions row below already has them, and a duplicate tap-target
-    // row would cost a card-height of the first screen. It keeps the h2
-    // landmark and the card rhythm; kept short and code-tag-free on purpose
-    // so .welcome-body's 1.8 line-height can't wrap it to 2-3 lines.
-    el.output.appendChild(welcomeCard('START EXPLORING', 'Ask naturally or use a shortcut',
-      'Every shortcut below runs instantly — no typing required.',
-      { cls: 'welcome-actions', tag: 'h2' }));
-  }
-
-  // A slim stat strip rather than a full "RUNNING LOCALLY" card (see
-  // .specs-strip in index.astro for why). Plain div, not a .welcome-card —
-  // no card border/shadow/eyebrow slot.
-  function specsStrip() {
-    var d = document.createElement('div');
-    d.className = 'specs-strip';
-    d.innerHTML = '<span class="specs-label">RUNNING LOCALLY</span>' +
-      '<span class="specs-item"><b>Needle</b> 26M<span class="specs-detail"> params · 38,000× smaller than Kimi 3</span></span>' +
-      '<span class="specs-item"><b>SmolLM2</b> 360M<span class="specs-detail"> params · 2,800× smaller than Kimi 3</span></span>' +
-      '<span class="specs-item">0 API calls<span class="specs-detail"> · zero servers · zero tracking</span></span>' +
-      '<span class="specs-item">100% private<span class="specs-detail"> · your data never leaves</span></span>';
-    return d;
   }
 
   function showWelcome() {
-    var state = store.getState();
-    showHeader(state.session.id, false, 0);
-
-    // The greeting message node is inserted now (empty, height reserved by
-    // .welcome-greeting's min-height) so nothing shifts layout when the
-    // typewriter fill starts a beat later — was a whole new block-level
-    // element landing 450ms after the cards had already settled, the other
-    // half of this page's measured CLS.
-    var welcome = 'Hello! I\'m an AI agent running entirely in your browser. Type <b>/help</b> to see commands, or ask me about Emin\'s work, repos, or smart glasses.';
-    var d = document.createElement('div'); d.className = 'msg agent welcome-greeting';
-    d.innerHTML = '<span class="prefix">' + ts() + '</span><span class="body"></span>';
-    el.output.appendChild(d);
-    var body = d.querySelector('.body'), lines = welcome.split('\n'), i = 0;
-    var buf = '';
-    function next() { if (i >= lines.length) { scrollToBottom(); store.dispatch({ type:'WELCOME_DONE' }); return; } buf += lines[i] + (i<lines.length-1?'<br>':''); body.innerHTML = buf; scrollToBottom(); i++; setTimeout(next, 22+Math.random()*12); }
-    setTimeout(next, 380);
-
-    setTimeout(function() {
-      if (el.suggestions) { el.suggestions.style.opacity = '1'; el.suggestions.style.transform = 'translateY(0)'; }
-    }, 750);
+    showHeader(store.getState().session.id, false, 0);
+    store.dispatch({ type: 'WELCOME_DONE' });
   }
 
   // ─── v2: Show restored session ───────────────────────────
   function showRestored(state) {
-    showHeader(state.session.id, true, Math.floor((Date.now() - state.session.start) / 60000));
+    showHeader(state.session.id, true, Math.floor((Date.now() - state.session.start) / MINUTE_MS));
 
-    // Append restored messages below the header boxes. showHeader() now
-    // paints synchronously (see its own comment), so this only needs one
-    // tick to let that paint settle before the (possibly long) history
-    // loop runs — was 500ms of blank wait for no functional reason.
+    // Append restored messages below the session line. showHeader() paints
+    // synchronously, so this only needs one tick to let that paint settle
+    // before the (possibly long) history loop runs.
     setTimeout(function() {
       var msgs = state.messages;
       for (var i = 0; i < msgs.length; i++) {
-        var m = msgs[i];
-        // Welcome cards are rebuilt by showHeader; never restore legacy ASCII welcome DOM.
-        if (m.type === 'welcome' || m.type === 'welcome-card' || m.type === 'react-step') continue;
-        var d = document.createElement('div');
-        d.className = 'msg ' + (m.role || 'agent');
-        if (isSlashEcho(m)) d.classList.add('slash-cmd');
-        d.innerHTML = messageHtml(m, '');
-        el.output.appendChild(d);
+        var saved = msgs[i];
+        // Never restore legacy welcome DOM (showHeader paints only the session
+        // line) or react-step traces (only a live turn's step list shows them).
+        if (saved.type === 'welcome' || saved.type === 'welcome-card' || saved.type === 'react-step') continue;
+        var node = document.createElement('div');
+        node.className = 'msg ' + (saved.role || 'agent');
+        if (isSlashEcho(saved)) node.classList.add('slash-cmd');
+        node.innerHTML = messageHtml(saved, '');
+        el.output.appendChild(node);
       }
-      el.output.lastChild && scrollToBottom();
-
-      if (el.suggestions) { el.suggestions.style.opacity = '1'; el.suggestions.style.transform = 'translateY(0)'; }
-      if (el.prompt) el.prompt.classList.add('ready');
-      if (el.input) { el.input.disabled = false; el.input.focus(); }
       store.dispatch({ type: 'WELCOME_DONE' });
-    }, 50);
+    }, RESTORE_PAINT_DELAY_MS);
   }
 
   // ─── v2: Decoder status ───────────────────────────────────
-  // Paints one status string on #s-model (status bar) and #input-model
-  // (composer line). It folds in the needle classifier's state
+  // Paints one status string on #sModel (header status line) and #inputModel
+  // (composer status row). It folds in the needle classifier's state
   // (state.models.needle*, set by store.js's generic MODEL_STATUS reducer)
   // since the header advertises both models as one pair.
   function llmLoadingDetail(m) {
@@ -525,9 +439,10 @@ var Renderer = (function() {
     return null;
   }
 
-  function init(_store, elements) {
+  function init(_store, elements, opts) {
     store = _store;
     el = elements;
+    options = opts || {};
     unsubscribe = store.subscribe(onStateChange);
   }
 

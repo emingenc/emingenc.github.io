@@ -7,7 +7,7 @@
 //   evaluate → {question, results, evalId, context, compactErrors} → evalResult
 //
 // Uses Transformers.js v4 from jsDelivr CDN (cached by browser after first load).
-// Model: onnx-community/SmolLM2-360M-Instruct-ONNX (~180MB download, cached in browser).
+// Model: onnx-community/SmolLM2-360M-Instruct-ONNX (272MB q4f16 download on WebGPU, 363MB q8 on the WASM fallback; cached in browser).
 
 import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/dist/transformers.min.js';
 

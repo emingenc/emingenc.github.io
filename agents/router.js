@@ -1,4 +1,5 @@
 // router.js v2 — ReAct agent loop: main entry point (dispatches to Classifier, Evaluator, Orchestrator)
+// eslint-disable-next-line max-lines-per-function -- legacy module wrapper (IIFE); out of scope for this UI change
 var Router = (function() {
   "use strict";
 
@@ -9,6 +10,8 @@ var Router = (function() {
   // opts.source === 'url' marks input that arrived from a query param or hash
   // route (agent-ui.js checkURLTriggers) rather than something the visitor
   // typed or clicked in-app — see the isSlash block below.
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy entry point; refactoring it is out of scope for this UI change
+  // eslint-disable-next-line max-lines-per-function, complexity -- legacy entry point; refactoring it is out of scope for this UI change
   function handleInput(text, opts) {
     opts = opts || {};
     // An ask_user pause intentionally keeps the turn alive while accepting a choice.
@@ -151,6 +154,7 @@ var Router = (function() {
     // ── Natural language: classify → unified ReAct loop ────
     store.dispatch({ type: 'THINKING', state: 'classifying', label: 'thinking...' });
 
+    // eslint-disable-next-line max-lines-per-function -- legacy classify callback; out of scope for this UI change
     Classifier.classify(text).then(function(result) {
       if (turnId !== Orchestrator.currentTurnId) { Orchestrator.done(turnId); return; }
       var intent = result || { type: 'faq', label: 'faq', score: 0 };
@@ -159,7 +163,7 @@ var Router = (function() {
         : Promise.resolve({ action: 'execute', tool: intent.label || 'faq', confidence: intent.score || 0, reason: 'alignment unavailable' });
       alignment.then(function(decision) {
         if (turnId !== Orchestrator.currentTurnId) { Orchestrator.done(turnId); return; }
-        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'system', type: 'react-step', content: 'align → ' + decision.action + ' ' + decision.tool + ' · ' + decision.reason, ts: '', noTs: true }});
+        reactStep('align → ' + decision.action + ' ' + decision.tool + ' · ' + decision.reason);
 
         // Compound query: detect additional tool keywords in the text
         var plan = [{ tool: decision.tool || 'out_of_scope', score: decision.confidence, reason: decision.reason }];
@@ -173,14 +177,24 @@ var Router = (function() {
       }).catch(function(err) {
         if (turnId !== Orchestrator.currentTurnId) { Orchestrator.done(turnId); return; }
         // Alignment failed — fall back to out_of_scope for safety
-        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'system', type: 'react-step', content: 'align → sink out_of_scope · alignment error', ts: '', noTs: true }});
+        reactStep('align → sink out_of_scope · alignment error');
         Orchestrator.runLoop([{ tool: 'out_of_scope', score: 0, reason: 'alignment error' }], text, turnId);
       });
     }).catch(function(err) {
       if (turnId !== Orchestrator.currentTurnId) { Orchestrator.done(turnId); return; }
-      store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'system', type: 'react-step', content: 'classify → error · ' + (err.message || 'classification failed'), ts: '', noTs: true }});
+      reactStep('classify → error · ' + (err.message || 'classification failed'));
       Orchestrator.runLoop([{ tool: 'out_of_scope', score: 0, reason: 'classification error' }], text, turnId);
     });
+  }
+
+  // Same message shape as Orchestrator's trace(): verb + raw text feed
+  // agent-ui's step list, which renders them as text.
+  function reactStep(text) {
+    var arrow = text.indexOf(' → ');
+    store.dispatch({ type: 'MESSAGE_ADD', message: {
+      role: 'system', type: 'react-step', content: text, ts: '', noTs: true,
+      verb: arrow > 0 ? text.slice(0, arrow) : '', text: text
+    }});
   }
 
   function init(_store) {
