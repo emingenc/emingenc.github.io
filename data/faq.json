@@ -961,17 +961,31 @@
         "website",
         "site",
         "this",
-        "how does this work",
         "portfolio",
         "local",
         "browser",
         "what is this site",
         "what is this website",
-        "how does this site work",
         "your portfolio site",
         "emin website"
       ],
-      "a": "<b>Emin's AI agent portfolio.</b> Runs 100% locally in your browser — ONNX Runtime Web + WebGPU + SmolLM2-360M. No servers, no API calls. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
+      "a": "<b>Emin's AI agent portfolio.</b> Two small models, Needle 26M and SmolLM2 360M, run 100% locally in your browser. No servers, no API calls. Ask <b>How does this work?</b> for the details. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
+    },
+    {
+      "q": "How does this work?",
+      "keywords": [
+        "how does this work",
+        "how does this chat",
+        "how does this site",
+        "how does this site work",
+        "how does this website",
+        "how does this agent",
+        "how does this page",
+        "how do you work",
+        "how are you built",
+        "how it works"
+      ],
+      "a": "<b>Two small models and a few tools, all in this tab.</b><ol><li><b>Route.</b> Needle (26M parameters) reads your question and picks a tool. Site questions like this one go straight to this FAQ.</li><li><b>Read.</b> The tool reads Emin's own files: career, repos, skills, posts and this FAQ. Ask about Emin's work, then tap the file name under a tool call to see the lines it read.</li><li><b>Check.</b> SmolLM2 (360M parameters) helps check the plan and the result, and handles small talk. A reply that claims something Emin's files don't say is dropped.</li></ol><p>Both run in your browser: Needle on WASM, SmolLM2 on WebGPU (or WASM). <b>0 servers, 0 API calls, zero tracking.</b></p><p>26M + 360M parameters, over 7,000× smaller than Kimi K3 (2.8 trillion). Not the size, it's how you use it. (But seriously, 26M params 🫠)</p>"
     },
     {
       "q": "How built?",
@@ -1619,7 +1633,7 @@
         "versus",
         "comparison"
       ],
-      "a": "I'm <b>360M params, local/private/offline</b>. ChatGPT/Claude are 1000x larger, cloud-based. Different tools — I'm specialized in Emin, they're generalists."
+      "a": "I'm <b>26M + 360M params, local/private/offline</b>. ChatGPT and Claude are far larger and run in the cloud. Different tools — I'm specialized in Emin, they're generalists."
     },
     {
       "q": "Time?",
@@ -1800,7 +1814,7 @@
         "look and feel",
         "ui design"
       ],
-      "a": "Emin designed and built it. The home page is a <b>warm-paper résumé</b> that doubles as the agent's context window: rows light up as its tools read them. The blog and the static résumé page keep the dark terminal look (teal #2dd4bf). Goal: feel like a coding agent at work, not a corporate site."
+      "a": "Emin designed and built it. The home page is the agent itself, drawn like a coding-agent session in a terminal: each question gets its tool calls, then the answer. Dark, one teal accent (#2dd4bf), all Roboto Mono. The blog and the old static site keep the same dark, teal look. Goal: feel like a coding agent at work, not a corporate site."
     },
     {
       "q": "Design system?",
@@ -2021,12 +2035,8 @@
       "a": "Emin's <b>learning hub</b> lives on <b>ultrafocus.space</b> — 25 bilingual (EN/TR) ADHD-focus articles with science-backed techniques like body doubling, box breathing, and deep work protocols. This portfolio site focuses on his career + projects, but ask me about ultrafocus and I'll tell you more."
     },
     {
-      "q": "How does this chat work / is it local?",
+      "q": "Is this chat local?",
       "keywords": [
-        "how does this chat",
-        "how does this site",
-        "how do you work",
-        "how are you built",
         "how is this site",
         "how is this built",
         "100% local",

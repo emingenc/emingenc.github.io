@@ -285,7 +285,18 @@ var Orchestrator = (function() {
     done();
   }
 
+  // agent-ui can open a tool's redirect inside the page instead (a post or
+  // the game as a card in the turn); without an opener, or when it declines,
+  // the page navigates there.
+  var opener = null;
+  function setOpener(fn) { opener = fn; }
+  function openOrNavigate(result, turnId) {
+    if (opener && opener(result)) trace(turnId, 'open → ' + result.redirect);
+    else window.location.href = result.redirect;
+  }
+
   // Smart ReAct loop: execute → evaluate → replan → stop
+  // eslint-disable-next-line max-lines-per-function -- legacy ReAct loop; refactoring it is out of scope for this UI change
   function runSmartLoop(intents, userText, turnId) {
     var results = [];
     var errors = [];
@@ -293,6 +304,7 @@ var Orchestrator = (function() {
     store.dispatch({ type: 'PLAN_START', plan: plan });
     trace(turnId, 'plan → ' + plan.map(function(p) { return p.tool; }).join(' → '));
 
+    // eslint-disable-next-line max-lines-per-function -- legacy ReAct loop; refactoring it is out of scope for this UI change
     function step(idx) {
       if (!validTurn(turnId)) return; // stale
       if (idx >= plan.length || store.getState().workingMemory.steps >= MAX_ITERATIONS) {
@@ -306,6 +318,7 @@ var Orchestrator = (function() {
 
       store.dispatch({ type: 'THINKING', state: 'executing', label: 'step ' + store.getState().workingMemory.steps + '/' + MAX_ITERATIONS + ': ' + toolName });
 
+      // eslint-disable-next-line max-lines-per-function, complexity -- legacy ReAct loop; refactoring it is out of scope for this UI change
       setTimeout(function() {
         if (!validTurn(turnId)) { done(turnId); return; }
 
@@ -424,7 +437,7 @@ var Orchestrator = (function() {
         }
 
         if (result && result.redirect) {
-          window.location.href = result.redirect;
+          openOrNavigate(result, turnId);
           done();
           return;
         }
@@ -790,6 +803,7 @@ var Orchestrator = (function() {
     done: done,
     cancel: cancel,
     resetFollowupState: resetFollowupState,
+    setOpener: setOpener,
     _getConversationBuffer: getConversationBuffer,
     getCompactErrors: getCompactErrors,
     _clearGenTimeout: _clearGenTimeout,

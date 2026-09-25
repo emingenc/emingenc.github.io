@@ -1,175 +1,189 @@
-// run-view.js — the agent column's turn engine (grafted from direction A).
-// Each question gets one turn block: step rows are appended once as trace
-// events arrive, one clock drives the status line (at most 4 updates a
-// second), and the turn folds to "Worked 160 ms · 6 steps" with its page
-// sources when it ends. Everything is rendered as text; no innerHTML here.
+// run-view.js — the session's turn engine. Each question becomes one turn in
+// the scrollback, newest last, drawn like a coding agent's in a terminal: the
+// prompt line, one tool call per tool the agent ran or page it opened, a busy
+// line with one clock while it works (at most 4 updates a second), the answer
+// and its cards, then a foot line with the turn's time and steps. A tool call
+// that read knowledge-file lines gets a result line ("└ work.md L1–L5") that
+// shows them, cited, when clicked; the foot's "details" shows every step.
+// Rendered as text; no innerHTML here.
 import * as Steps from './steps.js';
+import { make, makeButton } from './dom.js';
+import { readFigure } from './figures.js';
+import { repoList, repoCard, postCard, gameCard } from './cards.js';
 
 const TICK_MS = 250;
 const MAX_TURNS = 20;
 const CANCEL_LINE = '─── cancelled ───';
 const ASK_PHASE = 'Waiting for your answer…';
-const IDLE_SUMMARY = 'Ask the agent';
 const ANSWER_SELECTORS = ['.llm-summary', '.stream-body', '.msg.agent .body', '.faq-response'];
+const GLYPHS = { running: '•', done: '✓', error: '✗', interrupted: '■' };
+const FOOT_MARKS = { passed: ['ok', '✓'], stopped: ['bad', '■'], error: ['bad', '✗'] };
+const TOOL_VERBS = new Set(['act', 'open']);
+const REPO_TOOLS = new Set(['repos', 'g1']);
+const POST_PATH = /^\/blog\/(.+?)\/?$/;
 
-function make(tag, className, text) {
-  const elem = document.createElement(tag);
-  if (className) elem.className = className;
-  if (text !== undefined) elem.textContent = text;
-  return elem;
+// The query line, drawn like the prompt it was typed at.
+function buildQuery(query, id) {
+  const line = make('h2', 'q');
+  const caret = make('span', 'p', '❯');
+  caret.setAttribute('aria-hidden', 'true');
+  line.append(caret, make('span', 'sr', 'You asked: '), make('span', 'cmd', query));
+  if (id) line.id = id;
+  line.tabIndex = -1;
+  return line;
 }
 
-function makeButton(className, text) {
-  const button = make('button', className, text);
-  button.type = 'button';
-  return button;
+// The busy line is aria-hidden: the clock would be noisy, and the announcer
+// reports the finished turn instead.
+function buildBusy(finePointer) {
+  const busy = { root: make('p', 'busy'), phase: make('span', 'phase'), clock: make('span', 'clk') };
+  busy.root.setAttribute('aria-hidden', 'true');
+  busy.root.append(make('span', 'dot'), busy.phase, busy.clock);
+  if (finePointer) busy.root.append(make('span', 'esc', 'esc to stop'));
+  return busy;
 }
 
-function buildQuery(query, index) {
-  const heading = make('h3', 'turn-query', 'You asked ');
-  heading.id = 'turn-' + index + '-q';
-  heading.tabIndex = -1;
-  heading.append(make('b', '', query));
-  return heading;
-}
-
-// The status line is aria-hidden: the clock would be noisy, and the
-// announcer reports the finished turn instead.
-function buildStatus(finePointer) {
-  const root = make('p', 'turn-status');
-  root.setAttribute('aria-hidden', 'true');
-  const status = { root, phase: make('span', 'turn-phase'), clock: make('span', 'turn-clock') };
-  root.append(make('span', 'run-dot'), status.phase, status.clock);
-  if (finePointer) root.append(make('span', 'esc-hint', '· esc to stop'));
-  return status;
-}
-
-function buildTurnBlock(query, index, finePointer) {
+function buildTurn(query, index, finePointer) {
+  const id = 'turn-' + index;
   const block = {
-    root: make('section', 'turn-block'),
-    summary: makeButton('turn-summary-row'),
-    detail: make('div', 'turn-detail'),
-    query: buildQuery(query, index),
-    status: buildStatus(finePointer),
-    fold: makeButton('fold-btn'),
-    steps: make('ol', 'steps-list'),
-    msgs: make('div', 'turn-msgs'),
-    sources: make('div', 'sources'),
+    id,
+    root: make('section', 'turn'),
+    query: buildQuery(query, id + '-q'),
+    tools: make('ol', 'tools'),
+    busy: buildBusy(finePointer),
+    msgs: make('div', 'out'),
+    cards: make('div', 'out-cards'),
+    foot: make('p', 'foot'),
+    trace: make('ol', 'trace'),
   };
-  assembleTurnBlock(block, index);
+  assembleTurn(block);
   return block;
 }
 
-function assembleTurnBlock(block, index) {
+function assembleTurn(block) {
+  const body = make('div', 'turn-body');
   block.root.dataset.state = 'running';
   block.root.setAttribute('aria-labelledby', block.query.id);
-  block.summary.hidden = true;
-  block.fold.hidden = true;
-  block.sources.hidden = true;
-  block.steps.id = 'turn-' + index + '-steps';
-  block.fold.setAttribute('aria-controls', block.steps.id);
-  block.detail.append(block.query, block.status.root, block.fold, block.steps, block.msgs, block.sources);
-  block.root.append(block.summary, block.detail);
+  block.tools.setAttribute('aria-label', 'What the agent read and opened');
+  block.trace.id = block.id + '-steps';
+  block.trace.setAttribute('aria-label', 'Agent steps');
+  block.tools.hidden = true;
+  block.foot.hidden = true;
+  block.trace.hidden = true;
+  body.append(block.tools, block.busy.root, block.msgs, block.cards, block.foot, block.trace);
+  block.root.append(block.query, body);
 }
 
-function buildRow(row) {
-  const glyph = make('span', 'step-glyph');
-  glyph.setAttribute('aria-hidden', 'true');
-  const node = {
-    item: make('li', 'step'),
-    label: make('span', 'step-label', row.label),
-    ms: make('span', 'step-ms'),
-  };
-  node.item.append(glyph, make('span', 'step-verb', row.verb), node.label, node.ms);
+function buildStep(row) {
+  const node = { item: make('li'), glyph: make('span', 'gl'), label: make('span', 'd', row.label), ms: make('span', 'ms') };
+  node.glyph.setAttribute('aria-hidden', 'true');
+  node.item.append(node.glyph, make('span', 'v', row.verb), node.label, node.ms);
   return node;
 }
 
+// A tool call is one line until its tool's file lines are known; then a
+// result line under it names them. The call keeps its first label: the act
+// row's label later gains the lines, which the result line shows instead.
+function buildTool(row) {
+  const tool = { item: make('li'), call: make('span', 'tool'), glyph: make('span', 'gl'), res: null };
+  Object.assign(tool, { name: '', sources: [], figures: null });
+  tool.glyph.setAttribute('aria-hidden', 'true');
+  tool.call.append(tool.glyph, make('span', 'lbl', toolLabel(row)));
+  tool.item.append(tool.call);
+  paintTool(tool, row);
+  return tool;
+}
+
+function toolLabel(row) {
+  return row.verb === 'open' ? 'open ' + row.label : row.label;
+}
+
+function paintTool(tool, row) {
+  tool.item.dataset.state = row.state;
+  tool.glyph.textContent = GLYPHS[row.state] || '·';
+}
+
 // Rows the step engine added (including an interrupt's synthetic row) get
-// their node once; nodes are never rebuilt.
+// their node once; nodes are never rebuilt. Tool and page rows also get a
+// row of their own above the answer.
 function syncNodes(turn) {
   while (turn.nodes.length < turn.run.rows.length) {
-    const node = buildRow(turn.run.rows[turn.nodes.length]);
+    const index = turn.nodes.length;
+    const row = turn.run.rows[index];
+    const node = buildStep(row);
     turn.nodes.push(node);
-    turn.block.steps.append(node.item);
+    turn.block.trace.append(node.item);
+    if (TOOL_VERBS.has(row.verb) && !row.synthetic) addTool(turn, index, row);
   }
+}
+
+function addTool(turn, index, row) {
+  const tool = buildTool(row);
+  turn.tools.set(index, tool);
+  turn.block.tools.append(tool.item);
+  turn.block.tools.hidden = false;
+}
+
+function paintStep(turn, index, shown) {
+  const row = turn.run.rows[index];
+  const node = turn.nodes[index];
+  node.item.dataset.state = row.state;
+  node.glyph.textContent = GLYPHS[row.state] || '·';
+  node.label.textContent = row.label;
+  node.ms.textContent = shown[index];
+  const tool = turn.tools.get(index);
+  if (tool) paintTool(tool, row);
 }
 
 // Repaints only the last `count` rows: the row that just finished and the
 // newest one. Earlier rows keep their durations (cumulative rounding).
 function paintTail(turn, count) {
   const shown = Steps.displayDurations(turn.run.rows);
-  for (let i = Math.max(0, turn.nodes.length - count); i < turn.nodes.length; i++) {
-    const row = turn.run.rows[i];
-    turn.nodes[i].item.dataset.state = row.state;
-    turn.nodes[i].label.textContent = row.label;
-    turn.nodes[i].ms.textContent = shown[i];
-  }
+  for (let i = Math.max(0, turn.nodes.length - count); i < turn.nodes.length; i++) paintStep(turn, i, shown);
 }
 
+// The act row of `tool` names the file lines it read; returns its tool call.
 function relabelAct(turn, tool, sources) {
   const plain = tool + '()';
   for (let i = turn.run.rows.length - 1; i >= 0; i--) {
     const row = turn.run.rows[i];
     if (row.verb !== 'act' || row.label !== plain) continue;
     row.label = Steps.actLabel(tool, sources);
-    turn.nodes[i].label.textContent = row.label;
-    return;
+    paintStep(turn, i, Steps.displayDurations(turn.run.rows));
+    return turn.tools.get(i) || null;
   }
+  return null;
 }
 
-function setStepsOpen(block, open) {
-  block.fold.setAttribute('aria-expanded', String(open));
-  block.steps.hidden = !open;
+// The prose already says what these tools' ASCII cards show: the bio, the
+// company when the question named it, the stack. Their rows keep the lines.
+function proseCovers(tool, data) {
+  if (tool === 'skills') return true;
+  if (tool !== 'about') return false;
+  if (!data) return true;
+  if (data.type === 'company') return Boolean(data.namedInQuestion);
+  return data.type === 'timeline' || data.type === 'education';
 }
 
-function toggleSteps(block) {
-  setStepsOpen(block, block.steps.hidden);
-}
-
-function toggleDetail(block) {
-  const open = block.detail.hidden;
-  block.detail.hidden = !open;
-  block.summary.setAttribute('aria-expanded', String(open));
-}
-
-function buildSourceChip(source) {
-  const chip = makeButton('src-chip', Steps.sourceLabel([source]));
-  chip.dataset.file = source.file;
-  chip.dataset.line = String(source.lines[0] || 1);
-  return chip;
-}
-
-function fillSources(container, sources, page) {
-  if (!sources.length) return;
-  const files = sources.length === 1 ? '1 file' : sources.length + ' files';
-  const label = 'sources: ' + files + ' · ≈' + page.tokensFor(sources) + ' tok';
-  container.append(make('span', 'sources-label', label));
-  sources.forEach((source) => container.append(buildSourceChip(source)));
-  container.hidden = false;
-}
-
-function showDone(turn, page) {
+function fillFoot(turn) {
   const { block, run } = turn;
-  block.root.dataset.state = run.status === 'stopped' ? 'interrupted' : 'done';
-  block.status.root.hidden = true;
-  block.fold.textContent = Steps.foldLabel(run);
-  block.fold.hidden = false;
-  setStepsOpen(block, run.status !== 'passed');
-  fillSources(block.sources, turn.sources, page);
+  const [className, mark] = FOOT_MARKS[run.status] || FOOT_MARKS.error;
+  const label = make('span');
+  label.append(make('span', className, mark), ' ' + Steps.foldLabel(run));
+  block.foot.append(label);
+  if (turn.nodes.length) block.foot.append(detailsButton(block));
+  block.foot.hidden = false;
 }
 
-function stepsText(count) {
-  return count + (count === 1 ? ' step' : ' steps');
-}
-
-function historyParts(turn) {
-  const { run, index } = turn;
-  return [
-    make('span', 'ts-run', 'run #' + index),
-    make('span', 'ts-state ts-' + run.status, run.status),
-    make('span', 'ts-time', Steps.fmtMs(Steps.totalMs(run)) + ' · ' + stepsText(Steps.stepCount(run))),
-    make('span', 'ts-query', run.query),
-  ];
+function detailsButton(block) {
+  const button = makeButton('more', 'details');
+  button.setAttribute('aria-expanded', 'false');
+  button.setAttribute('aria-controls', block.trace.id);
+  button.addEventListener('click', () => {
+    block.trace.hidden = !block.trace.hidden;
+    button.setAttribute('aria-expanded', String(!block.trace.hidden));
+  });
+  return button;
 }
 
 function answerText(msgs) {
@@ -201,8 +215,7 @@ const HANDLERS = {
   NEW_SESSION: (view) => view.reset(),
 };
 
-// opts: {store, list, scroller, idlePanel, announcer, page, sheet,
-//        onRunStart, onRunEnd, finePointer}
+// opts: {store, list, announcer, page, onRunStart, onRunEnd, finePointer}
 export class RunView {
   constructor(opts) {
     this.opts = opts;
@@ -217,12 +230,14 @@ export class RunView {
     return this.turn !== null;
   }
 
-  // Renderer hook: user queries and the cancel line are drawn by this view.
+  // Renderer hook: user queries and the cancel line are drawn by this view,
+  // and an ASCII card is left out when the turn shows its content otherwise.
   containerFor(msg) {
     if (msg.role === 'user' || msg.type === 'react-step') return null;
     if (msg.role === 'system' && msg.content === CANCEL_LINE) return null;
     const turn = this.turn || this.last;
-    return turn && turn.block.root.isConnected ? turn.block.msgs : this.opts.list;
+    if (!turn || !turn.block.root.isConnected) return this.opts.list;
+    return msg.type === 'tool-call' && turn.drawn.has(msg.toolName) ? null : turn.block.msgs;
   }
 
   stop() {
@@ -238,9 +253,6 @@ export class RunView {
     clearInterval(this.ticker);
     this.turn = null;
     this.last = null;
-    if (this.opts.idlePanel) this.opts.idlePanel.hidden = false;
-    this.opts.page.clear();
-    this.opts.sheet.setSummary(IDLE_SUMMARY);
     if (hadTurn) this.opts.onRunEnd();
   }
 
@@ -258,25 +270,13 @@ export class RunView {
   }
 
   startTurn(query) {
-    this.foldLast();
     this.count += 1;
-    const block = buildTurnBlock(query, this.count, this.opts.finePointer);
+    const block = buildTurn(query, this.count, this.opts.finePointer);
     const run = Steps.createRun(query, performance.now());
-    this.turn = { run, block, nodes: [], index: this.count, sources: [] };
-    block.fold.addEventListener('click', () => toggleSteps(block));
-    block.summary.addEventListener('click', () => toggleDetail(block));
-    block.sources.addEventListener('click', (evt) => this.onSourceClick(evt));
-    this.opts.list.insertBefore(block.root, this.opts.list.firstChild);
+    this.turn = { run, block, nodes: [], tools: new Map(), drawn: new Set(), repoLines: new Set(), repoList: null };
+    this.opts.list.append(block.root);
     this.trimTurns();
-    this.afterStart();
-  }
-
-  afterStart() {
-    const { idlePanel, scroller, page, sheet } = this.opts;
-    if (idlePanel) idlePanel.hidden = true;
-    if (scroller) scroller.scrollTop = 0;
-    page.clear();
-    if (sheet.state() !== 'expanded') sheet.peek();
+    this.opts.page.pin(block.root);
     this.paintStatus();
     this.ticker = setInterval(() => this.paintStatus(), TICK_MS);
     this.opts.onRunStart();
@@ -285,11 +285,9 @@ export class RunView {
   paintStatus() {
     const turn = this.turn;
     if (!turn) return;
-    const clock = Steps.fmtClock(performance.now() - turn.run.startMs);
-    const { phase } = turn.block.status;
+    const { phase, clock } = turn.block.busy;
     if (phase.textContent !== turn.run.phase) phase.textContent = turn.run.phase;
-    turn.block.status.clock.textContent = clock;
-    this.opts.sheet.setSummary(turn.run.phase + ' ' + clock);
+    clock.textContent = Steps.fmtClock(performance.now() - turn.run.startMs);
   }
 
   setPhase(text) {
@@ -307,10 +305,88 @@ export class RunView {
     const turn = this.turn;
     if (!turn) return;
     const sources = Steps.sourcesFor(tool, data);
-    if (!sources.length) return;
-    turn.sources = Steps.mergeSources(turn.sources, sources);
-    relabelAct(turn, tool, sources);
-    this.opts.page.highlight(sources, tool);
+    if (sources.length) this.noteSources(turn, tool, sources);
+    const carded = this.addCards(turn, tool, data);
+    if (carded || (sources.length && proseCovers(tool, data))) turn.drawn.add(tool);
+  }
+
+  noteSources(turn, tool, sources) {
+    const toolRow = relabelAct(turn, tool, sources);
+    if (!toolRow || toolRow.res) return;
+    Object.assign(toolRow, { name: tool, sources });
+    this.addResult(turn, toolRow);
+  }
+
+  // The result line under a tool call: a button that shows the lines it read.
+  addResult(turn, tool) {
+    const button = makeButton('res');
+    const elbow = make('span', 'el', '└');
+    const twisty = make('span', 'tw', '▸');
+    elbow.setAttribute('aria-hidden', 'true');
+    twisty.setAttribute('aria-hidden', 'true');
+    const tok = make('span', 'tok', '· ≈' + this.opts.page.tokensFor(tool.sources) + ' tok');
+    button.append(elbow, make('span', 'src', Steps.sourceLabel(tool.sources)), tok, twisty);
+    button.setAttribute('aria-expanded', 'false');
+    button.addEventListener('click', () => this.toggleLines(turn, tool));
+    tool.item.append(button);
+    tool.res = button;
+  }
+
+  toggleLines(turn, tool) {
+    if (!tool.figures) {
+      tool.figures = tool.sources.map((source) => this.figureFor(tool, source));
+      tool.figures.forEach((figure, index) => { figure.id = `${turn.block.id}-${tool.name}-${index}`; });
+      tool.res.setAttribute('aria-controls', tool.figures.map((figure) => figure.id).join(' '));
+      tool.item.append(...tool.figures);
+    }
+    const open = tool.res.getAttribute('aria-expanded') !== 'true';
+    tool.res.setAttribute('aria-expanded', String(open));
+    tool.figures.forEach((figure) => { figure.hidden = !open; });
+  }
+
+  // The rows a source names, cited.
+  figureFor(tool, source) {
+    const { page } = this.opts;
+    const rows = page.rowsFor(source).map((row) => ({ line: row.line, text: row.text, hit: true }));
+    const range = Steps.lineRangeLabel(source.lines) || 'all lines';
+    return readFigure({ name: Steps.FILE_NAMES[source.file], range, tool: tool.name + '()', tok: page.tokensFor([source]) }, rows);
+  }
+
+  addCards(turn, tool, data) {
+    if (REPO_TOOLS.has(tool)) return this.addRepoCards(turn, Steps.sourcesFor(tool, data));
+    if (tool !== 'game' || !data || !data.games) return false;
+    data.games.forEach((game) => turn.block.cards.append(gameCard(game, false)));
+    return true;
+  }
+
+  // One card per repo a turn's tools read, in the order they read them.
+  addRepoCards(turn, sources) {
+    const fresh = sources.flatMap((source) => this.opts.page.rowsFor(source)).filter((row) => !turn.repoLines.has(row.line));
+    if (fresh.length && !turn.repoList) turn.repoList = turn.block.cards.appendChild(repoList());
+    fresh.forEach((row) => {
+      turn.repoLines.add(row.line);
+      turn.repoList.append(repoCard(row));
+    });
+    return turn.repoLines.size > 0;
+  }
+
+  // Orchestrator hook: a post or a game the agent would navigate to opens
+  // in this turn instead. False leaves the navigation to the orchestrator.
+  open(result) {
+    const card = this.turn ? this.cardFor(result) : null;
+    if (card) this.turn.block.cards.append(card);
+    return Boolean(card);
+  }
+
+  cardFor(result) {
+    const path = String(result.redirect || '');
+    const post = POST_PATH.exec(path);
+    if (result.toolName === 'blog' && post) {
+      const row = this.opts.page.rowsFor({ file: 'writing', lines: [] }).find((item) => item.data.slug === post[1]);
+      return row ? postCard(row) : null;
+    }
+    const game = result.toolName === 'game' ? (window.Tools.games || []).find((item) => item.path === path) : null;
+    return game ? gameCard(game, true) : null;
   }
 
   finishTurn() {
@@ -333,32 +409,34 @@ export class RunView {
     this.last = turn;
     syncNodes(turn);
     paintTail(turn, 2);
-    showDone(turn, this.opts.page);
-    this.opts.page.settle();
+    turn.block.root.dataset.state = turn.run.status === 'stopped' ? 'interrupted' : 'done';
+    turn.block.busy.root.hidden = true;
+    fillFoot(turn);
     this.opts.announcer.textContent = Steps.announceText(turn.run, answerText(turn.block.msgs));
-    this.opts.sheet.setSummary(Steps.foldLabel(turn.run));
     this.opts.onRunEnd();
   }
 
-  foldLast() {
-    const turn = this.last;
-    if (!turn || !turn.block.root.isConnected) return;
-    const { summary, detail } = turn.block;
-    summary.replaceChildren(...historyParts(turn));
-    summary.setAttribute('aria-expanded', 'false');
-    summary.hidden = false;
-    detail.hidden = true;
-  }
-
+  // Oldest first: the scrollback keeps the newest MAX_TURNS turns.
   trimTurns() {
-    const blocks = this.opts.list.querySelectorAll('.turn-block');
-    for (let i = MAX_TURNS; i < blocks.length; i++) blocks[i].remove();
+    const blocks = this.opts.list.querySelectorAll('.turn');
+    for (let i = 0; i < blocks.length - MAX_TURNS; i++) blocks[i].remove();
   }
 
-  onSourceClick(evt) {
-    const chip = evt.target.closest('.src-chip');
-    if (!chip) return;
-    if (this.opts.sheet.isPhone()) this.opts.sheet.idle();
-    this.opts.page.reveal(chip.dataset.file, Number(chip.dataset.line));
+  // `cat <file>` from the command menu: the whole file, as a turn of its own
+  // that never reaches the agent.
+  showFile(fileId) {
+    const name = Steps.FILE_NAMES[fileId];
+    if (!name) return;
+    const { page, list } = this.opts;
+    const source = { file: fileId, lines: [] };
+    const rows = page.rowsFor(source).map((row) => ({ line: row.line, text: row.text, hit: false }));
+    const figure = readFigure({ name, range: 'L1–L' + rows.length, tool: 'cat', tok: page.tokensFor([source]) }, rows);
+    const block = make('section', 'turn cat');
+    const body = make('div', 'turn-body');
+    body.append(figure);
+    block.append(buildQuery('cat ' + name, ''), body);
+    list.append(block);
+    this.trimTurns();
+    page.pin(block);
   }
 }

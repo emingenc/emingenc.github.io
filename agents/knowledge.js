@@ -98,7 +98,7 @@ var KnowledgeBase = (function() {
         found: true,
         company: target.company || '',
         role: target.title || '',
-        period: target.years || '',
+        period: target.years || (target.since ? target.since + ' – Present' : ''),
         location: target.location || '',
         description: target.description || '',
         highlights: target.highlights || [],
@@ -172,12 +172,11 @@ var KnowledgeBase = (function() {
     if (result.type === 'company') {
       var title = (result.company || '').toUpperCase();
       if (result.aka) title += ' (AKA ' + result.aka.toUpperCase() + ')';
-      var lines = [title];
-      lines.push('─'.repeat(Math.min(44, title.length + 4)));
+      var lines = [];
       lines.push(result.role || '');
-      lines.push(result.period || '');
+      if (result.period) lines.push(result.period);
       if (result.location) lines.push('@ ' + result.location);
-      if (result.isCurrent) lines.push('📍 CURRENT ROLE');
+      if (result.isCurrent) lines.push('CURRENT ROLE');
       if (result.description) { lines.push(''); lines.push(result.description); }
       lines.push('');
       var highlights = result.highlights || [];
@@ -185,15 +184,13 @@ var KnowledgeBase = (function() {
         lines.push('• ' + highlights[hi]);
       }
       if (result.url) lines.push('', result.url);
-      return { toolName: 'about', content: box(title.split('(')[0].trim(), lines), data: result };
+      return { toolName: 'about', content: box(title, lines), data: result };
     }
 
     if (result.type === 'timeline') {
       var c = result.career;
-      var tlines = ['CAREER TIMELINE'];
-      tlines.push('─'.repeat(44));
-      tlines.push('');
-      tlines.push('📍 CURRENT: ' + c.current.title + ' @ ' + c.current.company + ' (' + c.current.since + ')');
+      var tlines = [];
+      tlines.push('CURRENT: ' + c.current.title + ' @ ' + c.current.company + ' (' + c.current.since + ')');
       tlines.push('');
       var hist = c.history || [];
       for (var i = 0; i < hist.length; i++) {
@@ -201,8 +198,8 @@ var KnowledgeBase = (function() {
         tlines.push(h.years + '  ' + h.title + ' @ ' + h.company);
       }
       tlines.push('');
-      if (c.military) tlines.push('🎖  ' + c.military);
-      return { toolName: 'about', content: box('CAREER', tlines), data: result };
+      if (c.military) tlines.push(c.military);
+      return { toolName: 'about', content: box('CAREER TIMELINE', tlines), data: result };
     }
 
     if (result.type === 'education') {
