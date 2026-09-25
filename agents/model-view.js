@@ -1,21 +1,13 @@
-// model-view.js — the reserved model slot. While the local models load it
-// shows one row each (Needle routes, SmolLM2 writes); once both settle it
-// folds to a one-line runtime summary in the same fixed-height space, and
-// the phone header swaps its status chip for the role line.
-// Sizes are the real downloads: Needle's 52 MB encoder at boot, SmolLM2
-// 272 MB on WebGPU (q4f16) or 363 MB on the WASM fallback (q8).
+// model-view.js — the live status line under the prompt: the agent runs in
+// this browser with no servers, and one plain-word state says how its local
+// models are doing: "model loading", the download as "model 42%", then
+// "ready" ("model off · commands still work" if either model can't load
+// here). The title names both models. Needle (26M) picks a tool for each
+// question from its 52 MB encoder; SmolLM2 (360M) is 272 MB on WebGPU
+// (q4f16) or 363 MB on the WASM fallback (q8).
 const SMOL_WEBGPU_MB = 272;
 const SMOL_WASM_MB = 363;
-const FULL_PERCENT = 100;
 const MODEL_ACTIONS = new Set(['MODEL_STATUS', 'MODEL_PROGRESS']);
-
-function byId(id) {
-  return document.getElementById(id);
-}
-
-function setText(elem, text) {
-  if (elem && elem.textContent !== text) elem.textContent = text;
-}
 
 function usesWasm(models) {
   const text = String(models.llmStatusText || '').toLowerCase();
@@ -24,54 +16,28 @@ function usesWasm(models) {
   return !('gpu' in navigator);
 }
 
-function backendName(models) {
-  return usesWasm(models) ? 'WASM' : 'WebGPU';
+function modelFailed(models) {
+  return Boolean(models.llmError || models.needleError);
 }
 
-function needleText(models) {
-  if (models.needleError) return 'unavailable';
-  if (models.needleReady) return 'ready';
-  return models.needleStatusText || 'loading…';
+// Needle is small and loads first, so the state follows SmolLM2's download.
+function modelState(models) {
+  if (modelFailed(models)) return ['off', 'model off · commands still work'];
+  if (models.llmReady && !models.needleLoading) return ['ok', 'ready'];
+  if (models.llmDownloadProgress > 0) return ['busy', 'model ' + models.llmDownloadProgress + '%'];
+  return ['busy', 'model loading'];
 }
 
-function smolText(models) {
-  if (models.llmError) return 'unavailable';
-  if (models.llmReady) return 'ready · ' + backendName(models);
-  if (models.llmDownloadProgress > 0) return 'downloading ' + models.llmDownloadProgress + '%';
-  return models.llmStatusText || (models.llmLoading ? 'loading…' : 'waiting…');
-}
-
-function isSettled(models) {
-  const needleDone = models.needleReady || Boolean(models.needleError);
-  const smolDone = models.llmReady || Boolean(models.llmError);
-  return needleDone && smolDone;
-}
-
-function summaryText(models) {
-  if (models.llmError) return 'Runtime · SmolLM2 unavailable · commands and quick answers still work';
-  if (models.needleError) return 'Runtime · Needle unavailable · commands still work';
-  return 'Runtime ready · Needle 26M + SmolLM2 360M · ' + backendName(models) + ' · cached';
-}
-
-// State first: a narrow phone header clips the end of the chip.
-function chipText(models) {
-  if (models.llmDownloadProgress > 0 && !models.llmReady) return models.llmDownloadProgress + '% SmolLM2';
-  return models.needleReady ? 'loading SmolLM2' : 'loading Needle';
+function titleText(models) {
+  if (modelFailed(models)) return 'A model could not load in this tab; /commands still work. Nothing goes to a server.';
+  const smolMb = usesWasm(models) ? SMOL_WASM_MB : SMOL_WEBGPU_MB;
+  const backend = usesWasm(models) ? 'WASM' : 'WebGPU';
+  return `Two models run in this tab: Needle 26M picks a tool for each question (52 MB), and SmolLM2 360M checks answers and handles small talk (${smolMb} MB, ${backend}). Nothing goes to a server.`;
 }
 
 export class ModelView {
   constructor(store) {
-    this.els = {
-      needleState: byId('rmNeedleState'),
-      needleFill: byId('rmNeedleFill'),
-      smolSize: byId('rmSmolSize'),
-      smolState: byId('rmSmolState'),
-      smolFill: byId('rmSmolFill'),
-      rows: byId('rmRows'),
-      fold: byId('runtimeFold'),
-      chip: byId('statusChip'),
-    };
-    if (this.els.fold) this.els.fold.addEventListener('click', () => this.toggleRows());
+    this.els = { root: document.getElementById('liveStatus'), state: document.getElementById('liveModel') };
     store.subscribe((state, action) => {
       if (MODEL_ACTIONS.has(action.type)) this.paint(state.models);
     });
@@ -79,43 +45,12 @@ export class ModelView {
   }
 
   paint(models) {
-    this.paintNeedle(models);
-    this.paintSmol(models);
-    this.paintSummary(models);
-  }
-
-  paintNeedle(models) {
-    const { needleState, needleFill } = this.els;
-    setText(needleState, needleText(models));
-    if (!needleFill) return;
-    needleFill.style.width = models.needleReady ? FULL_PERCENT + '%' : '';
-    const loading = !models.needleReady && !models.needleError;
-    needleFill.parentElement.toggleAttribute('data-indeterminate', loading);
-  }
-
-  paintSmol(models) {
-    const { smolSize, smolState, smolFill } = this.els;
-    setText(smolSize, 'writer · ' + (usesWasm(models) ? SMOL_WASM_MB : SMOL_WEBGPU_MB) + ' MB');
-    setText(smolState, smolText(models));
-    if (smolFill) smolFill.style.width = (models.llmReady ? FULL_PERCENT : models.llmDownloadProgress || 0) + '%';
-  }
-
-  paintSummary(models) {
-    const { rows, fold, chip } = this.els;
-    const settled = isSettled(models);
-    document.body.classList.toggle('models-ready', settled);
-    if (chip) chip.hidden = settled;
-    setText(chip, models.llmError || models.needleError ? 'model unavailable' : chipText(models));
-    if (!fold) return;
-    fold.hidden = !settled;
-    setText(fold, summaryText(models));
-    if (rows) rows.hidden = settled && fold.getAttribute('aria-expanded') !== 'true';
-  }
-
-  toggleRows() {
-    const { rows, fold } = this.els;
-    const open = fold.getAttribute('aria-expanded') !== 'true';
-    fold.setAttribute('aria-expanded', String(open));
-    if (rows) rows.hidden = !open;
+    const { root, state } = this.els;
+    if (state) {
+      const [name, text] = modelState(models);
+      state.dataset.state = name;
+      if (state.textContent !== text) state.textContent = text;
+    }
+    if (root) root.title = titleText(models);
   }
 }

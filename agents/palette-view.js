@@ -43,7 +43,7 @@ function nameSpan(entry) {
 }
 
 function fileDescription(entry) {
-  return `Jump to file · ≈${entry.tok} tok`;
+  return `Show the file · ≈${entry.tok} tok`;
 }
 
 function descSpan(entry) {
@@ -131,7 +131,6 @@ function setChrome(opts, isOpen) {
   opts.menu.hidden = !isOpen;
   opts.scrim.hidden = !isOpen;
   opts.input.setAttribute('aria-expanded', String(isOpen));
-  document.body.classList.toggle('menu-open', isOpen);
 }
 
 function setHint(opts, text, isWarning) {

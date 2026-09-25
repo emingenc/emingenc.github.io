@@ -1,32 +1,35 @@
-// agent-ui.js — boots the in-browser agent on the C · Context page. It wires
-// the store, renderer and router (classic scripts on window) to the run view,
-// the composer (Enter queues while a turn runs; ■ Stop or Esc interrupts),
-// the command menu, the page highlight, the phone sheet and the model slot.
+// agent-ui.js — boots the in-browser agent that is the whole home page: one
+// coding-agent session. It wires the store, renderer and router (classic
+// scripts on window) to the run view (one turn per question in the
+// scrollback), the composer (Enter queues while a turn runs; ■ Stop or Esc
+// interrupts), the command menu, the live status line and the page's
+// following of new output. Posts and the game the agent opens stay in the
+// page as cards (Orchestrator.setOpener).
 // URL triggers keep their { source: 'url' } marker: router.js uses it to
 // refuse destructive commands (/forget, /clear) that arrive from a link.
 import { RunView } from './agents/run-view.js';
 import { ModelView } from './agents/model-view.js';
 import { createPaletteView } from './agents/palette-view.js';
 import { createPageView } from './agents/page-view.js';
-import { createSheetView } from './agents/sheet-view.js';
 
 const URL_TRIGGER_DELAY_MS = 1200;
-const SESSION_TICK_MS = 30000;
-const MINUTE_MS = 60000;
 const ID_RADIX = 36;
 const ID_START = 2;
 const ID_END = 6;
-const PLACEHOLDERS = { fine: 'Ask about Emin\'s work, or type / for commands', coarse: 'Ask, or type /' };
+const PLACEHOLDERS = { fine: 'Ask about Emin\'s work, or type / for commands', coarse: 'Ask about Emin or type /' };
 const HINTS = {
   idleFine: '/ for commands · ⌘K',
   idleCoarse: '',
-  runFine: 'Enter queues your next question · Esc stops',
+  runFine: 'Enter queues · Esc stops',
   runCoarse: '■ Stop interrupts',
 };
 const QUEUED_NOTES = { booting: 'queued — runs when the agent is ready: ', running: 'queued — runs after this turn: ' };
 
 const byId = (id) => document.getElementById(id);
 const finePointer = window.matchMedia('(pointer: fine)').matches;
+// The long placeholder needs a mouse and more room than index.astro's phone
+// layout (max-width: 640px) leaves the prompt; there it is cut off.
+const wideFinePointer = window.matchMedia('(pointer: fine) and (min-width: 641px)');
 const sessionStart = Date.now();
 const els = {
   input: byId('input'),
@@ -35,7 +38,6 @@ const els = {
   hint: byId('composerHint'),
   queued: byId('queuedNote'),
   turnList: byId('turnList'),
-  panel: byId('panelBody'),
 };
 let pending = null;
 let booted = false;
@@ -54,14 +56,10 @@ const store = window.createStore({
   ui: { isProcessing: false, thinkingState: 'idle', thinkingLabel: '', contextPct: 0 },
 });
 
-const page = createPageView({ doc: byId('docWrap'), jumpChip: byId('jumpChip'), agentCol: byId('agent') });
-const sheet = createSheetView({
-  panel: els.panel, handle: byId('sheetHandle'), summary: byId('sheetSummary'),
-  content: byId('turnContent'), composer: byId('composerWrap'),
-});
+const page = createPageView({ doc: byId('docWrap'), chip: byId('jumpChip'), list: els.turnList });
 const runView = new RunView({
-  store, page, sheet, finePointer, onRunStart, onRunEnd,
-  list: els.turnList, scroller: els.panel, idlePanel: byId('idlePanel'), announcer: byId('announcer'),
+  store, page, finePointer, onRunStart, onRunEnd,
+  list: els.turnList, announcer: byId('announcer'),
 });
 const palette = createPaletteView({
   input: els.input, menu: byId('cmdMenu'), list: byId('cmdList'), empty: byId('cmdEmpty'),
@@ -69,13 +67,9 @@ const palette = createPaletteView({
   getFiles: () => page.files(), onRun: (text) => submit(text), onOpenFile: openFile,
 });
 
+// renderer.js paints the context use into sCtxPct.
 function rendererElements() {
-  return {
-    output: els.turnList, input: els.input, hSession: byId('hSession'),
-    sCtxFill: byId('sCtxFill'), sCtxPct: byId('sCtxPct'),
-    sModel: byId('sModel'), sModelDot: byId('sModelDot'),
-    inputModel: byId('inputModel'), inputModelDot: byId('inputModelDot'),
-  };
+  return { output: els.turnList, input: els.input, sCtxPct: byId('liveCtx') };
 }
 
 // ─── Composer: submit, queue, stop ─────────────────────────
@@ -113,7 +107,7 @@ function setSendMode(mode) {
   const stopping = mode === 'stop';
   els.sendBtn.dataset.mode = mode;
   els.sendBtn.type = stopping ? 'button' : 'submit';
-  els.sendBtn.textContent = stopping ? '■ Stop' : '↵';
+  els.sendBtn.textContent = stopping ? '■' : '↵';
   els.sendBtn.setAttribute('aria-label', stopping ? 'Stop this turn' : 'Send');
 }
 
@@ -131,16 +125,14 @@ function onRunEnd() {
 }
 
 function openFile(fileId) {
-  if (sheet.isPhone()) sheet.idle();
-  page.reveal(fileId, 1);
+  runView.showFile(fileId);
 }
 
 // ─── Keyboard ──────────────────────────────────────────────
-// Esc order: command menu → running turn → phone sheet → clear the input.
+// Esc order: command menu → running turn → clear the input.
 function onEscape() {
   if (palette.isOpen()) palette.close();
   else if (runView.isRunning()) runView.stop();
-  else if (sheet.isPhone() && sheet.state() !== 'idle') sheet.idle();
   else if (document.activeElement === els.input) els.input.value = '';
 }
 
@@ -205,16 +197,7 @@ function wireComposer() {
   els.input.addEventListener('input', () => palette.syncToInput());
   els.input.addEventListener('keydown', onInputKey);
   document.addEventListener('keydown', onGlobalKey);
-  byId('cmdkBtn')?.addEventListener('click', openMenu);
-  byId('runtimeOpen')?.addEventListener('click', () => sheet.expand());
   wireChips(byId('suggestChips'));
-  wireChips(byId('idlePanel'));
-}
-
-// ─── Page chrome ───────────────────────────────────────────
-function tickSessionAge() {
-  const age = byId('sSession');
-  if (age) age.textContent = Math.floor((Date.now() - sessionStart) / MINUTE_MS) + 'm';
 }
 
 // /new and /resume repaint the transcript through these, so the run view
@@ -266,9 +249,6 @@ function checkHashTrigger() {
 // ─── Public API used by card markup (onclick="window.quickCmd('/x')") ──
 function exposeApi() {
   window.quickCmd = (cmd) => submit(cmd);
-  window.setMode = (mode) => {
-    if (mode === 'static') window.location.href = '/static';
-  };
   window._enableLLM = () => window.Router.enableLLM();
 }
 
@@ -291,20 +271,23 @@ function boot() {
   });
 }
 
+function showPlaceholder() {
+  els.input.placeholder = wideFinePointer.matches ? PLACEHOLDERS.fine : PLACEHOLDERS.coarse;
+}
+
 function start() {
   els.input.disabled = true;
-  els.input.placeholder = finePointer ? PLACEHOLDERS.fine : PLACEHOLDERS.coarse;
+  showPlaceholder();
+  wideFinePointer.addEventListener('change', showPlaceholder);
   new ModelView(store);
-  page.files(); // fills each file tab's token count
   window.Renderer.init(store, rendererElements(), { containerFor: (msg) => runView.containerFor(msg) });
   window.Router.init(store);
+  window.Orchestrator?.setOpener((result) => runView.open(result));
   exposeApi();
   wrapRenderer();
   wireComposer();
   setSendMode('send');
   els.hint.textContent = finePointer ? HINTS.idleFine : HINTS.idleCoarse;
-  tickSessionAge();
-  setInterval(tickSessionAge, SESSION_TICK_MS);
   window.addEventListener('hashchange', checkHashTrigger);
   boot();
 }

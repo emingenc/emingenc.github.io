@@ -15,6 +15,14 @@ var Tools = (function() {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // A visitor's query echoed into a card: printable ASCII only, since a wide
+  // character (CJK, emoji) takes two columns that vlen() counts as one and
+  // pushes the right border out; cut to 40 characters, then escaped.
+  var ECHO_MAX = 40;
+  function echoQuery(query) {
+    return escapeHtml(String(query).replace(/[^\x20-\x7E]/gu, '?').slice(0, ECHO_MAX));
+  }
+
   function vlen(s) {
     // Visible length: strip HTML tags and decode entities for ASCII box alignment
     return s.replace(/<[^>]*>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").length;
@@ -154,7 +162,7 @@ var Tools = (function() {
     ];
     var lines = repos.map(function(r) {
       var url = 'https://github.com/emingenc/' + r.slug;
-      return '★' + r.stars + '  ' + link(url, r.name, 'repo-link') + ' — ' + r.desc;
+      return '*' + r.stars + '  ' + link(url, r.name, 'repo-link') + ' — ' + r.desc;
     });
     lines.push('');
     lines.push(link('https://github.com/emingenc', 'github.com/emingenc — 47 repos', 'repo-link'));
@@ -240,7 +248,7 @@ var Tools = (function() {
       return {
         toolName: 'blog',
         content: box('BLOG', [
-          'No post matching "' + escapeHtml(query) + '"',
+          'No post matching "' + echoQuery(query) + '"',
           '',
           'Available posts:'
         ].concat(BLOG_POSTS.map(function(p) { return cmdLink('/blog ' + p.slug, p.title); }))),
@@ -263,12 +271,12 @@ var Tools = (function() {
     var items = [
       'G1 Smart Glasses Ecosystem by Emin Gench',
       '',
-      '★78 even_glasses  — BLE driver (Python)',
-      '★25 G1 Voice AI   — Voice assistant',
-      '★18 g1_flutter    — Mobile bridge (Dart)',
-      '★11 visionlink    — Multi-device OS (C)',
-      '★4  smart_glass_mcp — AI agent connector',
-      '★7  even_glasses_redis_control',
+      '*78 even_glasses  — BLE driver (Python)',
+      '*25 G1 Voice AI   — Voice assistant',
+      '*18 g1_flutter    — Mobile bridge (Dart)',
+      '*11 visionlink    — Multi-device OS (C)',
+      '*4  smart_glass_mcp — AI agent connector',
+      '*7  even_glasses_redis_control',
       '',
       '6 repos · 5 languages · 1 system',
       'Built entirely from scratch.'
@@ -415,7 +423,7 @@ var Tools = (function() {
     }
     var online = typeof navigator !== 'undefined' ? navigator.onLine : true;
     lines.push('');
-    lines.push('Online:    ' + (online ? 'yes ✓' : 'no ✗'));
+    lines.push('Online:    ' + (online ? 'yes' : 'no'));
     return {
       toolName: 'network',
       content: box('YOUR NETWORK', lines),
@@ -455,12 +463,12 @@ var Tools = (function() {
         return { toolName: 'game', redirect: g.path || g.url, content: null, data: { matched: g.name } };
       }
       // Escape the echoed query — same crafted-link vector as the /blog "no match" card.
-      var noLines = ['No game matching "' + escapeHtml(query) + '"', '', 'Pick one:'];
-      for (var ni = 0; ni < GAMES.length; ni++) noLines.push(cmdLink('/game ' + GAMES[ni].id, '▶ ' + GAMES[ni].name + ' — ' + GAMES[ni].desc));
+      var noLines = ['No game matching "' + echoQuery(query) + '"', '', 'Pick one:'];
+      for (var ni = 0; ni < GAMES.length; ni++) noLines.push(cmdLink('/game ' + GAMES[ni].id, '> ' + GAMES[ni].name + ' — ' + GAMES[ni].desc));
       return { toolName: 'game', content: box('GAMES', noLines), data: { notFound: true } };
     }
     var lines = [];
-    for (var gi = 0; gi < GAMES.length; gi++) lines.push(cmdLink('/game ' + GAMES[gi].id, '▶ ' + GAMES[gi].name + ' — ' + GAMES[gi].desc));
+    for (var gi = 0; gi < GAMES.length; gi++) lines.push(cmdLink('/game ' + GAMES[gi].id, '> ' + GAMES[gi].name + ' — ' + GAMES[gi].desc));
     lines.push('');
     lines.push('Select a game to launch it →');
     return { toolName: 'game', content: box('GAMES', lines), data: { games: GAMES } };
@@ -496,7 +504,7 @@ var Tools = (function() {
     var pick = facts[Math.floor(Math.random() * facts.length)];
     return {
       toolName: 'lucky',
-      content: box('DID YOU KNOW?', ['★ ' + pick]) + '<div style="color:var(--muted);font-size:var(--text-2xs);margin-top:6px">Try /lucky again for another random fact</div>',
+      content: box('DID YOU KNOW?', ['* ' + pick]) + '<div style="color:var(--muted);font-size:var(--text-2xs);margin-top:6px">Try /lucky again for another random fact</div>',
       data: { fact: pick }
     };
   }
@@ -633,7 +641,7 @@ var Tools = (function() {
   // → chat/LLM, 'is there a blog?' → chat/LLM), which produces wrong answers
   // or stalls. Matching these BEFORE classification guarantees the FAQ answer.
   function detectKnowledgeFastPath(text) {
-    var l = (text || '').toLowerCase();
+    var lower = (text || '').toLowerCase();
     var patterns = [
       // Site tools (NOT Emin's tech stack — those still go to skills). A bare
       // "tools are" also matches the tech-stack questions "what tools are in
@@ -646,14 +654,14 @@ var Tools = (function() {
       // "data leaves/stays" requires a device/browser anchor so a bare
       // "where does my data stay" (no destination named) falls through to
       // normal classification instead of forcing this fast path.
-      /how does this (chat|site|agent)|how do you work(?!\s+with)|how are you built|how is this (site|built|agent built)|100% local|run(s)? (entirely )?locally|runs (entirely )?in your browser|on-?device|local model|privacy|private|data (leaves?|stays?)( (on|in))? (my|your|the) (device|browser)|no servers|no api calls|zero (servers|tracking)/,
+      /how does this (chat|site|website|page|agent|work)|how do you work(?!\s+with)|how are you built|how is this (site|built|agent built)|100% local|run(s)? (entirely )?locally|runs (entirely )?in your browser|on-?device|local model|privacy|private|data (leaves?|stays?)( (on|in))? (my|your|the) (device|browser)|no servers|no api calls|zero (servers|tracking)/,
       // Learning hub (Emin's ultrafocus.space project)
       /learning hub|learning-hub|learning library|learn hub|learning center/,
       // Blog existence/overview (topic queries still go to the /blog tool)
       /is there a blog|does (he|emin) have a blog|has a blog|blog posts|blog articles|does emin write/
     ];
     for (var i = 0; i < patterns.length; i++) {
-      if (patterns[i].test(l)) return 'faq';
+      if (patterns[i].test(lower)) return 'faq';
     }
     return null;
   }
@@ -1042,6 +1050,7 @@ var Tools = (function() {
     fuzzyMatch: fuzzyMatch,
     getTool: getTool,
     replyFor: replyFor,
+    games: GAMES,
     contextExhaustedMessage: contextExhaustedMessage,
     validateToolResult: validateToolResult,
     getSelfContainedTools: getSelfContainedTools,
