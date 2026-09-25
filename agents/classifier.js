@@ -1,4 +1,5 @@
 // classifier.js — intent classification, LLM enablement, prompt loading
+// eslint-disable-next-line max-lines-per-function -- legacy module wrapper (IIFE); out of scope for this UI change
 var Classifier = (function() {
   "use strict";
   var store = null;
@@ -12,19 +13,19 @@ var Classifier = (function() {
     store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'loading' });
     try {
       needleWorker = new Worker('/agents/needle-router.js', { type: 'module' });
-      needleWorker.onmessage = function(e) {
-        var m = e.data;
-        if (m.type === 'ready') { store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'ready' }); }
-        else if (m.type === 'decoderReady') { store.dispatch({ type: 'MODEL_STATUS', model: 'needleFc', status: 'ready' }); }
-        else if (m.type === 'status') { /* progress: silent */ }
-        else if (m.type === 'error') { console.warn('[needle]', m.data); store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: m.data }); }
+      needleWorker.onmessage = function(event) {
+        var msg = event.data;
+        if (msg.type === 'ready') { store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'ready' }); }
+        else if (msg.type === 'decoderReady') { store.dispatch({ type: 'MODEL_STATUS', model: 'needleFc', status: 'ready' }); }
+        else if (msg.type === 'status') { store.dispatch({ type: 'MODEL_PROGRESS', model: 'needle', text: msg.data }); }
+        else if (msg.type === 'error') { console.warn('[needle]', msg.data); store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: msg.data }); }
       };
-      needleWorker.onerror = function(e) {
-        console.warn('[needle] Worker failed:', e.message);
-        store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: 'Worker load failed: ' + e.message });
+      needleWorker.onerror = function(event) {
+        console.warn('[needle] Worker failed:', event.message);
+        store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: 'Worker load failed: ' + event.message });
       };
       needleWorker.postMessage({ type: 'init' });
-    } catch(e) { console.warn('Needle worker failed:', e.message); store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: e.message }); }
+    } catch(err) { console.warn('Needle worker failed:', err.message); store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: err.message }); }
   }
 
   function classifyWithNeedle(text) {
@@ -56,7 +57,7 @@ var Classifier = (function() {
     store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'error', error: reason });
     if (llmWorker) { try { llmWorker.terminate(); } catch(ignored) { /* already gone — nothing to clean up */ } }
     llmWorker = null; // allow retry on next enableLLM call
-    llmFailedThisSession = true; // ...but NOT in this session (avoid 180MB re-download loop)
+    llmFailedThisSession = true; // ...but NOT in this session (avoid a 272-363MB re-download loop)
   }
 
   // Fatal (crash/load failure — chat-worker.js marks fatal:true) drops the
@@ -69,55 +70,54 @@ var Classifier = (function() {
   }
 
   // ─── LLM text generation (SmolLM2-360M in chat-worker.js) ──
+  // eslint-disable-next-line max-lines-per-function -- legacy worker setup; refactoring it is out of scope for this UI change
   function initDecoder() {
     if (llmWorker) return; // already loading or loaded
     store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading' });
     try {
       llmWorker = new Worker('/agents/chat-worker.js', { type: 'module' });
-      llmWorker.onmessage = function(e) {
-        var m = e.data;
-        if (m.type === 'status' && m.data === 'ready') {
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy message switch; refactoring it is out of scope for this UI change
+      llmWorker.onmessage = function(event) { // eslint-disable-line max-lines-per-function, complexity -- legacy message switch, see above
+        var msg = event.data;
+        if (msg.type === 'status' && msg.data === 'ready') {
           store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'ready' });
-        } else if (m.type === 'status') {
+        } else if (msg.type === 'status') {
           // loading in progress — update status text for renderer
-          store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading', statusText: m.data });
-        } else if (m.type === 'progress') {
-          store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading', progress: m.pct });
-        } else if (m.type === 'error') {
-          handleLLMWorkerError(m);
-        } else if (m.type === 'token') {
-          store.dispatch({ type: 'MESSAGE_STREAM', id: m.requestId, chunk: m.token });
-        } else if (m.type === 'done') {
-          store.dispatch({ type: 'MESSAGE_STREAM_DONE', id: m.requestId });
+          store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading', statusText: msg.data });
+        } else if (msg.type === 'progress') {
+          store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading', progress: msg.pct });
+        } else if (msg.type === 'error') {
+          handleLLMWorkerError(msg);
+        } else if (msg.type === 'token') {
+          store.dispatch({ type: 'MESSAGE_STREAM', id: msg.requestId, chunk: msg.token });
+        } else if (msg.type === 'done') {
+          store.dispatch({ type: 'MESSAGE_STREAM_DONE', id: msg.requestId });
           if (typeof Orchestrator !== 'undefined' && Orchestrator._clearGenTimeout) {
-            Orchestrator._clearGenTimeout(m.requestId);
+            Orchestrator._clearGenTimeout(msg.requestId);
           }
           // A successful generation must release the turn lock. The timeout
           // is cleared above, so this is the normal completion path.
-          if (typeof Orchestrator !== 'undefined' && Orchestrator._handleGenerationDone && Orchestrator._handleGenerationDone(m.requestId)) {
-            return;
+          if (typeof Orchestrator !== 'undefined' && Orchestrator._handleGenerationDone) {
+            Orchestrator._handleGenerationDone(msg.requestId);
           }
-          if (typeof Orchestrator !== 'undefined' && Orchestrator.done) {
-            Orchestrator.done();
-          }
-        } else if (m.type === 'evalResult') {
+        } else if (msg.type === 'evalResult') {
           if (typeof Evaluator !== 'undefined' && Evaluator._handleEvalResult) {
-            Evaluator._handleEvalResult(m.evalId, m.data);
+            Evaluator._handleEvalResult(msg.evalId, msg.data);
           }
-        } else if (m.type === 'alignResult') {
+        } else if (msg.type === 'alignResult') {
           if (typeof AlignmentGate !== 'undefined' && AlignmentGate._handleAlignResult) {
-            AlignmentGate._handleAlignResult(m.alignId, m.data);
+            AlignmentGate._handleAlignResult(msg.alignId, msg.data);
           }
         }
       };
-      llmWorker.onerror = function(e) {
+      llmWorker.onerror = function(event) {
         // Uncaught worker-level failure (e.g. a script error) — same fatal
         // handling as an in-worker crash: drop it, never leave it orphaned.
-        dropLLMWorker('Worker failed: ' + e.message);
+        dropLLMWorker('Worker failed: ' + event.message);
       };
       llmWorker.postMessage({ type: 'load' });
-    } catch(e) {
-      dropLLMWorker(e.message);
+    } catch(err) {
+      dropLLMWorker(err.message);
     }
   }
 

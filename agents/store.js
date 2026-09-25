@@ -11,6 +11,7 @@ var CONTEXT_FALLBACK_TAIL_MSGS = 8; // tail window when Orchestrator isn't loade
 var CONTEXT_CHARS_PER_TOKEN = 4; // rough chars-per-token estimate used across agents/*.js
 var PCT_MAX = 100;
 
+// eslint-disable-next-line max-lines-per-function -- legacy store factory; out of scope for this UI change
 function createStore(initial) {
   var state = JSON.parse(JSON.stringify(initial));
   state.summary = state.summary || ''; // rolling session memory (deterministic, persisted)
@@ -158,6 +159,8 @@ function createStore(initial) {
     return pct > PCT_MAX ? PCT_MAX : (pct < 0 ? 0 : pct);
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy reducer switch; out of scope for this UI change
+  // eslint-disable-next-line max-lines-per-function, complexity -- legacy reducer switch; out of scope for this UI change
   function reduce(action) {
     switch (action.type) {
 
@@ -177,10 +180,10 @@ function createStore(initial) {
         if (action.statusText !== undefined) state.models.llmStatusText = action.statusText;
         // On a hard LLM load failure, reset the transient progress/status
         // readouts so the store no longer claims the model is "loading model
-        // (wasm)... at 100%" when it actually failed. Every consumer
-        // (renderer #s-model, /status, the orchestrator "downloading..." message)
-        // gates on llmLoading/llmError, so this is a state-truthfulness cleanup
-        // with no UI behavior change.
+        // (wasm)... at 100%" when it actually failed. The renderer (#sModel),
+        // /status and the orchestrator's "downloading..." message gate on
+        // llmLoading/llmError; model-view.js's SmolLM2 bar and size label read
+        // these readouts directly, so the reset shows there.
         if (action.model === 'llm' && action.status === 'error') {
           state.models.llmDownloadProgress = 0;
           state.models.llmStatusText = 'unavailable';
@@ -192,6 +195,11 @@ function createStore(initial) {
           if (action.model === 'needleFc') state.models.capabilities.functionCall = true;
           if (action.model === 'llm') { state.models.capabilities.generate = true; state.models.capabilities.evaluate = true; }
         }
+        break;
+
+      case 'MODEL_PROGRESS':
+        // Load-step text from a model worker (e.g. Needle's "Loading encoder (52MB)...").
+        state.models[action.model + 'StatusText'] = String(action.text || '');
         break;
 
       case 'LLM_CONSENT':

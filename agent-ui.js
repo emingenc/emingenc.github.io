@@ -1,182 +1,312 @@
-// agent-ui.js — Entry point. Creates store, wires DOM, boots agent loop.
-(function() {
-  "use strict";
+// agent-ui.js — boots the in-browser agent on the C · Context page. It wires
+// the store, renderer and router (classic scripts on window) to the run view,
+// the composer (Enter queues while a turn runs; ■ Stop or Esc interrupts),
+// the command menu, the page highlight, the phone sheet and the model slot.
+// URL triggers keep their { source: 'url' } marker: router.js uses it to
+// refuse destructive commands (/forget, /clear) that arrive from a link.
+import { RunView } from './agents/run-view.js';
+import { ModelView } from './agents/model-view.js';
+import { createPaletteView } from './agents/palette-view.js';
+import { createPageView } from './agents/page-view.js';
+import { createSheetView } from './agents/sheet-view.js';
 
-  // ─── Canvas particles (atmospheric network) ──────────────────
-  // Respect prefers-reduced-motion: this loop runs for the life of the tab,
-  // so a visitor who asked for reduced motion should never pay for it (was
-  // previously ignored entirely). Fewer particles under a narrow viewport too
-  // — the effect reads behind the chat column either way, but the O(n²)
-  // neighbor-line pass still cost the same on a phone.
-  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var c = document.getElementById('particles'), x = c.getContext('2d'), w, h, p = [];
-  var particleCount = innerWidth < 640 ? 26 : 55;
-  function rz() { w = c.width = innerWidth; h = c.height = innerHeight; for (var i = 0; i < p.length; i++) { p[i].x = Math.random() * w; p[i].y = Math.random() * h } }
-  rz(); addEventListener('resize', function() { rz() });
-  if (!reduceMotion) {
-    for (var i = 0; i < particleCount; i++) p.push({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .18, vy: (Math.random() - .5) * .18, r: Math.random() * 1.4 + .15 });
-    var animId;
-    (function d() { x.clearRect(0, 0, w, h); for (var i = 0; i < p.length; i++) { var o = p[i]; o.x += o.vx; o.y += o.vy; if (o.x < 0 || o.x > w) o.vx *= -1; if (o.y < 0 || o.y > h) o.vy *= -1; x.beginPath(); x.arc(o.x, o.y, o.r, 0, Math.PI * 2); x.fillStyle = 'rgba(45,212,191,' + (.015 + o.r * .012) + ')'; x.fill(); for (var j = i + 1; j < p.length; j++) { var dx = o.x - p[j].x, dy = o.y - p[j].y, dist = Math.sqrt(dx * dx + dy * dy); if (dist < 85) { x.beginPath(); x.moveTo(o.x, o.y); x.lineTo(p[j].x, p[j].y); x.strokeStyle = 'rgba(45,212,191,' + (0.02 * (1 - dist / 85)) + ')'; x.lineWidth = 0.4; x.stroke() } } } animId = requestAnimationFrame(d) })();
-    document.addEventListener('visibilitychange', function() {
-      if (document.hidden) { cancelAnimationFrame(animId); }
-      else { animId = requestAnimationFrame(d); }
-    });
-  }
+const URL_TRIGGER_DELAY_MS = 1200;
+const SESSION_TICK_MS = 30000;
+const MINUTE_MS = 60000;
+const ID_RADIX = 36;
+const ID_START = 2;
+const ID_END = 6;
+const PLACEHOLDERS = { fine: 'Ask about Emin\'s work, or type / for commands', coarse: 'Ask, or type /' };
+const HINTS = {
+  idleFine: '/ for commands · ⌘K',
+  idleCoarse: '',
+  runFine: 'Enter queues your next question · Esc stops',
+  runCoarse: '■ Stop interrupts',
+};
+const QUEUED_NOTES = { booting: 'queued — runs when the agent is ready: ', running: 'queued — runs after this turn: ' };
 
-  // ─── DOM refs ──────────────────────────────────────────────
-  var elements = {
-    output: document.getElementById('output'),
-    input: document.getElementById('input'),
-    thinking: document.getElementById('thinking'),
-    thinkingLabel: document.getElementById('thinking-label'),
-    suggestions: document.getElementById('suggestions'),
-    sSession: document.getElementById('s-session'),
-    hSession: document.getElementById('h-session'),
-    ctxBar: document.getElementById('ctx-bar'),
-    sCtxFill: document.getElementById('s-ctx-fill'),
-    sCtxPct: document.getElementById('s-ctx-pct'),
-    prompt: document.getElementById('prompt'),
-    // Model download/loading status, painted by renderer.js renderLLMStatus.
-    // Mirrored to both the status bar and the input-adjacent line so the
-    // "100% local" claim travels with the moment of asking, not just distant
-    // chrome.
-    sModel: document.getElementById('s-model'),
-    sModelDot: document.getElementById('s-model-dot'),
-    inputModel: document.getElementById('input-model'),
-    inputModelDot: document.getElementById('input-model-dot')
+const byId = (id) => document.getElementById(id);
+const finePointer = window.matchMedia('(pointer: fine)').matches;
+const sessionStart = Date.now();
+const els = {
+  input: byId('input'),
+  form: byId('composerForm'),
+  sendBtn: byId('sendBtn'),
+  hint: byId('composerHint'),
+  queued: byId('queuedNote'),
+  turnList: byId('turnList'),
+  panel: byId('panelBody'),
+};
+let pending = null;
+let booted = false;
+
+const store = window.createStore({
+  session: {
+    id: 'agent-' + Math.random().toString(ID_RADIX).slice(ID_START, ID_END),
+    start: sessionStart, messageCount: 0, sessionCount: 1,
+  },
+  models: {
+    needleReady: false, needleLoading: false, needleStatusText: '',
+    llmReady: false, llmLoading: false, llmError: null, llmConsent: null,
+    llmDownloadProgress: 0, llmStatusText: '', capabilities: {},
+  },
+  messages: [],
+  ui: { isProcessing: false, thinkingState: 'idle', thinkingLabel: '', contextPct: 0 },
+});
+
+const page = createPageView({ doc: byId('docWrap'), jumpChip: byId('jumpChip'), agentCol: byId('agent') });
+const sheet = createSheetView({
+  panel: els.panel, handle: byId('sheetHandle'), summary: byId('sheetSummary'),
+  content: byId('turnContent'), composer: byId('composerWrap'),
+});
+const runView = new RunView({
+  store, page, sheet, finePointer, onRunStart, onRunEnd,
+  list: els.turnList, scroller: els.panel, idlePanel: byId('idlePanel'), announcer: byId('announcer'),
+});
+const palette = createPaletteView({
+  input: els.input, menu: byId('cmdMenu'), list: byId('cmdList'), empty: byId('cmdEmpty'),
+  hint: byId('cmdHint'), closeBtn: byId('cmdClose'), scrim: byId('scrim'),
+  getFiles: () => page.files(), onRun: (text) => submit(text), onOpenFile: openFile,
+});
+
+function rendererElements() {
+  return {
+    output: els.turnList, input: els.input, hSession: byId('hSession'),
+    sCtxFill: byId('sCtxFill'), sCtxPct: byId('sCtxPct'),
+    sModel: byId('sModel'), sModelDot: byId('sModelDot'),
+    inputModel: byId('inputModel'), inputModelDot: byId('inputModelDot'),
   };
+}
 
-  // ─── Session timer ─────────────────────────────────────────
-  var sessionStart = Date.now();
-  setInterval(function() {
-    if (elements.sSession) {
-      elements.sSession.textContent = 'session ' + Math.floor((Date.now() - sessionStart) / 60000) + 'm';
-    }
-  }, 30000);
+// ─── Composer: submit, queue, stop ─────────────────────────
+function submit(text, opts) {
+  const trimmed = String(text || '').trim();
+  if (!trimmed) return;
+  els.input.value = '';
+  palette.close();
+  if (mustQueue()) queue({ text: trimmed, opts });
+  else window.Router.handleInput(trimmed, opts);
+}
 
-  // ─── Create store ──────────────────────────────────────────
-  var store = createStore({
-    session: { id: 'agent-' + Math.random().toString(36).slice(2,6), start: Date.now(), messageCount: 0, sessionCount: 1 },
-    models: { needleReady: false, needleLoading: false, llmReady: false, llmLoading: false, llmError: null, llmConsent: null, llmDownloadProgress: 0, capabilities: {} },
-    messages: [],
-    ui: { isProcessing: false, thinkingState: 'idle', thinkingLabel: '', contextPct: 0 }
-  });
+// An ask_user pause keeps the turn open but takes typed answers directly.
+function mustQueue() {
+  const ui = store.getState().ui;
+  return !booted || (!ui.needsHumanInput && (runView.isRunning() || ui.isProcessing));
+}
 
-  // ─── Init renderer ─────────────────────────────────────────
-  Renderer.init(store, elements);
+function queue(item) {
+  pending = item;
+  els.queued.textContent = (booted ? QUEUED_NOTES.running : QUEUED_NOTES.booting) + item.text;
+  els.queued.hidden = false;
+  els.hint.hidden = true;
+}
 
-  // ─── Init router (needle worker, LLM consent) ──────────────
-  Router.init(store);
+function drainQueue() {
+  const next = pending;
+  pending = null;
+  els.queued.hidden = true;
+  els.hint.hidden = false;
+  if (next) setTimeout(() => submit(next.text, next.opts), 0);
+}
 
-  // ─── Tab completion ────────────────────────────────────────
-  var allCmds = Tools.getCommands();
+function setSendMode(mode) {
+  const stopping = mode === 'stop';
+  els.sendBtn.dataset.mode = mode;
+  els.sendBtn.type = stopping ? 'button' : 'submit';
+  els.sendBtn.textContent = stopping ? '■ Stop' : '↵';
+  els.sendBtn.setAttribute('aria-label', stopping ? 'Stop this turn' : 'Send');
+}
 
-  elements.input.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      Router.cancel();
-      elements.input.value = '';
-      return;
-    }
-    if (e.key === 'Tab') {
-      // Only steal Tab when there's an actual completion to offer; otherwise
-      // let it move focus natively out to the suggestion/command chips
-      // below, and never intercept Shift+Tab, so keyboard focus can't get
-      // trapped in the input.
-      if (e.shiftKey) return;
-      var v = elements.input.value.toLowerCase();
-      if (!v) return;
-      var m = allCmds.filter(function(c) { return c.startsWith(v); });
-      if (!m.length) return;
-      e.preventDefault();
-      elements.input.value = m[0] + ' ';
-      return;
-    }
-    if (e.key !== 'Enter') return;
-    var text = elements.input.value.trim();
-    if (!text) return;
-    elements.input.value = '';
-    Router.handleInput(text);
-  });
+function onRunStart() {
+  setSendMode('stop');
+  els.hint.textContent = finePointer ? HINTS.runFine : HINTS.runCoarse;
+}
 
-  // ─── Public API ────────────────────────────────────────────
-  window.quickCmd = function(cmd) {
-    if (Router.isProcessing()) return;
-    elements.input.value = cmd;
-    elements.input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-  };
-  window.setMode = function(m) { if (m === 'static') window.location.href = '/static'; };
-  window._enableLLM = function() { Router.enableLLM(); };
+function onRunEnd() {
+  setSendMode('send');
+  els.hint.textContent = finePointer ? HINTS.idleFine : HINTS.idleCoarse;
+  drainQueue();
+  const active = document.activeElement;
+  if (finePointer && (!active || active === document.body)) els.input.focus({ preventScroll: true });
+}
 
-  // ─── Factor #11: URL-based triggers ─────────────────────────
-  function checkURLTriggers() {
-    var hash = window.location.hash;
-    var params = new URLSearchParams(window.location.search);
-    var triggered = false;
+function openFile(fileId) {
+  if (sheet.isPhone()) sheet.idle();
+  page.reveal(fileId, 1);
+}
 
-    // Hash routes: /#/about, /#/repos, /#/g1, /#/contact, /#/skills, /#/blog, /#/help
-    // Hash query: /#/q/your+question+here
-    // { source: 'url' } marks input that came from a link, not from the
-    // visitor typing/clicking in-app — router.js uses it to refuse
-    // destructive/stateful commands (/forget, /clear) a link shouldn't be
-    // able to trigger. Every path below is a URL trigger, so all three carry it.
-    if (hash) {
-      var route = hash.replace(/^#\/?/, '');
-      if (route.startsWith('q/')) {
-        var q = decodeURIComponent(route.slice(2));
-        if (q) { Router.handleInput(q, { source: 'url' }); triggered = true; }
-      } else if (Tools.toolNames.indexOf(route) !== -1 || route === 'help' || route === 'blog') {
-        Router.handleInput('/' + route, { source: 'url' });
-        triggered = true;
-      }
-    }
+// ─── Keyboard ──────────────────────────────────────────────
+// Esc order: command menu → running turn → phone sheet → clear the input.
+function onEscape() {
+  if (palette.isOpen()) palette.close();
+  else if (runView.isRunning()) runView.stop();
+  else if (sheet.isPhone() && sheet.state() !== 'idle') sheet.idle();
+  else if (document.activeElement === els.input) els.input.value = '';
+}
 
-    // Query params: ?q=who+is+emin or ?ask=what+does+emin+do
-    if (!triggered) {
-      var q = params.get('q') || params.get('ask') || params.get('query');
-      if (q) {
-        Router.handleInput(q, { source: 'url' });
-        triggered = true;
-      }
-    }
-
-    // Clean URL after trigger (keep it bookmarkable)
-    if (triggered && hash) {
-      // Keep the hash — it's the canonical URL for this action
-    }
+function onInputKey(evt) {
+  if (palette.handleKeydown(evt)) {
+    evt.preventDefault();
+  } else if (evt.key === 'Escape') {
+    evt.preventDefault();
+    onEscape();
   }
+}
 
-  // ─── Boot ──────────────────────────────────────────────────
-  Promise.all([Tools.loadFAQ(), KnowledgeBase.load()]).then(function() {
-    // v2: Try to restore previous session
-    var restored = store.restore();
-    if (restored) {
-      Renderer.showRestored(store.getState());
-    } else {
-      Renderer.showWelcome();
-    }
-    elements.input.disabled = false;
-    elements.input.placeholder = 'ask me anything...';
-    // preventScroll: focus() on a short viewport (input sits below the
-    // welcome cards) was scrolling the page right at boot — a huge,
-    // measured layout-shift source (Lighthouse CLS) on top of visibly
-    // yanking the header out of view a beat after first paint.
-    elements.input.focus({ preventScroll: true });
+function isTypingTarget(target) {
+  return Boolean(target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)));
+}
 
-    // Factor #11: Check for URL triggers after welcome is shown
-    setTimeout(function() {
-      checkURLTriggers();
-    }, 1200);
+function openMenu() {
+  els.input.focus({ preventScroll: true });
+  palette.open();
+}
+
+function startCommand() {
+  els.input.value = '/';
+  els.input.focus({ preventScroll: true });
+  palette.syncToInput();
+}
+
+// The ask_user dialog handles its own keys (renderer.js).
+function onGlobalKey(evt) {
+  if (evt.defaultPrevented || (evt.target.closest && evt.target.closest('#ask-user-modal'))) return;
+  if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === 'k') {
+    evt.preventDefault();
+    openMenu();
+  } else if (evt.key === 'Escape') {
+    onEscape();
+  } else if (evt.key === '/' && !isTypingTarget(evt.target)) {
+    evt.preventDefault();
+    startCommand();
+  }
+}
+
+// Only our own static chip containers run [data-run]: sanitized card HTML
+// keeps data-* attributes, so a document-wide delegate would be a sink.
+function wireChips(container) {
+  if (!container) return;
+  container.addEventListener('click', (evt) => {
+    const button = evt.target.closest('[data-run]');
+    if (button && container.contains(button)) submit(button.dataset.run);
   });
+}
 
-  // Listen for hash changes (back/forward navigation)
-  window.addEventListener('hashchange', function() {
-    checkURLTriggers();
+function wireComposer() {
+  els.form.addEventListener('submit', (evt) => {
+    evt.preventDefault();
+    submit(els.input.value);
   });
-
-  // v2: Persist on page unload
-  window.addEventListener('beforeunload', function() {
-    // State auto-persists on significant actions via store
+  els.sendBtn.addEventListener('click', (evt) => {
+    if (els.sendBtn.dataset.mode !== 'stop') return;
+    evt.preventDefault();
+    runView.stop();
   });
+  els.input.addEventListener('input', () => palette.syncToInput());
+  els.input.addEventListener('keydown', onInputKey);
+  document.addEventListener('keydown', onGlobalKey);
+  byId('cmdkBtn')?.addEventListener('click', openMenu);
+  byId('runtimeOpen')?.addEventListener('click', () => sheet.expand());
+  wireChips(byId('suggestChips'));
+  wireChips(byId('idlePanel'));
+}
 
-})();
+// ─── Page chrome ───────────────────────────────────────────
+function tickSessionAge() {
+  const age = byId('sSession');
+  if (age) age.textContent = Math.floor((Date.now() - sessionStart) / MINUTE_MS) + 'm';
+}
+
+// /new and /resume repaint the transcript through these, so the run view
+// drops its turn state with them.
+function wrapRenderer() {
+  const { showWelcome, showRestored } = window.Renderer;
+  window.Renderer.showWelcome = () => {
+    runView.reset();
+    showWelcome();
+  };
+  window.Renderer.showRestored = (state) => {
+    runView.reset();
+    showRestored(state);
+  };
+}
+
+// ─── URL triggers: /#/q/<question>, /#/<tool>, ?q= / ?ask= / ?query= ──
+function hashTrigger(hash) {
+  const route = hash.replace(/^#\/?/, '');
+  if (route.startsWith('q/')) return safeDecode(route.slice(2));
+  const known = window.Tools.toolNames.indexOf(route) !== -1 || route === 'help' || route === 'blog';
+  return known ? '/' + route : '';
+}
+
+function safeDecode(text) {
+  try {
+    return decodeURIComponent(text);
+  } catch (err) {
+    console.warn('[agent-ui] ignoring a malformed #/q/ link', err);
+    return '';
+  }
+}
+
+function queryTrigger() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('q') || params.get('ask') || params.get('query') || '';
+}
+
+function checkURLTriggers() {
+  const text = (window.location.hash && hashTrigger(window.location.hash)) || queryTrigger();
+  if (text) submit(text, { source: 'url' });
+}
+
+function checkHashTrigger() {
+  const text = window.location.hash ? hashTrigger(window.location.hash) : '';
+  if (text) submit(text, { source: 'url' });
+}
+
+// ─── Public API used by card markup (onclick="window.quickCmd('/x')") ──
+function exposeApi() {
+  window.quickCmd = (cmd) => submit(cmd);
+  window.setMode = (mode) => {
+    if (mode === 'static') window.location.href = '/static';
+  };
+  window._enableLLM = () => window.Router.enableLLM();
+}
+
+function finishBoot() {
+  if (booted) return;
+  booted = true;
+  els.input.disabled = false;
+  if (finePointer) els.input.focus({ preventScroll: true });
+  drainQueue();
+}
+
+function boot() {
+  store.subscribe((state, action) => {
+    if (action.type === 'WELCOME_DONE') finishBoot();
+  });
+  Promise.all([window.Tools.loadFAQ(), window.KnowledgeBase.load()]).then(() => {
+    if (store.restore()) window.Renderer.showRestored(store.getState());
+    else window.Renderer.showWelcome();
+    setTimeout(checkURLTriggers, URL_TRIGGER_DELAY_MS);
+  });
+}
+
+function start() {
+  els.input.disabled = true;
+  els.input.placeholder = finePointer ? PLACEHOLDERS.fine : PLACEHOLDERS.coarse;
+  new ModelView(store);
+  page.files(); // fills each file tab's token count
+  window.Renderer.init(store, rendererElements(), { containerFor: (msg) => runView.containerFor(msg) });
+  window.Router.init(store);
+  exposeApi();
+  wrapRenderer();
+  wireComposer();
+  setSendMode('send');
+  els.hint.textContent = finePointer ? HINTS.idleFine : HINTS.idleCoarse;
+  tickSessionAge();
+  setInterval(tickSessionAge, SESSION_TICK_MS);
+  window.addEventListener('hashchange', checkHashTrigger);
+  boot();
+}
+
+start();

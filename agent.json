@@ -1,7 +1,7 @@
 {
   "name": "Emin Gench — Portfolio Agent",
   "version": "2.0.0",
-  "description": "Browser-based AI agent representing Emin Gench, Forward Deployed AI Engineer at Cresta AI. ReAct agent loop, multi-tool chains, needle-onnx intent classification + SmolLM2-360M text generation. 100% client-side, ~315MB ONNX models.",
+  "description": "Browser-based AI agent representing Emin Gench, Forward Deployed AI Engineer at Cresta AI. ReAct agent loop, multi-tool chains, needle-onnx intent classification + SmolLM2-360M text generation. 100% client-side, ~406MB ONNX models (~497MB without WebGPU).",
   "base_url": "https://emingenc.github.io",
 
   "endpoints": {
@@ -72,11 +72,11 @@
   },
 
   "llm": {
-    "model": "SmolLM2-360M-Instruct (ONNX, ~180MB)",
+    "model": "SmolLM2-360M-Instruct (ONNX, 272MB q4f16 on WebGPU, 363MB q8 on WASM)",
     "runtime": "Transformers.js v4 (WebGPU, WASM fallback)",
     "architecture": "360M-param instruction-tuned transformer",
-    "load": "Auto-enabled on first visit (~180MB download, browser-cached)",
-    "total_models": "~315MB (134MB needle encoder+decoder + 180MB SmolLM2)"
+    "load": "Auto-enabled on first visit (272MB download, 363MB without WebGPU; browser-cached)",
+    "total_models": "~406MB (134MB needle encoder+decoder + 272MB SmolLM2; SmolLM2 is 363MB on the WASM fallback)"
   },
 
   "architecture": {

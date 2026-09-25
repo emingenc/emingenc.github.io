@@ -1,4 +1,5 @@
 // tools.js v2 — Pure tools + FAQ + multi-intent routing + clickable outputs
+// eslint-disable-next-line max-lines-per-function -- legacy module wrapper (IIFE); out of scope for this UI change
 var Tools = (function() {
   "use strict";
 
@@ -466,6 +467,7 @@ var Tools = (function() {
   }
 
   // ─── Tool: lucky — fun random surprises ───────────────────
+  // eslint-disable-next-line id-match, max-lines-per-function -- legacy tool_* handler name and length; out of scope for this UI change
   function tool_lucky() {
     // Count answerable FAQ entries only (skip the decorative "═══ SECTION ═══"
     // header strings that also live in the faq array). Dynamic so it never
@@ -486,7 +488,7 @@ var Tools = (function() {
       '249+ GitHub stars earned through open source, not marketing.',
       'Emin has a BSc in Aerospace Engineering — literally rocket science.',
       faqFact,
-      'The AI model (SmolLM2-360M) is ~180MB and runs entirely in your browser.',
+      'The AI model (SmolLM2-360M) is a 272 MB download (363 MB without WebGPU) and runs entirely in your browser.',
       'Type /status to see every model in this agent report its own health — live.',
       "Emin's first tech role was Data Analyst. Now he's an FDE at Cresta AI.",
       'This site has zero tracking on the agent page. Your chats are 100% private.'
@@ -776,9 +778,10 @@ var Tools = (function() {
     return 'TRUSTED PROFILE FACTS: Emin Gench is a Forward Deployed AI Engineer at Cresta AI in Vancouver, BC, Canada. Previously Goodfintech (AI Engineer), Vivoo (Machine Learning Engineer), Novit AI (Full-stack AI Engineer), E-Kalite Software (Python Developer/QA), and indie game development (Founder, emdi_apps). He builds open-source AI and smart-glasses projects, including even_glasses, telegramGPT, G1 Voice AI, g1_flutter, and visionlink. He has 47 repositories and 249+ GitHub stars. Do not infer a different residence or employer.';
   }
 
+  // eslint-disable-next-line id-match -- legacy name (exported as llmConsentMessage); out of scope for this UI change
   function llm_consentMessage() {
     return faq_getFallback() +
-      '<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:monospace;font-size:var(--text-2xs);cursor:pointer;margin-top:6px" onclick="window._enableLLM()">⚡ Enable on-device AI <span style="opacity:.5;font-size:var(--text-2xs)">downloads once · ~180MB</span></span>';
+      '<br><br><span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:monospace;font-size:var(--text-2xs);cursor:pointer;margin-top:6px" onclick="window._enableLLM()">⚡ Enable on-device AI <span style="opacity:.5;font-size:var(--text-2xs)">downloads once · 272 MB (363 MB without WebGPU)</span></span>';
   }
 
   // ─── v2: Multi-intent detection ──────────────────────────
