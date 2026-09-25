@@ -1010,7 +1010,7 @@
         "secure",
         "data privacy"
       ],
-      "a": "<b>100% private.</b> Messages never leave your browser. No API calls, no tracking, no analytics on agent page. Cleared on tab close."
+      "a": "<b>100% private.</b> Messages never leave your browser. No API calls, no tracking, no analytics on agent page. Saved only in this browser; /forget --confirm deletes them."
     },
     {
       "q": "Tracking?",
