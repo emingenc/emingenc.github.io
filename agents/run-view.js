@@ -200,8 +200,8 @@ const HANDLERS = {
     if (msg.role === 'user') view.onUserMessage(state, msg);
     else if (msg.type === 'react-step') view.onStep(msg.text || msg.content || '');
   },
-  // Only the OBSERVE that carries the tool's result has a `data` key; the
-  // evaluator's follow-up OBSERVE for the same tool has none.
+  // Only the OBSERVE that carries the tool's result has a `data` key;
+  // LoopPolicy's follow-up self-contained OBSERVE for the same tool has none.
   OBSERVE: (view, state, action) => {
     if ('data' in action) view.onObserve(action.tool, action.data);
   },
@@ -243,9 +243,6 @@ export class RunView {
   stop() {
     if (!this.turn) return;
     window.Router.cancel();
-    // cancel() is a no-op between a mid-turn THINKING hide and the turn's
-    // end, so interrupt the view itself; the late turnEnd then finds no turn.
-    if (this.turn && !this.opts.store.getState().ui.isProcessing) this.interruptTurn();
   }
 
   reset() {

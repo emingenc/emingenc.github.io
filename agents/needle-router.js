@@ -155,7 +155,7 @@ var FC_TOOLS = null;
 function buildFCTools() {
   if (FC_TOOLS) return FC_TOOLS;
   FC_TOOLS = [
-    { name: 'about',   description: 'Emin Gench biography, career background, current role at Cresta AI in Vancouver. Previously at Goodfintech, Vivoo, Novit AI. Aerospace Engineering degree.', parameters: {} },
+    { name: 'about',   description: 'Emin Gench biography, career background, based in Vancouver, current role at Cresta AI. Previously at Goodfintech, Vivoo, Novit AI. Aerospace Engineering degree.', parameters: {} },
     { name: 'repos',   description: 'GitHub open source repositories by emingenc: even_glasses (78 stars G1 BLE SDK), telegramGPT (52 stars AI bot guide), G1 Voice AI (25 stars), g1_flutter (18 stars), visionlink, llm_adaptive_router.', parameters: {} },
     { name: 'contact', description: 'Contact Emin Gench: GitHub at github.com/emingenc, LinkedIn, Twitter/X. Open to open source collaboration.', parameters: {} },
     { name: 'skills',  description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, PostgreSQL, Docker, AWS, Linux, LLMs, AI agents, RAG systems, smart glasses BLE development.', parameters: {} },
@@ -261,33 +261,39 @@ async function init() {
 // ═══════════════════════════════════════════════════════════════
 // Message handler
 // ═══════════════════════════════════════════════════════════════
-self.onmessage = async function(e) {
-  var m = e.data;
 
-  if (m.type === 'init') await init();
-
-  if (m.type === 'initDecoder') {
-    try {
-      await initDecoder();
-      self.postMessage({ type: 'decoderReady', data: 'decoder ready' });
-    } catch(err) {
-      self.postMessage({ type: 'error', data: 'decoder: ' + (err.message || String(err)) });
-    }
+async function handleInitDecoder() {
+  try {
+    await initDecoder();
+    self.postMessage({ type: 'decoderReady', data: 'decoder ready' });
+  } catch(err) {
+    self.postMessage({ type: 'error', data: 'decoder: ' + (err.message || String(err)) });
   }
+}
 
-  if (m.type === 'classify') {
-    if (!encoderReady) { self.postMessage({ type: 'intent', data: null }); return; }
+// Every intent reply echoes the request's own id, so classifier.js's
+// classify() can tell a late reply for an earlier question apart from the
+// one it is waiting on.
+function postIntent(id, data) {
+  self.postMessage({ type: 'intent', id: id, data: data });
+}
 
-    // 1. Try full function-calling pipeline (if decoder loaded)
-    if (decoderReady) {
-      try {
-        var fc = await fcClassify(m.data.text);
-        if (fc) { self.postMessage({ type: 'intent', data: fc }); return; }
-      } catch(e) { /* FC failed, fall through to keyword */ }
-    }
+// 1. The full function-calling pipeline, if the decoder is loaded; a parse
+// or inference failure falls through to keywords rather than losing the
+// question. 2. Keyword routing, which always works.
+async function handleClassify(request) {
+  if (!encoderReady) { postIntent(request.id, null); return; }
+  var proposal = decoderReady ? await proposeByFunctionCall(request.data.text) : null;
+  postIntent(request.id, proposal || keywordClassify(request.data.text));
+}
 
-    // 2. Keyword routing fallback (always works)
-    var kw = keywordClassify(m.data.text);
-    self.postMessage({ type: 'intent', data: kw });
-  }
+async function proposeByFunctionCall(text) {
+  try { return await fcClassify(text); } catch(err) { return null; }
+}
+
+var MESSAGE_HANDLERS = { init: init, initDecoder: handleInitDecoder, classify: handleClassify };
+
+self.onmessage = function(workerEvent) {
+  var handler = MESSAGE_HANDLERS[workerEvent.data.type];
+  if (handler) return handler(workerEvent.data);
 };

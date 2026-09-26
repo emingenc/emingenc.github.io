@@ -2,14 +2,9 @@
 
 var SESSIONS_KEY = 'agent-sessions';
 var MAX_SESSIONS = 10;
-var MAX_SESSION_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-var MAX_CONTEXT_TOKENS = 1600; // SmolLM2-360M's real window is 2048; ~450 fixed overhead + output headroom
-var CONTEXT_BUFFER_TOKENS = 900; // matches the getConversationBuffer() call generation actually uses
-var CONTEXT_TOOL_RESULT_CHARS = 500; // matches getGenerationContext's per-result truncation
-var CONTEXT_PROMPT_CLAMP_CHARS = 7500; // matches chat-worker.js's context clamp
-var CONTEXT_FALLBACK_TAIL_MSGS = 8; // tail window when Orchestrator isn't loaded yet
-var CONTEXT_CHARS_PER_TOKEN = 4; // rough chars-per-token estimate used across agents/*.js
-var PCT_MAX = 100;
+var MS_PER_DAY = 86400000; // 24 * 60 * 60 * 1000
+var SESSION_MAX_AGE_DAYS = 7;
+var MAX_SESSION_AGE_MS = SESSION_MAX_AGE_DAYS * MS_PER_DAY;
 
 // eslint-disable-next-line max-lines-per-function -- legacy store factory; out of scope for this UI change
 function createStore(initial) {
@@ -94,69 +89,9 @@ function createStore(initial) {
     } catch(e) { return '?'; }
   }
 
-  // Conversation buffer chars: mirror the exact bounded window
-  // orchestrator.js feeds into generation, so the meter can't drift from
-  // what the model actually sees.
-  function bufferChars() {
-    if (typeof Orchestrator === 'undefined' || !Orchestrator._getConversationBuffer) {
-      // Orchestrator not loaded yet (e.g. a store used in isolation) — fall
-      // back to a small tail of real messages so the meter still reads sane.
-      return tailChars();
-    }
-    var buf = Orchestrator._getConversationBuffer(CONTEXT_BUFFER_TOKENS);
-    var chars = 0;
-    for (var i = 0; i < buf.length; i++) chars += buf[i].content.length;
-    return chars;
-  }
-
-  function tailChars() {
-    var chars = 0;
-    var start = Math.max(0, state.messages.length - CONTEXT_FALLBACK_TAIL_MSGS);
-    for (var i = start; i < state.messages.length; i++) {
-      var fm = state.messages[i];
-      if (fm.role === 'user' || fm.role === 'agent') chars += (fm.content || '').length;
-    }
-    return chars;
-  }
-
-  // This turn's tool results: same per-result char cap getGenerationContext
-  // applies before they reach the model. Walk back only to the user message
-  // that opened the current turn.
-  function currentTurnToolChars() {
-    var chars = 0;
-    for (var i = state.messages.length - 1; i >= 0; i--) {
-      var tm = state.messages[i];
-      if (tm.role === 'user') break;
-      if (tm.role !== 'tool') continue;
-      var stripped = (tm.content || '').replace(/<[^>]*>/g, ' ');
-      chars += Math.min(stripped.length, CONTEXT_TOOL_RESULT_CHARS);
-    }
-    return chars;
-  }
-
-  // Real context window: derive usage from the prompt actually assembled for
-  // generation — the bounded conversation buffer + rolling summary + this
-  // turn's tool results — never the whole session's raw history. Summing
-  // every user/agent message ever sent only grows, so a 10-15 exchange
-  // session pinned this at 100% and orchestrator.js refused every later turn
-  // even though each prompt sent to the model stays bounded (buffer + summary
-  // + results, clamped again in chat-worker.js).
-  //
-  // This intentionally omits the fixed ~530-char Tools.profileFacts()
-  // preamble getGenerationContext() also prepends: it's constant overhead
-  // the visitor can't act on, and counting it would leave a permanent
-  // nonzero floor after /clear or /new (an empty session should read 0%,
-  // matching the pre-existing /clear contract instead of a "why isn't
-  // this 0" surprise for a fixed cost we can't reduce anyway). Omitting a
-  // roughly constant ~500 chars only ever under-reports the meter by a few
-  // points, which never causes a spurious hint or refusal.
+  // Context owns the bounded window; this just forwards to its meter.
   function computeContextPct() {
-    var totalChars = bufferChars() + (state.summary || '').length + currentTurnToolChars();
-    // Same clamp chat-worker.js applies to the assembled context string.
-    if (totalChars > CONTEXT_PROMPT_CLAMP_CHARS) totalChars = CONTEXT_PROMPT_CLAMP_CHARS;
-    // ~4 chars per token, estimate against MAX_CONTEXT_TOKENS
-    var pct = Math.round(totalChars / CONTEXT_CHARS_PER_TOKEN / MAX_CONTEXT_TOKENS * PCT_MAX);
-    return pct > PCT_MAX ? PCT_MAX : (pct < 0 ? 0 : pct);
+    return Context.meterPct(state);
   }
 
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy reducer switch; out of scope for this UI change
@@ -181,7 +116,7 @@ function createStore(initial) {
         // On a hard LLM load failure, reset the transient progress/status
         // readouts so the store no longer claims the model is "loading model
         // (wasm)... at 100%" when it actually failed. The renderer (#sModel),
-        // /status and the orchestrator's "downloading..." message gate on
+        // /status and Reply's "downloading..." message gate on
         // llmLoading/llmError; model-view.js's SmolLM2 bar and size label read
         // these readouts directly, so the reset shows there.
         if (action.model === 'llm' && action.status === 'error') {
@@ -283,10 +218,6 @@ function createStore(initial) {
         };
         break;
 
-      case 'PLAN_NEXT':
-        if (state.workingMemory) state.workingMemory.planIndex++;
-        break;
-
       case 'OBSERVE':
         if (!state.workingMemory) state.workingMemory = { turnId: null, observations: [], plan: [], planIndex: 0, coveredTools: {}, steps: 0, triedFallbacks: {} };
         state.workingMemory.observations.push({
@@ -314,21 +245,6 @@ function createStore(initial) {
       case 'WM_ASK_COUNT':
         if (!state.workingMemory) state.workingMemory = { turnId: null, observations: [], plan: [], planIndex: 0, coveredTools: {}, steps: 0, triedFallbacks: {}, askCount: 0 };
         state.workingMemory.askCount = (state.workingMemory.askCount || 0) + 1;
-        break;
-
-      case 'PLAN_DONE':
-        // Keep observations for synthesis, clear after response
-        break;
-
-      // ─── v2: Error feedback ────────────────────────────
-      case 'TOOL_ERROR':
-        if (!state.workingMemory) state.workingMemory = { turnId: null, observations: [], plan: [], planIndex: 0, coveredTools: {}, steps: 0, triedFallbacks: {} };
-        state.workingMemory.observations.push({
-          tool: action.toolName,
-          error: action.error,
-          hint: action.hint || null,
-          compactError: (action.toolName + ': ' + (action.error || 'unknown error') + (action.hint ? ' — ' + action.hint : '')).slice(0, 150)
-        });
         break;
 
       // ─── v2: Pause/Resume ──────────────────────────────
@@ -370,7 +286,7 @@ function createStore(initial) {
         state.ui.needsHumanInput = false;
         state.ui.humanQuestion = null;
         state.ui.humanOptions = [];
-        // Response handled by router callback
+        // Turn.answer resumes the paused turn
         break;
 
       case 'SUMMARY_UPDATE':

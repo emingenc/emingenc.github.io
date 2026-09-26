@@ -1,143 +1,170 @@
-// align-gate.js — validate Needle proposals before tool execution
-var AlignmentGate = (function() {
-  "use strict";
-  var store = null;
-  var resolvers = {};
-  var nextId = 0;
-  // Budget for an LLM alignment rescue once the model IS ready. Was 6000ms —
-  // a single unmatched off-topic turn ("what's the weather like today?")
-  // blocked for the full 6s whenever the align call was slow to resolve
-  // (measured 7168ms end-to-end). The not-ready case below already resolves
-  // with no wait at all, so this only bounds a ready-but-slow worker.
-  var ALIGN_TIMEOUT_MS = 1200;
+// align-gate.js — turns Needle's proposed intent into a tool decision: a
+// deterministic rule first, the chat model when the rules don't cover it,
+// and a fuzzy-match fallback when there is no model to ask or it answers
+// too slowly. Every path resolves the same {action, tool, sink, reason,
+// confidence, source} shape, so the router never needs to know which one
+// decided.
+'use strict';
+var AlignmentGate;
+{
+  // Bounds a ready but slow worker: past it, the keyword redirect decides,
+  // so a question no rule settles never stalls its turn. With no model
+  // ready, the redirect decides at once.
+  const ALIGN_TIMEOUT_MS = 1200;
+  const SHORT_KEYWORD_CHARS = 3;
+  const CASUAL_MAX_WORDS = 3;
+  const FAQ_CASUAL_MAX_WORDS = 4;
+  const FAQ_EXTENDED_MAX_WORDS = 6;
+  const AMBIGUOUS_MAX_WORDS = 2;
+  const SCOPE_BASE_CONFIDENCE = 55;
+  const SCOPE_PER_MATCH_CONFIDENCE = 10;
+  const SCOPE_MAX_CONFIDENCE = 95;
+  const CASUAL_ONLY = /^\s*(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great|good\s+(morning|afternoon|evening))[\s!.?,]*$/i;
+  const CASUAL_WORD = /\b(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great|cool|awesome|sweet|perfect|got it|alright|goodbye|see you|catch you|later|what's up|sup|howdy|yo)\b/i;
 
-  function decision(action, tool, reason, confidence, source) {
-    return { action: action, tool: tool, sink: action === 'sink' ? 'out_of_scope' : null, reason: reason, confidence: confidence || 0, source: source || 'fallback' };
+  function decision({ action, tool, reason, confidence = 0, source = 'fallback' }) {
+    return { action, tool, sink: action === 'sink' ? 'out_of_scope' : null, reason, confidence, source };
   }
 
   function words(text) {
     return (text || '').toLowerCase().match(/[a-z][a-z0-9_-]*/g) || [];
   }
 
-  // Match a keyword against text — uses word-boundary for short keywords (≤3 chars)
+  // A short keyword must match a standalone word ("he" must not match inside
+  // "where"); a longer one is fine as a substring.
   function kwMatch(keyword, joined, ws) {
-    var kw = String(keyword).toLowerCase();
-    if (kw.length <= 3) {
-      // Short keywords: must match a standalone word (avoids "he" in "where")
-      for (var wi = 0; wi < ws.length; wi++) {
-        if (ws[wi] === kw) return true;
-      }
-      return false;
-    }
-    // Longer keywords: substring match is fine
-    return joined.indexOf(kw) !== -1;
+    const kw = String(keyword).toLowerCase();
+    return kw.length <= SHORT_KEYWORD_CHARS ? ws.includes(kw) : joined.includes(kw);
   }
 
+  // ─── Deterministic rules: no model needed for the common cases ─────────
   function deterministic(text, intent) {
-    var label = intent && intent.label || 'faq';
-    var meta = Tools.getTool(label);
-    var ws = words(text);
-    var joined = ws.join(' ');
-    if (label === 'chat' || label === 'stop') {
-      // Only fast-path pure greetings; otherwise check for better tool matches
-      var casualOnly = text.match(/^\s*(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great|good\s+(morning|afternoon|evening))[\s!.?,]*$/i);
-      if (casualOnly && ws.length <= 3) return decision('execute', 'chat', 'conversational proposal', 80, 'deterministic');
-      // Two-pass routing: use fuzzy match to find best tool
-      var fuzzy = Tools.fuzzyMatch(text);
-      if (fuzzy && fuzzy.tool) {
-        return decision('redirect', fuzzy.tool, 'chat proposal redirected via fuzzy match (' + fuzzy.score + ')', fuzzy.score, 'deterministic');
-      }
-      return null; // no good match — let LLM check
-    }
-    if (label === 'faq') {
-      // Only treat as casual if the query is primarily a greeting (≤3 words or no tool keywords)
-      var casualMatch = text.match(/\b(hi|hello|hey|thanks|thank|bye|ok|okay|nice|great|cool|awesome|sweet|perfect|got it|alright|goodbye|see you|catch you|later|what's up|sup|howdy|yo)\b/i);
-      if (casualMatch && ws.length <= 4) return decision('execute', 'chat', 'casual conversation', 90, 'deterministic');
-      if (casualMatch && ws.length <= 6) {
-        // Longer casual query — try FAQ first, then chat
-        if (Tools.faqMatch(text)) return decision('execute', 'faq', 'FAQ match for casual query', 90, 'deterministic');
-        return decision('execute', 'chat', 'extended casual conversation', 80, 'deterministic');
-      }
-      if (casualMatch) return null; // has greeting prefix but also substantive content — let LLM align
-      // Two-pass routing: fuzzy match tools BEFORE FAQ — tools take priority
-      var fuzzy = Tools.fuzzyMatch(text);
-      if (fuzzy && fuzzy.tool) {
-        return decision('redirect', fuzzy.tool, 'faq proposal redirected via fuzzy match (' + fuzzy.score + ')', fuzzy.score, 'deterministic');
-      }
-      // No tool keyword match — try FAQ, then fall through to LLM
-      if (Tools.faqMatch(text)) return decision('execute', 'faq', 'FAQ match', 100, 'deterministic');
-      return null;
-    }
-    if (!meta) return decision('sink', 'out_of_scope', 'unknown proposed tool', 100, 'deterministic');
-    var domainWords = (meta.scopeWords || meta.keywords || []).map(function(k) { return String(k).toLowerCase(); });
-    var matches = 0;
-    for (var i = 0; i < domainWords.length; i++) {
-      if (kwMatch(domainWords[i], joined, ws)) matches++;
-    }
-    if (matches > 0) {
-      // Ultra-short queries (e.g. "blog?") are ambiguous — let LLM alignment confirm
-      if (ws.length <= 2) return null;
-      return decision('execute', label, 'registry scope match', Math.min(95, 55 + matches * 10), 'deterministic');
-    }
+    const label = (intent && intent.label) || 'faq';
+    const ws = words(text);
+    if (label === 'chat' || label === 'stop') return chatProposal(text, ws);
+    if (label === 'faq') return faqProposal(text, ws);
+    return toolProposal(label, ws);
+  }
+
+  // A pure greeting fast-paths to chat; anything else tries a fuzzy tool
+  // match first, so "hi, can you show me your repos" still reaches /repos.
+  function chatProposal(text, ws) {
+    if (CASUAL_ONLY.test(text) && ws.length <= CASUAL_MAX_WORDS) return decision({ action: 'execute', tool: 'chat', reason: 'conversational proposal', confidence: 80, source: 'deterministic' });
+    return fuzzyRedirect(text, 'chat proposal redirected via fuzzy match');
+  }
+
+  // A short greeting stays casual; a longer one tries FAQ before chat; real
+  // content past a greeting prefix falls through to LLM alignment.
+  function faqProposal(text, ws) {
+    if (!CASUAL_WORD.test(text)) return faqOrFuzzy(text);
+    if (ws.length <= FAQ_CASUAL_MAX_WORDS) return decision({ action: 'execute', tool: 'chat', reason: 'casual conversation', confidence: 90, source: 'deterministic' });
+    if (ws.length <= FAQ_EXTENDED_MAX_WORDS) return casualFaqOrChat(text);
     return null;
   }
 
-  // Fuzzy fallback using unified tool matching — no more keyword patching
+  function casualFaqOrChat(text) {
+    if (Tools.faqMatch(text)) return decision({ action: 'execute', tool: 'faq', reason: 'FAQ match for casual query', confidence: 90, source: 'deterministic' });
+    return decision({ action: 'execute', tool: 'chat', reason: 'extended casual conversation', confidence: 80, source: 'deterministic' });
+  }
+
+  // Tools take priority over the FAQ; only once neither matches does
+  // alignment fall through to the LLM.
+  function faqOrFuzzy(text) {
+    const redirect = fuzzyRedirect(text, 'faq proposal redirected via fuzzy match');
+    if (redirect) return redirect;
+    if (Tools.faqMatch(text)) return decision({ action: 'execute', tool: 'faq', reason: 'FAQ match', confidence: 100, source: 'deterministic' });
+    return null;
+  }
+
+  function fuzzyRedirect(text, reasonPrefix) {
+    const fuzzy = Tools.fuzzyMatch(text);
+    if (!fuzzy || !fuzzy.tool) return null;
+    return decision({ action: 'redirect', tool: fuzzy.tool, reason: `${reasonPrefix} (${fuzzy.score})`, confidence: fuzzy.score, source: 'deterministic' });
+  }
+
+  // A registry tool Needle already named: a scope-word match confirms it
+  // outright, unless the query is so short (e.g. "blog?") that the LLM
+  // should still confirm it.
+  function toolProposal(label, ws) {
+    const meta = Tools.getTool(label);
+    if (!meta) return decision({ action: 'sink', tool: 'out_of_scope', reason: 'unknown proposed tool', confidence: 100, source: 'deterministic' });
+    const matches = scopeMatches(meta, ws);
+    if (matches === 0 || ws.length <= AMBIGUOUS_MAX_WORDS) return null;
+    const confidence = Math.min(SCOPE_MAX_CONFIDENCE, SCOPE_BASE_CONFIDENCE + matches * SCOPE_PER_MATCH_CONFIDENCE);
+    return decision({ action: 'execute', tool: label, reason: 'registry scope match', confidence, source: 'deterministic' });
+  }
+
+  function scopeMatches(meta, ws) {
+    const joined = ws.join(' ');
+    const domainWords = (meta.scopeWords || meta.keywords || []).map((word) => String(word).toLowerCase());
+    return domainWords.filter((word) => kwMatch(word, joined, ws)).length;
+  }
+
+  // ─── Fallback: no model to ask, or it never answers in time ────────────
+  function defaultToolFor(intent) {
+    return intent && intent.label === 'chat' ? 'chat' : 'out_of_scope';
+  }
+
   function keywordRedirect(text, defaultTool) {
-    var fuzzy = Tools.fuzzyMatch(text);
-    if (fuzzy && fuzzy.tool) {
-      return decision('redirect', fuzzy.tool, 'fuzzy match: ' + fuzzy.tool + ' (score ' + fuzzy.score + ')', fuzzy.score, 'fallback');
-    }
-    var fallbackAction = defaultTool === 'chat' ? 'execute' : 'sink';
-    return decision(fallbackAction, defaultTool || 'out_of_scope', 'no fuzzy match — sinking', 40, 'fallback');
+    const fuzzy = Tools.fuzzyMatch(text);
+    if (fuzzy && fuzzy.tool) return decision({ action: 'redirect', tool: fuzzy.tool, reason: `fuzzy match: ${fuzzy.tool} (score ${fuzzy.score})`, confidence: fuzzy.score, source: 'fallback' });
+    const fallbackAction = defaultTool === 'chat' ? 'execute' : 'sink';
+    return decision({ action: fallbackAction, tool: defaultTool || 'out_of_scope', reason: 'no fuzzy match — sinking', confidence: 40, source: 'fallback' });
   }
 
-  function check(text, intent, opts) {
-    var d = deterministic(text, intent || {});
-    if (d) return Promise.resolve(d);
-    var worker = Classifier._getLLMWorker ? Classifier._getLLMWorker() : null;
-    if (!Classifier.isLLMReady || !Classifier.isLLMReady() || !worker) {
-      // No LLM — try keyword match before sinking
-      var defaultTool = (intent && intent.label === 'chat') ? 'chat' : 'out_of_scope';
-      return Promise.resolve(keywordRedirect(text, defaultTool));
-    }
-    var id = 'align_' + (++nextId);
-    var turnId = opts && opts.turnId;
-    return new Promise(function(resolve) {
-      resolvers[id] = { resolve: resolve, intent: intent || {}, turnId: turnId };
-      setTimeout(function() {
-        if (!resolvers[id]) return;
-        delete resolvers[id];
-        // LLM timed out — try keyword match before sinking
-        var defaultTool = (intent && intent.label === 'chat') ? 'chat' : 'out_of_scope';
-        resolve(keywordRedirect(text, defaultTool));
-      }, ALIGN_TIMEOUT_MS);
-      var scopes = (Tools.TOOL_REGISTRY || []).map(function(t) {
-        return { name: t.name, description: t.description, scope: t.scopeWords || t.keywords || [] };
-      });
-      worker.postMessage({ type: 'align', alignId: id, text: text, intent: { label: intent && intent.label || 'faq' }, toolScopes: scopes });
+  // ─── The model seam ───────────────────────────────────────────────────
+  function alignRequest(text, intent) {
+    const toolScopes = (Tools.TOOL_REGISTRY || []).map((tool) => ({ name: tool.name, description: tool.description, scope: tool.scopeWords || tool.keywords || [] }));
+    return { text, intent: { label: (intent && intent.label) || 'faq' }, toolScopes };
+  }
+
+  // The model's own verdict: out of scope sinks, a registry tool redirects
+  // to it, and anything else executes the intent Needle already proposed.
+  function fromWorkerResult(data, intent) {
+    const verdict = data || {};
+    if (verdict.inScope === false) return sinkResult(verdict);
+    if (isKnownTool(verdict.suggestedTool)) return redirectResult(verdict);
+    if (verdict.suggestedTool === 'out_of_scope') return sinkResult(verdict);
+    return executeResult(verdict, intent);
+  }
+
+  function isKnownTool(suggested) {
+    return Boolean(suggested && suggested !== 'out_of_scope' && Tools.getTool(suggested));
+  }
+
+  function sinkResult(verdict) {
+    return decision({ action: 'sink', tool: 'out_of_scope', reason: verdict.reason || 'out of scope', confidence: verdict.confidence, source: 'llm' });
+  }
+
+  function redirectResult(verdict) {
+    return decision({ action: 'redirect', tool: verdict.suggestedTool, reason: verdict.reason || 'model-selected tool', confidence: verdict.confidence, source: 'llm' });
+  }
+
+  function executeResult(verdict, intent) {
+    return decision({ action: 'execute', tool: (intent && intent.label) || 'chat', reason: verdict.reason || 'aligned proposal', confidence: verdict.confidence, source: 'llm' });
+  }
+
+  // Races the worker against the timeout above; Promise.race takes whichever
+  // settles first. A stopped turn's request resolves null, which maps to the
+  // 'alignment cancelled' sink, so its alignment never outlives the turn.
+  function settle(pending, text, intent) {
+    const mapped = pending.then((data) => (data === null ? decision({ action: 'sink', tool: 'out_of_scope', reason: 'alignment cancelled' }) : fromWorkerResult(data, intent)));
+    let timer;
+    const timeout = new Promise((resolve) => {
+      timer = setTimeout(() => resolve(keywordRedirect(text, defaultToolFor(intent))), ALIGN_TIMEOUT_MS);
     });
+    return Promise.race([mapped, timeout]).finally(() => clearTimeout(timer));
   }
 
-  function handleResult(id, data) {
-    var item = resolvers[id];
-    if (!item) return;
-    delete resolvers[id];
-    var suggested = data && data.suggestedTool;
-    var meta = suggested && Tools.getTool(suggested);
-    if (data && data.inScope === false) return item.resolve(decision('sink', 'out_of_scope', data.reason || 'out of scope', data.confidence, 'llm'));
-    if (meta && suggested !== 'out_of_scope') return item.resolve(decision('redirect', suggested, data.reason || 'model-selected tool', data.confidence, 'llm'));
-    if (suggested === 'out_of_scope') return item.resolve(decision('sink', 'out_of_scope', data.reason || 'out of scope', data.confidence, 'llm'));
-    item.resolve(decision('execute', item.intent.label || 'chat', data && data.reason || 'aligned proposal', data && data.confidence, 'llm'));
+  // Only a model request can outlive its turn, so only it takes the turn's
+  // signal: the rules and the keyword redirect decide without waiting.
+  function check(text, intent, { signal }) {
+    const proposed = deterministic(text, intent || {});
+    if (proposed) return Promise.resolve(proposed);
+    if (!Classifier.isLLMReady()) return Promise.resolve(keywordRedirect(text, defaultToolFor(intent)));
+    const pending = Classifier.align(alignRequest(text, intent), { signal });
+    return pending ? settle(pending, text, intent) : Promise.resolve(keywordRedirect(text, defaultToolFor(intent)));
   }
 
-  function cancelAll() {
-    for (var id in resolvers) {
-      resolvers[id].resolve(decision('sink', 'out_of_scope', 'alignment cancelled', 0, 'fallback'));
-      delete resolvers[id];
-    }
-  }
-
-  function init(s) { store = s; }
-  return { init: init, check: check, _handleAlignResult: handleResult, _cancelAllAligns: cancelAll };
-})();
+  AlignmentGate = { check };
+}

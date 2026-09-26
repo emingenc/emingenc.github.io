@@ -1,0 +1,130 @@
+.tray-section {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.chip-tray {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.chip-tray-full .tray-chip {
+  opacity:0.6;
+}
+
+.tray-note,.key-legend {
+  font-size:13px;
+  color:var(--dim);
+}
+
+.revealed-line {
+  color:var(--amber);
+  font-size:15px;
+}
+
+.action-rows {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.action-row-primary {
+  display:flex;
+  gap:10px;
+}
+
+.action-row-primary .action-run,.action-row-primary .action-submit {
+  flex:1;
+}
+
+.action-row-secondary {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+}
+
+@media (max-width:767px) {
+  .lock-screen {
+    height:calc(100dvh - var(--bar-h) - env(safe-area-inset-bottom,0px));
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:12px;
+  }
+  .action-row-primary {
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:10;
+    min-height:var(--bar-h);
+    margin:0;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
+    background:var(--panel);
+    border-top:1px solid var(--border);
+  }
+}
+
+.test-panel {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:12px;
+  min-height:60px;
+}
+
+.test-panel-empty {
+  color:var(--dim);
+  font-size:14px;
+}
+
+.panel-header {
+  font-family:var(--font-display);
+  font-size:20px;
+  color:var(--bright);
+}
+
+.panel-summary {
+  color:var(--dim);
+  font-size:14px;
+}
+
+.panel-detail {
+  font-size:14px;
+}
+
+.panel-syntax {
+  color:var(--red);
+}
+
+.example-results-list,.judged-list {
+  list-style:none;
+  padding-left:0;
+  font-size:14px;
+}
+
+.example-result,.judged-row {
+  display:flex;
+  gap:8px;
+  align-items:baseline;
+  padding:2px 0;
+}
+
+.example-result.pass,.judged-row.pass {
+  color:var(--primary);
+}
+
+.example-result.fail,.judged-row.fail {
+  color:var(--red);
+}
+
+.cost-model {
+  margin-top:6px;
+}
+
+.cost-model-text {
+  font-size:13px;
+  color:var(--dim);
+}

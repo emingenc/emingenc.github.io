@@ -15,10 +15,10 @@ Keywords: game, play, playable, arcade, platformer, hack-overflow
 
 | id             | name             | path            | what it is                                                     |
 |----------------|------------------|-----------------|-----------------------------------------------------------------|
-| hack-overflow  | HACK://OVERFLOW  | /hack-overflow/ | Blind-75 learning platformer — walk the route, hack firewalls   |
+| hack-overflow  | HACK://OVERFLOW  | /hack-overflow/ | LeetCode puzzle game — solve each problem with one line of Python |
 
-`public/hack-overflow/` holds the Godot web export copied verbatim from the
-private `emingenc/hack-overflow` repo's GitHub `main`. See AGENTS.md for how
+`public/hack-overflow/` holds the ONE-LINER web build (`npm run build` in the
+private `emingenc/hack-overflow` repo's `web/`), copied verbatim. See AGENTS.md for how
 to refresh it.
 
 ## Adding a game

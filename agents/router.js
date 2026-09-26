@@ -1,237 +1,236 @@
-// router.js v2 — ReAct agent loop: main entry point (dispatches to Classifier, Evaluator, Orchestrator)
-// eslint-disable-next-line max-lines-per-function -- legacy module wrapper (IIFE); out of scope for this UI change
-var Router = (function() {
-  "use strict";
+// router.js — the agent's front door. Every input enters here: typed in the
+// composer, clicked on a card, or sent by a link ({source: 'url'}). While a
+// chooser is open, typed text answers it. Otherwise the router begins a turn,
+// echoes the input, and either runs a session command itself or decides
+// which tool answers: the one a slash command names, the FAQ for a
+// well-known site question, or the tool the classifier proposes and the
+// alignment gate accepts. LoopPolicy turns that decision into a plan and the
+// orchestrator runs it. Turn owns every turn from begin() to its end, so
+// input that arrives while one runs is dropped: agent-ui has queued it.
+'use strict';
 
-  var store = null;
-  var humanCallback = null; // for ask_user resume
+var Router;
 
-  // ─── v2: Main entry ──────────────────────────────────────
-  // opts.source === 'url' marks input that arrived from a query param or hash
-  // route (agent-ui.js checkURLTriggers) rather than something the visitor
-  // typed or clicked in-app — see the isSlash block below.
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy entry point; refactoring it is out of scope for this UI change
-  // eslint-disable-next-line max-lines-per-function, complexity -- legacy entry point; refactoring it is out of scope for this UI change
-  function handleInput(text, opts) {
-    opts = opts || {};
-    // An ask_user pause intentionally keeps the turn alive while accepting a choice.
-    if (store.getState().ui.needsHumanInput) {
-      // A slash command typed while the chooser is open must be honored as a
-      // command, not swallowed as a (numeric) answer. Cancel the pending
-      // ask_user turn cleanly, then fall through to normal command processing.
-      if (Tools.isSlash(text)) {
-        store.dispatch({ type: 'RESUME' });   // clear the needsHumanInput modal
-        humanCallback = null;                 // drop the pending ask_user callback
-        Orchestrator.done();                  // release the isProcessing lock
-      } else {
-        if (humanCallback) {
-          var answer = parseInt(text, 10);
-          if (isNaN(answer)) answer = 0;
-          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'user', type: 'text', content: text, ts: '' }});
-          store.dispatch({ type: 'USER_RESPONSE', answer: answer });
-          humanCallback(answer);
-          humanCallback = null;
-        }
-        return;
-      }
+{
+  const COMMAND_CONFIDENCE = 1;
+  const FAST_PATH_CONFIDENCE = 100;
+  const FAST_PATH_REASON = 'knowledge fast-path';
+  const FAST_PATH_LABEL = 'routing';
+  const CLASSIFY_LABEL = 'thinking...';
+  const SESSIONS_LABEL = 'listing sessions';
+  const SESSIONS_DELAY_MS = 200;
+  const FORGET_CONFIRMATIONS = new Set(['confirm', 'yes', 'y']);
+  // The classifier had no answer: its model is not ready, or it was too slow.
+  const NO_INTENT = Object.freeze({ type: 'faq', label: 'faq', score: 0 });
+
+  let store = null;
+
+  const addMessage = (message) => ({ type: 'MESSAGE_ADD', message });
+  const userSays = (content) => addMessage({ role: 'user', type: 'text', content, ts: '' });
+  const errorSays = (content) => addMessage({ role: 'error', type: 'text', content, ts: '' });
+  const agentSays = (content) => addMessage({ role: 'agent', type: 'faq', content, ts: '' });
+  const toolCard = (toolName, content) => addMessage({ role: 'tool', type: 'tool-call', toolName, content, ts: '', noTs: false });
+
+  // ─── Input ───────────────────────────────────────────────────────────────
+
+  // An open chooser takes typed text as its answer. The echo comes first:
+  // run-view files a visitor line that arrives while the chooser is open as
+  // the paused turn's answer step. A slash command closes the chooser and
+  // runs like any other input.
+  function handleInput(text, { source } = {}) {
+    if (Turn.isPaused()) {
+      if (!Tools.isSlash(text)) return answerChooser(text);
+      Turn.abandon();
     }
-    if (store.getState().ui.isProcessing) return;
-    Orchestrator.currentTurnId++; // invalidate any stale async callbacks
-    var turnId = Orchestrator.currentTurnId;
+    if (Turn.isBusy()) return;
+    const turn = Turn.begin();
+    turn.dispatch(userSays(text));
+    if (source === 'url' && Tools.isDestructiveCommand(text)) return refuseLink(turn, text);
+    if (Tools.isSlash(text)) return runCommand(turn, text);
+    return routeQuestion(turn, text);
+  }
 
-    // Normal input follows the standard turn path.
+  function answerChooser(text) {
+    store.dispatch(userSays(text));
+    Turn.answer(text);
+  }
 
-    Orchestrator.processingTurnId = Orchestrator.currentTurnId; // lock ownership
+  // The chooser's buttons, and the inline onclick of saved transcripts,
+  // answer by index. A button left from an earlier turn has nothing to answer.
+  function answerByButton(index) {
+    Turn.answer(index);
+    focusInput();
+  }
 
-    store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'user', type: 'text', content: text, ts: '' }});
+  function focusInput() {
+    document.getElementById('input')?.focus();
+  }
 
-    // Stop welcome animation on first user input (delightful → focused)
-    if (typeof Renderer !== 'undefined' && Renderer.stopAnimations) Renderer.stopAnimations();
+  // A link may run any command but these: ?q=/forget --confirm would wipe
+  // every saved session, and ?q=/clear right after the auto-restore would
+  // prune the session just restored. /new and /resume stay reachable, since
+  // neither deletes a saved session.
+  function refuseLink(turn, text) {
+    const command = Tools.parseSlash(text);
+    const loss = command === 'clear' ? 'clear the transcript' : 'delete saved sessions';
+    failCommand(turn, `Type /${command} yourself in the chat box — a link can't ${loss}.`);
+  }
 
-    // Slash command
-    if (Tools.isSlash(text)) {
-      var cmd = Tools.parseSlash(text);
+  function failCommand(turn, message) {
+    turn.dispatch(errorSays(message));
+    turn.end();
+  }
 
-      // A URL (query param or hash route, on load or on hashchange) can drive
-      // any slash command — that's the whole point of Factor #11 deep links.
-      // But /forget and /clear are destructive/stateful, so a link a visitor
-      // didn't type must not be able to run them (crafted-link data-loss —
-      // e.g. ?q=/forget%20--confirm, or ?q=/clear right after the <30min
-      // auto-restore, which would prune the just-restored session as "empty").
-      // /new and /resume are left reachable from a URL: neither deletes a
-      // saved session (see store.js persist()/restoreById) — /new persists
-      // under a fresh, never-before-seen id, and /resume only re-saves the
-      // session it loads, so at worst a link changes what's on screen, not
-      // what's in storage.
-      if (opts.source === 'url' && Tools.isDestructiveCommand(text)) {
-        store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'error', type: 'text', content: 'Type /' + cmd + ' yourself in the chat box — a link can\'t ' + (cmd === 'clear' ? 'clear the transcript' : 'delete saved sessions') + '.', ts: '' }});
-        Orchestrator.done();
-        return;
-      }
+  // ─── Slash commands ──────────────────────────────────────────────────────
 
-      if (cmd === 'clear') { store.dispatch({ type: 'CLEAR' }); Orchestrator.resetFollowupState(); Orchestrator.done(); return; }
-      if (cmd === 'new') { store.dispatch({ type: 'NEW_SESSION' }); Orchestrator.resetFollowupState(); Renderer.showWelcome(); store.dispatch({ type: 'THINKING', state: 'hide' }); return; }
-      if (cmd === 'blog') { Orchestrator.singleTool('blog', text, turnId); return; }
-      if (cmd === 'ask') { Orchestrator.singleTool('ask_user', text, turnId); return; }
+  // The commands the router runs itself. A Map, not an object: the command
+  // is whatever the visitor typed, and /constructor must find nothing.
+  const COMMANDS = new Map([
+    ['clear', clearTranscript],
+    ['new', startNewSession],
+    ['sessions', listSessions],
+    ['resume', resumeSession],
+    ['r', resumeSession],
+    ['forget', forgetSessions],
+    ['ask', (turn, text) => runTool(turn, text, 'ask_user')],
+  ]);
 
-      // Session management
-      if (cmd === 'sessions') {
-        store.dispatch({ type: 'THINKING', state: 'executing', label: 'listing sessions' });
-        setTimeout(function() {
-          // Cancelled meanwhile: adding the card would persist a session
-          // again, even one a later /forget --confirm just deleted.
-          if (turnId !== Orchestrator.currentTurnId) return;
-          store.dispatch({ type: 'THINKING', state: 'hide' });
-          var sessions = store.listSessions();
-          var result = Tools.sessions(sessions, store.getSize());
-          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'tool', type: 'tool-call', toolName: 'sessions', content: result.content, ts: '', noTs: false }});
-          Orchestrator.done();
-        }, 200);
-        return;
-      }
-      if (cmd === 'resume' || cmd === 'r') {
-        var sid = text.slice(cmd === 'resume' ? 8 : 3).trim().replace(/^\//, '');
-        if (!sid) {
-          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'error', type: 'text', content: 'Usage: /resume <session-id>  (use /sessions to list)', ts: '' }});
-          Orchestrator.done(); return;
-        }
-        var ok = store.restoreById(sid);
-        if (ok) {
-          Renderer.showRestored(store.getState());
-          store.dispatch({ type: 'THINKING', state: 'hide' });
-          document.getElementById('input').focus();
-        } else {
-          // sid is raw user/URL text, but no escaping needed here: renderer.js
-          // renders this role:'error' message as plain text, running it
-          // through escapeHtml once, live and when a saved session is
-          // restored. Escaping it again here double-encodes (verified live:
-          // a crafted sid rendered as literal "&amp;lt;...").
-          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'error', type: 'text', content: 'Session ' + sid + ' not found. Use /sessions to list.', ts: '' }});
-          store.dispatch({ type: 'THINKING', state: 'hide' });
-          Orchestrator.done();
-        }
-        return;
-      }
-      if (cmd === 'forget') {
-        // Safety: /forget irreversibly wipes all saved sessions, so require an
-        // explicit confirm token. Without it, show a warning and do NOT wipe.
-        // (URL-sourced /forget of any shape is already refused above.)
-        var arg = (text.slice(7) || '').trim().toLowerCase().replace(/^[\/-]+/, '').replace(/\/+$/, '');
-        if (arg === 'confirm' || arg === 'yes' || arg === 'y') {
-          // Order matters: dispatch the confirmation FIRST, then forgetAll()
-          // LAST. MESSAGE_ADD auto-persists the current session, so calling
-          // forgetAll() first was immediately undone — the "cleared" message
-          // re-wrote the current session to storage, leaving /forget --confirm
-          // with 1 session still saved (and a misleading "Storage freed" note).
-          // Reversing the order empties storage after the message is persisted.
-          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: 'All saved sessions cleared. Storage freed.', ts: '' }});
-          store.forgetAll();
-        } else {
-          var n = 0;
-          try { n = store.listSessions().length; } catch(e) { n = 0; }
-          store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: 'This will permanently delete ' + (n > 0 ? (n + ' saved session' + (n === 1 ? '' : 's')) : 'all saved sessions') + '. Type <b>/forget --confirm</b> to proceed, or <b>/sessions</b> to review first.', ts: '' }});
-        }
-        Orchestrator.done();
-        return;
-      }
+  function runCommand(turn, text) {
+    const command = Tools.parseSlash(text);
+    const run = COMMANDS.get(command) ?? runTool;
+    run(turn, text, command);
+  }
 
-      Orchestrator.singleTool(cmd, text, turnId);
-      return;
-    }
+  // Any other command names the tool that answers it: /help, /blog, or a
+  // mistyped one, which the loop reports as not found.
+  function runTool(turn, text, tool) {
+    runLoop(turn, text, { tool, confidence: COMMAND_CONFIDENCE });
+  }
 
-    // ── Deterministic knowledge fast-path ───────────────────
-    // Well-known site questions ('tools on this site', 'how does this chat
-    // work', 'learning hub', 'is there a blog?') are answered from FAQ
-    // directly — the Needle classifier misroutes them to skills/chat/LLM,
-    // producing wrong answers or stalls when the local model is unavailable.
-    var fastTool = Tools.detectKnowledgeFastPath(text);
-    if (fastTool) {
-      store.dispatch({ type: 'THINKING', state: 'classifying', label: 'routing' });
-      Orchestrator.runLoop([{ tool: fastTool, score: 100, reason: 'knowledge fast-path' }], text, turnId);
-      return;
-    }
+  // A cleared transcript or a new session no longer shows the last question,
+  // so a follow-up has nothing to lean on.
+  function clearTranscript(turn) {
+    turn.dispatch({ type: 'CLEAR' });
+    Orchestrator.resetFollowupState();
+    turn.end();
+  }
 
-    // ── Natural language: classify → unified ReAct loop ────
-    store.dispatch({ type: 'THINKING', state: 'classifying', label: 'thinking...' });
+  function startNewSession(turn) {
+    turn.dispatch({ type: 'NEW_SESSION' });
+    Orchestrator.resetFollowupState();
+    Renderer.showWelcome();
+    turn.end();
+  }
 
-    // eslint-disable-next-line max-lines-per-function -- legacy classify callback; out of scope for this UI change
-    Classifier.classify(text).then(function(result) {
-      if (turnId !== Orchestrator.currentTurnId) { Orchestrator.done(turnId); return; }
-      var intent = result || { type: 'faq', label: 'faq', score: 0 };
-      var alignment = typeof AlignmentGate !== 'undefined'
-        ? AlignmentGate.check(text, intent, { turnId: turnId })
-        : Promise.resolve({ action: 'execute', tool: intent.label || 'faq', confidence: intent.score || 0, reason: 'alignment unavailable' });
-      alignment.then(function(decision) {
-        if (turnId !== Orchestrator.currentTurnId) { Orchestrator.done(turnId); return; }
-        reactStep('align → ' + decision.action + ' ' + decision.tool + ' · ' + decision.reason);
-
-        // Compound query: detect additional tool keywords in the text
-        var plan = [{ tool: decision.tool || 'out_of_scope', score: decision.confidence, reason: decision.reason }];
-        if ((decision.action === 'execute' || decision.action === 'redirect') && decision.tool !== 'out_of_scope' && decision.tool !== 'chat' && decision.tool !== 'faq') {
-          var extraTools = Tools.detectExtraTools(text, decision.tool);
-          for (var i = 0; i < extraTools.length; i++) {
-            plan.push({ tool: extraTools[i], score: 80, reason: 'compound query expansion' });
-          }
-        }
-        Orchestrator.runLoop(plan, text, turnId);
-      }).catch(function(err) {
-        if (turnId !== Orchestrator.currentTurnId) { Orchestrator.done(turnId); return; }
-        // Alignment failed — fall back to out_of_scope for safety
-        reactStep('align → sink out_of_scope · alignment error');
-        Orchestrator.runLoop([{ tool: 'out_of_scope', score: 0, reason: 'alignment error' }], text, turnId);
-      });
-    }).catch(function(err) {
-      if (turnId !== Orchestrator.currentTurnId) { Orchestrator.done(turnId); return; }
-      reactStep('classify → error · ' + (err.message || 'classification failed'));
-      Orchestrator.runLoop([{ tool: 'out_of_scope', score: 0, reason: 'classification error' }], text, turnId);
+  // The card persists the session it lands in, so a turn stopped meanwhile
+  // must not write it after a /forget --confirm: its timer dies with it.
+  function listSessions(turn) {
+    turn.busy('executing', SESSIONS_LABEL);
+    turn.after(SESSIONS_DELAY_MS, () => {
+      turn.dispatch(toolCard('sessions', Tools.sessions(store.listSessions(), store.getSize()).content));
+      turn.end();
     });
   }
 
-  // Same message shape as Orchestrator's trace(): verb + raw text feed
-  // agent-ui's step list, which renders them as text.
-  function reactStep(text) {
-    var arrow = text.indexOf(' → ');
-    store.dispatch({ type: 'MESSAGE_ADD', message: {
-      role: 'system', type: 'react-step', content: text, ts: '', noTs: true,
-      verb: arrow > 0 ? text.slice(0, arrow) : '', text: text
-    }});
+  // A resumed session keeps the rolling summary it was saved with. The id is
+  // raw visitor or link text, left unescaped: renderer.js escapes an error
+  // line once, live and restored, so escaping here would show it encoded.
+  function resumeSession(turn, text, command) {
+    const id = argumentOf(text, command).trim().replace(/^\//, '');
+    if (!id) return failCommand(turn, 'Usage: /resume <session-id>  (use /sessions to list)');
+    if (!store.restoreById(id)) return failCommand(turn, `Session ${id} not found. Use /sessions to list.`);
+    Renderer.showRestored(store.getState());
+    turn.end({ summarize: false });
+    focusInput();
   }
 
-  function init(_store) {
-    store = _store;
-    Tools.setStore(store);
-    Classifier.init(store);
-    Evaluator.init(store);
-    if (typeof AlignmentGate !== 'undefined') AlignmentGate.init(store);
-    Orchestrator.init(store);
-    window._enableLLM = Classifier.enableLLM;
-    window._answerAsk = function(idx) {
-      store.dispatch({ type: 'RESUME' });
-      if (humanCallback) { humanCallback(idx); humanCallback = null; }
-      el_input_focus();
-    };
+  // Wiping every saved session cannot be undone, so it takes a typed
+  // confirmation. The message persists the session it lands in, so the wipe
+  // comes after it.
+  function forgetSessions(turn, text, command) {
+    const confirmed = FORGET_CONFIRMATIONS.has(confirmationOf(argumentOf(text, command)));
+    turn.dispatch(agentSays(confirmed ? 'All saved sessions cleared. Storage freed.' : forgetWarning(store.listSessions().length)));
+    if (confirmed) store.forgetAll();
+    turn.end();
   }
 
-  function el_input_focus() {
-    var inp = document.getElementById('input');
-    if (inp) inp.focus();
+  function forgetWarning(count) {
+    const doomed = count > 0 ? `${count} saved session${count === 1 ? '' : 's'}` : 'all saved sessions';
+    return `This will permanently delete ${doomed}. Type <b>/forget --confirm</b> to proceed, or <b>/sessions</b> to review first.`;
   }
 
-  function _clearHumanCallback() { humanCallback = null; }
-  function _setHumanCallback(cb) { humanCallback = cb; }
+  // What follows "/command" and the one space or slash that ends it.
+  const argumentOf = (text, command) => text.slice(`/${command} `.length);
 
-  return {
-    init: init,
-    handleInput: handleInput,
-    enableLLM: function() { Classifier.enableLLM(); },
-    cancel: function() { Orchestrator.cancel(); },
-    isProcessing: function() { return store.getState().ui.isProcessing; },
-    _clearHumanCallback: _clearHumanCallback,
-    _setHumanCallback: _setHumanCallback,
-    // Live getter — a plain `_store: store` captures the initial `null` at IIFE
-    // eval time (before init() assigns the closure var), so the debugging hook
-    // always returned null. A getter resolves the current store on each access.
-    get _store() { return store; }
+  // "--confirm", "/confirm/" and "CONFIRM" all read "confirm".
+  const confirmationOf = (argument) => argument.trim().toLowerCase().replace(/^[\/-]+/, '').replace(/\/+$/, '');
+
+  // ─── Questions ───────────────────────────────────────────────────────────
+
+  // Well-known site questions skip the classifier, which misroutes them;
+  // any other question is classified, then aligned to a tool.
+  function routeQuestion(turn, text) {
+    const known = Tools.detectKnowledgeFastPath(text);
+    if (!known) return classify(turn, text);
+    turn.busy('classifying', FAST_PATH_LABEL);
+    runLoop(turn, text, { tool: known, confidence: FAST_PATH_CONFIDENCE, reason: FAST_PATH_REASON });
+  }
+
+  function classify(turn, text) {
+    turn.busy('classifying', CLASSIFY_LABEL);
+    Classifier.classify(text)
+      .then((intent) => {
+        if (turn.isCurrent()) align(turn, text, intent || NO_INTENT);
+      })
+      .catch((error) => {
+        if (!turn.isCurrent()) return;
+        turn.trace(`classify → error · ${error.message || 'classification failed'}`);
+        runLoop(turn, text, outOfScope('classification error'));
+      });
+  }
+
+  function align(turn, text, intent) {
+    AlignmentGate.check(text, intent, { signal: turn.signal })
+      .then((decision) => {
+        if (!turn.isCurrent()) return;
+        turn.trace(`align → ${decision.action} ${decision.tool} · ${decision.reason}`);
+        runLoop(turn, text, decision);
+      })
+      .catch(() => {
+        if (!turn.isCurrent()) return;
+        turn.trace('align → sink out_of_scope · alignment error');
+        runLoop(turn, text, outOfScope('alignment error'));
+      });
+  }
+
+  const outOfScope = (reason) => ({ tool: 'out_of_scope', confidence: 0, reason });
+
+  // LoopPolicy turns the decision into a plan, adding the other tools a
+  // compound question names, and the orchestrator runs the turn from there.
+  function runLoop(turn, text, decision) {
+    Orchestrator.run(turn, text, LoopPolicy.planFor(text, decision));
+  }
+
+  // ─── Wiring ──────────────────────────────────────────────────────────────
+
+  // Turn stops a running turn first, so whatever reacts to its abort still
+  // writes to the store that turn began in; then every module binds the new
+  // one, and the loop forgets the last conversation's follow-up.
+  function init(nextStore) {
+    Turn.init(nextStore);
+    store = nextStore;
+    Tools.setStore(nextStore);
+    Classifier.init(nextStore);
+    Evaluator.init(nextStore);
+    Reply.init(nextStore);
+    Orchestrator.resetFollowupState();
+    window._answerAsk = answerByButton;
+  }
+
+  Router = {
+    init,
+    handleInput,
+    enableLLM: () => Classifier.enableLLM(),
+    cancel: () => Turn.cancel(),
   };
-
-})();
+}

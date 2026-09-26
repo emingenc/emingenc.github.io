@@ -133,8 +133,8 @@ var Tools = (function() {
     }
     // Fallback: general bio
     var items = [
-      'Forward Deployed AI Engineer',
-      '@ Cresta AI · Vancouver, BC',
+      'Based in Vancouver, BC',
+      'Forward Deployed AI Engineer @ Cresta AI',
       '',
       'Previously:',
       '2023–26  Goodfintech — AI Engineer',
@@ -437,7 +437,7 @@ var Tools = (function() {
   // is the public address kept for display/reference only. Selectable:
   // /game shows the list, /game <id> redirects to launch it.
   var GAMES = [
-    { id: 'hack-overflow', name: 'HACK://OVERFLOW', path: '/hack-overflow/', url: 'https://emingenc.github.io/hack-overflow/', desc: 'Blind-75 learning platformer — walk the route, hack firewalls' }
+    { id: 'hack-overflow', name: 'HACK://OVERFLOW', path: '/hack-overflow/', url: 'https://emingenc.github.io/hack-overflow/', desc: 'LeetCode puzzle game — solve each problem with one line of Python' }
   ];
 
   function tool_game(text) {
@@ -681,7 +681,7 @@ var Tools = (function() {
     { name: 'skills', fn: tool_skills, description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, Docker, AWS', keywords: ['skills','skill','tech','tool','tools','stack','know','language','python','typescript','docker','programming','framework','database','cloud','aws','linux','fastapi','next','react','ml','llm','rag','agent'], selfContained: true, category: 'discover', params: {} },
     { name: 'blog', fn: tool_blog, description: 'Blog posts about building AI agents', keywords: ['blog','post','article','write','read','published'], selfContained: true, category: 'discover', params: {} },
     { name: 'g1', fn: tool_g1, description: 'G1 smart glasses by Even Realities: BLE SDK, voice assistant, mobile bridge', keywords: ['g1','smart glass','glasses','even realities','ble','flutter','wearable','hardware','even_glasses'], selfContained: true, category: 'discover', params: {} },
-    { name: 'game', fn: tool_game, description: 'Emin\'s playable games (platformers)', keywords: ['game','play','playable','games','arcade','platformer','hack-overflow','hack overflow','hack://overflow','blind 75'], selfContained: true, category: 'fun', params: {} },
+    { name: 'game', fn: tool_game, description: 'Emin\'s playable games', keywords: ['game','play','playable','games','arcade','platformer','hack-overflow','hack overflow','hack://overflow','blind 75'], selfContained: true, category: 'fun', params: {} },
     { name: 'help', fn: tool_help, description: 'List all available commands', keywords: ['help','commands','what can you do','options'], selfContained: true, category: 'meta', params: {} },
     { name: 'time', fn: tool_time, description: 'Current local time and timezone', keywords: ['time','date','clock','timezone','what time'], selfContained: true, category: 'device', params: {} },
     { name: 'device', fn: tool_device, description: 'Browser and hardware fingerprint', keywords: ['device','browser','hardware','cores','memory'], selfContained: true, category: 'device', params: {} },
@@ -783,7 +783,7 @@ var Tools = (function() {
   }
 
   function profileFacts() {
-    return 'TRUSTED PROFILE FACTS: Emin Gench is a Forward Deployed AI Engineer at Cresta AI in Vancouver, BC, Canada. Previously Goodfintech (AI Engineer), Vivoo (Machine Learning Engineer), Novit AI (Full-stack AI Engineer), E-Kalite Software (Python Developer/QA), and indie game development (Founder, emdi_apps). He builds open-source AI and smart-glasses projects, including even_glasses, telegramGPT, G1 Voice AI, g1_flutter, and visionlink. He has 47 repositories and 249+ GitHub stars. Do not infer a different residence or employer.';
+    return 'TRUSTED PROFILE FACTS: Emin Gench is based in Vancouver, BC, Canada, and works as a Forward Deployed AI Engineer at Cresta AI. Previously Goodfintech (AI Engineer), Vivoo (Machine Learning Engineer), Novit AI (Full-stack AI Engineer), E-Kalite Software (Python Developer/QA), and indie game development (Founder, emdi_apps). He builds open-source AI and smart-glasses projects, including even_glasses, telegramGPT, G1 Voice AI, g1_flutter, and visionlink. He has 47 repositories and 249+ GitHub stars. Do not infer a different residence or employer.';
   }
 
   // eslint-disable-next-line id-match -- legacy name (exported as llmConsentMessage); out of scope for this UI change
@@ -991,7 +991,7 @@ var Tools = (function() {
         if (data && data.namedInQuestion) {
           return aboutCompanyProse(data, isFollowUp);
         }
-        return open + 'Emin Gench is a <b>Forward Deployed AI Engineer at Cresta AI</b> in Vancouver, BC — aerospace engineer turned AI builder; he works where systems thinking meets large language models. Before Cresta: Goodfintech (AI engineer), Vivoo (ML engineer), Novit AI (full-stack AI engineer), and indie game dev. BSc Aerospace Engineering, Turkish Air Force Academy; former Air Defense Officer. He also builds open source — 249+ GitHub stars across 47 repos.';
+        return open + 'Emin Gench is based in Vancouver, BC, and works as a <b>Forward Deployed AI Engineer at Cresta AI</b> — aerospace engineer turned AI builder; he works where systems thinking meets large language models. Before Cresta: Goodfintech (AI engineer), Vivoo (ML engineer), Novit AI (full-stack AI engineer), and indie game dev. BSc Aerospace Engineering, Turkish Air Force Academy; former Air Defense Officer. He also builds open source — 249+ GitHub stars across 47 repos.';
       case 'repos':
         return open + 'He has <b>47 repositories</b> and <b>249+ GitHub stars</b>. The one people find first: <b>even_glasses</b> — a smart-glasses integration platform (78★ and counting), plus <b>telegramGPT</b> (52★) and a voice AI assistant (25★).';
       case 'skills':
@@ -1005,9 +1005,9 @@ var Tools = (function() {
       case 'game':
         // Never echo the unmatched id here: the card above already shows it, escaped.
         if (data && data.notFound) {
-          return open + 'No game goes by that name. The one Emin has published is <b>HACK://OVERFLOW</b>, a platformer that teaches Blind-75 algorithms by playing. Pick it below to launch it.';
+          return open + 'No game goes by that name. The one Emin has published is <b>HACK://OVERFLOW</b>, a LeetCode puzzle game: you solve 24 problems, each with one line of Python judged right in your browser. Pick it below to launch it.';
         }
-        return open + 'He made <b>HACK://OVERFLOW</b> — a platformer that teaches Blind-75 algorithms by playing. Pick it below and it opens at /hack-overflow.';
+        return open + 'He made <b>HACK://OVERFLOW</b> — a LeetCode puzzle game: you solve 24 problems, each with one line of Python judged right in your browser. Pick it below and it opens at /hack-overflow.';
       default:
         return null;
     }

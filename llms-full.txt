@@ -2,7 +2,7 @@
 
 ## Identity
 
-Emin Gench is a Forward Deployed AI Engineer at Cresta AI, based in Vancouver, BC. He is a self-taught developer with a BSc in Aerospace Engineering from the Turkish Air Force Academy. He transitioned from aerospace to software through hands-on building and open source contributions.
+Emin Gench is based in Vancouver, BC, and works as a Forward Deployed AI Engineer at Cresta AI. He is a self-taught developer with a BSc in Aerospace Engineering from the Turkish Air Force Academy. He transitioned from aerospace to software through hands-on building and open source contributions.
 
 ## Career Timeline
 

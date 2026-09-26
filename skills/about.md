@@ -1,6 +1,6 @@
 # About Emin Gench
 
-I am Emin Gench, a Forward Deployed AI Engineer at Cresta AI based in Vancouver, BC.
+I am Emin Gench. I'm based in Vancouver, BC, and work as a Forward Deployed AI Engineer at Cresta AI.
 
 ## Quick Facts
 - **Role:** Forward Deployed AI Engineer @ Cresta AI (2026–present)

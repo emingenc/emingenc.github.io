@@ -1,0 +1,62 @@
+.menu-overlay {
+  position:fixed;
+  inset:0;
+  background:rgba(3,8,5,0.82);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:20;
+  padding:16px;
+}
+
+.menu-panel {
+  background:var(--panel);
+  border:2px solid var(--border);
+  border-radius:8px;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  width:min(320px,100%);
+}
+
+.selftest-badge {
+  position:fixed;
+  bottom:4px;
+  right:4px;
+  z-index:30;
+  font-size:13px;
+  padding:3px 8px;
+  border-radius:4px;
+  font-family:var(--font-body);
+  background:var(--panel);
+  border:1px solid var(--border);
+  color:var(--dim);
+}
+
+.selftest-badge:empty {
+  display:none;
+}
+
+.selftest-pass {
+  color:var(--primary);
+  border-color:var(--primary);
+}
+
+.selftest-fail {
+  color:var(--red);
+  border-color:var(--red);
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .rain-canvas {
+    display:none;
+  }
+  .caret {
+    animation:none;
+    opacity:1;
+  }
+  .lock-burst {
+    animation:none;
+  }
+}

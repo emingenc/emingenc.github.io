@@ -1,183 +1,250 @@
-// classifier.js — intent classification, LLM enablement, prompt loading
-// eslint-disable-next-line max-lines-per-function -- legacy module wrapper (IIFE); out of scope for this UI change
-var Classifier = (function() {
-  "use strict";
-  var store = null;
-  var needleWorker = null;
-  var llmWorker = null;
-  var promptsCache = {}; // cached prompt templates from /agents/prompts/
-  var llmFailedThisSession = false; // stop the re-download loop after a worker crash
+// classifier.js — the page's two on-device models, each behind its own
+// worker: Needle (needle-router.js) classifies a question's intent, and
+// SmolLM2-360M (chat-worker.js) generates, evaluates and aligns. Every
+// request carries an id and settles once, on whichever comes first: the
+// reply that echoes its id, its caller's abort, or (for classify) its own
+// timeout. A reply that finds no request waiting, late after Stop or a
+// timeout, is dropped, so it never reaches a later turn or the store.
+'use strict';
 
-  // ─── Needle worker ────────────────────────────────────────
+var Classifier;
+
+{
+  const CLASSIFY_TIMEOUT_MS = 2000;
+  const NEEDLE_URL = '/agents/needle-router.js';
+  const CHAT_URL = '/agents/chat-worker.js';
+
+  let store = null;
+  let needleWorker = null;
+  let llmWorker = null;
+  // A crash or load failure ends the chat model for the session: enabling it
+  // again would re-download 272-363MB in a loop, so the page stays on its
+  // FAQ and canned answers instead.
+  let llmFailedThisSession = false;
+  // id -> {resolve, signal, onAbort, onToken?, error?} for each request a
+  // reply may still settle.
+  const pending = new Map();
+  const seamCounters = { cls: 0, eval: 0, align: 0 };
+
+  function modelStatus(model, status, detail) {
+    store.dispatch({ type: 'MODEL_STATUS', model, status, ...detail });
+  }
+
+  // ─── Needle: intent classification ─────────────────────────────────────
+  const NEEDLE_LIFECYCLE = {
+    ready: () => modelStatus('needle', 'ready'),
+    decoderReady: () => modelStatus('needleFc', 'ready'),
+    status: (msg) => store.dispatch({ type: 'MODEL_PROGRESS', model: 'needle', text: msg.data }),
+    error: (msg) => needleFailed(msg.data),
+  };
+
   function initNeedle() {
-    store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'loading' });
+    modelStatus('needle', 'loading');
     try {
-      needleWorker = new Worker('/agents/needle-router.js', { type: 'module' });
-      needleWorker.onmessage = function(event) {
-        var msg = event.data;
-        if (msg.type === 'ready') { store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'ready' }); }
-        else if (msg.type === 'decoderReady') { store.dispatch({ type: 'MODEL_STATUS', model: 'needleFc', status: 'ready' }); }
-        else if (msg.type === 'status') { store.dispatch({ type: 'MODEL_PROGRESS', model: 'needle', text: msg.data }); }
-        else if (msg.type === 'error') { console.warn('[needle]', msg.data); store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: msg.data }); }
-      };
-      needleWorker.onerror = function(event) {
-        console.warn('[needle] Worker failed:', event.message);
-        store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: 'Worker load failed: ' + event.message });
-      };
+      needleWorker = new Worker(NEEDLE_URL, { type: 'module' });
+      needleWorker.onmessage = (event) => NEEDLE_LIFECYCLE[event.data.type]?.(event.data);
+      needleWorker.onerror = (event) => needleFailed(`Worker load failed: ${event.message}`);
       needleWorker.postMessage({ type: 'init' });
-    } catch(err) { console.warn('Needle worker failed:', err.message); store.dispatch({ type: 'MODEL_STATUS', model: 'needle', status: 'error', error: err.message }); }
+    } catch (err) {
+      needleFailed(err.message);
+    }
   }
 
-  function classifyWithNeedle(text) {
-    return new Promise(function(resolve) {
-      if (!store.getState().models.needleReady || !needleWorker) { resolve(null); return; }
-      var tid = setTimeout(function() { needleWorker.removeEventListener('message', handler); resolve(null); }, 2000);
-      function handler(e) {
-        if (e.data.type === 'intent') { clearTimeout(tid); needleWorker.removeEventListener('message', handler); resolve(e.data.data); }
+  function needleFailed(error) {
+    console.warn('[needle]', error);
+    modelStatus('needle', 'error', { error });
+  }
+
+  // Resolves Needle's {type, label, score, a?}, or null when Needle is not
+  // ready or does not answer in time. Only the reply echoing this call's id
+  // settles it: after Stop and a fresh question inside the timeout, a late
+  // reply for the old question must not route the new one.
+  function classify(text) {
+    if (!store.getState().models.needleReady || !needleWorker) return Promise.resolve(null);
+    const worker = needleWorker;
+    const id = seamId('cls');
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => settle(null), CLASSIFY_TIMEOUT_MS);
+      const onReply = (event) => {
+        if (event.data.type === 'intent' && event.data.id === id) settle(event.data.data);
+      };
+      function settle(intent) {
+        clearTimeout(timer);
+        worker.removeEventListener('message', onReply);
+        resolve(intent);
       }
-      needleWorker.addEventListener('message', handler);
-      needleWorker.postMessage({ type: 'classify', data: { text: text } });
+      worker.addEventListener('message', onReply);
+      worker.postMessage({ type: 'classify', id, data: { text } });
     });
   }
 
-  // v3: Needle classifies → returns {type, label, score, a?}
-  function classifyIntent(text) {
-    return classifyWithNeedle(text).then(function(result) {
-      // result is now {type: 'faq'|'tool'|'chat', label, score, a?}
-      // or null if needle timed out
-      return result;
-    });
-  }
+  // ─── SmolLM2: the chat worker's lifecycle ──────────────────────────────
+  // chat-worker.js says 'ready' once the model can answer; any other status,
+  // 'ready (webgpu)' included, names a loading step. A per-request error
+  // carries its request's id and fails only that request, so the model stays
+  // loaded for the next one; a crash or load failure is marked fatal:true
+  // and drops it.
+  const CHAT_LIFECYCLE = {
+    status: (msg) => (msg.data === 'ready' ? modelStatus('llm', 'ready') : modelStatus('llm', 'loading', { statusText: msg.data })),
+    progress: (msg) => modelStatus('llm', 'loading', { progress: msg.pct }),
+    error: (msg) => (msg.fatal ? dropLLMWorker(msg.data) : console.warn('[chat-worker]', msg.data)),
+  };
 
-  // A fatal worker failure (crash or load failure — never a single bad
-  // request) drops the resident worker so the session falls back to reduced
-  // mode instead of leaving an orphaned worker that no future turn can reach.
-  function dropLLMWorker(reason) {
-    console.warn('[chat-worker]', reason);
-    store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'error', error: reason });
-    if (llmWorker) { try { llmWorker.terminate(); } catch(ignored) { /* already gone — nothing to clean up */ } }
-    llmWorker = null; // allow retry on next enableLLM call
-    llmFailedThisSession = true; // ...but NOT in this session (avoid a 272-363MB re-download loop)
-  }
-
-  // Fatal (crash/load failure — chat-worker.js marks fatal:true) drops the
-  // worker; a per-request error (bad generate/evaluate, carries
-  // requestId/evalId instead) only fails that turn — the model stays loaded
-  // and the next request uses it again.
-  function handleLLMWorkerError(payload) {
-    if (payload.fatal) { dropLLMWorker(payload.data); return; }
-    console.warn('[chat-worker]', payload.data);
-  }
-
-  // ─── LLM text generation (SmolLM2-360M in chat-worker.js) ──
-  // eslint-disable-next-line max-lines-per-function -- legacy worker setup; refactoring it is out of scope for this UI change
   function initDecoder() {
     if (llmWorker) return; // already loading or loaded
-    store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading' });
+    modelStatus('llm', 'loading');
     try {
-      llmWorker = new Worker('/agents/chat-worker.js', { type: 'module' });
-      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy message switch; refactoring it is out of scope for this UI change
-      llmWorker.onmessage = function(event) { // eslint-disable-line max-lines-per-function, complexity -- legacy message switch, see above
-        var msg = event.data;
-        if (msg.type === 'status' && msg.data === 'ready') {
-          store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'ready' });
-        } else if (msg.type === 'status') {
-          // loading in progress — update status text for renderer
-          store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading', statusText: msg.data });
-        } else if (msg.type === 'progress') {
-          store.dispatch({ type: 'MODEL_STATUS', model: 'llm', status: 'loading', progress: msg.pct });
-        } else if (msg.type === 'error') {
-          handleLLMWorkerError(msg);
-        } else if (msg.type === 'token') {
-          store.dispatch({ type: 'MESSAGE_STREAM', id: msg.requestId, chunk: msg.token });
-        } else if (msg.type === 'done') {
-          store.dispatch({ type: 'MESSAGE_STREAM_DONE', id: msg.requestId });
-          if (typeof Orchestrator !== 'undefined' && Orchestrator._clearGenTimeout) {
-            Orchestrator._clearGenTimeout(msg.requestId);
-          }
-          // A successful generation must release the turn lock. The timeout
-          // is cleared above, so this is the normal completion path.
-          if (typeof Orchestrator !== 'undefined' && Orchestrator._handleGenerationDone) {
-            Orchestrator._handleGenerationDone(msg.requestId);
-          }
-        } else if (msg.type === 'evalResult') {
-          if (typeof Evaluator !== 'undefined' && Evaluator._handleEvalResult) {
-            Evaluator._handleEvalResult(msg.evalId, msg.data);
-          }
-        } else if (msg.type === 'alignResult') {
-          if (typeof AlignmentGate !== 'undefined' && AlignmentGate._handleAlignResult) {
-            AlignmentGate._handleAlignResult(msg.alignId, msg.data);
-          }
-        }
-      };
-      llmWorker.onerror = function(event) {
-        // Uncaught worker-level failure (e.g. a script error) — same fatal
-        // handling as an in-worker crash: drop it, never leave it orphaned.
-        dropLLMWorker('Worker failed: ' + event.message);
-      };
+      llmWorker = new Worker(CHAT_URL, { type: 'module' });
+      llmWorker.onmessage = (event) => onChatReply(event.data);
+      // A worker-level failure (a script error, say) is as fatal as a crash
+      // reported from inside the worker.
+      llmWorker.onerror = (event) => dropLLMWorker(`Worker failed: ${event.message}`);
       llmWorker.postMessage({ type: 'load' });
-    } catch(err) {
+    } catch (err) {
       dropLLMWorker(err.message);
     }
   }
 
+  // A reply for a request still waiting settles it; otherwise only the
+  // worker's lifecycle messages mean anything. A token, done or verdict for
+  // a request already settled or dropped falls through both and is ignored.
+  function onChatReply(msg) {
+    if (routeReply(msg)) return;
+    CHAT_LIFECYCLE[msg.type]?.(msg);
+  }
+
+  // Drops the resident worker rather than leave one no future turn can
+  // reach; its pending requests end on their callers' own timeouts.
+  function dropLLMWorker(reason) {
+    console.warn('[chat-worker]', reason);
+    modelStatus('llm', 'error', { error: reason });
+    if (llmWorker) llmWorker.terminate();
+    llmWorker = null;
+    llmFailedThisSession = true;
+  }
+
+  // ─── The model-request seam ────────────────────────────────────────────
+  // A generation keeps its caller's id, which is already the id of the
+  // message it streams into; classify, evaluate and align number their own.
+  function seamId(prefix) {
+    seamCounters[prefix] += 1;
+    return `${prefix}_${seamCounters[prefix]}`;
+  }
+
+  // Tracks a request until a reply or the caller's abort settles it,
+  // whichever comes first; the other then finds nothing left to settle.
+  // False means the signal had already fired, so the caller must not post.
+  function trackRequest(id, signal, entry) {
+    if (signal.aborted) {
+      entry.resolve(null);
+      return false;
+    }
+    const onAbort = () => settleRequest(id, null);
+    pending.set(id, { ...entry, signal, onAbort });
+    signal.addEventListener('abort', onAbort);
+    return true;
+  }
+
+  function settleRequest(id, value) {
+    const entry = pending.get(id);
+    if (!entry) return;
+    pending.delete(id);
+    entry.signal.removeEventListener('abort', entry.onAbort);
+    entry.resolve(value);
+  }
+
+  // evalResult and alignResult carry their own id; a generation's token,
+  // error and done all carry the requestId its caller chose.
+  function replyIdFor(msg) {
+    if (msg.type === 'evalResult') return msg.evalId;
+    if (msg.type === 'alignResult') return msg.alignId;
+    return msg.requestId;
+  }
+
+  function routeReply(msg) {
+    const id = replyIdFor(msg);
+    const entry = pending.get(id);
+    if (!entry) return false;
+    deliver(id, entry, msg);
+    return true;
+  }
+
+  // A generation's error is held for its done, which always follows it;
+  // evalResult and alignResult settle with their data.
+  function deliver(id, entry, msg) {
+    if (msg.type === 'token') entry.onToken(msg.token);
+    else if (msg.type === 'error') entry.error = msg.data;
+    else if (msg.type === 'done') settleRequest(id, entry.error ? { error: entry.error } : {});
+    else settleRequest(id, msg.data);
+  }
+
+  // generate, evaluate and align return null outright with no worker to
+  // ask, and resolve null the moment their signal fires, or at once if it
+  // already has.
+  function generate(text, context, { id, signal, onToken }) {
+    if (!llmWorker) return null;
+    return new Promise((resolve) => {
+      if (trackRequest(id, signal, { resolve, onToken })) llmWorker.postMessage({ type: 'generate', text, context, requestId: id });
+    });
+  }
+
+  function evaluate(request, { signal }) {
+    return requestVerdict('eval', signal, (evalId) => ({
+      type: 'evaluate',
+      question: request.question,
+      results: (request.results || []).map(toEvaluatedResult),
+      evalId,
+      context: request.context,
+      compactErrors: request.compactErrors,
+    }));
+  }
+
+  function toEvaluatedResult(result) {
+    return { toolName: result.toolName || 'tool', content: result.content || '' };
+  }
+
+  function align(request, { signal }) {
+    return requestVerdict('align', signal, (alignId) => ({
+      type: 'align',
+      alignId,
+      text: request.text,
+      intent: { label: request.intent?.label || 'faq' },
+      toolScopes: request.toolScopes,
+    }));
+  }
+
+  function requestVerdict(prefix, signal, messageFor) {
+    if (!llmWorker) return null;
+    const id = seamId(prefix);
+    return new Promise((resolve) => {
+      if (trackRequest(id, signal, { resolve })) llmWorker.postMessage(messageFor(id));
+    });
+  }
+
+  // ─── Consent and readiness ─────────────────────────────────────────────
   function isLLMReady() { return store.getState().models.llmReady; }
   function hasLLMConsent() { return store.getState().models.llmConsent === true; }
   function isLLMConsentPending() { return store.getState().models.llmConsent === null; }
 
-  // ─── Prompt loader (fetches + caches markdown templates) ─────
-  function loadPrompt(name) {
-    if (promptsCache[name]) return promptsCache[name];
-    var url = '/agents/prompts/' + name + '.md';
-    try {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', url, false); // sync for simplicity — prompts are tiny
-      xhr.send();
-      if (xhr.status === 200) {
-        promptsCache[name] = xhr.responseText;
-        return xhr.responseText;
-      }
-    } catch(e) { console.warn('[router] Failed to load prompt:', name, e.message); }
-    return null;
-  }
-
+  // Loads the chat model on the visitor's opt-in, or when a reply finds it
+  // neither ready nor loading; after a crash the page stays on its FAQ and
+  // canned answers rather than download it again. Needle's function-calling
+  // decoder loads alongside it.
   function enableLLM() {
-    if (llmFailedThisSession) return; // worker crashed — fall back to FAQ, never re-download in-session
+    if (llmFailedThisSession) return;
     store.dispatch({ type: 'LLM_CONSENT', value: true });
-    initDecoder(); // SmolLM2-360M text generation (chat-worker)
-    // Also init Needle decoder for function-calling classification
-    if (needleWorker && store.getState().models.needleReady) {
-      needleWorker.postMessage({ type: 'initDecoder' });
-    }
+    initDecoder();
+    if (needleWorker && store.getState().models.needleReady) needleWorker.postMessage({ type: 'initDecoder' });
   }
 
-  function autoEnableLLM() {
-    // Auto-enable on-device AI by default — no opt-in needed. Note: this does
-    // NOT read a stored consent value; it always enables (consent persistence
-    // via the 'llm-consent' key is vestigial and never read back).
+  // On-device AI is on by default. init never reads a stored consent: store.js
+  // still writes the 'llm-consent' key, but nothing reads it back.
+  function init(nextStore) {
+    store = nextStore;
+    initNeedle();
     store.dispatch({ type: 'LLM_CONSENT', value: true });
     initDecoder();
   }
 
-  function resetLLMConsent() {
-    try { localStorage.removeItem('llm-consent'); } catch(e) {}
-    store.dispatch({ type: 'LLM_CONSENT', value: null });
-  }
-
-  function _getLLMWorker() { return llmWorker; }
-
-  function init(_store) { store = _store; initNeedle(); autoEnableLLM(); }
-
-  return {
-    init: init,
-    classify: classifyWithNeedle,
-    classifyIntent: classifyIntent,
-    enableLLM: enableLLM,
-    isLLMReady: isLLMReady,
-    hasLLMConsent: hasLLMConsent,
-    isLLMConsentPending: isLLMConsentPending,
-    resetLLMConsent: resetLLMConsent,
-    loadPrompt: loadPrompt,
-    _getLLMWorker: _getLLMWorker
-  };
-})();
+  Classifier = { init, classify, generate, evaluate, align, enableLLM, isLLMReady, hasLLMConsent, isLLMConsentPending };
+}
