@@ -1,151 +1,104 @@
-// evaluator.js — result evaluation (LLM semantic check, fallback keyword, entity preservation)
-var Evaluator = (function() {
-  "use strict";
-  var store = null;
-  var evalResolvers = {}; // {evalId: resolve} for LLM evaluator correlation
+// evaluator.js — checks whether a turn's result actually answers the
+// visitor's question: the chat model's semantic read when it is ready, a
+// keyword rule when it is not or has no worker to ask. The model's read
+// races a 12s budget, so a slow model still leaves the turn with a verdict
+// instead of a wait with no end.
+'use strict';
+var Evaluator;
+{
+  const EVAL_TIMEOUT_MS = 12000;
+  const EVAL_TIMEOUT_RESULT = Object.freeze({ stop: false, summary: null, confidence: 50, nextTool: '', next: '' });
+  const FALLBACK_SUMMARY_CHARS = 300;
+  const RELEVANCE_ACCEPT = 0.3;
+  const RELEVANCE_WORD_CHARS = 3;
+  const CONFIDENCE_PERCENT = 100;
+  const IDENTITY_QUESTION = /who|about|emin|gench|bio|background|career/i;
+  const IDENTITY_ANSWER = /emin|engineer|cresta|developer/i;
 
-  // Check that key entities (numbers, proper nouns) from original survive LLM polish
-  function entityPreserved(original, summary) {
-    if (!original || !summary) return true; // nothing to check
-    var strip = function(s) { return s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); };
-    var orig = strip(original).toLowerCase();
-    var summ = summary.toLowerCase();
-    // Extract numbers (years, star counts, etc.)
-    var nums = orig.match(/\b\d+\b/g) || [];
-    for (var n = 0; n < nums.length; n++) {
-      if (summ.indexOf(nums[n]) === -1) return false;
-    }
-    // Extract capitalized proper nouns (names, products)
-    var propers = strip(original).match(/\b[A-Z][a-z]{2,}\b/g) || [];
-    var missing = 0;
-    for (var p = 0; p < propers.length; p++) {
-      if (summ.indexOf(propers[p].toLowerCase()) === -1) missing++;
-    }
-    // Allow at most 1 proper noun missing
-    if (missing > 1) return false;
-    return true;
-  }
+  let store = null;
 
-  // Fast path: tools that always satisfy without LLM evaluation
-  // Uses TOOL_REGISTRY metadata; falls back to hardcoded list for backward compat
+  // ─── Reads the loop and the registry both share ─────────────────────────
   function isSelfContained(toolName) {
     return (Tools.getTool(toolName) || {}).selfContained || false;
-    // PREVIOUS HARDCODED LIST (kept for reference):
-    // return toolName === 'help' || toolName === 'status' || toolName === 'lucky' ||
-    //        toolName === 'about' || toolName === 'repos' || toolName === 'contact' ||
-    //        toolName === 'skills' || toolName === 'blog' ||
-    //        toolName === 'time' || toolName === 'device' || toolName === 'screen' ||
-    //        toolName === 'network' || toolName === 'session' || toolName === 'g1' ||
-    //        toolName === 'faq' || toolName === 'chat' || toolName === 'stop';
   }
 
-  // Fallback keyword evaluator (used when LLM not loaded)
-  function evaluateResultFallback(toolName, result, userText) {
+  // Deterministic guard for a high-risk personal fact: the trusted profile
+  // says Vancouver, so a generated answer that places Emin somewhere else is
+  // rejected outright, whatever confidence the model gave it.
+  function groundedAgainstProfile(text) {
+    const claim = /\b(?:lives?|resides?|located|based|from|currently\s+(?:in|lives?\s+in))\b[^.\n]{0,80}\b(new york|nyc|los angeles|san francisco|toronto|london|istanbul)\b/i;
+    const lower = (text || '').toLowerCase();
+    return !(claim.test(lower) && !lower.includes('vancouver'));
+  }
+
+  // ─── Keyword fallback: no model ready, or no worker to ask ─────────────
+  function keywordVerdict(toolName, result, question) {
     if (!result) return { satisfied: false, confidence: 0, reason: 'no result' };
     if (result.toolError) return { satisfied: false, confidence: 0, reason: 'tool error' };
     if (result.redirect) return { satisfied: true, confidence: 1, reason: 'redirect' };
     if (isSelfContained(toolName)) return { satisfied: true, confidence: 1, reason: 'self-contained' };
+    return relevanceVerdict(result.content, question);
+  }
 
-    var content = (result.content || '').toLowerCase();
-    var question = (userText || '').toLowerCase();
-    var qWords = question.split(/\s+/).filter(function(w) { return w.length > 3; });
-    var matches = 0;
-    for (var i = 0; i < qWords.length; i++) {
-      if (content.indexOf(qWords[i]) !== -1) matches++;
-    }
-    var relevance = qWords.length > 0 ? matches / qWords.length : 0;
-    if (/who|about|emin|gench|bio|background|career/i.test(question) && /emin|engineer|cresta|developer/i.test(content)) {
-      return { satisfied: true, confidence: 0.9, reason: 'identity match' };
-    }
-    if (relevance >= 0.3) return { satisfied: true, confidence: relevance, reason: 'keyword overlap' };
-    if (matches > 0) return { satisfied: true, confidence: 0.5, reason: 'partial match' };
+  function relevanceVerdict(content, question) {
+    const lowerContent = (content || '').toLowerCase();
+    const lowerQuestion = (question || '').toLowerCase();
+    if (IDENTITY_QUESTION.test(lowerQuestion) && IDENTITY_ANSWER.test(lowerContent)) return { satisfied: true, confidence: 0.9, reason: 'identity match' };
+    const relevance = wordOverlap(lowerQuestion, lowerContent);
+    if (relevance >= RELEVANCE_ACCEPT) return { satisfied: true, confidence: relevance, reason: 'keyword overlap' };
+    if (relevance > 0) return { satisfied: true, confidence: 0.5, reason: 'partial match' };
     return { satisfied: false, confidence: 0, reason: 'low relevance' };
   }
 
-  function groundedAgainstProfile(text) {
-    var s = (text || '').toLowerCase();
-    // Deterministic contradiction guard for high-risk personal facts.
-    // The trusted profile says Vancouver; reject an answer that asserts a
-    // different city/country as Emin's residence or current location.
-    var locationClaim = /\b(?:lives?|resides?|located|based|from|currently\s+(?:in|lives?\s+in))\b[^.\n]{0,80}\b(new york|nyc|los angeles|san francisco|toronto|london|istanbul)\b/i;
-    if (locationClaim.test(s) && s.indexOf('vancouver') === -1) return false;
-    return true;
+  // The share of the question's words (more than three letters) the content
+  // also contains.
+  function wordOverlap(question, content) {
+    const words = question.split(/\s+/).filter((word) => word.length > RELEVANCE_WORD_CHARS);
+    return words.length ? words.filter((word) => content.includes(word)).length / words.length : 0;
   }
 
-  // ─── LLM Evaluator: semantic check + summary generation ─────
-  function evaluateWithLLM(question, results, turnId) {
-    var llmWorker = Classifier._getLLMWorker ? Classifier._getLLMWorker() : null;
-    var evalPrompt = (Classifier.isLLMReady() && llmWorker) ? Classifier.loadPrompt('evaluate') : null;
-    return new Promise(function(resolve) {
-      // If LLM not loaded, fall back to keyword evaluation
-      if (!Classifier.isLLMReady() || !llmWorker) {
-        var lastResult = results.length > 0 ? results[results.length - 1] : null;
-        var toolName = lastResult ? (lastResult.toolName || 'faq') : 'faq';
-        var fb = evaluateResultFallback(toolName, lastResult, question);
-        var fallbackSummary = lastResult && lastResult.content
-          ? lastResult.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300)
-          : null;
-        resolve({ stop: fb.satisfied, summary: fallbackSummary, confidence: Math.round(fb.confidence * 100), nextTool: '', next: '' });
-        return;
-      }
+  function fallbackSummary(result) {
+    return result?.content ? result.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, FALLBACK_SUMMARY_CHARS) : null;
+  }
 
-      var evalId = 'eval_' + turnId + '_' + Date.now();
-      evalResolvers[evalId] = resolve;
+  function fallbackResult(question, results) {
+    const last = results.length ? results[results.length - 1] : null;
+    const verdict = keywordVerdict(last ? last.toolName || 'faq' : 'faq', last, question);
+    return { stop: verdict.satisfied, summary: fallbackSummary(last), confidence: Math.round(verdict.confidence * CONFIDENCE_PERCENT), nextTool: '', next: '' };
+  }
 
-      // Timeout safety: 12s
-      setTimeout(function() {
-        if (evalResolvers[evalId]) {
-          delete evalResolvers[evalId];
-          resolve({ stop: false, summary: null, confidence: 50, nextTool: '', next: '' });
-        }
-      }, 12000);
-
-      var convBuf = (typeof Orchestrator !== 'undefined' && Orchestrator._getConversationBuffer)
-        ? Orchestrator._getConversationBuffer(800)
-        : [];
-      if (typeof Tools !== 'undefined' && Tools.profileFacts) {
-        convBuf.unshift({ role: 'trusted-context', content: Tools.profileFacts() });
-      }
-
-      var compactErrors = (typeof Orchestrator !== 'undefined' && Orchestrator.getCompactErrors)
-        ? Orchestrator.getCompactErrors()
-        : [];
-
-      llmWorker.postMessage({
-        type: 'evaluate',
-        question: question,
-        results: results.map(function(r) {
-          return { toolName: r.toolName || 'tool', content: r.content || '' };
-        }),
-        evalId: evalId,
-        context: convBuf, // Last 3 exchanges for context
-        compactErrors: compactErrors // Error strings from failed tool calls
-      });
+  // ─── The model seam ───────────────────────────────────────────────────
+  function compactToolErrors(observations) {
+    return observations.filter((observation) => observation.error).map((observation) => {
+      const hint = observation.hint ? ` — ${observation.hint}` : '';
+      return `${observation.tool}: ${observation.error}${hint}`.slice(0, Context.LIMITS.compactErrorChars);
     });
   }
 
-  function _cancelAllEvals() {
-    for (var eid in evalResolvers) { evalResolvers[eid]({ stop: false, summary: null, confidence: 0, nextTool: '', next: '' }); delete evalResolvers[eid]; }
+  function evaluationRequest(question, results) {
+    const state = store.getState();
+    const evaluation = Context.forEvaluation(state);
+    return { question, results, context: evaluation.context, compactErrors: compactToolErrors(state.workingMemory?.observations || []) };
   }
 
-  // Called by classifier.js when chat-worker returns evalResult
-  function _handleEvalResult(evalId, data) {
-    if (evalResolvers[evalId]) {
-      evalResolvers[evalId](data);
-      delete evalResolvers[evalId];
-    }
+  // Races the worker against evaluator's own budget; Promise.race takes
+  // whichever settles first, and the timer that didn't win is cleared so it
+  // never fires again after the turn has moved on.
+  function settle(pending) {
+    let timer;
+    const timeout = new Promise((resolve) => {
+      timer = setTimeout(() => resolve(EVAL_TIMEOUT_RESULT), EVAL_TIMEOUT_MS);
+    });
+    return Promise.race([pending, timeout]).finally(() => clearTimeout(timer));
   }
 
-  function init(_store) { store = _store; }
+  function evaluate(question, results, { signal }) {
+    if (!Classifier.isLLMReady()) return Promise.resolve(fallbackResult(question, results));
+    const pending = Classifier.evaluate(evaluationRequest(question, results), { signal });
+    return pending ? settle(pending) : Promise.resolve(fallbackResult(question, results));
+  }
 
-  return {
-    init: init,
-    evaluate: evaluateWithLLM,
-    evaluateFallback: evaluateResultFallback,
-    entityPreserved: entityPreserved,
-    groundedAgainstProfile: groundedAgainstProfile,
-    isSelfContained: isSelfContained,
-    _cancelAllEvals: _cancelAllEvals,
-    _handleEvalResult: _handleEvalResult
-  };
-})();
+  function init(nextStore) { store = nextStore; }
+
+  Evaluator = { init, evaluate, isSelfContained, groundedAgainstProfile };
+}

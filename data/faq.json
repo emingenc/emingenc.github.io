@@ -6,8 +6,8 @@
         {
           "heading": "ROLE",
           "items": [
-            "Forward Deployed AI Engineer",
-            "@ Cresta AI · Vancouver, BC"
+            "Based in Vancouver, BC",
+            "Forward Deployed AI Engineer @ Cresta AI"
           ]
         },
         {
@@ -124,7 +124,7 @@
         "identify",
         "yourself"
       ],
-      "a": "I'm an AI agent representing <b>Emin Gench</b>, a Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a> in Vancouver, BC. I run 100% locally in your browser — no servers, no API calls. Ask me about his career, projects, skills, or background."
+      "a": "I'm an AI agent representing <b>Emin Gench</b>, who is based in Vancouver, BC, and works as a Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a>. I run 100% locally in your browser — no servers, no API calls. Ask me about his career, projects, skills, or background."
     },
     {
       "q": "Hello / Hi",
@@ -236,7 +236,7 @@
         "tell me about emin",
         "who is emin gench"
       ],
-      "a": "<b>Emin Gench</b> — Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a> in Vancouver, BC. Self-taught developer, BSc Aerospace Engineering, former Air Defense Officer. 47 open source repos, 249+ GitHub stars."
+      "a": "<b>Emin Gench</b> is based in Vancouver, BC, and works as a Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a>. Self-taught developer, BSc Aerospace Engineering, former Air Defense Officer. 47 open source repos, 249+ GitHub stars."
     },
     {
       "q": "What does Emin do?",
@@ -291,7 +291,7 @@
         "country",
         "current city"
       ],
-      "a": "<b>Vancouver, BC, Canada 🇨🇦</b>. Works at Cresta AI's Vancouver office."
+      "a": "<b>Vancouver, BC, Canada 🇨🇦</b>. He's based there and works for Cresta AI."
     },
     {
       "q": "Career timeline?",
@@ -1572,7 +1572,7 @@
         "ne yapıyor",
         "işi ne"
       ],
-      "a": "<b>Cresta AI</b> (Vancouver) — Forward Deployed AI Engineer. Müşterilerle çalışarak AI sistemleri geliştiriyor."
+      "a": "<b>Cresta AI</b> — Forward Deployed AI Engineer. Vancouver'da yaşıyor. Müşterilerle çalışarak AI sistemleri geliştiriyor."
     },
     {
       "q": "Projeleri?",
@@ -2018,7 +2018,7 @@
         "tools here",
         "available tools"
       ],
-      "a": "On this site you can:<br><br>💬 <b>Chat with me</b> — this agent runs 100% locally in your browser<br>🎮 <b>Play HACK://OVERFLOW</b> — a Blind-75 platformer (<b>/game</b>)<br>📖 <b>Read the blog</b> — AI engineering posts (<b>/blog</b>)<br>🛠️ <b>Device commands</b> — <b>/time</b>, <b>/device</b>, <b>/screen</b>, <b>/network</b>, <b>/status</b>, <b>/lucky</b><br><br>Ask me about Emin's career, projects, or skills anytime."
+      "a": "On this site you can:<br><br>💬 <b>Chat with me</b> — this agent runs 100% locally in your browser<br>🎮 <b>Play HACK://OVERFLOW</b> — a LeetCode puzzle game solved one line of Python at a time (<b>/game</b>)<br>📖 <b>Read the blog</b> — AI engineering posts (<b>/blog</b>)<br>🛠️ <b>Device commands</b> — <b>/time</b>, <b>/device</b>, <b>/screen</b>, <b>/network</b>, <b>/status</b>, <b>/lucky</b><br><br>Ask me about Emin's career, projects, or skills anytime."
     },
     {
       "q": "What is the learning hub?",

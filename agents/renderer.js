@@ -255,24 +255,23 @@ var Renderer = (function() {
     if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }
 
-  function trapAskUserTab(e) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      // Router.cancel() forwards to Orchestrator.cancel(), which no-ops
-      // unless ui.isProcessing is true, and nothing in ASK_USER's own
-      // reducer guarantees that. Call cancel() first for its eval/alignment
-      // cleanup and "cancelled" message when it applies, then close the
-      // modal directly if it's still open, so Escape is never a silent no-op
-      // on a modal with no visible close button.
+  function trapAskUserTab(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      // Router.cancel() stops the turn this chooser paused: it closes the
+      // chooser (RESUME) and writes the "cancelled" line. With no turn
+      // running it does nothing, so a chooser still open after it is closed
+      // directly, and Escape is never a silent no-op on a modal with no
+      // visible close button.
       if (typeof Router !== 'undefined' && Router.cancel) Router.cancel();
       if (store && store.getState().ui.needsHumanInput) {
         store.dispatch({ type: 'RESUME' });
       }
       return;
     }
-    if (e.key !== 'Tab') return;
+    if (event.key !== 'Tab') return;
     var btns = askUserOptButtons();
-    if (btns.length) wrapAskUserFocus(e, btns[0], btns[btns.length - 1]);
+    if (btns.length) wrapAskUserFocus(event, btns[0], btns[btns.length - 1]);
   }
 
   function createAskUserModal() {

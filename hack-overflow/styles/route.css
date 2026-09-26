@@ -1,0 +1,89 @@
+.route-screen {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.route-heading {
+  font-size:30px;
+  color:var(--primary);
+}
+
+.route-tier {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.route-node-wrap {
+  display:flex;
+  flex-direction:column;
+}
+
+.route-node {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  min-height:var(--tap);
+  padding:10px 14px;
+  border-radius:6px;
+  border:2px solid var(--border);
+  background:var(--panel);
+  color:var(--text);
+  cursor:pointer;
+  min-width:160px;
+}
+
+.route-live {
+  border-color:var(--primary);
+}
+
+.route-upcoming {
+  border-color:var(--cyan);
+  color:var(--dim);
+}
+
+.route-future {
+  color:var(--dim);
+  opacity:0.55;
+}
+
+.route-node.peek-open {
+  border-color:var(--bright);
+}
+
+.route-node-name {
+  font-family:var(--font-display);
+  font-size:18px;
+}
+
+.route-node-status {
+  font-size:13px;
+  color:var(--dim);
+}
+
+.route-peek {
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:10px;
+  margin-top:6px;
+  background:var(--bg);
+  font-size:13px;
+  max-width:260px;
+}
+
+@media (max-width:767px) {
+  .route-tier {
+    flex-direction:column;
+  }
+
+  .route-node {
+    min-width:0;
+    width:100%;
+  }
+
+  .route-peek {
+    max-width:none;
+  }
+}

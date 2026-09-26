@@ -1,0 +1,135 @@
+.lock-grid {
+  display:grid;
+  grid-template-columns:1fr;
+  gap:20px;
+}
+
+.lock-left,.lock-right {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-width:0;
+}
+
+@media (min-width:768px) {
+  .lock-grid {
+    grid-template-columns:1fr 1.2fr;
+    align-items:start;
+  }
+}
+
+.lock-id {
+  font-size:30px;
+  color:var(--primary);
+}
+
+.lock-hidden-note {
+  color:var(--dim);
+  font-size:13px;
+}
+
+.statement {
+  font-size:16px;
+}
+
+.constraints-list,.examples-list {
+  font-size:14px;
+  color:var(--dim);
+}
+
+.examples-list {
+  color:var(--text);
+}
+
+.code-panel {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:12px;
+  font-family:var(--font-body);
+  font-size:15px;
+  overflow-x:auto;
+}
+
+.code-line {
+  display:flex;
+  gap:10px;
+  white-space:pre-wrap;
+  padding:2px 0;
+}
+
+.code-line-num {
+  color:var(--dim);
+  min-width:2ch;
+  text-align:right;
+  user-select:none;
+}
+
+.code-line-text {
+  color:var(--text);
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
+.editor-row {
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.editor-content {
+  display:inline-flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+}
+
+.line-chip {
+  display:inline-flex;
+  align-items:center;
+  min-height:var(--tap);
+  min-width:var(--tap);
+  padding:4px 10px;
+  border-radius:4px;
+  border:1px solid var(--border);
+  background:rgba(0,230,128,0.08);
+  color:var(--bright);
+  cursor:pointer;
+  font-size:15px;
+}
+
+.caret {
+  display:inline-block;
+  width:2px;
+  height:1.1em;
+  background:var(--primary);
+  animation:ho-caret-blink 1s steps(1) infinite;
+}
+
+@keyframes ho-caret-blink {
+  50% {
+    opacity:0;
+  }
+}
+
+.onboarding-hint {
+  background:rgba(45,226,255,0.08);
+  border:1px solid var(--cyan);
+  color:var(--bright);
+  padding:8px 10px;
+  border-radius:4px;
+  font-size:14px;
+}
+
+.first-try-note {
+  color:var(--dim);
+  font-size:13px;
+}
+
+.day-transition-banner {
+  background:rgba(255,176,32,0.08);
+  border:1px solid var(--amber);
+  color:var(--amber);
+  padding:8px 10px;
+  border-radius:4px;
+  font-size:14px;
+}
