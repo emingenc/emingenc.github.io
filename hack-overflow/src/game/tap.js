@@ -1,7 +1,28 @@
 import { findPath } from './path.js';
+import { cellAtPoint } from './viewport.js';
 import { isPassable, thingAt } from './world.js';
 
 const INTERACT_KINDS = new Set(['terminal', 'core', 'kernel']);
+const TAP_TARGET_PX = 44;
+const CELL_CENTRE = 0.5;
+const AROUND = [-1, 0, 1].flatMap(function (dRow) { return [-1, 0, 1].map(function (dCol) { return { dCol,dRow }; }); });
+function reachOffset(world,view,tap) {
+const thing = thingAt(world,tap.cell);
+if (!thing || !INTERACT_KINDS.has(thing.kind)) return null;
+const dx = (tap.cell.col + CELL_CENTRE - view.camera.col) * view.tile - tap.point.left;
+const dy = (tap.cell.row + CELL_CENTRE - view.camera.row) * view.tile - tap.point.top;
+const half = Math.max(view.tile,TAP_TARGET_PX) / 2;
+return Math.abs(dx) <= half && Math.abs(dy) <= half ? dx * dx + dy * dy :null;
+}
+function tapCellFor(world,view,point) {
+const under = cellAtPoint(view,point);
+const reached = AROUND.map(function (step) {
+const cell = { col:under.col + step.dCol,row:under.row + step.dRow };
+return { cell,dist:reachOffset(world,view,{ cell,point }) };
+}).filter(function (hit) { return hit.dist !== null; });
+if (reached.length === 0) return under;
+return reached.reduce(function (best,hit) { return hit.dist < best.dist ? hit :best; }).cell;
+}
 function kindOfTap(world,progress,cell) {
 const thing = thingAt(world,cell);
 if (thing && INTERACT_KINDS.has(thing.kind)) return 'interact';
@@ -37,4 +58,4 @@ if (!gesture.pressed.has(leave.pointerId)) return null;
 return { gesture:dpadUp(gesture,leave).gesture,swallowClickUntil:leave.at + DPAD_CLICK_GUARD_MS };
 }
 
-export { tapIntent, createDpadGesture, dpadDown, dpadUp, dpadClickIsGhost, dpadLeaveScreen };
+export { TAP_TARGET_PX, tapCellFor, tapIntent, createDpadGesture, dpadDown, dpadUp, dpadClickIsGhost, dpadLeaveScreen };

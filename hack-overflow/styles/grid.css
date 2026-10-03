@@ -29,6 +29,30 @@
   image-rendering:pixelated;
 }
 
+.grid-hint {
+  position:absolute;
+  z-index:2;
+  left:var(--sp-3);
+  right:var(--sp-3);
+  bottom:var(--sp-3);
+  width:fit-content;
+  max-width:calc(100% - 2 * var(--sp-3));
+  margin:0 auto;
+  padding:var(--sp-2) var(--sp-3);
+  border:2px solid var(--amber);
+  border-radius:var(--radius-sm);
+  background:var(--panel);
+  color:var(--text);
+  font-size:var(--fs-lg);
+  line-height:1.2;
+  text-align:center;
+  pointer-events:none;
+}
+
+.grid-hint[hidden] {
+  display:none;
+}
+
 .grid-stage::before,.grid-stage::after {
   content:'';
   position:absolute;

@@ -1,5 +1,4 @@
-import { tapIntent, createDpadGesture, dpadDown, dpadUp, dpadClickIsGhost, dpadLeaveScreen } from '../game/tap.js';
-import { cellAtPoint } from '../game/viewport.js';
+import { tapIntent, tapCellFor, createDpadGesture, dpadDown, dpadUp, dpadClickIsGhost, dpadLeaveScreen } from '../game/tap.js';
 import { uiEl, uiPointerIsCoarse } from './dom.js';
 import { uiDpadDirFor } from './grid-dpad.js';
 import { uiWalkPath, uiWalkPress, uiWalkRelease } from './grid-walk.js';
@@ -24,7 +23,7 @@ return (canvas || node).getBoundingClientRect();
 }
 function uiCellForEvent(app,node,event) {
 const rect = uiStageRectFor(app,node);
-return cellAtPoint(app.game.view,{ left:event.clientX - rect.left,top:event.clientY - rect.top });
+return tapCellFor(app.game.world,app.game.view,{ left:event.clientX - rect.left,top:event.clientY - rect.top });
 }
 function uiMarkerRect(view,cell) {
 return { left:(cell.col - view.camera.col) * view.tile,top:(cell.row - view.camera.row) * view.tile,size:view.tile };

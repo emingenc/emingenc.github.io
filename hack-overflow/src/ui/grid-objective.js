@@ -18,6 +18,7 @@ function uiGridObjective(app) {
 const game = app.game;
 const objective = uiCurrentObjective(app);
 game.objectiveShown = uiStripPeriod(objective.text);
+game.objectiveTarget = objective.targetId;
 return uiEl('div',{
 className:'grid-objective-block',
 children:[
