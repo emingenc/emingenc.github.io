@@ -12,6 +12,8 @@ const HISTORY_KINDS = new Set(['run','submit']);
 const LAB_ID_PATTERN = /^[a-z0-9-]{1,32}$/;
 const MAX_LABS = 16;
 const MAX_LAB_LEVELS = 64;
+const BEAT_ID_PATTERN = /^[a-z0-9-]{1,48}$/;
+const MAX_BEATS = 64;
 function isRecord(value) {
 return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -24,7 +26,7 @@ return Object.fromEntries(STAT_NAMES.map((name) => [name,wholeNumber(stats[name]
 }
 function createSave(world) {
 return {
-version:SAVE_VERSION,xp:0,locks:{},pending:{},entries:{},caches:[],cores:[],seenOpen:[],labs:{},
+version:SAVE_VERSION,xp:0,locks:{},pending:{},entries:{},caches:[],cores:[],seenOpen:[],labs:{},story:[],
 pos:{ col:world.spawn.col,row:world.spawn.row },facing:START_FACING,stats:statsFrom(null),ended:false,
 };
 }
@@ -43,7 +45,9 @@ return value.carried === true ? { ...lock,carried:true } :lock;
 }
 function repairLabLevel(value) {
 if (!isRecord(value)) return null;
-return { best:Math.min(MAX_STARS_PER_LOCK,wholeNumber(value.best,0)),clears:Math.max(1,wholeNumber(value.clears,1)) };
+const level = { best:Math.min(MAX_STARS_PER_LOCK,wholeNumber(value.best,0)),clears:Math.max(1,wholeNumber(value.clears,1)) };
+const score = wholeNumber(value.score,0);
+return score > 0 ? { ...level,score } :level;
 }
 function repairLabLevels(raw) {
 const levels = Object.entries(isRecord(raw) ? raw :{}).filter(([id]) => LAB_ID_PATTERN.test(id));
@@ -54,6 +58,10 @@ function repairLabs(raw) {
 const labs = Object.entries(isRecord(raw) ? raw :{}).filter(([id]) => LAB_ID_PATTERN.test(id));
 const repaired = labs.map(([id,levels]) => [id,repairLabLevels(levels)]).filter(([,levels]) => Object.keys(levels).length > 0);
 return Object.fromEntries(repaired.slice(0,MAX_LABS));
+}
+function repairStory(raw) {
+const ids = Array.isArray(raw) ? raw.filter((id) => typeof id === 'string' && BEAT_ID_PATTERN.test(id)) :[];
+return [...new Set(ids)].slice(0,MAX_BEATS);
 }
 function repairEntry(value) {
 return wholeNumber(value,null);
@@ -107,7 +115,7 @@ seenOpen:knownIds(data.seenOpen,new Set(Object.keys(world.things))),
 function parseSave(raw,world) {
 const data = readRaw(raw);
 if (!isRecord(data) || data.version !== SAVE_VERSION) return createSave(world);
-const save = { ...createSave(world),...repairedClaims(world,data),labs:repairLabs(data.labs),stats:statsFrom(data.stats),ended:data.ended === true };
+const save = { ...createSave(world),...repairedClaims(world,data),labs:repairLabs(data.labs),story:repairStory(data.story),stats:statsFrom(data.stats),ended:data.ended === true };
 save.facing = Object.hasOwn(DIRS,data.facing) ? data.facing :START_FACING;
 save.xp = Math.max(wholeNumber(data.xp,0),earnedXp(world,save));
 const capacity = traceCapacity(levelFor(save.xp));
@@ -149,6 +157,9 @@ return { ...save,pos:{ col:avatar.pos.col,row:avatar.pos.row },facing:avatar.fac
 function markSeen(save,ids) {
 return { ...save,seenOpen:[...new Set([...save.seenOpen,...ids])] };
 }
+function markBeatsSeen(save,ids) {
+return { ...save,story:repairStory([...save.story,...ids]) };
+}
 function bumpStat(save,name) {
 return { ...save,stats:bumped(save.stats,name) };
 }
@@ -181,6 +192,7 @@ claimCache,
 claimCore,
 withPosition,
 markSeen,
+markBeatsSeen,
 bumpStat,
 markEnded,
 labBest,

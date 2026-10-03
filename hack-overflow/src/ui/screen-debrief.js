@@ -8,6 +8,7 @@ import { uiEl, uiPrefersReducedMotion } from './dom.js';
 import { uiEmit } from './bus.js';
 import { uiEnterGrid } from './screen-grid.js';
 import { uiOpenLevelUp } from './screen-levelup.js';
+import { uiBreachQuip } from './story-quip.js';
 import { uiProblemByKey } from './render-lock-left.js';
 import { uiResultFamilyBlock, uiResultComplexity, uiResultMaxTest, uiResultClassFormBlock, uiResultEvidence, uiSolveLink, UI_EVIDENCE_FIRST_TRY, UI_EVIDENCE_SHOW_LINE } from './render-result.js';
 
@@ -180,12 +181,14 @@ text:'CONTINUE',
 attrs:{ type:'button','data-action':'debrief-continue','data-focus-key':'debrief-continue' },
 });
 }
-function uiDebriefChildren(outcome,plan,elapsed) {
+function uiDebriefChildren(outcome,timing) {
+const { plan,elapsed } = timing;
 return [
 uiEl('p',{ className:'debrief-kicker',text:'BREACHED · ' + outcome.lockName }),
 uiDebriefTitleNode(plan,elapsed),
 uiStarsRow(outcome,plan,elapsed),
 uiEl('p',{ className:'debrief-xp',text:uiXpText(outcome,plan,elapsed) }),
+uiBreachQuip(outcome),
 uiCapNote(outcome),
 uiSectorNote(outcome),
 uiDebriefContinueButton(),
@@ -199,7 +202,7 @@ const elapsed = uiDebriefElapsed(debrief);
 return uiEl('section',{
 className:'screen screen-card debrief-screen',
 attrs:{ 'data-screen':'debrief' },
-children:uiDebriefChildren(outcome,debrief.plan,elapsed).filter(Boolean),
+children:uiDebriefChildren(outcome,{ plan:debrief.plan,elapsed }).filter(Boolean),
 });
 }
 function uiApplyDebriefAction(app,actionId) {

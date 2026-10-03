@@ -36,11 +36,16 @@ function uiLabsButton(app) {
 if (app.screen !== 'grid') return null;
 return uiMenuButton('menu-labs','CONTEXT LAB');
 }
+function uiStreamButton(app) {
+if (app.screen !== 'grid') return null;
+return uiMenuButton('menu-stream','CONTEXT STREAM');
+}
 function uiMenuFace(app) {
 const stops = [
 uiMenuButton('menu-close','RESUME'),
 uiMenuButton('toggle-sound',app.soundOn ? 'SOUND: ON' :'SOUND: OFF'),
 uiLabsButton(app),
+uiStreamButton(app),
 uiDisconnectButton(app),
 uiMenuButton('reset-progress','RESET PROGRESS'),
 ].filter(Boolean);

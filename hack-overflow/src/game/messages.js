@@ -1,5 +1,6 @@
 import { hashStr } from '../logic/tray.js';
 import { coreState, sectorLocksLeft } from './progress.js';
+import { encryptedHook } from './story/story.js';
 
 const LOCK_SEED_SUFFIX = ':0:0';
 const LOCK_ID_MASK = 0xffff;
@@ -30,7 +31,7 @@ all:(world,need) => 'Breach all ' + plural(world.placed.length,'lock') + ' (' + 
 const BLOCKING_TEXTS = {
 blocked:(world,event) => NEED_TEXTS[event.need.kind](world,event.need),
 core:(world,event) => (event.ready ? '' :'CORE LOCKED: ' + plural(event.left,'lock') + ' left'),
-encrypted:(world,event) => 'ENCRYPTED: ' + event.name + ' — not in this build yet',
+encrypted:(world,event) => 'ENCRYPTED: ' + event.name + ' — ' + encryptedHook(event.family),
 };
 function blockedText(world,event) {
 return Object.hasOwn(BLOCKING_TEXTS,event.type) ? BLOCKING_TEXTS[event.type](world,event) :'';

@@ -2,6 +2,7 @@ import { uiQs, uiMount, uiAnnounce, uiFindByFocusKey, uiRestoreFocus, UI_ROOT_ID
 import { uiLoadSoundOn, uiLoadOnboarded } from './storage.js';
 import { UI_ONBOARD_STAGE_CHIP } from './onboarding.js';
 import { uiMenuIfOpen } from './menu.js';
+import { uiStoryIfOpen } from './story-render.js';
 import { uiScreenFor, uiSyncScreens } from './screens.js';
 import { uiCreateGame } from './game-state.js';
 import { checkMaxTestData } from './judge-client.js';
@@ -62,9 +63,9 @@ function uiRenderApp(app) {
 const screen = uiScreenFor(app);
 const changed = screen.id !== app.lastAnnouncedScreen;
 app.lastAnnouncedScreen = screen.id;
-if (changed) app.lastFocusKey = screen.focusKey(app);
+if (changed && !app.story) app.lastFocusKey = screen.focusKey(app);
 const scrollTop = changed ? 0 :uiScrollTopOf(uiQs(UI_ROOT_ID).firstChild);
-const root = uiMount(UI_ROOT_ID,[screen.render(app),uiMenuIfOpen(app)].filter(Boolean));
+const root = uiMount(UI_ROOT_ID,[screen.render(app),uiMenuIfOpen(app),uiStoryIfOpen(app)].filter(Boolean));
 uiKeepScreenScroll(root,scrollTop);
 uiSyncScreens(app,root);
 uiAnnounceRender(app,changed ? screen.announce(app) :null);

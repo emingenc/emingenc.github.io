@@ -7,7 +7,9 @@ import { uiEnterGrid } from './screen-grid.js';
 import { uiLeaveBreach, uiDisconnect } from './breach-flow.js';
 import { uiOpenMap, uiCloseMap } from './screen-map.js';
 import { uiOpenLabs } from './lab-loader.js';
+import { uiOpenStream } from './stream-loader.js';
 import { uiBreachInert } from './render-submit-panel.js';
+import { uiStoryNext, uiStorySkip } from './story-dialogue.js';
 
 function uiStartGame(app) {
 uiEnterGrid(app);
@@ -20,7 +22,7 @@ return app.menuOpen && Boolean(app.confirmReset);
 }
 function uiHandleToggleSound(app) {
 app.soundOn = uiToggleSound();
-if (uiResetAsked(app)) return;
+if (uiResetAsked(app) || app.story) return;
 if (app.menuOpen || !app.game.travelOpen) app.lastFocusKey = 'toggle-sound';
 }
 function uiAskResetProgress(app) {
@@ -39,7 +41,7 @@ function uiConfirmReset(app) {
 if (!uiResetAsked(app)) return;
 if (app.game.breach) uiLeaveBreach(app);
 uiResetGameState(app,uiResetGame(app.game.world));
-Object.assign(app,{ lab:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
+Object.assign(app,{ lab:null,story:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
 }
 function uiOpenMenu(app) {
 uiWalkReleaseAll(app);
@@ -68,16 +70,22 @@ uiOpenMap(app);
 function uiHandleMapClose(app) {
 uiCloseMap(app);
 }
-async function uiHandleLabsOpen(app) {
+async function uiOpenFromMenu(app,spec) {
 if (app.screen !== 'grid') return;
 uiWalkReleaseAll(app);
 app.menuOpen = false;
 app.confirmReset = null;
 try {
-await uiOpenLabs(app);
+await spec.open(app);
 } catch (error) {
-uiShowToast(app,{ text:'CONTEXT LAB could not load. Try again.',kind:'info' });
+uiShowToast(app,{ text:spec.failText,kind:'info' });
 }
+}
+function uiHandleLabsOpen(app) {
+return uiOpenFromMenu(app,{ open:uiOpenLabs,failText:'CONTEXT LAB could not load. Try again.' });
+}
+function uiHandleStreamOpen(app) {
+return uiOpenFromMenu(app,{ open:uiOpenStream,failText:'CONTEXT STREAM could not load. Try again.' });
 }
 const UI_NAV_HANDLERS = {
 'title-start':uiStartGame,
@@ -91,6 +99,9 @@ const UI_NAV_HANDLERS = {
 'map-open':uiHandleMapOpen,
 'map-close':uiHandleMapClose,
 'menu-labs':uiHandleLabsOpen,
+'story-next':uiStoryNext,
+'story-skip':uiStorySkip,
+'menu-stream':uiHandleStreamOpen,
 };
 function uiIsNavActionId(actionId) {
 return Object.hasOwn(UI_NAV_HANDLERS,actionId);

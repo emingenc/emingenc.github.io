@@ -1,8 +1,9 @@
 import { CONTEXT_WINDOW } from '../game/labs/data/context-window.js';
 import { apply, createRun, movesUsed, read } from '../game/labs/context-reader.js';
-import { recordLab } from '../game/save.js';
+import { labBest, recordLab } from '../game/save.js';
 import { uiCommitSave } from './game-state.js';
 import { uiEnterGrid } from './screen-grid.js';
+import { uiStoryLabFinish, uiStoryLabOpen } from './story-dialogue.js';
 import { uiLabLevelOf, uiLabRenderEmpty, uiLabRenderPlay, uiLabRenderSelect } from './lab-render.js';
 
 const LAB_SEED_STRIDE = 1000;
@@ -17,6 +18,7 @@ function uiLabOpen(app) {
 app.lab = { view:'select',levelIndex:0,run:null,probe:null,attempt:0 };
 app.screen = 'lab';
 app.lastFocusKey = LAB_FOCUS_BACK;
+uiStoryLabOpen(app,CONTEXT_WINDOW.id);
 }
 function uiLabLeave(app) {
 app.lab = null;
@@ -68,6 +70,9 @@ lab.probe = read(uiLabLevelOf(app),lab.run.window);
 app.pendingAnnounce = uiLabProbeSpoken(lab.probe,uiLabLevelOf(app));
 app.lastFocusKey = 'lab-probe';
 }
+function uiLabAllCleared(save) {
+return CONTEXT_WINDOW.levels.every(function (level) { return labBest(save,CONTEXT_WINDOW.id,level.id) > 0; });
+}
 function uiLabWin(app,run) {
 const level = uiLabLevelOf(app);
 const { save } = recordLab(app.game.save,{ labId:CONTEXT_WINDOW.id,levelId:level.id },run.stars);
@@ -76,6 +81,7 @@ const hasNext = app.lab.levelIndex < CONTEXT_WINDOW.levels.length - 1;
 app.lastFocusKey = hasNext ? 'lab-next' :'lab-levels';
 const par = 'Par ' + level.par + ', you used ' + movesUsed(run.window) + '.';
 app.pendingAnnounce = 'Run passed. ' + uiLabStarsWord(run.stars) + '. ' + par;
+if (uiLabAllCleared(save)) uiStoryLabFinish(app,CONTEXT_WINDOW.id);
 }
 function uiLabFail(app,run) {
 app.lab.probe = read(uiLabLevelOf(app),run.window);

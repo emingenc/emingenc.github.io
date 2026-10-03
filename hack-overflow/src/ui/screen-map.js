@@ -1,5 +1,6 @@
 import { sectorLocksLeft } from '../game/progress.js';
 import { isOpen } from '../game/world.js';
+import { encryptedHook } from '../game/story/story.js';
 import { uiEl } from './dom.js';
 import { uiWalkReleaseAll } from './grid-walk.js';
 import { uiEnterGrid } from './screen-grid.js';
@@ -29,7 +30,7 @@ encrypted:false,
 };
 }
 function uiMapEncryptedEntry(entry) {
-return { name:entry.name,total:0,done:0,gateLevel:null,coreClaimed:false,encrypted:true };
+return { name:entry.name,family:entry.family,total:0,done:0,gateLevel:null,coreClaimed:false,encrypted:true };
 }
 function uiMapProgressEntries(game) {
 const live = Object.values(game.world.sectors).map((sector) => uiMapSectorEntry(game,sector));
@@ -40,7 +41,7 @@ function uiMapVisibleProgress(entry) {
 return entry.total === 0 ? 'no locks placed' :entry.done + '/' + entry.total + ' locks';
 }
 function uiMapVisibleText(entry) {
-if (entry.encrypted) return entry.name + ': ENCRYPTED';
+if (entry.encrypted) return entry.name + ': ENCRYPTED · ' + encryptedHook(entry.family);
 const gate = entry.gateLevel === null ? '' :' · GATE LV ' + entry.gateLevel;
 const core = entry.coreClaimed ? ' · CORE claimed' :'';
 return entry.name + ': ' + uiMapVisibleProgress(entry) + gate + core;
