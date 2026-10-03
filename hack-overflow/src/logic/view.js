@@ -18,8 +18,7 @@ function showLineEligible(lock) {
 return !lock.revealed && lock.visibleFails >= SHOW_LINE_THRESHOLD;
 }
 function judgeOptions(lock) {
-if (lock.line.length === 0) return [];
-const options = [{ id:'run',label:'RUN' },{ id:'submit',label:'SUBMIT' }];
+const options = lock.line.length === 0 ? [] :[{ id:'run',label:'RUN' },{ id:'submit',label:'SUBMIT' }];
 if (showLineEligible(lock)) options.push({ id:'show-line',label:'SHOW LINE' });
 return options;
 }

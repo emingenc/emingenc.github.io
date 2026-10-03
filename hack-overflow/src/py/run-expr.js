@@ -11,12 +11,6 @@ import { PyError } from './errors.js';
 import { starredItems } from './run-iterable.js';
 
 const NAME_CONSTANTS = { True:true,False:false,None:NONE };
-/**
- * A bare builtin name read as a *value* (not called) - `x = max`, then
- * `max > 1` - is CPython's `builtin_function_or_method` object, not a
- * `NameError`; only unshadowed builtins qualify, the same shadow rule
- * `run-call.js`'s `isBuiltinCall` uses for the call form.
- */
 function isBareBuiltinName(id,ctx) {
 return Boolean(BUILTINS[id]) && !ctx.scope.has(id) && !ctx.localNames.has(id);
 }
@@ -27,14 +21,6 @@ return getVar(ctx,node.id);
 function evalNameConstant(node) {
 return NAME_CONSTANTS[node.value];
 }
-/**
- * Evaluates a tuple/list display's elements, spreading a `*expr` (Starred)
- * element's own iterable items into the result (PEP 448) instead of
- * pushing the Starred node's value itself.
- * @param {Array<object>} elts
- * @param {object} ctx
- * @returns {Array<*>}
- */
 function evaluateElements(elts,ctx) {
 const items = [];
 for (const elt of elts) {
@@ -71,12 +57,6 @@ return negateValue(evaluateExpr(node.value,ctx));
 function evalUnaryPlus(node,ctx) {
 return posateValue(evaluateExpr(node.value,ctx));
 }
-/**
- * `*`'s sequence repeat (`[1] * n`) is charged the size of the result *before* building it -
- * matching `pycost.py`'s `_arith` - so a runaway repeat times out instead of allocating first
- * and only then discovering it went over budget. Plain numeric `*` (and every other op) has no
- * growth of its own to charge; `guardIntMagnitude` inside `applyBinOp` already bounds it.
- */
 function evalBinOp(node,ctx) {
 const left = evaluateExpr(node.left,ctx);
 const right = evaluateExpr(node.right,ctx);
@@ -98,20 +78,10 @@ in:(left,right) => pyContains(left,right),
 };
 function compareLink(op,operands,ctx) {
 const [left,right] = operands;
-// containsCost(right) only matters when ctx.chargeSlot will actually charge it
-// (the slot line), so skip building it on every off-slot in/not-in check -
-// e.g. a loop header re-evaluated up to the op budget every tick (perf only,
-// same charged amount as before: chargeSlot itself already no-ops off-slot).
 if ((op === 'in' || op === 'not in') && ctx.onSlotLine) ctx.chargeSlot(containsCost(right));
 return COMPARATORS[op](left,right);
 }
 const MEMBERSHIP_COMPARE_OPS = new Set(['in','not in']);
-/**
- * CPython's op-cost model only wraps a comparison chain's operands in
- * per-operand closures (see `RunContext.withChainThunk`) when the chain has
- * 2+ operators and at least one is `in`/`not in`; a lone `in`/`not in` test
- * is metered inline with no closure involved.
- */
 function needsChainThunk(node) {
 return node.ops.length > 1 && node.ops.some((op) => MEMBERSHIP_COMPARE_OPS.has(op));
 }
@@ -128,16 +98,6 @@ function evalCompare(node,ctx) {
 if (ctx.onSlotLine && needsChainThunk(node)) return ctx.withChainThunk(() => evalCompareChain(node,ctx));
 return evalCompareChain(node,ctx);
 }
-/**
- * Evaluates one parsed expression node against the current run context.
- * A `switch` on `node.type` rather than a `{Type: fn}` dispatch object: this
- * is the single hottest call in the interpreter (every expression anywhere
- * in a running program passes through it, often millions of times for one
- * slow judged line), and V8's inline cache for a plain-object property
- * lookup goes megamorphic across this many distinct `node.type` strings,
- * costing far more than a `switch`'s string-compare chain (profiled: this
- * change alone cut a 400,000-op line's judge time by about a fifth).
- */
 function evaluateExpr(node,ctx) {
 switch (node.type) {
 case 'Name':return evalName(node,ctx);

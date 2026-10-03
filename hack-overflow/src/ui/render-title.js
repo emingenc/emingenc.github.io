@@ -1,5 +1,6 @@
 import { uiEl } from './dom.js';
-import { uiIsResumable } from './storage.js';
+import { uiHasGame } from './game-storage.js';
+import { UI_SECTOR_ACCENTS } from './grid-draw-tiles.js';
 
 function uiTitleButton(action,label,kind) {
 return uiEl('button',{
@@ -8,16 +9,25 @@ text:label,
 attrs:{ type:'button','data-action':action,'data-focus-key':action },
 });
 }
-function uiTitleStartLabel(app) {
-return uiIsResumable(app.savedRun) ? 'CONTINUE' :'START';
+function uiTitleStartLabel() {
+return uiHasGame() ? 'CONTINUE' :'START';
+}
+function uiTitleSectorTiles() {
+const tiles = Object.values(UI_SECTOR_ACCENTS).map(function (accent) {
+const tile = uiEl('span',{ className:'title-sector' });
+tile.style.setProperty('--sector','var(--' + accent + ')');
+return tile;
+});
+return uiEl('div',{ className:'title-sectors',attrs:{ 'aria-hidden':'true' },children:tiles });
 }
 function uiTitleHeading() {
 return uiEl('div',{
 className:'title-wordmark',
 children:[
-uiEl('h1',{ className:'wordmark',text:'HACK://OVERFLOW' }),
-uiEl('h2',{ className:'subtitle',text:'ONE-LINER' }),
-uiEl('p',{ className:'tagline',text:'One missing line. A real Python judge. Write it.' }),
+uiEl('p',{ className:'title-kicker',text:'HACK://OVERFLOW' }),
+uiEl('h1',{ className:'wordmark',text:'THE GRID' }),
+uiTitleSectorTiles(),
+uiEl('p',{ className:'tagline',text:'One missing line. A real Python judge. Breach the Grid.' }),
 ],
 });
 }
@@ -25,8 +35,7 @@ function uiTitleActions(app) {
 return uiEl('div',{
 className:'title-actions',
 children:[
-uiTitleButton('title-start',uiTitleStartLabel(app),'btn-primary'),
-uiTitleButton('title-route','ROUTE','btn-ghost'),
+uiTitleButton('title-start',uiTitleStartLabel(),'btn-primary'),
 uiTitleButton('toggle-sound',app.soundOn ? 'SOUND: ON' :'SOUND: OFF','btn-ghost'),
 ],
 });

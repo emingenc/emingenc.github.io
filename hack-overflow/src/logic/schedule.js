@@ -1,11 +1,6 @@
 import { hashStr, mulberry32 } from './tray.js';
 import { isDue, hasBeenServed, hasBeenSolved, isFamilySolved } from './profile.js';
 
-// Mirrors content/families.json's run_size. Kept as a module constant
-// rather than a parameter: scheduleForRun's (profile, families, when)
-// signature is shared with src/logic/audit.js's checks.schedule, which
-// calls it positionally, so a 4th argument cannot be threaded through
-// safely.
 const RUN_SIZE = 3;
 
 function seededChoice(items,seedText) {
@@ -28,14 +23,6 @@ return Boolean(prereqFamily) && isFamilySolved(profile,prereqFamily);
 function isFamilyAvailable(profile,family,byKey) {
 return family.start_open || prereqsMet(profile,family,byKey);
 }
-/**
- * The live families the player may currently be served from: start_open
- * families from day 0, others once every prereq family has at least one
- * solved problem.
- * @param {object} profile
- * @param {Array<object>} families - catalog.data.families, in route order
- * @returns {Array<object>}
- */
 function availableFamilies(profile,families) {
 const byKey = familyByKeyMap(families);
 return families.filter((family) => isFamilyAvailable(profile,family,byKey));
@@ -48,16 +35,6 @@ const dueDelta = profile.families[left.key].due - profile.families[right.key].du
 return dueDelta !== 0 ? dueDelta :routeIndex.get(left.key) - routeIndex.get(right.key);
 };
 }
-/**
- * Available families due for a box review today, most-overdue first (ties
- * broken by route order) so a family cannot be starved indefinitely by
- * always losing the route-order tiebreak once more families are due than
- * fit in one run (RUN_SIZE caps a run at 3 locks).
- * @param {object} profile
- * @param {Array<object>} families
- * @param {number} day
- * @returns {Array<object>}
- */
 function dueFamilies(profile,families,day) {
 const due = availableFamilies(profile,families).filter((family) => isDue(profile.families[family.key],day));
 return [...due].sort(byDueThenRoute(profile,families));
@@ -81,32 +58,12 @@ return withoutLast.length > 0 ? withoutLast :candidates;
 function nextUnservedProblem(profile,family) {
 return family.problems.find((key) => !hasBeenServed(profile.problems[key])) ?? null;
 }
-/**
- * Picks a review problem from a family that has no unserved problem left:
- * the sibling(s) solved longest ago (or never solved), tie-broken away from
- * the immediately preceding pick, then by a seeded choice.
- * @param {object} profile
- * @param {object} family
- * @param {{day: number, attempt: number}} when
- * @returns {string} a problem key
- */
 function pickReviewProblem(profile,family,when) {
 const familyState = profile.families[family.key];
 const candidates = excludingLastServed(leastRecentlySolved(family,profile),familyState.lastServed);
 if (candidates.length === 1) return candidates[0];
 return seededChoice(candidates,`${family.key}:${when.day}:${when.attempt}`);
 }
-/**
- * Picks a problem the player was served but has not (yet) solved on a
- * later try: failed a hidden test, timed out, or used SHOW LINE (CR
- * finding 16). Spaced repetition should bring these back at the family's
- * next due date before any sibling the player has never seen, tie-broken
- * away from the immediately preceding pick, then by a seeded choice.
- * @param {object} profile
- * @param {object} family
- * @param {{day: number, attempt: number}} when
- * @returns {string|null} a problem key, or null when none is outstanding
- */
 function pickFailedOrRevealedProblem(profile,family,when) {
 const outstanding = family.problems.filter((key) => {
 const state = profile.problems[key];
@@ -118,18 +75,6 @@ const candidates = excludingLastServed(outstanding,familyState.lastServed);
 if (candidates.length === 1) return candidates[0];
 return seededChoice(candidates,`${family.key}:${when.day}:${when.attempt}`);
 }
-/**
- * Picks the problem to serve for a family that is due today: a problem the
- * player failed or had revealed on its most recent try, when one exists
- * (CR finding 16); otherwise its next never-served problem in authoring
- * order (this both introduces new content and satisfies the due review);
- * otherwise a review pick among its already-served, already-solved
- * siblings.
- * @param {object} profile
- * @param {object} family
- * @param {{day: number, attempt: number}} when
- * @returns {string} a problem key
- */
 function pickDueProblem(profile,family,when) {
 return pickFailedOrRevealedProblem(profile,family,when)
 ?? nextUnservedProblem(profile,family)
@@ -150,17 +95,6 @@ if (unserved !== null) items.push({ key:unserved,family:family.key,scored:true }
 }
 return items;
 }
-/**
- * Builds one daily run's locks: families due for a box review first (their
- * next unserved problem when one remains, otherwise a review pick), then
- * at most one new problem per still-open
- * family that was not already scheduled, in route order, capped at
- * run_size (3) total.
- * @param {object} profile
- * @param {Array<object>} families - catalog.data.families
- * @param {{day: number, attempt: number}} when
- * @returns {Array<{key: string, family: string, scored: boolean}>}
- */
 function scheduleForRun(profile,families,when) {
 const due = dueRunItems(profile,families,when);
 const remaining = RUN_SIZE - due.length;
@@ -185,18 +119,6 @@ const open = availableFamilies(profile,families);
 if (open.length === 0) return null;
 return open.reduce((soonest,family) => (familyDueDay(profile,family) < familyDueDay(profile,soonest) ? family :soonest));
 }
-/**
- * Builds a practice run's picks: the player's currently-available,
- * not-yet-solved problems first (family/problem
- * order), falling back to a review pick from the family due soonest once
- * every available problem is solved. Every entry is unscored, so playing
- * it never itself changes a family's box (run-judge.js only promotes or
- * resets a family when a completed lock's `scored` is true).
- * @param {object} profile
- * @param {Array<object>} families - catalog.data.families
- * @param {{day: number, attempt: number}} when
- * @returns {Array<{key: string, family: string, scored: boolean}>}
- */
 function practiceSchedule(profile,families,when) {
 const unsolved = unsolvedAvailableItems(profile,families).slice(0,RUN_SIZE);
 if (unsolved.length > 0) return unsolved;

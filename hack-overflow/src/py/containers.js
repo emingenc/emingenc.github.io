@@ -4,12 +4,6 @@ import { unhashableContextMessage } from './error-messages.js';
 
 const DICT_KEY_CONTEXT = 'dict key';
 const SET_ELEMENT_CONTEXT = 'set element';
-/**
- * `hashKey`, wrapped so an unhashable value's error names the container it
- * was being placed into (CPython: `d[[1]] = 1` says "cannot use 'list' as
- * a dict key (unhashable type: 'list')", not the bare inner error).
- */
-/** int/str/bool are always hashable, so this hot path skips the try/catch below entirely. */
 function isAlwaysHashablePrimitive(value) {
 const jsType = typeof value;
 return jsType === 'number' || jsType === 'string' || jsType === 'boolean';

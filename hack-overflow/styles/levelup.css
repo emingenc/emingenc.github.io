@@ -1,0 +1,147 @@
+.levelup-kicker {
+  font-family:var(--font-display);
+  font-size:var(--fs-2xl);
+  color:var(--amber);
+  letter-spacing:0.12em;
+  animation:levelup-pop-in 320ms ease-out both;
+  animation-delay:var(--levelup-elapsed,0ms);
+}
+
+.levelup-title {
+  font-size:var(--fs-6xl);
+  color:var(--bright);
+  text-shadow:0 0 22px rgba(125,255,184,0.55);
+  animation:levelup-pop-in 380ms cubic-bezier(0.2,1.4,0.4,1) both;
+  animation-delay:calc(60ms + var(--levelup-elapsed,0ms));
+}
+
+.levelup-rank {
+  font-family:var(--font-display);
+  font-size:var(--fs-2xl);
+  color:var(--cyan);
+  animation:levelup-pop-in 320ms ease-out both;
+  animation-delay:calc(120ms + var(--levelup-elapsed,0ms));
+}
+
+.levelup-unlocks {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-4);
+  width:100%;
+  max-width:520px;
+}
+
+.levelup-group {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-3);
+}
+
+.levelup-group-level {
+  margin:0;
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  color:var(--amber);
+  letter-spacing:0.1em;
+  text-align:left;
+  animation:levelup-card-in 280ms ease-out both;
+  animation-delay:calc(180ms + var(--levelup-card-i,0) * 60ms + var(--levelup-elapsed,0ms));
+}
+
+.levelup-cards {
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-3);
+}
+
+.levelup-card {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--sp-4);
+  padding:var(--sp-4) var(--sp-5);
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-left:4px solid var(--primary);
+  border-radius:var(--radius-md);
+  text-align:left;
+  animation:levelup-card-in 280ms ease-out both;
+  animation-delay:calc(180ms + var(--levelup-card-i,0) * 60ms + var(--levelup-elapsed,0ms));
+}
+
+.levelup-card-trace {
+  border-left-color:var(--amber);
+}
+
+.levelup-card-exploit {
+  border-left-color:var(--magenta);
+}
+
+.levelup-card-rank {
+  border-left-color:var(--bright);
+}
+
+.levelup-card-text {
+  margin:0;
+  flex:1 1 auto;
+  min-width:0;
+  color:var(--text);
+  font-size:var(--fs-md);
+}
+
+.levelup-card-meta {
+  flex-shrink:0;
+  padding:var(--sp-1) var(--sp-3);
+  border:1px solid var(--border);
+  border-radius:var(--radius-pill);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  color:var(--bright);
+  white-space:nowrap;
+}
+
+.levelup-continue {
+  position:sticky;
+  bottom:var(--sp-5);
+}
+
+@keyframes levelup-pop-in {
+  from {
+    opacity:0;
+    transform:scale(0.7);
+  }
+}
+
+@keyframes levelup-card-in {
+  from {
+    opacity:0;
+    transform:translateY(10px);
+  }
+}
+
+@media (max-width:767px) {
+  .levelup-title {
+    font-size:var(--fs-4xl);
+  }
+
+  .levelup-rank {
+    font-size:var(--fs-xl);
+  }
+
+  .levelup-card {
+    padding:var(--sp-3) var(--sp-4);
+  }
+
+  .levelup-card-text {
+    font-size:var(--fs-sm);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .levelup-kicker,.levelup-title,.levelup-rank,.levelup-card,.levelup-group-level {
+    animation:none;
+  }
+}

@@ -18,13 +18,6 @@ inputHash:jsonHash(args),
 expectedHash:jsonHash(expected),
 };
 }
-/**
- * Builds the judging context for one problem: its small and max cases,
- * its own budget (every merged problem carries one), and the single
- * {examples, hidden, total} test-count set every view reads from.
- * @param {object} problem - a merged content.gen.js problem
- * @returns {object} the judging context
- */
 function buildContext(problem) {
 const budget = problem.budget;
 const built = buildMaxCase(problem,budget);

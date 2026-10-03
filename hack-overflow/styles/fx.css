@@ -1,0 +1,198 @@
+.fx-layer {
+  position:fixed;
+  inset:0;
+  z-index:4;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+.fx-canvas {
+  position:absolute;
+  inset:0;
+  display:block;
+  width:100%;
+  height:100%;
+}
+
+.fx-effect {
+  position:absolute;
+  inset:0;
+  animation-duration:var(--fx-ms);
+  animation-fill-mode:both;
+}
+
+.fx-flash {
+  opacity:0;
+  animation-name:fx-flash;
+  animation-timing-function:ease-out;
+}
+
+.fx-flash-accepted {
+  --fx-peak:0.55;
+  background:radial-gradient(circle at var(--fx-x,50%) var(--fx-y,50%),var(--bright) 0,transparent 45%);
+}
+
+.fx-flash-level {
+  --fx-peak:0.45;
+  background:var(--bright);
+}
+
+.fx-flash-jack {
+  --fx-peak:0.3;
+  background:var(--cyan);
+}
+
+@keyframes fx-flash {
+  0% {
+    opacity:0;
+  }
+  12% {
+    opacity:var(--fx-peak);
+  }
+  100% {
+    opacity:0;
+  }
+}
+
+.fx-fade {
+  opacity:0.9;
+  animation-name:fx-fade;
+  animation-timing-function:ease-out;
+}
+
+.fx-fade-disconnect {
+  background:var(--bg);
+}
+
+@keyframes fx-fade {
+  0% {
+    opacity:0.9;
+  }
+  100% {
+    opacity:0;
+  }
+}
+
+.fx-jack {
+  border:2px solid var(--cyan);
+  box-shadow:0 0 14px var(--cyan),inset 0 0 14px var(--cyan);
+  animation-name:fx-jack;
+  animation-timing-function:cubic-bezier(0.55,0,0.9,0.45);
+}
+
+@keyframes fx-jack {
+  0% {
+    top:var(--fx-top);
+    left:var(--fx-left);
+    right:var(--fx-right);
+    bottom:var(--fx-bottom);
+    opacity:1;
+  }
+  70% {
+    opacity:1;
+  }
+  100% {
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    opacity:0;
+  }
+}
+
+.fx-glitch {
+  animation-name:fx-glitch;
+  animation-timing-function:steps(1,end);
+}
+
+.fx-glitch::before,.fx-glitch::after {
+  content:'';
+  position:absolute;
+  inset:0;
+}
+
+.fx-glitch::before {
+  background:var(--red);
+  opacity:0.16;
+}
+
+.fx-glitch::after {
+  background:repeating-linear-gradient(0deg,var(--magenta) 0 2px,transparent 2px 7px);
+  opacity:0.22;
+  animation:fx-glitch-roll calc(var(--fx-ms) / 4) steps(4,end) infinite;
+}
+
+@keyframes fx-glitch {
+  0% {
+    opacity:1;
+  }
+  10% {
+    opacity:0.25;
+  }
+  16% {
+    opacity:1;
+  }
+  38% {
+    opacity:0.55;
+  }
+  46% {
+    opacity:1;
+  }
+  70% {
+    opacity:0.8;
+  }
+  84% {
+    opacity:0.3;
+  }
+  100% {
+    opacity:0;
+  }
+}
+
+@keyframes fx-glitch-roll {
+  0% {
+    background-position:0 0;
+  }
+  100% {
+    background-position:0 28px;
+  }
+}
+
+.fx-glitch-bar {
+  position:absolute;
+  left:0;
+  right:0;
+  z-index:1;
+  opacity:0;
+  background:var(--red);
+  animation:fx-glitch-bar calc(var(--fx-ms) / 3) steps(1,end) forwards;
+}
+
+.fx-glitch-bar-alt {
+  background:var(--cyan);
+}
+
+@keyframes fx-glitch-bar {
+  0% {
+    opacity:0.85;
+    transform:translateX(var(--fx-shift));
+  }
+  30% {
+    opacity:0.5;
+    transform:translateX(calc(var(--fx-shift) * -0.6));
+  }
+  60% {
+    opacity:0.9;
+    transform:translateX(calc(var(--fx-shift) * 0.3));
+  }
+  100% {
+    opacity:0;
+    transform:translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .fx-layer {
+    display:none;
+  }
+}

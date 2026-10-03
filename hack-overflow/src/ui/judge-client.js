@@ -1,8 +1,3 @@
-// Thin request/response wrapper around the judge Web Worker
-// (`src/judge/judge-worker.js`). The worker is created lazily, on first
-// use, so importing this module has no side effect: `node --test` never
-// touches the DOM or `Worker`, and this file must stay import-safe there
-// (see test/ui-tray-focus.test.js, which imports a sibling UI module).
 import { NONE, PyTuple, PySlice, PyDict, PySet, PyRange, PyBuiltinFunction } from '../py/value-types.js';
 
 let worker = null;
@@ -23,17 +18,11 @@ function ensureWorker() {
 if (worker) return worker;
 worker = new Worker(new URL('../judge/judge-worker.js',import.meta.url),{ type:'module' });
 worker.addEventListener('message',handleWorkerMessage);
-// A worker-script error (e.g. blocked by CSP, or a load failure) leaves
-// every in-flight request unresolved unless it is rejected here.
 worker.addEventListener('error',function (event) {
 rejectAllPending(event.message || 'judge worker error');
 });
 return worker;
 }
-// postMessage's structured clone keeps a Python value's fields but not its
-// identity: `None` arrives as a copy of the NONE sentinel and a tuple, dict,
-// set, range, slice or builtin as a plain object, so pyType (and pyRepr in
-// the RUN/SUBMIT panels) would throw on it. These rebuild the originals.
 function reviveMap(map,reviveEntry) {
 return new Map(Array.from(map,([key,entry]) => [key,reviveEntry(entry)]));
 }
@@ -64,14 +53,6 @@ const { lastRun,lastSubmit } = run.lock;
 const revivedLastRun = lastRun && { ...lastRun,examples:lastRun.examples.map(reviveShown) };
 return { ...run,lock:{ ...run.lock,lastRun:revivedLastRun,lastSubmit:reviveShown(lastSubmit) } };
 }
-/**
- * Runs `act(catalog,run,optionId)` on the judge worker and resolves with
- * the resulting run. Rejects if the worker cannot be created, fails to
- * load, or the reducer itself throws.
- * @param {object} run - the current run state (structured-cloneable)
- * @param {string} optionId - 'run' or 'submit'
- * @returns {Promise<object>} the next run state
- */
 function judgeAct(run,optionId) {
 const id = nextId;
 nextId += 1;
@@ -80,16 +61,6 @@ pending.set(id,{ resolve:function (data) { resolve(reviveRun(data.run)); },rejec
 ensureWorker().postMessage({ id,kind:'act',run,optionId });
 });
 }
-/**
- * Runs the max-test data-integrity check (`HO_AUDIT.checks.maxTest`'s
- * judge-context build) on the judge worker instead of the main thread: for a
- * problem with a large max test, building that context is itself the
- * multi-second cost finding 5 flagged, so it must happen off-thread rather
- * than blocking the click that triggers it (`app.js`'s
- * uiSyncJudgeDataBadge).
- * @param {string} key - the problem key to check
- * @returns {Promise<{inputHashOk:boolean, expectedHashOk:boolean}>}
- */
 function checkMaxTestData(key) {
 const id = nextId;
 nextId += 1;
@@ -98,15 +69,6 @@ pending.set(id,{ resolve:function (data) { resolve(data.maxTestCheck); },reject 
 ensureWorker().postMessage({ id,kind:'maxTestCheck',key });
 });
 }
-/**
- * Starts creating the judge worker ahead of the first RUN/SUBMIT, so that
- * one-time cost (spawning the worker and loading its module graph) lands
- * during page boot instead of blocking the player's first click. Call
- * once, from the browser entry point only (`src/ui/events.js`'s uiBoot):
- * never at this module's own load time, so importing it stays side-effect
- * free and safe under `node --test` (see the file header).
- * @returns {void}
- */
 function warmJudgeWorker() {
 ensureWorker();
 }

@@ -31,13 +31,6 @@ if (error instanceof PyError) return { pass:false,got:null,error:error.pyClass,e
 throw error;
 }
 }
-/**
- * Formats the combined `"<class>: <message>"` line shown for a runtime
- * error, or `null` when no CPython message applies.
- * @param {?string} pyClass
- * @param {?string} pyMessage
- * @returns {?string}
- */
 function errorText(pyClass,pyMessage) {
 return pyMessage === null ? null :`${pyClass}: ${pyMessage}`;
 }
@@ -56,15 +49,6 @@ const allPassed = examples.every((example) => example.pass);
 if (!allPassed) return null;
 return runMessage(counts.examples,counts.hidden);
 }
-/**
- * Judges the visible-example run (RUN), using the problem's single
- * {examples, hidden, total} test-count set (judge/counts.js) so its
- * "N hidden tests" wording can never diverge from SUBMIT's counts.
- * @param {object} catalog - `createCatalog(content)`
- * @param {string} key - problem key
- * @param {string} text - the candidate slot line
- * @returns {object} the RUN view model
- */
 function examplesFor(catalog,key,text) {
 const problem = catalog.problemByKey.get(key);
 const func = compileLine(problem,text);

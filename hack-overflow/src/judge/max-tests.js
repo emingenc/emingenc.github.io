@@ -1,8 +1,3 @@
-/**
- * Max-test argument DSL. Each generator turns one `max.args[i]` spec into
- * the JS value CPython's `gen.py` would build for the same spec; the
- * FNV-1a hashes in judge/context.js prove the two agree.
- */
 
 const DEFAULT_STEP = 1;
 const DEFAULT_START = 0;
@@ -62,20 +57,10 @@ rotate:genRotate,
 const:genConst,
 };
 
-/**
- * Resolves one `max.args[i]` DSL spec into its JS value.
- * @param {{gen:string}} argSpec - one entry of `problem.max.args`
- * @returns {*} a Python-value-shaped JS value (number, string, or array)
- */
 function resolveMaxArg(argSpec) {
 return MAX_ARG_GENERATORS[argSpec.gen](argSpec);
 }
 
-/**
- * Resolves every entry of `problem.max.args` into the max test's argument list.
- * @param {Array<{gen:string}>} argSpecs - `problem.max.args`
- * @returns {Array<*>} the arguments to call the compiled line with
- */
 function maxTestArgs(argSpecs) {
 return argSpecs.map(resolveMaxArg);
 }

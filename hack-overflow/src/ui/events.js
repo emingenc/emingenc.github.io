@@ -1,23 +1,14 @@
-import { uiIsAuditActionId, uiLineRemovePosition } from './line-actions.js';
-import { uiApplyAuditAction } from './dispatch-audit.js';
-import { uiIsNavActionId, uiApplyNavAction } from './dispatch-nav.js';
+import { uiQs, UI_ROOT_ID } from './dom.js';
 import { uiCreateApp, uiRenderApp } from './app.js';
-import { uiKeyAction } from './keys.js';
+import { uiApplyAction } from './actions.js';
+import { uiScreenFor, uiSyncScreens } from './screens.js';
+import { uiWireFeedback } from './feedback.js';
+import { uiGameDebug, uiGameSnapshot, uiSolveSteps } from './game-state.js';
 import { uiInitAudio } from './audio.js';
 import { warmJudgeWorker } from './judge-client.js';
 
-function uiIsGameActionId(actionId) {
-return uiIsAuditActionId(actionId) || uiLineRemovePosition(actionId) !== null;
-}
-// Async because a RUN/SUBMIT action hands off to the judge worker
-// (dispatch-audit.js); every other action still resolves in the same
-// microtask, so this stays effectively synchronous for them.
 async function uiHandleAction(app,actionId) {
-if (uiIsGameActionId(actionId)) {
-await uiApplyAuditAction(app,actionId);
-} else if (uiIsNavActionId(actionId)) {
-uiApplyNavAction(app,actionId);
-}
+await uiApplyAction(app,actionId);
 uiRenderApp(app);
 }
 function uiActionElement(target) {
@@ -28,33 +19,69 @@ const el = uiActionElement(event.target);
 if (!el || el.disabled) return;
 uiHandleAction(app,el.getAttribute('data-action'));
 }
-function uiHandleTrayMove(app) {
-app.lastFocusKey = 'chip-' + app.trayFocusIndex;
-uiRenderApp(app);
+function uiGlobalKeyAction(event,app) {
+if (event.key === 'm' || event.key === 'M') return 'toggle-sound';
+return app.menuOpen && event.key === 'Escape' ? 'menu-close' :null;
 }
-function uiHandleToggleMenu(app) {
-app.menuOpen = !app.menuOpen;
-app.lastFocusKey = app.menuOpen ? 'menu-close' :'open-menu';
-uiRenderApp(app);
+function uiHandleKeyResult(app,result) {
+if (result.type === 'action') return uiHandleAction(app,result.id);
+if (result.type === 'toggle-menu') return uiHandleAction(app,app.menuOpen ? 'menu-close' :'open-menu');
+if (result.type === 'render') uiRenderApp(app);
+return null;
 }
 function uiHandleKeydown(app,event) {
-const result = uiKeyAction(event,app);
-if (!result) return;
-if (result.type === 'render') return uiHandleTrayMove(app);
-if (result.type === 'toggle-menu') return uiHandleToggleMenu(app);
-return uiHandleAction(app,result.id);
+if (event.ctrlKey || event.metaKey || event.altKey) return;
+const globalId = uiGlobalKeyAction(event,app);
+if (globalId) {
+event.preventDefault();
+uiHandleAction(app,globalId);
+return;
+}
+if (app.menuOpen) return;
+const screen = uiScreenFor(app);
+const result = screen.keyAction ? screen.keyAction(event,app) :null;
+if (result) uiHandleKeyResult(app,result);
+}
+function uiHandleKeyup(app,event) {
+const screen = uiScreenFor(app);
+if (screen.keyUp) screen.keyUp(event,app);
+}
+const UI_POINTER_HOOKS = { pointerdown:'pointerDown',pointerup:'pointerUp',pointercancel:'pointerCancel' };
+function uiHandlePointer(app,event) {
+const hook = uiScreenFor(app)[UI_POINTER_HOOKS[event.type]];
+if (hook) hook(event,app);
+}
+function uiReleaseInput(app) {
+const screen = uiScreenFor(app);
+if (screen.release) screen.release(app);
+}
+function uiHandleVisibility(app) {
+if (document.hidden) uiReleaseInput(app);
+uiSyncScreens(app,uiQs(UI_ROOT_ID));
 }
 function uiWireEvents(app) {
 document.addEventListener('click',function (event) { uiHandleClick(app,event); });
 document.addEventListener('keydown',function (event) { uiHandleKeydown(app,event); });
+document.addEventListener('keyup',function (event) { uiHandleKeyup(app,event); });
+Object.keys(UI_POINTER_HOOKS).forEach(function (type) {
+document.addEventListener(type,function (event) { uiHandlePointer(app,event); });
+});
+window.addEventListener('blur',function () { uiReleaseInput(app); });
+document.addEventListener('visibilitychange',function () { uiHandleVisibility(app); });
+}
+function uiExposeDebug(app) {
+window.HO_GAME = Object.assign(uiGameDebug(),{
+app,
+state:function () { return uiGameSnapshot(app); },
+solveSteps:function () { return uiSolveSteps(app); },
+});
 }
 function uiBoot() {
 uiInitAudio();
-// Starts the judge worker's one-time creation cost (spawning it and
-// loading its module graph) during boot, not on the player's first
-// RUN/SUBMIT click.
 warmJudgeWorker();
+uiWireFeedback();
 const app = uiCreateApp();
+uiExposeDebug(app);
 uiWireEvents(app);
 uiRenderApp(app);
 }

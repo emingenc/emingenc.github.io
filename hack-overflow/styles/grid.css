@@ -1,0 +1,81 @@
+.grid-screen {
+  max-width:none;
+  height:100dvh;
+  display:grid;
+  grid-template-rows:auto auto minmax(0,1fr) auto;
+  grid-template-areas:'hud' 'objective' 'stage' 'travel';
+  row-gap:var(--sp-3);
+  padding:var(--sp-3) var(--sp-5) calc(var(--sp-3) + env(safe-area-inset-bottom,0px));
+}
+
+.grid-stage {
+  grid-area:stage;
+  position:relative;
+  isolation:isolate;
+  min-height:0;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg);
+  box-shadow:0 0 0 3px var(--panel),0 0 0 4px var(--border),0 0 24px rgba(0,230,128,0.12);
+}
+
+.grid-canvas {
+  position:absolute;
+  inset:0;
+  display:block;
+  width:100%;
+  height:100%;
+  image-rendering:pixelated;
+}
+
+.grid-stage::before,.grid-stage::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+}
+
+.grid-stage::before {
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0.22) 0px,rgba(0,0,0,0.22) 1px,transparent 2px,transparent 4px);
+}
+
+.grid-stage::after {
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.5) 100%);
+  box-shadow:inset 0 0 0 1px rgba(125,255,184,0.08),inset 0 0 32px rgba(0,0,0,0.6);
+}
+
+@media (max-width:767px) {
+  .grid-screen {
+    padding:var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom,0px));
+    row-gap:var(--sp-2);
+  }
+
+  .grid-stage::after {
+    box-shadow:inset 0 0 0 1px rgba(125,255,184,0.08),inset 0 0 16px rgba(0,0,0,0.6);
+  }
+}
+
+@media (pointer:coarse) {
+  .grid-screen {
+    grid-template-rows:auto auto minmax(0,1fr) auto auto;
+    grid-template-areas:'hud' 'objective' 'stage' 'dpad' 'travel';
+  }
+}
+
+@media (max-height:640px) {
+  .grid-screen {
+    row-gap:var(--sp-1);
+    padding-top:var(--sp-2);
+  }
+}
+
+@media (pointer:coarse) and (orientation:landscape) and (max-height:480px) {
+  .grid-screen {
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto minmax(0,1fr) auto;
+    grid-template-areas:'hud hud' 'objective dpad' 'stage dpad' 'travel dpad';
+    column-gap:var(--sp-4);
+  }
+}

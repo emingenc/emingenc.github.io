@@ -6,7 +6,6 @@ constructor(items) {
 this.items = items;
 }
 }
-/** Shared by `PySlice` and `PyRange`: both are plain `(start, stop, step)` triples. */
 function assignBounds(instance,bounds) {
 instance.start = bounds.start;
 instance.stop = bounds.stop;
@@ -27,21 +26,11 @@ constructor() {
 this.items = new Map();
 }
 }
-/**
- * A bare builtin name used as a value rather than called (`x = max`, then
- * `x > 1`): CPython resolves the name to the builtin's own
- * `builtin_function_or_method` object instead of raising `NameError`. This
- * subset never lets one flow anywhere but a comparison or arithmetic
- * operand (calling still goes through evaluateCall's own `isBuiltinCall`
- * name lookup, never through this value), so it only needs a `pyType`
- * identity, not real callability.
- */
 class PyBuiltinFunction {
 constructor(name) {
 this.name = name;
 }
 }
-/** `range(start, stop, step)`'s length, CPython's `(stop-start)` ceil-divided by `step`. */
 function pyRangeLength(start,stop,step) {
 if (step > 0) return stop > start ? Math.ceil((stop - start) / step) :0;
 return stop < start ? Math.ceil((start - stop) / -step) :0;
@@ -52,11 +41,9 @@ assignBounds(this,{ start,stop,step });
 this.length = pyRangeLength(start,stop,step);
 }
 }
-/** The `at`-th value of a range, without materializing the whole sequence. */
 function pyRangeItem(range,at) {
 return range.start + at * range.step;
 }
-/** The full list of a range's values, in order. */
 function pyRangeValues(range) {
 const values = [];
 for (let at = 0; at < range.length; at += 1) values.push(pyRangeItem(range,at));
@@ -108,16 +95,6 @@ tuple:(value) => `t:${value.items.map(hashKey).join(',')}`,
 slice:(value) => `l:${hashKey(value.start)}:${hashKey(value.stop)}:${hashKey(value.step)}`,
 builtin_function_or_method:(value) => `b:${value.name}`,
 };
-/**
- * Builds a dict/set Map key for `value`. `int` and `bool` are returned as
- * their raw JS number (CPython: `hash(True) == hash(1) == 1`, so both must
- * land on the same Map key as the int 1), skipping the string allocation
- * the other types need to stay distinguishable from each other in the
- * same Map - a hot path for int-keyed containers (op-cost.js's per-op
- * `in`/`not in` checks run this on every loop tick).
- * @param {*} value
- * @returns {(number|string)}
- */
 function hashKey(value) {
 const jsType = typeof value;
 if (jsType === 'number') return value;

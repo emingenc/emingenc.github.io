@@ -1,7 +1,10 @@
 import { uiEl } from './dom.js';
 import { pyRepr } from '../py/repr.js';
-import { uiInputAssignments, uiLockIdText, uiDayLabel } from './format.js';
+import { uiInputAssignments } from './format.js';
+import { lockName } from '../game/messages.js';
 import { ui } from './app.js';
+import { uiVerdictHeld } from './render-submit-panel.js';
+import { uiDecryptScramble } from './breach-exploits.js';
 
 function uiFamilyName(familyKey) {
 const family = ui.content.families.find(function (item) { return item.key === familyKey; });
@@ -10,19 +13,24 @@ return family.name;
 function uiProblemByKey(key) {
 return ui.content.problems.find(function (problem) { return problem.key === key; });
 }
-function uiDailyLabel(run) {
-return 'DAILY #' + uiDayLabel(run.when.day);
-}
-const HUD_PILL_LABEL = { open:'OPEN',won:'WON',lost:'LOST' };
-const HUD_PILL_CLASS = { open:'hud-pill-open',won:'hud-pill-won',lost:'hud-pill-lost' };
+const UI_LOCK_HEADING_KEY = 'lock-header';
+const HUD_PILL_LABEL = { open:'FIRST TRY',won:'FIRST TRY ✓',lost:'FIRST TRY USED',shown:'ANSWER SHOWN' };
+const HUD_PILL_SPOKEN = { open:'First try still open.',won:'First try won.',lost:'First try used.',shown:'Answer shown: this breach pays 0 stars.' };
+const HUD_PILL_CLASS = { open:'hud-pill-open',won:'hud-pill-won',lost:'hud-pill-lost',shown:'hud-pill-lost' };
 
-function uiFirstTryPill(viewLock) {
-const label = HUD_PILL_LABEL[viewLock.firstTry];
-return uiEl('span',{
-className:'hud-pill ' + HUD_PILL_CLASS[viewLock.firstTry],
-text:label,
-attrs:{ title:viewLock.firstTryRule,'aria-label':'First try: ' + label + '. ' + viewLock.firstTryRule },
-});
+const uiPillFirstTry = new WeakMap();
+function uiShownFirstTry(viewLock,app) {
+const state = viewLock.revealed ? 'shown' :viewLock.firstTry;
+const breach = app.game.breach;
+if (!breach) return state;
+if (!uiVerdictHeld(app)) uiPillFirstTry.set(breach,state);
+return uiPillFirstTry.has(breach) ? uiPillFirstTry.get(breach) :state;
+}
+function uiFirstTryPill(viewLock,app) {
+const shown = uiShownFirstTry(viewLock,app);
+const attrs = { role:'img','aria-label':HUD_PILL_SPOKEN[shown] };
+if (shown !== 'shown') attrs.title = viewLock.firstTryRule;
+return uiEl('span',{ className:'hud-pill ' + HUD_PILL_CLASS[shown],text:HUD_PILL_LABEL[shown],attrs:attrs });
 }
 function uiHudSoundButton(app) {
 return uiEl('button',{
@@ -38,32 +46,30 @@ text:'☰',
 attrs:{ type:'button','data-action':'open-menu','data-focus-key':'open-menu','aria-label':'Menu' },
 });
 }
-function uiLockHud(ctx) {
-return uiEl('div',{
-className:'hud',
-children:[
-uiEl('span',{ className:'hud-daily',text:uiDailyLabel(ctx.run) }),
-uiEl('span',{ className:'hud-family hud-title',text:uiFamilyName(ctx.view.lock.family) }),
-uiFirstTryPill(ctx.view.lock),
-uiHudSoundButton(ctx.app),
-uiHudMenuButton(),
-],
-});
+function uiEarlyIdentityText(ctx) {
+const breach = ctx.app.game.breach;
+if (!breach.known && !breach.used.decrypt) return null;
+const note = breach.used.decrypt ? 'revealed by DECRYPT' :'known: you already breached this lock';
+return { id:ctx.problem.number + '. ' + ctx.problem.name,note,decrypted:Boolean(breach.used.decrypt) };
+}
+function uiTitleShown(lock,app) {
+return 'number' in lock && (lock.revealed || !uiVerdictHeld(app));
 }
 function uiLockHeaderText(ctx) {
 const lock = ctx.view.lock;
-if ('number' in lock) return { id:lock.number + '. ' + lock.name,note:'revealed by SHOW LINE' };
-const idText = uiLockIdText(ctx.problem.key,ctx.run.when);
-return { id:'LOCK 0x' + idText,note:'title hidden until you breach it' };
+if (uiTitleShown(lock,ctx.app)) return { id:lock.number + '. ' + lock.name,note:lock.revealed ? 'revealed by SHOW LINE' :'breached: title decrypted' };
+return uiEarlyIdentityText(ctx) || { id:lockName(ctx.problem.key),note:'title hidden until you breach it' };
+}
+function uiLockTitle(ctx,text) {
+const attrs = { tabindex:'-1','data-focus-key':UI_LOCK_HEADING_KEY };
+const scramble = text.decrypted ? uiDecryptScramble(ctx.app,text.id) :null;
+return scramble ? uiEl('h1',{ className:'lock-id',attrs,children:scramble }) :uiEl('h1',{ className:'lock-id',text:text.id,attrs });
 }
 function uiLockHeader(ctx) {
 const text = uiLockHeaderText(ctx);
 return uiEl('div',{
 className:'lock-header',
-children:[
-uiEl('h1',{ className:'lock-id',text:text.id,attrs:{ tabindex:'-1','data-focus-key':'lock-header' } }),
-uiEl('p',{ className:'lock-hidden-note',text:text.note }),
-],
+children:[uiLockTitle(ctx,text),uiEl('p',{ className:'lock-hidden-note',text:text.note })],
 });
 }
 function uiConstraintsList(constraints) {
@@ -89,22 +95,14 @@ const inputs = uiInputAssignments(problem,testCase.args).join('; ');
 const text = 'Example ' + (index + 1) + ': ' + inputs + ' → ' + pyRepr(testCase.expected);
 return uiEl('li',{ className:'example-item',text:text });
 }
-// Plain <ul>, not <ol>: each item's own text already spells out "Example N:",
-// so a browser-numbered <ol> would double the numbering and hang its marker
-// outside the column with no CSS claiming it.
 function uiExamplesList(problem) {
 const items = uiExampleCases(problem).map(function (testCase,index) {
 return uiExampleItem(problem,testCase,index);
 });
 return uiEl('ul',{ className:'examples-list',children:items });
 }
-function uiDayTransitionBanner(app) {
-if (!app.dayTransitionMessage) return null;
-return uiEl('p',{ className:'day-transition-banner',text:app.dayTransitionMessage });
-}
 function uiLockLeftColumn(ctx) {
-const children = [uiDayTransitionBanner(ctx.app),uiLockHeader(ctx),uiStatementBlock(ctx.view.lock),uiExamplesList(ctx.problem)];
-return uiEl('div',{ className:'lock-left',children:children.filter(Boolean) });
+return uiEl('div',{ className:'lock-left',children:[uiLockHeader(ctx),uiStatementBlock(ctx.view.lock),uiExamplesList(ctx.problem)] });
 }
 
-export { uiFamilyName, uiProblemByKey, uiLockHud, uiLockLeftColumn };
+export { UI_LOCK_HEADING_KEY, uiFamilyName, uiProblemByKey, uiFirstTryPill, uiHudSoundButton, uiHudMenuButton, uiLockLeftColumn };

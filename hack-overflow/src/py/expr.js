@@ -3,29 +3,12 @@ import { TOKEN_TYPES, KEYWORDS, peek, current, advance, tokenIsKeyword, tokenIsO
 function parseTest(parser) {
 return parseOrTest(parser);
 }
-/**
- * `*expr` (PEP 448 iterable unpacking) wherever one comma-list item may be
- * starred: a tuple/list display element or a call argument. The evaluator
- * side (run-expr.js's evalList/evalTuple, run-call.js's evalArgs) spreads a
- * `Starred` node's iterable items into that position at run time.
- */
 function parseStarrableTest(parser) {
 if (!atOp(parser,'*')) return parseTest(parser);
 const start = current(parser);
 advance(parser);
 return nodeAt(start,{ type:'Starred',value:parseTest(parser) });
 }
-/**
- * `*expr` is only meaningful spread into a real sequence (a list/tuple
- * display of 2+ items, a trailing-comma 1-tuple, or a call's argument list);
- * a *lone* `*expr` with nothing to spread into - bare grouping parens `(*x)`,
- * a bare statement `*x`, or an assignment side `y = *x` / `*x = y` - is a
- * CPython syntax error (verified live: each of those three shapes raises
- * SyntaxError). This parser's own syntax-error wording is never compared
- * against CPython's - porting CPython's exact SyntaxError text was
- * descoped (see judge-fixtures.test.js) - so only the outcome, not this
- * message, needs to match.
- */
 function rejectBareStarred(node) {
 if (node.type === 'Starred') parseFail(node,"can't use starred expression here");
 return node;
@@ -145,12 +128,6 @@ advance(parser);
 advance(parser);
 return nodeAt(tok,{ type:'Keyword',name:tok.value,value:parseTest(parser) });
 }
-/**
- * A plain positional argument may never follow a keyword argument, but PEP
- * 448 carves out `*expr` unpacking: `f(x=1, *a)` and even `f(*a, x=1, *b)`
- * are valid CPython syntax (verified live) because iterable unpacking is not
- * itself a positional argument in the grammar's sense.
- */
 function parseOneArgument(parser,positional,keyword) {
 const asKeyword = tryParseKeywordArg(parser);
 if (asKeyword) { keyword.push(asKeyword); return; }

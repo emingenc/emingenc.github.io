@@ -19,7 +19,6 @@ return items(value);
 function iterableItems(value) {
 return itemsOrThrow(value,notIterableMessage);
 }
-/** `*expr` in a tuple/list display or a non-first call argument (run-expr.js's evalList/evalTuple, run-call.js's evalArgs): CPython's own wording for a non-iterable there. */
 function starredItems(value) {
 return itemsOrThrow(value,starredNotIterableMessage);
 }

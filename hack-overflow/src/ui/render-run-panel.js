@@ -1,7 +1,10 @@
 import { uiEl } from './dom.js';
 import { pyRepr } from '../py/repr.js';
 import { lineTextFor, parseCandidate, VERDICT_WORDS } from '../logic/index.js';
+import { testCounts } from '../judge/counts.js';
 import { uiInputAssignments } from './format.js';
+
+const UI_BREACH_TRACE_CLAUSE = 'a failed BREACH fills TRACE';
 
 function uiSyntaxCheck(ctx) {
 const line = ctx.run.lock.line;
@@ -14,14 +17,11 @@ return { hasError:true,chip:chip,message:result.message };
 }
 function uiSyntaxFallbackMessage(ctx) {
 if (ctx.syntax.hasError) return ctx.syntax.message;
-return 'You changed the line since this SYNTAX ERROR. Run or submit again.';
+return 'You changed the line since this SYNTAX ERROR. PROBE or BREACH again.';
 }
 function uiSyntaxBody(ctx) {
 return uiEl('p',{ className:'panel-detail panel-syntax',text:'SyntaxError (game parser): ' + uiSyntaxFallbackMessage(ctx) });
 }
-// A runtime error is a bare pyClass string until a CPython-style `message`
-// is attached to it; this accepts both shapes so the display upgrades
-// itself once that data lands, without another UI change.
 function uiErrorClass(error) {
 return typeof error === 'string' ? error :error.pyClass;
 }
@@ -46,13 +46,22 @@ const text = 'Example ' + (index + 1) + ': ' + mark + ' ' + uiExampleVerdictWord
 + inputs + ' → expected ' + pyRepr(example.expected) + '; ' + uiExampleGotText(example);
 return uiEl('li',{ className:example.pass ? 'example-result pass' :'example-result fail',text:text });
 }
-function uiRunSummary(panelData) {
-return panelData.message ? uiEl('p',{ className:'panel-summary',text:panelData.message }) :null;
+function uiAllExamplesPass(panelData) {
+return panelData.examples.every(function (example) { return example.pass; });
+}
+function uiExamplesPassSentence(exampleCount,hiddenTests) {
+return 'EXAMPLES PASS ' + exampleCount + '/' + exampleCount + '. BREACH runs ' + hiddenTests + ' + the max test; ' + UI_BREACH_TRACE_CLAUSE + '.';
+}
+function uiRunSummary(ctx,panelData) {
+if (!uiAllExamplesPass(panelData)) return null;
+const counts = testCounts(ctx.problem.cases);
+const text = uiExamplesPassSentence(counts.examples,'all ' + counts.hidden + ' hidden tests');
+return uiEl('p',{ className:'panel-summary',text:text });
 }
 function uiRunResultsBody(ctx,panelData) {
 const rows = panelData.examples.map(function (example,index) { return uiExampleRow(ctx.problem,example,index); });
 const children = [uiEl('ol',{ className:'example-results-list',children:rows })];
-const summary = uiRunSummary(panelData);
+const summary = uiRunSummary(ctx,panelData);
 if (summary) children.push(summary);
 return uiEl('div',{ className:'test-panel-body',children:children });
 }
@@ -62,9 +71,9 @@ return uiRunResultsBody(ctx,panelData);
 }
 function uiRunAnnounceText(data) {
 if (!data.ok) return 'SYNTAX ERROR.';
-if (data.message) return data.message;
+if (uiAllExamplesPass(data)) return uiExamplesPassSentence(data.examples.length,'every hidden test');
 const passCount = data.examples.filter(function (example) { return example.pass; }).length;
 return passCount + ' of ' + data.examples.length + ' examples pass.';
 }
 
-export { uiSyntaxCheck, uiSyntaxBody, uiRunPanelBody, uiRunAnnounceText, uiRuntimeErrorText };
+export { UI_BREACH_TRACE_CLAUSE, uiSyntaxCheck, uiSyntaxBody, uiRunPanelBody, uiRunAnnounceText, uiRuntimeErrorText };

@@ -22,14 +22,6 @@ return fn();
 this.onSlotLine = false;
 }
 }
-/**
- * CPython's op-cost model evaluates each operand of a slot-line comparison
- * chain of 2+ operators that includes `in`/`not in` inside its own nested
- * closure (a lambda per operand, used to charge membership cost once each).
- * A not-yet-assigned local read from inside that closure is therefore a free
- * variable to CPython, not a plain local - `getVar` reports it accordingly
- * while this flag is set.
- */
 withChainThunk(fn) {
 const previous = this.inChainThunk;
 this.inChainThunk = true;

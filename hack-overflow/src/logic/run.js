@@ -94,4 +94,4 @@ const handler = ACT_HANDLERS[optionId];
 return handler ? handler(catalog,run) :run;
 }
 
-export { newRun, act };
+export { newRun, act, startLock };

@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="HACK://OVERFLOW: walk the Grid and breach each lock with one line of Python, judged in your browser. LeetCode patterns, levels and unlocks.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#030805">
+<link rel="icon" href="data:,">
 <title>HACK://OVERFLOW</title>
 <link rel="preload" href="assets/fonts/VT323-Regular.woff" as="font" type="font/woff" crossorigin>
 <link rel="stylesheet" href="styles/base.css">
@@ -13,9 +15,19 @@
 <link rel="stylesheet" href="styles/code.css">
 <link rel="stylesheet" href="styles/panels.css">
 <link rel="stylesheet" href="styles/result.css">
-<link rel="stylesheet" href="styles/review.css">
-<link rel="stylesheet" href="styles/route.css">
 <link rel="stylesheet" href="styles/title.css">
+<link rel="stylesheet" href="styles/grid.css">
+<link rel="stylesheet" href="styles/grid-hud.css">
+<link rel="stylesheet" href="styles/grid-controls.css">
+<link rel="stylesheet" href="styles/grid-travel.css">
+<link rel="stylesheet" href="styles/breach.css">
+<link rel="stylesheet" href="styles/trace.css">
+<link rel="stylesheet" href="styles/exploits.css">
+<link rel="stylesheet" href="styles/debrief.css">
+<link rel="stylesheet" href="styles/levelup.css">
+<link rel="stylesheet" href="styles/ending.css">
+<link rel="stylesheet" href="styles/fx.css">
+<link rel="stylesheet" href="styles/map.css">
 <link rel="modulepreload" href="src/judge/judge-worker.js">
 <link rel="modulepreload" href="src/logic/run.js">
 <link rel="modulepreload" href="src/logic/run-phase.js">
@@ -70,34 +82,94 @@
 <link rel="modulepreload" href="src/ui/judge-client.js">
 <link rel="modulepreload" href="src/ui/audio.js">
 <link rel="modulepreload" href="src/ui/storage.js">
+<link rel="modulepreload" href="src/ui/game-state.js">
+<link rel="modulepreload" href="src/ui/game-storage.js">
+<link rel="modulepreload" href="src/game/save.js">
+<link rel="modulepreload" href="src/game/progress.js">
+<link rel="modulepreload" href="src/game/path.js">
+<link rel="modulepreload" href="src/game/world.js">
+<link rel="modulepreload" href="src/game/world-data.js">
+<link rel="modulepreload" href="src/game/move.js">
+<link rel="modulepreload" href="src/game/exploits.js">
+<link rel="modulepreload" href="src/logic/index.js">
+<link rel="modulepreload" href="src/game/save-migrate.js">
+<link rel="modulepreload" href="src/ui/feedback.js">
+<link rel="modulepreload" href="src/ui/announce.js">
+<link rel="modulepreload" href="src/ui/dom.js">
+<link rel="modulepreload" href="src/ui/fx.js">
+<link rel="modulepreload" href="src/ui/grid-draw-fx.js">
+<link rel="modulepreload" href="src/game/particles.js">
+<link rel="modulepreload" href="src/game/ease.js">
+<link rel="modulepreload" href="src/game/viewport.js">
+<link rel="modulepreload" href="src/game/pins.js">
+<link rel="modulepreload" href="src/game/game-events.js">
+<link rel="modulepreload" href="src/ui/sfx.js">
+<link rel="modulepreload" href="src/ui/synth.js">
+<link rel="modulepreload" href="src/game/sfx-cues.js">
+<link rel="modulepreload" href="src/ui/bus.js">
+<link rel="modulepreload" href="src/game/bus.js">
+<link rel="modulepreload" href="src/ui/screens.js">
+<link rel="modulepreload" href="src/ui/screen-map.js">
+<link rel="modulepreload" href="src/ui/map-draw.js">
+<link rel="modulepreload" href="src/ui/grid-draw-tiles.js">
+<link rel="modulepreload" href="src/ui/grid-sprites.js">
+<link rel="modulepreload" href="src/ui/screen-grid.js">
+<link rel="modulepreload" href="src/ui/grid-events.js">
+<link rel="modulepreload" href="src/ui/screen-ending.js">
+<link rel="modulepreload" href="src/ui/grid-walk.js">
+<link rel="modulepreload" href="src/game/tween.js">
+<link rel="modulepreload" href="src/game/ending.js">
+<link rel="modulepreload" href="src/ui/screen-levelup.js">
+<link rel="modulepreload" href="src/game/messages.js">
+<link rel="modulepreload" href="src/ui/breach-flow.js">
+<link rel="modulepreload" href="src/ui/screen-traced.js">
+<link rel="modulepreload" href="src/ui/screen-debrief.js">
+<link rel="modulepreload" href="src/ui/render-result.js">
+<link rel="modulepreload" href="src/ui/format.js">
+<link rel="modulepreload" href="src/logic/solution-form.js">
+<link rel="modulepreload" href="src/ui/render-lock-left.js">
+<link rel="modulepreload" href="src/ui/breach-exploits.js">
+<link rel="modulepreload" href="src/ui/render-submit-panel.js">
+<link rel="modulepreload" href="src/ui/app.js">
+<link rel="modulepreload" href="src/ui/menu.js">
+<link rel="modulepreload" href="src/ui/onboarding.js">
+<link rel="modulepreload" href="src/ui/render-run-panel.js">
+<link rel="modulepreload" href="src/game/breach.js">
+<link rel="modulepreload" href="src/game/trace.js">
+<link rel="modulepreload" href="src/game/lock-run.js">
+<link rel="modulepreload" href="src/ui/grid-toast.js">
+<link rel="modulepreload" href="src/ui/grid-objective.js">
+<link rel="modulepreload" href="src/game/objective.js">
+<link rel="modulepreload" href="src/ui/grid-keys.js">
+<link rel="modulepreload" href="src/ui/grid-dpad.js">
+<link rel="modulepreload" href="src/ui/grid-touch.js">
+<link rel="modulepreload" href="src/game/tap.js">
+<link rel="modulepreload" href="src/ui/grid-travel.js">
+<link rel="modulepreload" href="src/game/travel.js">
+<link rel="modulepreload" href="src/ui/grid-canvas.js">
+<link rel="modulepreload" href="src/ui/grid-draw-avatar.js">
+<link rel="modulepreload" href="src/ui/avatar-sprite.js">
+<link rel="modulepreload" href="src/ui/grid-doors.js">
+<link rel="modulepreload" href="src/game/doors.js">
+<link rel="modulepreload" href="src/ui/grid-camera.js">
+<link rel="modulepreload" href="src/ui/grid-hud.js">
+<link rel="modulepreload" href="src/ui/screen-breach.js">
+<link rel="modulepreload" href="src/ui/breach-trace.js">
+<link rel="modulepreload" href="src/ui/breach-lock.js">
 <link rel="modulepreload" href="src/ui/keys.js">
 <link rel="modulepreload" href="src/ui/line-actions.js">
-<link rel="modulepreload" href="src/ui/app.js">
 <link rel="modulepreload" href="src/ui/render-lock.js">
-<link rel="modulepreload" href="src/ui/render-submit-panel.js">
-<link rel="modulepreload" href="src/ui/render-run-panel.js">
-<link rel="modulepreload" href="src/ui/format.js">
-<link rel="modulepreload" href="src/logic/index.js">
-<link rel="modulepreload" href="src/ui/dom.js">
 <link rel="modulepreload" href="src/ui/render-actions.js">
 <link rel="modulepreload" href="src/ui/render-tray.js">
 <link rel="modulepreload" href="src/ui/render-code.js">
-<link rel="modulepreload" href="src/ui/onboarding.js">
-<link rel="modulepreload" href="src/ui/render-lock-left.js">
-<link rel="modulepreload" href="src/ui/render-review.js">
-<link rel="modulepreload" href="src/ui/render-review-locks.js">
-<link rel="modulepreload" href="src/logic/solution-form.js">
-<link rel="modulepreload" href="src/ui/render-result.js">
-<link rel="modulepreload" href="src/ui/render-route.js">
-<link rel="modulepreload" href="src/ui/render-title.js">
 <link rel="modulepreload" href="src/ui/rain.js">
-<link rel="modulepreload" href="src/ui/menu.js">
+<link rel="modulepreload" href="src/ui/render-title.js">
+<link rel="modulepreload" href="src/ui/actions.js">
 <link rel="modulepreload" href="src/ui/dispatch-nav.js">
 <link rel="modulepreload" href="src/ui/dispatch-audit.js">
-<link rel="modulepreload" href="src/ui/sound-map.js">
 </head>
 <body>
-<div id="app"></div>
+<main id="app"></main>
 <div id="live" aria-live="polite" role="status"></div>
 <div id="selftest-badge" class="selftest-badge"></div>
 <script type="module" src="src/main.js"></script>

@@ -11,11 +11,6 @@ itemAssignmentMessage, unpackMismatchMessage, notEnoughValuesForStarredMessage, 
 EXTENDED_SLICE_NOT_ITERABLE_MESSAGE, unpackNotIterableMessage,
 } from './error-messages.js';
 
-/**
- * `iterableItems`, wrapped so a non-iterable assignment source gets the
- * CPython wording for *this* assignment shape (extended-slice vs unpack)
- * instead of the bare "not iterable" wording a `for` loop would use.
- */
 function itemsForAssign(value,message) {
 try {
 return iterableItems(value);
@@ -59,13 +54,6 @@ throw new PyError('ValueError',unpackMismatchMessage(target.elts.length,items.le
 }
 target.elts.forEach((element,i) => storeTarget(element,items[i],write.ctx));
 }
-/**
- * PEP 3132 `a, *b, c = seq`: the one `Starred` element among the target's
- * `elts` absorbs every item not claimed by a fixed (non-starred) target on
- * either side of it, as a plain list - CPython verified: `a, *b, c = [1,2,3]`
- * gives `b == [2]`; `a, *b, c = [1]` raises `not enough values to unpack
- * (expected at least 2, got 1)`.
- */
 function storeTupleStarred(target,starIndex,items,write) {
 const fixedCount = target.elts.length - 1;
 if (items.length < fixedCount) {

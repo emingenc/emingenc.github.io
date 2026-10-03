@@ -24,13 +24,6 @@ const inner = sourceCursor(en.target);
 return { length:inner.length,item:(at) => new PyTuple([at,inner.item(at)]) };
 }
 const DICT_MUTATED_MESSAGE = 'dictionary changed size during iteration';
-/**
- * A dict's `for` cursor. `length()` re-checks the live size against the
- * size captured at loop start every time it is called (once per iteration
- * attempt, including the final one that discovers exhaustion) so a size
- * change is reported even on what would otherwise be the last iteration -
- * the same order CPython's dict iterator uses.
- */
 function dictCursor(dict) {
 const keys = dictEntries(dict).map(([key]) => key);
 const initialSize = dict.entries.size;

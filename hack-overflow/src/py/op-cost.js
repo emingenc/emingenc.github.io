@@ -8,12 +8,6 @@ function containsCost(container) {
 return SEQUENCE_TYPES.has(pyType(container)) ? pySize(container) :1;
 }
 const GROWTH_METHODS = new Set(['extend']);
-/**
- * @param {*} receiver
- * @param {string} name
- * @param {Array<*>} positionalArgs - the call's actual positional arguments, not just their count:
- * `extend`'s cost is the size of what's being merged in, not of the receiver (see `augAddCost`).
- */
 function methodCost(receiver,name,positionalArgs) {
 if (GROWTH_METHODS.has(name) && pyType(receiver) === 'list') {
 const [argument] = positionalArgs;
@@ -24,13 +18,6 @@ const linear = LINEAR_METHODS.has(name) && isSequence;
 const popped = name === 'pop' && positionalArgs.length > 0 && pyType(receiver) === 'list';
 return linear || popped ? pySize(receiver) :1;
 }
-/**
- * `+=` growth cost, mirroring `pycost.py`'s `_aug_charge`: a list or str target's `+=` charges
- * the size of what's being merged in, charged before the growth happens (so a self-referential
- * line like `piles += piles` hits the op budget in O(log budget) iterations instead of doubling
- * an uncosted list until it OOMs or exceeds JS's max array length). Every other `+=` target is
- * plain numeric arithmetic, already bounded by `guardIntMagnitude` (arith.js).
- */
 function augAddCost(current,addend) {
 if (!SEQUENCE_TYPES.has(pyType(current))) return 0;
 return hasPySize(addend) ? pySize(addend) :1;
