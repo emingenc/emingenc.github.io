@@ -7,6 +7,7 @@ import { uiEnterGrid } from './screen-grid.js';
 import { uiLeaveBreach, uiDisconnect } from './breach-flow.js';
 import { uiOpenMap, uiCloseMap } from './screen-map.js';
 import { uiOpenLabs } from './lab-loader.js';
+import { uiOpenForge } from './forge-loader.js';
 import { uiOpenStream } from './stream-loader.js';
 import { uiBreachInert } from './render-submit-panel.js';
 import { uiStoryNext, uiStorySkip } from './story-dialogue.js';
@@ -41,7 +42,7 @@ function uiConfirmReset(app) {
 if (!uiResetAsked(app)) return;
 if (app.game.breach) uiLeaveBreach(app);
 uiResetGameState(app,uiResetGame(app.game.world));
-Object.assign(app,{ lab:null,story:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
+Object.assign(app,{ lab:null,story:null,forge:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
 }
 function uiOpenMenu(app) {
 uiWalkReleaseAll(app);
@@ -84,6 +85,9 @@ uiShowToast(app,{ text:spec.failText,kind:'info' });
 function uiHandleLabsOpen(app) {
 return uiOpenFromMenu(app,{ open:uiOpenLabs,failText:'CONTEXT LAB could not load. Try again.' });
 }
+function uiHandleForgeOpen(app) {
+return uiOpenFromMenu(app,{ open:uiOpenForge,failText:'HARNESS FORGE could not load. Try again.' });
+}
 function uiHandleStreamOpen(app) {
 return uiOpenFromMenu(app,{ open:uiOpenStream,failText:'CONTEXT STREAM could not load. Try again.' });
 }
@@ -101,6 +105,7 @@ const UI_NAV_HANDLERS = {
 'menu-labs':uiHandleLabsOpen,
 'story-next':uiStoryNext,
 'story-skip':uiStorySkip,
+'menu-forge':uiHandleForgeOpen,
 'menu-stream':uiHandleStreamOpen,
 };
 function uiIsNavActionId(actionId) {

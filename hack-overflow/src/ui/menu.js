@@ -36,6 +36,10 @@ function uiLabsButton(app) {
 if (app.screen !== 'grid') return null;
 return uiMenuButton('menu-labs','CONTEXT LAB');
 }
+function uiForgeButton(app) {
+if (app.screen !== 'grid') return null;
+return uiMenuButton('menu-forge','HARNESS FORGE');
+}
 function uiStreamButton(app) {
 if (app.screen !== 'grid') return null;
 return uiMenuButton('menu-stream','CONTEXT STREAM');
@@ -45,6 +49,7 @@ const stops = [
 uiMenuButton('menu-close','RESUME'),
 uiMenuButton('toggle-sound',app.soundOn ? 'SOUND: ON' :'SOUND: OFF'),
 uiLabsButton(app),
+uiForgeButton(app),
 uiStreamButton(app),
 uiDisconnectButton(app),
 uiMenuButton('reset-progress','RESET PROGRESS'),
