@@ -201,10 +201,6 @@ return current(parser).type === type;
 function atOp(parser,value) {
 return tokenIsOp(current(parser),value);
 }
-// NEWLINE/INDENT/DEDENT/ENDMARKER tokens carry value:'', so quoting
-// tok.value verbatim in an error message would print an empty, uninformative
-// "found ''"; name the boundary in words instead so an unfinished line such
-// as `x in` always gets a real message.
 function describeToken(tok) {
 if (tok.value) return `'${tok.value}'`;
 if (tok.type === TOKEN_TYPES.NEWLINE) return 'end of line';

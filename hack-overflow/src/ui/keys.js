@@ -1,5 +1,6 @@
-import { BUILD_PHASE, RESULT_PHASE, REVIEW_PHASE } from '../logic/run-phase.js';
+import { BUILD_PHASE } from '../logic/run-phase.js';
 import { uiLineRemovePosition } from './line-actions.js';
+import { UI_LOCK_HEADING_KEY } from './render-lock-left.js';
 
 const UI_TRAY_NEXT_KEYS = { ArrowRight:1,ArrowDown:1 };
 const UI_TRAY_PREV_KEYS = { ArrowLeft:1,ArrowUp:1 };
@@ -12,22 +13,21 @@ const active = document.activeElement;
 const raw = active && active.getAttribute('data-tray-position');
 return raw === null || raw === undefined ? null :Number(raw);
 }
+function uiFocusAwaitsTray() {
+const active = document.activeElement;
+return !active || active === document.body || active.getAttribute('data-focus-key') === UI_LOCK_HEADING_KEY;
+}
+function uiEnterTray(app) {
+const last = app.run.lock.tray.order.length - 1;
+app.trayFocusIndex = Math.max(0,Math.min(app.trayFocusIndex,last));
+return true;
+}
 function uiMoveTrayFocus(app,step) {
 const current = uiFocusedTrayPosition();
-if (current === null) return false;
+if (current === null) return uiFocusAwaitsTray() && uiEnterTray(app);
 const length = app.run.lock.tray.order.length;
 app.trayFocusIndex = (current + step + length) % length;
 return true;
-}
-function uiFocusedButtonActionId() {
-const active = document.activeElement;
-return (active && active.getAttribute && active.getAttribute('data-action')) || null;
-}
-function uiEnterActionId(phase) {
-const focused = uiFocusedButtonActionId();
-if (focused) return focused;
-if (phase === RESULT_PHASE) return 'next';
-return phase === REVIEW_PHASE ? 'practice' :null;
 }
 function uiFocusedLineRemoveAction() {
 const active = document.activeElement;
@@ -50,16 +50,8 @@ return removeId ? { type:'action',id:removeId } :null;
 const actionId = uiSimpleBuildKeyAction(event);
 return actionId ? { type:'action',id:actionId } :null;
 }
-function uiResolveKeyAction(event,app) {
-if (event.key === 'm' || event.key === 'M') return { type:'action',id:'toggle-sound' };
-if (app.menuOpen) return event.key === 'Escape' ? { type:'toggle-menu' } :null;
-if (!app.run) return null;
-if (app.run.phase === BUILD_PHASE) return uiBuildKeyAction(event,app);
-const enterId = event.key === 'Enter' ? uiEnterActionId(app.run.phase) :null;
-return enterId ? { type:'action',id:enterId } :null;
-}
 function uiKeyAction(event,app) {
-const result = uiResolveKeyAction(event,app);
+const result = app.run && app.run.phase === BUILD_PHASE ? uiBuildKeyAction(event,app) :null;
 if (result) event.preventDefault();
 return result;
 }

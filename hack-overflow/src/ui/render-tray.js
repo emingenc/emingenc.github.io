@@ -1,24 +1,29 @@
+import { uiStruckChipPositions, uiSweepStruckChips } from './breach-exploits.js';
 import { uiEl, uiPointerIsCoarse } from './dom.js';
 import { MAX_LINE_CHIPS } from '../logic/index.js';
 
-function uiTrayChip(label,position,isCurrent) {
-return uiEl('button',{
-className:'chip tray-chip',
-text:label,
-attrs:{
+const UI_STRUCK_CHIP_WHY = ', struck: the answer does not need it';
+function uiTrayChipClass(chip) {
+return chip.isStruck ? 'chip tray-chip chip-struck' :'chip tray-chip';
+}
+function uiTrayChip(chip) {
+const attrs = {
 type:'button',
-'data-action':'chip-' + position,
-'data-focus-key':'chip-' + position,
-'data-tray-position':String(position),
-tabindex:isCurrent ? '0' :'-1',
-},
-});
+'data-action':'chip-' + chip.position,
+'data-focus-key':'chip-' + chip.position,
+'data-tray-position':String(chip.position),
+tabindex:chip.isCurrent ? '0' :'-1',
+};
+if (chip.isStruck) attrs['aria-label'] = chip.label + UI_STRUCK_CHIP_WHY;
+return uiEl('button',{ className:uiTrayChipClass(chip),text:chip.label,attrs });
 }
 function uiChipTray(ctx) {
 const current = ctx.app.trayFocusIndex;
+const struck = uiStruckChipPositions(ctx.app);
 const chips = ctx.view.lock.tray.map(function (label,position) {
-return uiTrayChip(label,position,position === current);
+return uiTrayChip({ label,position,isCurrent:position === current,isStruck:struck.includes(position) });
 });
+uiSweepStruckChips(ctx.app,struck.map(function (position) { return chips[position]; }));
 const full = ctx.view.lock.line.length >= MAX_LINE_CHIPS;
 return uiEl('div',{
 className:'chip-tray' + (full ? ' chip-tray-full' :''),
@@ -36,7 +41,7 @@ if (!ctx.view.lock.revealed) return null;
 return uiEl('p',{ className:'revealed-line',text:'Answer: ' + ctx.view.lock.revealedText });
 }
 function uiKeyLegend() {
-const text = 'ARROWS move chip | ENTER/SPACE add | ⌫ backspace | SHIFT+⌫ clear | R run | S submit | M sound | ESC menu';
+const text = 'ARROWS move chip | ENTER/SPACE add | ⌫ backspace | SHIFT+⌫ clear | R PROBE | S BREACH | 1/2 exploits | M sound | ESC menu';
 return uiEl('p',{ className:'key-legend',text:text });
 }
 function uiTraySection(ctx) {

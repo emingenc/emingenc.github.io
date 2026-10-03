@@ -1,0 +1,128 @@
+.grid-travel {
+  grid-area:travel;
+  min-width:0;
+}
+
+.grid-travel-toggle {
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  width:100%;
+}
+
+.grid-travel-toggle::before {
+  content:'▸' / '';
+  margin-right:var(--sp-3);
+}
+
+.grid-travel-toggle[aria-expanded="true"]::before {
+  content:'▾' / '';
+}
+
+.grid-travel-panel {
+  position:fixed;
+  top:0;
+  right:0;
+  bottom:0;
+  z-index:15;
+  width:min(440px,92vw);
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-4);
+  padding:var(--sp-5);
+  border-left:2px solid var(--border);
+  background:var(--panel);
+  box-shadow:-12px 0 32px rgba(0,0,0,0.45);
+}
+
+.grid-travel-panel[hidden] {
+  display:none;
+}
+
+.grid-travel-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--sp-4);
+}
+
+.grid-travel-heading {
+  margin:0;
+  font-family:var(--font-display);
+  font-size:var(--fs-xl);
+  color:var(--bright);
+}
+
+.grid-travel-list {
+  list-style:none;
+  margin:0;
+  padding:var(--sp-3);
+  scroll-padding-block:var(--sp-3);
+  min-height:0;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-3);
+}
+
+.travel-go {
+  width:100%;
+  min-height:var(--tap);
+  display:flex;
+  align-items:center;
+  gap:var(--sp-4);
+  text-align:left;
+}
+
+.travel-go-tag {
+  flex:none;
+  color:var(--primary);
+}
+
+.travel-go-body {
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-1);
+}
+
+.travel-go-name {
+  line-height:1.2;
+  overflow-wrap:break-word;
+}
+
+.travel-go-info {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  column-gap:var(--sp-4);
+  row-gap:var(--sp-1);
+}
+
+.travel-go-meta {
+  font-size:var(--fs-md);
+  color:var(--dim);
+}
+
+.travel-go-state {
+  margin-left:auto;
+  color:var(--dim);
+  white-space:nowrap;
+}
+
+@media (max-width:767px) {
+  .grid-travel-panel {
+    top:auto;
+    left:0;
+    right:0;
+    bottom:0;
+    width:auto;
+    max-height:70vh;
+    border-left:none;
+    border-top:2px solid var(--border);
+    border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow:0 -12px 32px rgba(0,0,0,0.45);
+    padding-bottom:calc(var(--sp-5) + env(safe-area-inset-bottom,0px));
+  }
+}

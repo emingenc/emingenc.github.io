@@ -1,87 +1,89 @@
-import { ui } from './app.js';
-import { uiLoadProfile, uiSaveRun, uiIsResumable, uiResetProgress } from './storage.js';
 import { uiToggleSound } from './audio.js';
+import { uiResetGame } from './game-storage.js';
+import { uiResetGameState } from './game-state.js';
+import { uiWalkReleaseAll } from './grid-walk.js';
+import { uiShowToast } from './grid-toast.js';
+import { uiEnterGrid } from './screen-grid.js';
+import { uiLeaveBreach, uiDisconnect } from './breach-flow.js';
+import { uiOpenMap, uiCloseMap } from './screen-map.js';
+import { uiBreachInert } from './render-submit-panel.js';
 
-function uiFreshOrSavedRun() {
-const profile = uiLoadProfile();
-if (!profile) return ui.audit.newRun({ day:0,attempt:0,fresh:true });
-return ui.audit.newRun({ day:profile.today,attempt:profile.attempt,fresh:false,profile:profile });
+function uiStartGame(app) {
+uiEnterGrid(app);
+if (!app.game.notice) return;
+uiShowToast(app,{ text:app.game.notice,kind:'info' });
+app.game.notice = null;
 }
-function uiStartOrResumeRun(app) {
-app.run = uiIsResumable(app.savedRun) ? app.savedRun :uiFreshOrSavedRun();
-app.runStartProfile = app.run.profile;
-app.screen = 'lock';
-app.lastFocusKey = 'lock-header';
-uiSaveRun(app.run);
+function uiResetAsked(app) {
+return app.menuOpen && Boolean(app.confirmReset);
 }
 function uiHandleToggleSound(app) {
 app.soundOn = uiToggleSound();
-app.lastFocusKey = 'toggle-sound';
+if (uiResetAsked(app)) return;
+if (app.menuOpen || !app.game.travelOpen) app.lastFocusKey = 'toggle-sound';
 }
-const UI_RESET_CONFIRM_TEXT = 'Reset all progress? This clears every box, due day and saved run.';
-function uiHandleResetProgress(app) {
-if (!window.confirm(UI_RESET_CONFIRM_TEXT)) return;
-uiResetProgress();
-app.run = null;
-app.savedRun = null;
-app.runStartProfile = null;
-app.menuOpen = false;
-app.screen = 'title';
-app.lastFocusKey = 'title-start';
+function uiAskResetProgress(app) {
+uiWalkReleaseAll(app);
+app.confirmReset = app.menuOpen ? 'menu' :'screen';
+app.menuOpen = true;
+app.lastFocusKey = 'reset-cancel';
 }
-function uiGoToRoute(app) {
-app.screen = 'route';
-app.menuOpen = false;
-app.lastFocusKey = 'route';
+function uiCancelReset(app) {
+if (!uiResetAsked(app)) return;
+app.menuOpen = app.confirmReset === 'menu';
+app.confirmReset = null;
+app.lastFocusKey = 'reset-progress';
 }
-function uiLeaveRoute(app) {
-app.screen = app.run ? 'lock' :'title';
-app.lastFocusKey = 'route-back';
-}
-function uiHandleRoutePeek(app,actionId) {
-const nodeId = actionId.slice('route-peek-'.length);
-app.routePeekKey = app.routePeekKey === nodeId ? null :nodeId;
-app.lastFocusKey = 'route-node-' + nodeId;
+function uiConfirmReset(app) {
+if (!uiResetAsked(app)) return;
+if (app.game.breach) uiLeaveBreach(app);
+uiResetGameState(app,uiResetGame(app.game.world));
+Object.assign(app,{ run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
 }
 function uiOpenMenu(app) {
+uiWalkReleaseAll(app);
 app.menuOpen = true;
+app.confirmReset = null;
 app.lastFocusKey = 'menu-close';
 }
-function uiCloseMenu(app) {
-app.menuOpen = false;
-app.lastFocusKey = 'open-menu';
+function uiMenuOpenerKey(app) {
+if (app.confirmReset === 'screen') return 'reset-progress';
+if (app.screen !== 'grid') return 'open-menu';
+return app.game.travelOpen ? 'travel-close' :'grid-stage';
 }
-function uiGoToTitleRoute(app) {
-app.screen = 'route';
-app.lastFocusKey = 'title-route';
+function uiCloseMenu(app) {
+app.lastFocusKey = uiMenuOpenerKey(app);
+app.menuOpen = false;
+app.confirmReset = null;
+}
+function uiMenuDisconnect(app) {
+if (app.screen !== 'breach' || uiBreachInert(app)) return;
+app.menuOpen = false;
+uiDisconnect(app);
+}
+function uiHandleMapOpen(app) {
+uiOpenMap(app);
+}
+function uiHandleMapClose(app) {
+uiCloseMap(app);
 }
 const UI_NAV_HANDLERS = {
-'title-start':uiStartOrResumeRun,
-'title-route':uiGoToTitleRoute,
-route:uiGoToRoute,
-'route-back':uiLeaveRoute,
-'route-peek-close':function (app) {
-app.lastFocusKey = 'route-node-' + app.routePeekKey;
-app.routePeekKey = null;
-},
+'title-start':uiStartGame,
 'toggle-sound':uiHandleToggleSound,
-'reset-progress':uiHandleResetProgress,
+'reset-progress':uiAskResetProgress,
+'reset-confirm':uiConfirmReset,
+'reset-cancel':uiCancelReset,
 'open-menu':uiOpenMenu,
 'menu-close':uiCloseMenu,
+'menu-disconnect':uiMenuDisconnect,
+'map-open':uiHandleMapOpen,
+'map-close':uiHandleMapClose,
 };
-function uiIsRoutePeekId(actionId) {
-return actionId.indexOf('route-peek-') === 0 && actionId !== 'route-peek-close';
-}
 function uiIsNavActionId(actionId) {
-return Boolean(UI_NAV_HANDLERS[actionId]) || uiIsRoutePeekId(actionId);
+return Object.hasOwn(UI_NAV_HANDLERS,actionId);
 }
 function uiApplyNavAction(app,actionId) {
-if (uiIsRoutePeekId(actionId)) {
-uiHandleRoutePeek(app,actionId);
-return;
-}
-const handler = UI_NAV_HANDLERS[actionId];
-if (handler) handler(app);
+if (uiIsNavActionId(actionId)) UI_NAV_HANDLERS[actionId](app);
 }
 
 export { uiIsNavActionId, uiApplyNavAction };

@@ -107,29 +107,10 @@ if (type !== 'int' && type !== 'bool') return false;
 const value = Number(item);
 return withinRangeBounds(value,range) && (value - range.start) % range.step === 0;
 }
-/**
- * `pyEquals(item, element)` per element, specialized for a numeric `item`
- * (the overwhelming case for `in`/`not in` over a `List[int]` judged
- * program, often run up to the op budget's full size): skips `pyEquals`'s
- * generic `pyType` dispatch on both sides and compares directly, while still
- * matching Python's cross-type `int`/`bool` numeric equality (`1 == True`).
- * A non-numeric `element` can never equal a numeric `item` (`pyEquals`
- * returns `false` whenever exactly one side is numeric), so this needs no
- * fallback to the general comparator for that side.
- */
 function numericEquals(item,element) {
 const type = typeof element;
 return (type === 'number' || type === 'boolean') && Number(item) === Number(element);
 }
-/**
- * `list`/`tuple` membership's shared scan, fast-pathed for a numeric `item`
- * (see `numericEquals`). A hand-rolled loop rather than `.some` for that
- * numeric case: this is the single hottest path a slow judged line can hit
- * (a `List[int]` membership test run up to the op budget's full size, so
- * potentially every element on every op-budget tick), and avoiding one
- * indirect callback invocation per element measurably compounds at that
- * scale (profiled on a 100M-comparison judged line).
- */
 function sequenceContains(item,items) {
 if (typeof item === 'number' || typeof item === 'boolean') {
 for (let i = 0; i < items.length; i += 1) if (numericEquals(item,items[i])) return true;
@@ -145,14 +126,6 @@ dict:(item,container) => dictHas(container,item),
 set:setContains,
 range:rangeContains,
 };
-/**
- * `container instanceof PyDict` is a direct hot-path shortcut around the
- * `pyType` + `CONTAINS_TESTS` object-property dispatch below: a `for`-body
- * `in`/`not in` test against a dict (op-cost.js's per-op containment check)
- * runs this on every loop tick, so skipping the generic type lookup for the
- * one container type that dominates that path is worth the special case.
- * Every other container kind still goes through the general dispatch.
- */
 function pyContains(item,container) {
 if (container instanceof PyDict) return dictHas(container,item);
 const test = CONTAINS_TESTS[pyType(container)];

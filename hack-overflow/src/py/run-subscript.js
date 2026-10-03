@@ -27,15 +27,6 @@ return value;
 function isIndexType(value) {
 return pyType(value) === 'int' || pyType(value) === 'bool';
 }
-/**
- * Validates and normalizes a subscript index against a container's length,
- * with CPython's exact wording for each container `kind` ('list', 'tuple',
- * 'str' or 'range'; list assignment has its own out-of-range wording).
- * @param {*} index - the evaluated index value
- * @param {number} length - the container's current length
- * @param {{kind: string, isAssignment?: boolean}} options
- * @returns {number} the resolved, non-negative index
- */
 function boundIndex(index,length,{ kind,isAssignment = false }) {
 if (!isIndexType(index)) throw new PyError('TypeError',indexTypeMessage(kind,index));
 const at = Number(index) < 0 ? Number(index) + length :Number(index);

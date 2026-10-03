@@ -10,9 +10,6 @@ function recordDistinct(list,text,outcomes,kind) {
 if (list.some((entry) => entry.text === text)) return list;
 return [...list,{ text,outcomes,kind }];
 }
-// `kind` ('run' or 'submit') names which action produced this evidence row
-// so the result screen can prefix it; a text already recorded keeps the
-// kind of its first judged occurrence.
 function judgeEntry(catalog,lock,text,kind) {
 const { outcomes } = fullJudge(catalog,lock.key,text);
 return { lock:{ ...lock,judged:recordDistinct(lock.judged,text,outcomes,kind) },outcomes };

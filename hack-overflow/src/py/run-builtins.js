@@ -60,21 +60,10 @@ return current;
 function extremeArgs(positional) {
 return positional.length === 1 ? iterableItems(positional[0]) :positional;
 }
-/**
- * CPython's real `min`/`max` check the positional-argument count before
- * ever looking at keywords, so a keyword-only call (`min(x=1)`) still
- * reports "expected at least 1 argument, got 0" - never a keyword error.
- */
 function requireExtremeArgs(name,positional,keyword) {
 if (positional.length === 0) throw new PyError('TypeError',extremeTooFewArgsMessage(name));
 if (keyword.length > 0) throw new PyError('TypeError',extremeUnexpectedKeywordMessage(name,keyword[0].name));
 }
-/**
- * Shared implementation of `min()`/`max()`: same argument shapes (one
- * iterable, or two-or-more positional candidates), differing only in the
- * comparator and the builtin's own name (used in its error wording).
- * @param {{better: Function, name: string, positional: Array<*>, keyword: Array<*>}} call
- */
 function callExtreme({ better,name,positional,keyword }) {
 requireExtremeArgs(name,positional,keyword);
 return pickExtreme(extremeArgs(positional),better,name);

@@ -10,33 +10,15 @@ const FEW_FAILS_CEILING = 2;
 const FIRST_TRY_OPEN = 'open';
 const FIRST_TRY_WON = 'won';
 const FIRST_TRY_LOST = 'lost';
-const FIRST_TRY_RULE = 'First try = your first SUBMIT. RUN is free.';
+const FIRST_TRY_RULE = 'First try = your first BREACH. PROBE is free.';
 
 function countFailedSubmits(submitted) {
 return submitted.filter((entry) => !isFullPass(entry.outcomes)).length;
 }
-/**
- * The first-try state of a lock, from its distinct SUBMIT attempts only:
- * RUN never counts, because RUN is meant to be a safe, repeatable check
- * that must never cost the player their one first-try attempt. `open`
- * before any SUBMIT, `won`/`lost` from the outcome of the very first one,
- * permanently.
- * @param {Array<{text: string, outcomes: string}>} submitted - distinct
- *   texts judged by SUBMIT, in the order first submitted
- * @returns {'open'|'won'|'lost'} the first-try state
- */
 function firstTryFor(submitted) {
 if (submitted.length === 0) return FIRST_TRY_OPEN;
 return isFullPass(submitted[0].outcomes) ? FIRST_TRY_WON :FIRST_TRY_LOST;
 }
-/**
- * Stars for a lock from its distinct SUBMIT attempts only; RUN never costs
- * a star. Three stars only on a won first try; SHOW LINE always zeroes it.
- * @param {Array<{text: string, outcomes: string}>} submitted - distinct
- *   texts judged by SUBMIT, in the order first submitted
- * @param {boolean} revealed - SHOW LINE was used on this lock
- * @returns {number} 0-3 stars
- */
 function starsFor(submitted,revealed) {
 if (revealed) return NO_STARS;
 if (firstTryFor(submitted) === FIRST_TRY_WON) return THREE_STARS;

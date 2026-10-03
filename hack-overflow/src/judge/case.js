@@ -14,14 +14,6 @@ if (error instanceof TimeLimitExceeded) return { letter:'T',ops:meter.ops,detail
 if (error instanceof PyError) return { letter:'R',ops:meter.ops,detail:error.pyClass,message:error.pyMessage };
 throw error;
 }
-/**
- * Runs one case against a compiled line and reports its verdict letter,
- * op count, evidence detail, and a nullable failure `message` holding the
- * exact CPython `str(exc)` text for a runtime-error verdict.
- * @param {{func:object, slot:object, compare:string, budget:object}} compiled
- * @param {{args:Array<*>, expected:*}} testCase
- * @returns {{letter:string, ops:number, detail:*, message:?string}}
- */
 function runCaseDetail(compiled,testCase) {
 const meter = new Meter(budgetFor(compiled.budget,testCase.args));
 const run = { meter,args:testCase.args.map(pyDeepCopy) };

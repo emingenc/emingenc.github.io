@@ -76,14 +76,6 @@ return problemState.servedSeq !== NEVER;
 function hasBeenSolved(problemState) {
 return problemState.solvedSeq !== NEVER;
 }
-/**
- * A family counts as solved once any one of its problems has been solved:
- * a locked family opens once every prereq family has at least one solved
- * problem.
- * @param {object} profile
- * @param {{problems: Array<string>}} family - a live family (its problem keys)
- * @returns {boolean}
- */
 function isFamilySolved(profile,family) {
 return family.problems.some((key) => hasBeenSolved(profile.problems[key]));
 }

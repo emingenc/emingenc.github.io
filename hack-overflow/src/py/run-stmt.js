@@ -18,26 +18,10 @@ function execAssign(node,ctx) {
 assignTargets(node.targets,evaluateExpr(node.value,ctx),ctx);
 }
 const AUG_TO_BIN = { '+=':'+','-=':'-','*=':'*','//=':'//','%=':'%' };
-/**
- * `list += x` calls `list.__iadd__(x)` - extend semantics, requiring `x`
- * iterable (`'int' object is not iterable` for a non-iterable, and a string
- * spreads its characters, verified live: `[1,2] += 'ab'` -> `[1,2,'a','b']`)
- * - not `__add__`'s same-type-only concatenation every other `+=` target
- * uses (`str`/`tuple` have no `__iadd__`, so CPython falls back to `__add__`
- * for those: `'a' += 1` -> "can only concatenate str (not "int") to str").
- */
 function augAddResult(current,rhs) {
 if (pyType(current) === 'list') { current.push(...iterableItems(rhs)); return current; }
 return applyBinOp('+',current,rhs);
 }
-/**
- * Charges an augmented assignment's growth cost *before* the real op runs, mirroring
- * `pycost.py`'s `_aug_charge`: `+=` on a list/str charges the size of what's merged in
- * (`augAddCost`), and `*=`'s sequence repeat charges the size of the result it is about to
- * build (`repeatResultSize`) - both charged, and so able to stop the case with Time Limit
- * Exceeded, before the growth itself happens. Every other op is plain numeric arithmetic,
- * already bounded by `guardIntMagnitude` inside `applyBinOp` (arith.js).
- */
 function chargeAugGrowth(op,current,rhs,ctx) {
 if (op === '+=') { ctx.chargeSlot(augAddCost(current,rhs)); return; }
 if (op !== '*=') return;
@@ -72,12 +56,6 @@ return pyTruthy(evaluateExpr(node.test,ctx));
 function execIf(node,ctx) {
 execBody(headerTest(node,ctx) ? node.body :node.orelse,ctx);
 }
-/**
- * A `switch` on `node.type` rather than a `{Type: fn}` dispatch object, for
- * the same reason as `evaluateExpr` (run-expr.js): every executed statement
- * anywhere in a judged program passes through this call, so keeping V8's
- * inline cache monomorphic here matters as much as it does for expressions.
- */
 function execStatement(node,ctx) {
 switch (node.type) {
 case 'ExprStmt':execExprStmt(node,ctx); return;
@@ -97,9 +75,6 @@ if (!startsSlotStatement) { execStatement(node,ctx); return; }
 ctx.meter.charge(1);
 ctx.withSlot(() => execStatement(node,ctx));
 }
-// A plain indexed loop instead of Array#forEach: execBody runs on every
-// loop-body execution (a hot path - op-cost.js charges one op per tick), so
-// avoiding forEach's per-call closure/iteration overhead is worth it here.
 function execBody(statements,ctx) {
 for (let i = 0; i < statements.length; i += 1) execOne(statements[i],ctx);
 }

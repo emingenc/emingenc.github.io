@@ -34,11 +34,21 @@ uiClear(root);
 nodes.forEach(function (node) { uiAppendChild(root,node); });
 return root;
 }
+let uiAnnounceQueue = null;
+function uiFlushAnnounce(live) {
+live.textContent = uiAnnounceQueue.join(' ');
+uiAnnounceQueue = null;
+}
 function uiAnnounce(message) {
 const live = uiQs(UI_LIVE_ID);
-if (!live) return;
+if (!live || !message) return;
+if (uiAnnounceQueue) {
+uiAnnounceQueue.push(message);
+return;
+}
+uiAnnounceQueue = [message];
 live.textContent = '';
-window.setTimeout(function () { live.textContent = message; },UI_ANNOUNCE_DELAY_MS);
+window.setTimeout(function () { uiFlushAnnounce(live); },UI_ANNOUNCE_DELAY_MS);
 }
 function uiFindByFocusKey(root,key) {
 if (!key) return null;
@@ -47,7 +57,7 @@ return node && !node.disabled ? node :null;
 }
 function uiRestoreFocus(root,key,fallback) {
 const node = uiFindByFocusKey(root,key) || fallback || root;
-if (node && typeof node.focus === 'function') node.focus();
+if (node && typeof node.focus === 'function') node.focus({ preventScroll:true });
 }
 function uiLeetcodeLink(slug,text) {
 return uiEl('a',{

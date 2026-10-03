@@ -10,7 +10,6 @@ const LIST_INDEX_NOT_FOUND_MESSAGE = 'list.index(x): x not in list';
 const POP_FROM_EMPTY_MESSAGE = 'pop from empty list';
 const POP_INDEX_OUT_OF_RANGE_MESSAGE = 'pop index out of range';
 const EXACTLY_ONE_ARG = 1;
-/** `[1].append()`/`[1].append(1, 2)`: `list.append`/`list.count` each take exactly one argument. */
 function requireOneArg(qualifiedName,args) {
 if (args.length !== EXACTLY_ONE_ARG) throw new PyError('TypeError',methodArgCountMessage(qualifiedName,args.length));
 }
@@ -83,7 +82,6 @@ return count;
 function strCount(receiver,args) {
 return countSubstring(receiver,args[0]);
 }
-/** Unicode-aware `str.isalnum()`: true only for a non-empty string of letters/digits. Our content is ASCII, so the ASCII case is exact CPython; broader Unicode uses the `\p{L}\p{N}` approximation (see content/README.md). */
 const ALNUM_RE = /^[\p{L}\p{N}]+$/u;
 function strIsalnum(receiver) {
 return ALNUM_RE.test(receiver);

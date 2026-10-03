@@ -14,13 +14,6 @@ return { verdict:SYNTAX_ERROR_VERDICT,test:null,of:null,...emptyFields() };
 function wrongAnswerFields(testCase,result) {
 return { ...emptyFields(),input:testCase.args,expected:testCase.expected,got:result.detail };
 }
-/**
- * Formats the combined `"<class>: <message>"` line shown for a runtime
- * error, or `null` when no CPython message applies.
- * @param {?string} pyClass
- * @param {?string} message
- * @returns {?string}
- */
 function errorText(pyClass,message) {
 return message === null ? null :`${pyClass}: ${message}`;
 }
@@ -65,15 +58,6 @@ return smallCases.map((testCase,index) => ({ index,testCase,result:runCaseDetail
 function firstFailure(evaluated) {
 return evaluated.find((entry) => entry.result.letter !== 'P') || null;
 }
-/**
- * Judges one SUBMIT: every small case, then the max case, using the
- * problem's single {examples, hidden, total} test-count set (judge/counts.js)
- * for every count shown so it can never diverge from the RUN panel.
- * @param {object} catalog - `createCatalog(content)`
- * @param {string} key - problem key
- * @param {string} text - the candidate slot line
- * @returns {object} the submit view model
- */
 function submitFor(catalog,key,text) {
 const problem = catalog.problemByKey.get(key);
 const func = compileLine(problem,text);
