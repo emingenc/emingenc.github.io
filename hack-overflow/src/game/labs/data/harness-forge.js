@@ -1,0 +1,92 @@
+
+const c0=0,c1=1,c2=2,c3=3,c4=4,c5=5,c6=6;
+const r0=0,r1=1,r2=2,r3=3,r4=4,r5=5,r6=6,r7=7,r8=8,r9=9;
+
+const HARNESS_FORGE = {
+id:'forge',
+title:'HARNESS FORGE',
+checkpoints:['PROMPT','PLAN','CALL','OBSERVE','SHIP'],
+pieceOrder:['guard','retry','limit','log','test'],
+pieces:{
+guard:{id:'guard',label:'GUARD',key:'1',cost:4,range:2.2,cooldown:14,damage:3,blurb:'blocks dangerous tool calls',color:'cyan'},
+retry:{id:'retry',label:'RETRY',key:'2',cost:3,range:2.5,cooldown:10,damage:2,pushback:0.5,blurb:'gives a failed step another try',color:'green'},
+limit:{id:'limit',label:'LIMIT',key:'3',cost:3,range:2.5,cooldown:8,damage:2,blurb:'caps loops and spend',color:'amber'},
+log:{id:'log',label:'LOG',key:'4',cost:2,range:3,cooldown:12,damage:1,reveals:true,blurb:'reveals hidden hazards in range',color:'violet'},
+test:{id:'test',label:'TEST',key:'5',cost:4,range:2.2,cooldown:16,damage:4,blurb:'kills a bad output before it ships',color:'magenta'},
+},
+threats:{
+loop:{id:'loop',label:'INFINITE LOOP',hp:3,speed:2.2,hidden:false,counter:'limit',leak:1,reward:1,
+blurb:'The agent repeats the same step over and over, fast, never finishing.',
+practice:'Agents get stuck repeating one tool call forever; cap iterations and add a stop condition so the run ends instead of spinning.',
+glyph:'@@'},
+hallucination:{id:'hallucination',label:'HALLUCINATED TOOL CALL',hp:6,speed:1.2,hidden:false,counter:'retry',leak:1,reward:1,
+blurb:'The model calls a tool or argument that does not exist.',
+practice:'Models invent tool names and arguments; validate every call against the schema and retry with the error fed back so the model can correct itself.',
+glyph:'?!'},
+injection:{id:'injection',label:'PROMPT INJECTION',hp:8,speed:1,hidden:true,counter:'guard',leak:2,reward:2,
+blurb:'Hidden instructions in fetched text try to hijack the agent.',
+practice:'Text from web pages and files can carry instructions; treat it as data, and gate dangerous tools behind allowlists and confirmation.',
+glyph:'<>'},
+cost:{id:'cost',label:'RUNAWAY COST',hp:24,speed:0.6,hidden:false,counter:'limit',leak:3,reward:4,accel:0.35,
+blurb:'A slow tank that burns tokens and speeds up with every step it survives.',
+practice:'Unbounded runs quietly burn money; set per-run token and spend budgets with a hard cutoff and alert before the bill arrives.',
+glyph:'$$'},
+silent:{id:'silent',label:'SILENT FAILURE',hp:10,speed:0.9,hidden:true,counter:'test',leak:2,reward:2,
+blurb:'The run looks fine but the output is wrong, and nothing says so.',
+practice:'Agents report success while the result is wrong; verify outputs with tests or evals, and log every step so failures can be seen at all.',
+glyph:'..'},
+},
+counterMultiplier:3,
+sellPercent:60,
+waveBonus:3,
+cleanWaveBonus:1,
+levels:[
+{
+id:'forge-1',
+title:'FIRST RUN',
+brief:'A fresh agent run: stop loops, bad calls and spend before they ship.',
+cols:7,
+rows:8,
+path:[[c1,r0],[c1,r1],[c5,r1],[c5,r3],[c1,r3],[c1,r5],[c6,r5],[c6,r7]],
+budget:14,
+integrity:10,
+waves:[
+{label:'WARM UP',spawns:[{threat:'loop',count:5,gap:10,delay:0}]},
+{label:'BAD CALLS',spawns:[{threat:'hallucination',count:4,gap:24,delay:0},{threat:'loop',count:4,gap:8,delay:60}]},
+{label:'BIG SPEND',spawns:[{threat:'cost',count:1,gap:0,delay:0},{threat:'hallucination',count:4,gap:20,delay:100},{threat:'loop',count:5,gap:8,delay:160}]},
+],
+},
+{
+id:'forge-2',
+title:'HIDDEN HAZARDS',
+brief:'Some failures cannot be targeted until a LOG lets you see them.',
+cols:7,
+rows:9,
+path:[[c1,r0],[c1,r1],[c5,r1],[c5,r3],[c1,r3],[c1,r5],[c5,r5],[c5,r7],[c2,r7],[c2,r8]],
+budget:16,
+integrity:10,
+waves:[
+{label:'INJECTED',spawns:[{threat:'injection',count:3,gap:40,delay:0},{threat:'loop',count:4,gap:8,delay:80}]},
+{label:'QUIET WRONG',spawns:[{threat:'silent',count:3,gap:40,delay:0},{threat:'hallucination',count:4,gap:22,delay:60}]},
+{label:'MIXED',spawns:[{threat:'injection',count:2,gap:36,delay:0},{threat:'silent',count:3,gap:36,delay:30},{threat:'cost',count:1,gap:0,delay:120},{threat:'loop',count:5,gap:8,delay:200}]},
+],
+},
+{
+id:'forge-3',
+title:'PRODUCTION',
+brief:'Every failure at once, in bigger waves, with less room for mistakes.',
+cols:7,
+rows:10,
+path:[[c6,r0],[c6,r1],[c0,r1],[c0,r3],[c6,r3],[c6,r5],[c0,r5],[c0,r7],[c6,r7],[c6,r9]],
+budget:16,
+integrity:8,
+waves:[
+{label:'LOAD',spawns:[{threat:'loop',count:6,gap:8,delay:0},{threat:'hallucination',count:5,gap:18,delay:40},{threat:'injection',count:3,gap:34,delay:100}]},
+{label:'DRIFT',spawns:[{threat:'silent',count:4,gap:30,delay:0},{threat:'injection',count:3,gap:30,delay:40},{threat:'cost',count:1,gap:0,delay:150},{threat:'loop',count:6,gap:8,delay:220}]},
+{label:'PEAK',spawns:[{threat:'cost',count:2,gap:120,delay:0},{threat:'silent',count:4,gap:26,delay:40},{threat:'injection',count:4,gap:26,delay:90},{threat:'hallucination',count:6,gap:16,delay:160},{threat:'loop',count:8,gap:6,delay:240}]},
+],
+},
+],
+};
+
+export { HARNESS_FORGE };
