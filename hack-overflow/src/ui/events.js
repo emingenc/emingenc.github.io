@@ -21,6 +21,7 @@ uiHandleAction(app,el.getAttribute('data-action'));
 }
 function uiGlobalKeyAction(event,app) {
 if (event.key === 'm' || event.key === 'M') return 'toggle-sound';
+if (app.story) return event.key === 'Escape' ? 'story-skip' :null;
 return app.menuOpen && event.key === 'Escape' ? 'menu-close' :null;
 }
 function uiHandleKeyResult(app,result) {
@@ -29,15 +30,21 @@ if (result.type === 'toggle-menu') return uiHandleAction(app,app.menuOpen ? 'men
 if (result.type === 'render') uiRenderApp(app);
 return null;
 }
+function uiSwallowStoryRepeat(app,event) {
+if (!app.story || !event.repeat) return false;
+event.preventDefault();
+return true;
+}
 function uiHandleKeydown(app,event) {
 if (event.ctrlKey || event.metaKey || event.altKey) return;
+if (uiSwallowStoryRepeat(app,event)) return;
 const globalId = uiGlobalKeyAction(event,app);
 if (globalId) {
 event.preventDefault();
 uiHandleAction(app,globalId);
 return;
 }
-if (app.menuOpen) return;
+if (app.menuOpen || app.story) return;
 const screen = uiScreenFor(app);
 const result = screen.keyAction ? screen.keyAction(event,app) :null;
 if (result) uiHandleKeyResult(app,result);

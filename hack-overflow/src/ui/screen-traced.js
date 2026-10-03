@@ -1,6 +1,7 @@
 import { uiEl } from './dom.js';
 import { uiJackIn } from './breach-flow.js';
 import { uiEnterGrid } from './screen-grid.js';
+import { uiTracedQuip } from './story-quip.js';
 import { SHOW_LINE_THRESHOLD } from '../logic/run-judge.js';
 
 const TRACED_HEADLINE = 'TRACE COMPLETE — connection dropped';
@@ -39,6 +40,7 @@ className:'screen screen-card traced-screen',
 attrs:{ 'data-screen':'traced' },
 children:[
 uiEl('h1',{ className:'traced-title',text:'TRACED' }),
+uiTracedQuip(traced),
 uiEl('p',{ className:'traced-lead',text:TRACED_HEADLINE + ' at ' + traced.lockName + '.' }),
 uiEl('p',{ className:'traced-carried',text:uiCarriedText(traced) }),
 uiEl('p',{ className:'traced-note',text:'RETRY: fresh TRACE, reshuffled chips.' }),

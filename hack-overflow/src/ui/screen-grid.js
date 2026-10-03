@@ -9,11 +9,13 @@ import { uiGridDpad, uiDpadDirOf } from './grid-dpad.js';
 import { uiGridKeyAction, uiGridKeyUp } from './grid-keys.js';
 import { uiWalkPress, uiWalkRelease, uiWalkReleaseAll, uiWalkInteract } from './grid-walk.js';
 import { uiOpenReadyLevelUp, uiLevelUpAfterRender } from './grid-events.js';
+import { uiStoryOnGrid } from './story-dialogue.js';
 
 function uiEnterGrid(app) {
 app.screen = 'grid';
 app.lastFocusKey = 'grid-stage';
 uiOpenReadyLevelUp(app);
+uiStoryOnGrid(app);
 }
 function uiRenderGrid(app) {
 const children = [

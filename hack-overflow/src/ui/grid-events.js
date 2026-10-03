@@ -53,7 +53,7 @@ return uiObjectiveChanged(app);
 }
 const UI_LEVEL_UP_WAIT_MS = { cache:700,core:850 };
 function uiGridInPlay(app) {
-return app.screen === 'grid' && !app.menuOpen && !app.game.travelOpen;
+return app.screen === 'grid' && !app.menuOpen && !app.story && !app.game.travelOpen;
 }
 function uiOpenDueLevelUp(app) {
 const game = app.game;
@@ -164,4 +164,4 @@ const rerender = UI_STEP_HANDLERS[result.event.type](app,{ event:result.event,fr
 if (rerender) uiRenderKeepingFocus(app);
 }
 
-export { uiApplyStepEvent, uiNearDir, uiOpenReadyLevelUp, uiLevelUpAfterRender };
+export { uiApplyStepEvent, uiNearDir, uiOpenReadyLevelUp, uiLevelUpAfterRender, uiLevelUpAfter };
