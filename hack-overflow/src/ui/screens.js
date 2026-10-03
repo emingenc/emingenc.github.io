@@ -7,6 +7,7 @@ import { uiLevelUpScreen } from './screen-levelup.js';
 import { uiTracedScreen } from './screen-traced.js';
 import { uiEndingScreen } from './screen-ending.js';
 import { uiMapScreen } from './screen-map.js';
+import { uiLabStubScreen } from './lab-loader.js';
 
 
 function uiSyncTitleRain(app,active,root) {
@@ -24,7 +25,7 @@ id:'title',render:uiRenderTitle,focusKey:() => 'title-start',announce:() => 'Tit
 let uiScreenTable = null;
 function uiScreens() {
 if (uiScreenTable) return uiScreenTable;
-const screens = [uiTitleScreen(),uiGridScreen(),uiBreachScreen(),uiDebriefScreen(),uiLevelUpScreen(),uiTracedScreen(),uiEndingScreen(),uiMapScreen()];
+const screens = [uiTitleScreen(),uiGridScreen(),uiBreachScreen(),uiDebriefScreen(),uiLevelUpScreen(),uiTracedScreen(),uiEndingScreen(),uiMapScreen(),uiLabStubScreen()];
 uiScreenTable = Object.fromEntries(screens.map(function (screen) { return [screen.id,screen]; }));
 return uiScreenTable;
 }

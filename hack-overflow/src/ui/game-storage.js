@@ -38,7 +38,7 @@ return record && typeof record === 'object' ? Object.keys(record).length :0;
 function uiHasGame() {
 const data = uiParsedRaw(uiReadGameRaw());
 if (!data || typeof data !== 'object') return false;
-return data.xp > 0 || uiCountKeys(data.locks) > 0 || uiCountKeys(data.pending) > 0 || uiCountKeys(data.entries) > 0;
+return data.xp > 0 || uiCountKeys(data.locks) > 0 || uiCountKeys(data.pending) > 0 || uiCountKeys(data.entries) > 0 || uiCountKeys(data.labs) > 0;
 }
 function uiResetGame(world) {
 const save = createSave(world);

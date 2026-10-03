@@ -6,6 +6,7 @@ import { uiShowToast } from './grid-toast.js';
 import { uiEnterGrid } from './screen-grid.js';
 import { uiLeaveBreach, uiDisconnect } from './breach-flow.js';
 import { uiOpenMap, uiCloseMap } from './screen-map.js';
+import { uiOpenLabs } from './lab-loader.js';
 import { uiBreachInert } from './render-submit-panel.js';
 
 function uiStartGame(app) {
@@ -38,7 +39,7 @@ function uiConfirmReset(app) {
 if (!uiResetAsked(app)) return;
 if (app.game.breach) uiLeaveBreach(app);
 uiResetGameState(app,uiResetGame(app.game.world));
-Object.assign(app,{ run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
+Object.assign(app,{ lab:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
 }
 function uiOpenMenu(app) {
 uiWalkReleaseAll(app);
@@ -67,6 +68,17 @@ uiOpenMap(app);
 function uiHandleMapClose(app) {
 uiCloseMap(app);
 }
+async function uiHandleLabsOpen(app) {
+if (app.screen !== 'grid') return;
+uiWalkReleaseAll(app);
+app.menuOpen = false;
+app.confirmReset = null;
+try {
+await uiOpenLabs(app);
+} catch (error) {
+uiShowToast(app,{ text:'CONTEXT LAB could not load. Try again.',kind:'info' });
+}
+}
 const UI_NAV_HANDLERS = {
 'title-start':uiStartGame,
 'toggle-sound':uiHandleToggleSound,
@@ -78,12 +90,13 @@ const UI_NAV_HANDLERS = {
 'menu-disconnect':uiMenuDisconnect,
 'map-open':uiHandleMapOpen,
 'map-close':uiHandleMapClose,
+'menu-labs':uiHandleLabsOpen,
 };
 function uiIsNavActionId(actionId) {
 return Object.hasOwn(UI_NAV_HANDLERS,actionId);
 }
-function uiApplyNavAction(app,actionId) {
-if (uiIsNavActionId(actionId)) UI_NAV_HANDLERS[actionId](app);
+async function uiApplyNavAction(app,actionId) {
+if (uiIsNavActionId(actionId)) await UI_NAV_HANDLERS[actionId](app);
 }
 
 export { uiIsNavActionId, uiApplyNavAction };

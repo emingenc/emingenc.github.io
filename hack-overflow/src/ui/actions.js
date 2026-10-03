@@ -8,7 +8,7 @@ return uiIsAuditActionId(actionId) || uiLineRemovePosition(actionId) !== null;
 }
 async function uiApplyAction(app,actionId) {
 if (uiIsNavActionId(actionId)) {
-uiApplyNavAction(app,actionId);
+await uiApplyNavAction(app,actionId);
 return;
 }
 if (app.screen === 'breach' && uiIsBreachAuditId(actionId)) {

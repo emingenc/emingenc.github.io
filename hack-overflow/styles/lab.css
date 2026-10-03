@@ -1,0 +1,378 @@
+.lab-screen {
+  max-width:720px;
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-4);
+  min-width:0;
+  padding-bottom:0;
+}
+
+.lab-head {
+  display:flex;
+  align-items:center;
+  gap:var(--sp-4);
+}
+
+.lab-title {
+  margin:0;
+  font-size:var(--fs-2xl);
+  color:var(--primary);
+}
+
+.lab-sim {
+  margin:0;
+  padding:var(--sp-2) var(--sp-3);
+  border:1px dashed var(--amber);
+  border-radius:var(--radius-sm);
+  color:var(--amber);
+  font-size:var(--fs-xs);
+  align-self:flex-start;
+}
+
+.lab-intro {
+  margin:0;
+  color:var(--dim);
+}
+
+.lab-levels {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-3);
+}
+
+.lab-btn,
+.lab-level,
+.lab-chip {
+  min-height:44px;
+}
+
+.lab-level {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:var(--sp-2);
+  width:100%;
+  text-align:left;
+  font-family:var(--font-body);
+  font-size:var(--fs-md);
+}
+
+.lab-level-title {
+  font-family:var(--font-display);
+  font-size:var(--fs-xl);
+  color:var(--primary);
+}
+
+.lab-level-task {
+  color:var(--text);
+}
+
+.lab-level-best {
+  color:var(--dim);
+  font-size:var(--fs-xs);
+}
+
+.lab-card,
+.lab-window,
+.lab-tray,
+.lab-result {
+  min-width:0;
+  padding:var(--sp-4);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  background:var(--panel);
+}
+
+.lab-card-title {
+  margin:0 0 var(--sp-3);
+  font-size:var(--fs-lg);
+  color:var(--primary);
+}
+
+.lab-task-text {
+  margin:0 0 var(--sp-3);
+  font-size:var(--fs-lg);
+}
+
+.lab-needed {
+  margin:0;
+  color:var(--cyan);
+  font-size:var(--fs-sm);
+}
+
+.lab-rules-list {
+  margin:0;
+  color:var(--dim);
+  font-size:var(--fs-sm);
+}
+
+.lab-meter {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+}
+
+.lab-meter-text,
+.lab-meter-note {
+  margin:0;
+  font-size:var(--fs-sm);
+}
+
+.lab-meter-note {
+  color:var(--dim);
+}
+
+.lab-meter.is-over .lab-meter-note {
+  color:var(--amber);
+}
+
+.lab-progress {
+  display:block;
+  width:100%;
+  height:14px;
+  appearance:none;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg);
+  accent-color:var(--primary);
+}
+
+.lab-progress::-webkit-progress-bar {
+  background:var(--bg);
+}
+
+.lab-progress::-webkit-progress-value {
+  background:var(--primary);
+  transition:width var(--ui-ease);
+}
+
+.lab-progress::-moz-progress-bar {
+  background:var(--primary);
+}
+
+.lab-meter.is-over .lab-progress::-webkit-progress-value {
+  background:var(--amber);
+}
+
+.lab-meter.is-over .lab-progress::-moz-progress-bar {
+  background:var(--amber);
+}
+
+.lab-empty {
+  margin:0;
+  color:var(--dim);
+}
+
+.lab-rows {
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-3);
+}
+
+.lab-row {
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:var(--sp-2) var(--sp-3);
+  padding:var(--sp-3);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg);
+}
+
+.lab-row.is-cut {
+  border-color:var(--red);
+  opacity:0.75;
+}
+
+.lab-row.is-culprit {
+  border-color:var(--amber);
+  box-shadow:0 0 0 2px var(--amber);
+}
+
+.lab-pos {
+  color:var(--dim);
+}
+
+.lab-row-label {
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  overflow-wrap:anywhere;
+}
+
+.lab-tokens {
+  color:var(--dim);
+  font-size:var(--fs-sm);
+}
+
+.lab-badge {
+  grid-column:1 / -1;
+  justify-self:start;
+  padding:0 var(--sp-3);
+  border:1px solid var(--red);
+  border-radius:var(--radius-pill);
+  color:var(--red);
+  font-size:var(--fs-xs);
+}
+
+.lab-facts {
+  grid-column:1 / -1;
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--sp-2);
+}
+
+.lab-fact {
+  padding:0 var(--sp-3);
+  border:1px solid var(--border);
+  border-radius:var(--radius-pill);
+  color:var(--cyan);
+  font-size:var(--fs-xs);
+  overflow-wrap:anywhere;
+}
+
+.lab-row-controls {
+  grid-column:1 / -1;
+  display:flex;
+  gap:var(--sp-3);
+  justify-content:flex-end;
+}
+
+.lab-chips {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:var(--sp-3);
+}
+
+.lab-chip {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:var(--sp-2);
+  padding:var(--sp-3);
+  border:2px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:var(--fs-sm);
+  text-align:left;
+  cursor:pointer;
+  transition:border-color var(--ui-ease),color var(--ui-ease);
+}
+
+.lab-chip:hover:not(:disabled) {
+  border-color:var(--primary);
+}
+
+.lab-chip:disabled,
+.lab-btn:disabled {
+  opacity:0.4;
+  cursor:default;
+}
+
+.lab-chip.is-culprit {
+  border-color:var(--amber);
+}
+
+.lab-chip-head {
+  overflow-wrap:anywhere;
+}
+
+.lab-result.is-fail,
+.lab-fail {
+  border-color:var(--red);
+}
+
+.lab-win {
+  border-color:var(--primary);
+}
+
+.lab-fail-text {
+  margin:0 0 var(--sp-3);
+  color:var(--red);
+  font-size:var(--fs-lg);
+}
+
+.lab-fail-move {
+  margin:0 0 var(--sp-3);
+  color:var(--amber);
+}
+
+.lab-practice,
+.lab-note {
+  margin:0 0 var(--sp-3);
+  color:var(--dim);
+  font-size:var(--fs-sm);
+}
+
+.lab-stars {
+  margin:0 0 var(--sp-3);
+  color:var(--amber);
+  font-size:var(--fs-3xl);
+}
+
+.lab-table {
+  width:100%;
+  margin:0 0 var(--sp-3);
+  border-collapse:collapse;
+  font-size:var(--fs-sm);
+}
+
+.lab-table caption {
+  padding-bottom:var(--sp-2);
+  color:var(--dim);
+  text-align:left;
+}
+
+.lab-table th,
+.lab-table td {
+  padding:var(--sp-2) var(--sp-3);
+  border-bottom:1px solid var(--border);
+  text-align:left;
+  overflow-wrap:anywhere;
+}
+
+.lab-win-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--sp-3);
+}
+
+.lab-bar {
+  position:sticky;
+  bottom:0;
+  z-index:6;
+  display:flex;
+  gap:var(--sp-3);
+  margin:0 calc(var(--sp-5) * -1);
+  padding:var(--sp-3) var(--sp-5) calc(var(--sp-3) + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--border);
+  background:var(--bg);
+}
+
+.lab-bar .lab-btn {
+  flex:1 1 0;
+  min-width:0;
+}
+
+@media (min-width:768px) {
+  .lab-bar {
+    margin:0;
+    padding-left:0;
+    padding-right:0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-chip,
+  .lab-btn,
+  .lab-progress,
+  .lab-progress::-webkit-progress-value {
+    transition:none;
+    animation:none;
+  }
+}
