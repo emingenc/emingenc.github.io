@@ -6,70 +6,70 @@ summarize:'Summaries are lossy: a compressed history keeps the gist and quietly 
 omitted:'Retrieval only helps if the fact you need is actually fetched into the prompt; a model cannot read what was never included.',
 };
 
-const STALE_POLICY = {
+const STALE_RULE = {
 id:'ctx-1',
-title:'STALE POLICY',
-task:'Customer #4471: can I still return my headphones?',
+title:'STALE RULE',
+task:'Can GHOSTWRITER still undo the bad merge?',
 budget:400,
 par:4,
 bridges:BRIDGES,
 chunks:[
-{ id:'system',label:'SYSTEM',tokens:40,facts:{ role:'support' } },
-{ id:'policy2',label:'POLICY v2',tokens:90,facts:{ window:'30' } },
-{ id:'policy1',label:'POLICY v1',tokens:90,facts:{ window:'14' } },
-{ id:'order',label:'ORDER',tokens:60,facts:{ bought:'Mar 3' } },
-{ id:'chatFull',label:'CHAT full',tokens:300,facts:{ mood:'upset' } },
-{ id:'chatSum',label:'CHAT summary',tokens:70,facts:{ topic:'return' } },
-{ id:'today',label:'TODAY',tokens:20,facts:{ today:'Mar 20' } },
+{ id:'system',label:'SYSTEM',tokens:40,facts:{ role:'guardian' } },
+{ id:'policy2',label:'RULE v2',tokens:90,facts:{ undo:'30 days' } },
+{ id:'policy1',label:'RULE v1',tokens:90,facts:{ undo:'14 days' } },
+{ id:'order',label:'MERGE LOG',tokens:60,facts:{ merged:'day 3' } },
+{ id:'chatFull',label:'CHAT full',tokens:300,facts:{ mood:'panic' } },
+{ id:'chatSum',label:'CHAT summary',tokens:70,facts:{ topic:'undo' } },
+{ id:'today',label:'CLOCK',tokens:20,facts:{ today:'day 20' } },
 ],
-expect:{ role:'support',window:'30',bought:'Mar 3',today:'Mar 20' },
+expect:{ role:'guardian',undo:'30 days',merged:'day 3',today:'day 20' },
 };
 
-const TOOL_CALL = {
+const CACHED_TOOL = {
 id:'ctx-2',
-title:'TOOL CALL',
-task:'Order #8820 arrived late: refund the shipping?',
+title:'CACHED TOOL',
+task:'A lock tripped late. Does it get a free reset?',
 budget:270,
 par:5,
 bridges:BRIDGES,
 chunks:[
-{ id:'system',label:'SYSTEM',tokens:40,facts:{ role:'support' } },
-{ id:'profile',label:'PROFILE',tokens:40,facts:{ tier:'gold' } },
-{ id:'policy3',label:'POLICY v3',tokens:70,facts:{ window:'45' } },
-{ id:'policy2',label:'POLICY v2',tokens:70,facts:{ window:'30' } },
-{ id:'toolFresh',label:'TOOL get_order (fresh)',tokens:80,facts:{ bought:'Dec 2' } },
-{ id:'toolCached',label:'TOOL get_order (cached)',tokens:80,facts:{ bought:'Nov 20' } },
-{ id:'today',label:'TODAY',tokens:20,facts:{ today:'Jan 5' } },
-{ id:'chatFull',label:'CHAT full',tokens:200,facts:{ mood:'upset' } },
+{ id:'system',label:'SYSTEM',tokens:40,facts:{ role:'guardian' } },
+{ id:'profile',label:'OPERATOR',tokens:40,facts:{ clearance:'gold' } },
+{ id:'policy3',label:'RULE v3',tokens:70,facts:{ reset:'45 days' } },
+{ id:'policy2',label:'RULE v2',tokens:70,facts:{ reset:'30 days' } },
+{ id:'toolFresh',label:'TOOL log (fresh)',tokens:80,facts:{ tripped:'day 12' } },
+{ id:'toolCached',label:'TOOL log (cached)',tokens:80,facts:{ tripped:'day 2' } },
+{ id:'today',label:'CLOCK',tokens:20,facts:{ today:'day 40' } },
+{ id:'chatFull',label:'CHAT full',tokens:200,facts:{ mood:'panic' } },
 ],
-expect:{ role:'support',tier:'gold',window:'45',bought:'Dec 2',today:'Jan 5' },
+expect:{ role:'guardian',clearance:'gold',reset:'45 days',tripped:'day 12',today:'day 40' },
 };
 
-const SUMMARIZE = {
+const SQUEEZE = {
 id:'ctx-3',
-title:'SUMMARIZE',
-task:'Order #9031: was it delivered in time, and what do we refund?',
+title:'SQUEEZE',
+task:'Did the patch land in time, and what does an undo cost?',
 budget:220,
 par:6,
 bridges:BRIDGES,
 chunks:[
-{ id:'system',label:'SYSTEM',tokens:30,facts:{ role:'support' } },
-{ id:'policy4',label:'POLICY v4',tokens:60,facts:{ window:'30' } },
-{ id:'policy3',label:'POLICY v3',tokens:60,facts:{ window:'14' } },
-{ id:'order',label:'ORDER',tokens:50,facts:{ bought:'Feb 1',price:'$60' },
-summary:{ tokens:25,facts:{ bought:'Feb 1' } } },
-{ id:'shipLog',label:'TOOL shipping_log',tokens:120,facts:{ delivered:'Feb 20',trace:'ab12' },
-summary:{ tokens:60,facts:{ delivered:'Feb 20' } } },
-{ id:'today',label:'TODAY',tokens:20,facts:{ today:'Mar 1' } },
-{ id:'chatFull',label:'CHAT full',tokens:150,facts:{ mood:'upset' } },
+{ id:'system',label:'SYSTEM',tokens:30,facts:{ role:'guardian' } },
+{ id:'policy4',label:'RULE v4',tokens:60,facts:{ undo:'30 days' } },
+{ id:'policy3',label:'RULE v3',tokens:60,facts:{ undo:'14 days' } },
+{ id:'order',label:'MERGE LOG',tokens:50,facts:{ merged:'day 1',cost:'60 cycles' },
+summary:{ tokens:25,facts:{ merged:'day 1' } } },
+{ id:'shipLog',label:'TOOL deploy log',tokens:120,facts:{ landed:'day 20',trace:'ab12' },
+summary:{ tokens:60,facts:{ landed:'day 20' } } },
+{ id:'today',label:'CLOCK',tokens:20,facts:{ today:'day 31' } },
+{ id:'chatFull',label:'CHAT full',tokens:150,facts:{ mood:'panic' } },
 ],
-expect:{ role:'support',window:'30',bought:'Feb 1',price:'$60',delivered:'Feb 20',today:'Mar 1' },
+expect:{ role:'guardian',undo:'30 days',merged:'day 1',cost:'60 cycles',landed:'day 20',today:'day 31' },
 };
 
 const CONTEXT_WINDOW = {
 id:'context',
-title:'CONTEXT WINDOW',
-levels:[STALE_POLICY,TOOL_CALL,SUMMARIZE],
+title:'MEMORY BANK',
+levels:[STALE_RULE,CACHED_TOOL,SQUEEZE],
 bridges:BRIDGES,
 };
 

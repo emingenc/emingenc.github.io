@@ -2,7 +2,7 @@ import { uiEl } from './dom.js';
 
 const UI_LAB_SCREEN_ID = 'lab';
 const UI_LAB_BACK_KEY = 'lab-back';
-const UI_LAB_LOADING_TEXT = 'Context lab loading. Simulated model, no real AI.';
+const UI_LAB_LOADING_TEXT = 'MEMORY BANK loading.';
 
 let uiLabDelegate = null;
 let uiLabLoading = null;

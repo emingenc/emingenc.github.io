@@ -2,7 +2,7 @@ import { uiEl } from './dom.js';
 
 const UI_STREAM_SCREEN_ID = 'stream';
 const UI_STREAM_BACK_KEY = 'stream-back';
-const UI_STREAM_LOADING_TEXT = 'Context stream loading. Arcade game, simulated model, no real AI.';
+const UI_STREAM_LOADING_TEXT = 'The Intake loading. Real-time arcade game, simulated model, replayed offline.';
 
 const UI_STREAM_HOOK_FALLBACKS = {
 keyAction:null,keyUp:false,applyAction:false,sync:undefined,pointerDown:false,pointerUp:false,pointerCancel:false,release:undefined,

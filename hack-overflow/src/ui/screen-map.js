@@ -91,7 +91,7 @@ if (!active) return;
 const canvas = root.querySelector('.map-canvas');
 if (!canvas) return;
 uiMapResizer = new ResizeObserver(function () {
-uiDrawMapInto(canvas,{ world:app.game.world,progress:app.game.progress,avatar:app.game.avatar.pos });
+uiDrawMapInto(canvas,{ world:app.game.world,progress:app.game.progress,save:app.game.save,avatar:app.game.avatar.pos });
 });
 uiMapResizer.observe(canvas);
 }

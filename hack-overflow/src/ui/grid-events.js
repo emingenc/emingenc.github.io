@@ -1,8 +1,10 @@
 import { GAME_EVENT } from '../game/game-events.js';
 import { DIRS, cellToward } from '../game/move.js';
 import { thingAt } from '../game/world.js';
-import { withPosition, claimCache, claimCore } from '../game/save.js';
+import { withPosition, claimCache, claimCore, markBeatsSeen, markMet } from '../game/save.js';
+import { rigOf } from '../game/rig-catalog.js';
 import { unlocksBetween } from '../game/progress.js';
+import { rigMeeting } from '../game/story/story.js';
 import { blockedText, nearText, sectorName } from '../game/messages.js';
 import { uiPointerIsCoarse, uiPrefersReducedMotion } from './dom.js';
 import { uiEmit } from './bus.js';
@@ -13,8 +15,11 @@ import { uiShowToast } from './grid-toast.js';
 import { uiJackIn } from './breach-flow.js';
 import { uiOpenLevelUp } from './screen-levelup.js';
 import { uiOpenEnding } from './screen-ending.js';
+import { uiOpenRigHost } from './rig-loader.js';
+import { uiStoryShow } from './story-dialogue.js';
 
-const UI_NEAR_KINDS = { terminal:1,core:1,kernel:1 };
+const UI_STORY_FOCUS_KEY = 'story-next';
+const UI_NEAR_KINDS = { terminal:1,core:1,kernel:1,rig:1 };
 function uiNearThingAt(game,dir) {
 const thing = thingAt(game.world,cellToward(game.avatar.pos,dir));
 return thing && UI_NEAR_KINDS[thing.kind] ? thing :null;
@@ -37,7 +42,7 @@ const thing = dir ? uiNearThingAt(game,dir) :null;
 const id = thing ? thing.id :null;
 if (id === game.walk.nearId) return;
 game.walk.nearId = id;
-if (thing) uiEmit(GAME_EVENT.NEAR,{ id,kind:thing.kind,label:nearText(game.world,id,{ progress:game.progress,actWord:uiActWord() }) });
+if (thing) uiEmit(GAME_EVENT.NEAR,{ id,kind:thing.kind,label:nearText(game.world,id,{ progress:game.progress,actWord:uiActWord(),save:game.save }) });
 }
 function uiActedOn(game) {
 const thing = uiNearThingAt(game,game.avatar.facing);
@@ -151,9 +156,41 @@ uiActedOn(app.game);
 if (!uiLevelUpBeforeLeaving(app)) uiOpenEnding(app);
 return true;
 }
+function uiStoryKeepsFocus(app) {
+if (!app.story) return;
+app.story.returnKey = app.lastFocusKey;
+app.lastFocusKey = UI_STORY_FOCUS_KEY;
+}
+function uiOpenRigScreen(app,rig) {
+uiOpenRigHost(app,rig).then(function () {
+if (app.screen === 'grid') return;
+uiStoryKeepsFocus(app);
+uiRenderApp(app);
+}).catch(function () {
+uiShowToast(app,{ text:rig.title + ' could not load. Try again.',kind:'info' });
+uiRenderKeepingFocus(app);
+});
+}
+function uiRigMeeting(app,rig) {
+const meeting = rigMeeting(rig.id,rig.storyId ?? rig.labId);
+uiStoryShow(app,meeting.show);
+const unseen = meeting.skip.filter((id) => !app.game.save.story.includes(id));
+if (unseen.length > 0) uiCommitSave(app,markBeatsSeen(app.game.save,unseen));
+}
+function uiOnRig(app,info) {
+const game = app.game;
+uiActedOn(game);
+if (uiLevelUpBeforeLeaving(app)) return true;
+const rig = rigOf(info.event.rigId);
+if (!info.event.met) uiCommitSave(app,markMet(game.save,rig.id));
+uiEmit(GAME_EVENT.RIG_ENTER,{ rigId:rig.id,cell:{ ...game.avatar.pos } });
+uiRigMeeting(app,rig);
+uiOpenRigScreen(app,rig);
+return true;
+}
 const UI_STEP_HANDLERS = {
 step:uiOnStep,cache:uiOnCache,bump:uiOnBump,blocked:uiBlock,encrypted:uiBlock,
-terminal:uiOnTerminal,core:uiOnCore,kernel:uiOnKernel,
+terminal:uiOnTerminal,core:uiOnCore,kernel:uiOnKernel,rig:uiOnRig,
 };
 function uiApplyStepEvent(app,result) {
 const game = app.game;

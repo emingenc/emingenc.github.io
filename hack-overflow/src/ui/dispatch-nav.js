@@ -1,3 +1,5 @@
+import { rigOf } from '../game/rig-catalog.js';
+import { rigMet } from '../game/rig-reward.js';
 import { uiToggleSound } from './audio.js';
 import { uiResetGame } from './game-storage.js';
 import { uiResetGameState } from './game-state.js';
@@ -6,9 +8,8 @@ import { uiShowToast } from './grid-toast.js';
 import { uiEnterGrid } from './screen-grid.js';
 import { uiLeaveBreach, uiDisconnect } from './breach-flow.js';
 import { uiOpenMap, uiCloseMap } from './screen-map.js';
-import { uiOpenLabs } from './lab-loader.js';
-import { uiOpenForge } from './forge-loader.js';
-import { uiOpenStream } from './stream-loader.js';
+import { UI_MENU_RIG_PREFIX } from './menu.js';
+import { uiOpenRigHost } from './rig-loader.js';
 import { uiBreachInert } from './render-submit-panel.js';
 import { uiStoryNext, uiStorySkip } from './story-dialogue.js';
 
@@ -42,7 +43,7 @@ function uiConfirmReset(app) {
 if (!uiResetAsked(app)) return;
 if (app.game.breach) uiLeaveBreach(app);
 uiResetGameState(app,uiResetGame(app.game.world));
-Object.assign(app,{ lab:null,story:null,forge:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
+Object.assign(app,{ lab:null,story:null,forge:null,rig:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
 }
 function uiOpenMenu(app) {
 uiWalkReleaseAll(app);
@@ -82,14 +83,10 @@ await spec.open(app);
 uiShowToast(app,{ text:spec.failText,kind:'info' });
 }
 }
-function uiHandleLabsOpen(app) {
-return uiOpenFromMenu(app,{ open:uiOpenLabs,failText:'CONTEXT LAB could not load. Try again.' });
-}
-function uiHandleForgeOpen(app) {
-return uiOpenFromMenu(app,{ open:uiOpenForge,failText:'HARNESS FORGE could not load. Try again.' });
-}
-function uiHandleStreamOpen(app) {
-return uiOpenFromMenu(app,{ open:uiOpenStream,failText:'CONTEXT STREAM could not load. Try again.' });
+async function uiHandleRigReplay(app,actionId) {
+const rig = rigOf(actionId.slice(UI_MENU_RIG_PREFIX.length));
+if (!rig || !rigMet(app.game.save,rig.id)) return;
+await uiOpenFromMenu(app,{ open:(target) => uiOpenRigHost(target,rig),failText:rig.title + ' could not load. Try again.' });
 }
 const UI_NAV_HANDLERS = {
 'title-start':uiStartGame,
@@ -102,17 +99,15 @@ const UI_NAV_HANDLERS = {
 'menu-disconnect':uiMenuDisconnect,
 'map-open':uiHandleMapOpen,
 'map-close':uiHandleMapClose,
-'menu-labs':uiHandleLabsOpen,
 'story-next':uiStoryNext,
 'story-skip':uiStorySkip,
-'menu-forge':uiHandleForgeOpen,
-'menu-stream':uiHandleStreamOpen,
 };
 function uiIsNavActionId(actionId) {
-return Object.hasOwn(UI_NAV_HANDLERS,actionId);
+return Object.hasOwn(UI_NAV_HANDLERS,actionId) || actionId.startsWith(UI_MENU_RIG_PREFIX);
 }
 async function uiApplyNavAction(app,actionId) {
-if (uiIsNavActionId(actionId)) await UI_NAV_HANDLERS[actionId](app);
+if (Object.hasOwn(UI_NAV_HANDLERS,actionId)) await UI_NAV_HANDLERS[actionId](app);
+else if (actionId.startsWith(UI_MENU_RIG_PREFIX)) await uiHandleRigReplay(app,actionId);
 }
 
 export { uiIsNavActionId, uiApplyNavAction };

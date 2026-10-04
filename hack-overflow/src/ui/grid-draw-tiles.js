@@ -3,14 +3,13 @@ import { coreState } from '../game/progress.js';
 import { visibleRange } from '../game/viewport.js';
 import { cellAt } from '../game/world.js';
 import { UI_BEAM_FRAMES, UI_SPRITE_SIZE, uiBadgeSprite, uiRingSprite, uiSpriteCanvas, uiSpriteRows } from './grid-sprites.js';
+import { UI_GROUND, UI_LABEL, UI_RIG_ACCENTS, UI_SAFEHOUSE_ACCENT, UI_SECTOR_ACCENTS, uiAccentOf, uiIsGround, uiLabelWidth, uiPulse, uiRigAccent } from './grid-draw-common.js';
+import { uiRigCleared, uiRigLayers, uiRigOverlays, uiRigPlan, uiRigPlates, uiRigState } from './grid-draw-rigs.js';
 
-const UI_SECTOR_ACCENTS = { hash:'primary','two-pointers':'cyan',stack:'magenta','binary-search':'amber',window:'bright' };
-const UI_SAFEHOUSE_ACCENT = 'dim';
 const UI_ENCRYPTED_ACCENT = 'dim';
-const UI_GROUND = new Set(['floor','cache','terminal','door','gate','core','kernel-door','kernel']);
 const UI_WALKABLE = new Set(['floor','cache']);
-const UI_FAMILY_SEEDS = new Set(['terminal','door','core','gate']);
-const UI_NEAR_KINDS = new Set(['terminal','core','kernel']);
+const UI_FAMILY_SEEDS = new Set(['terminal','door','core','gate','rig']);
+const UI_NEAR_KINDS = new Set(['terminal','core','kernel','rig']);
 const UI_WALL_EDGES = [
 { dir:'down',sprite:'wall-face' },{ dir:'up',sprite:'rim-up' },{ dir:'left',sprite:'rim-left' },{ dir:'right',sprite:'rim-right' },
 ];
@@ -22,24 +21,16 @@ const UI_BARRIER_SPRITES = { door:{ flat:'door',turned:'door-turned' },'kernel-d
 const UI_NO_LAYERS = Object.freeze([]);
 const UI_HALF = UI_SPRITE_SIZE / 2;
 const UI_FULL_STARS = 3;
-const UI_TILE_MOTION = { beamMs:90,blinkMs:530,pulseMs:1600,pulseLow:0.45,pulseRest:0.8,sparkleMs:1900,sparkleOn:260 };
+const UI_TILE_MOTION = { beamMs:90,blinkMs:530,sparkleMs:1900,sparkleOn:260 };
 const UI_FLOOR_HASH = { colMul:0x27d4eb2d,rowMul:0x165667b1,mix:0x85ebca6b,shift:15,buckets:16,trace:11,vent:14 };
-const UI_LABEL = { scale:0.5,advance:0.4,inset:2,font:'px VT323, monospace',top:0.37,bottom:0.72 };
 const UI_COUNT_OVERLAP = 3;
 
-function uiAccentOf(family) {
-return family && Object.hasOwn(UI_SECTOR_ACCENTS,family) ? UI_SECTOR_ACCENTS[family] :UI_SAFEHOUSE_ACCENT;
-}
 function uiIndexAt(world,cell) {
 const inside = cell.col >= 0 && cell.col < world.cols && cell.row >= 0 && cell.row < world.rows;
 return inside ? cell.row * world.cols + cell.col :-1;
 }
 function uiCellOf(world,index) {
 return { col:index % world.cols,row:Math.floor(index / world.cols) };
-}
-function uiIsGround(world,cell) {
-const entry = cellAt(world,cell);
-return entry !== null && UI_GROUND.has(entry.kind);
 }
 function uiNeighbours(world,index) {
 const cell = uiCellOf(world,index);
@@ -178,6 +169,7 @@ return spot.turned === null ? plan :{ ...plan,turned:spot.turned,...uiBarrierPla
 function uiCellPlan(world,spot) {
 const kind = spot.entry.kind;
 if (kind === 'wall') return { kind,layers:uiWallLayers(world,spot) };
+if (kind === 'rig') return uiRigPlan(world,spot);
 if (kind === 'encrypted') return { kind,layers:[{ sprite:'encrypted',accent:UI_ENCRYPTED_ACCENT }] };
 if (!UI_GROUND.has(kind)) return { kind,layers:UI_NO_LAYERS };
 const barrier = kind === 'door' || kind === 'gate' || kind === 'kernel-door';
@@ -193,7 +185,8 @@ const cells = world.cells.map(function (entry,index) {
 const cell = uiCellOf(world,index);
 return uiCellPlan(world,{ entry,cell,regions,hash:uiCellHash(cell),accent:uiAccentOf(regions[index]) });
 });
-return { regions,cells,labels:world.labels.map(function (label) { return uiLabelPlan(world,label); }) };
+const labels = world.labels.map(function (label) { return uiLabelPlan(world,label); });
+return { regions,cells,labels:[...labels,...uiRigPlates(world)] };
 }
 const uiPlans = new WeakMap();
 function uiPlanOf(world) {
@@ -205,11 +198,6 @@ const index = uiIndexAt(world,cell);
 return index < 0 ? null :uiPlanOf(world).regions[index];
 }
 
-function uiPulse(frame) {
-if (frame.reducedMotion) return UI_TILE_MOTION.pulseRest;
-const wave = (1 + Math.sin((frame.now / UI_TILE_MOTION.pulseMs) * 2 * Math.PI)) / 2;
-return UI_TILE_MOTION.pulseLow + wave * (1 - UI_TILE_MOTION.pulseLow);
-}
 function uiBlinkOn(frame) {
 return frame.reducedMotion || Math.floor(frame.now / UI_TILE_MOTION.blinkMs) % 2 === 0;
 }
@@ -250,7 +238,7 @@ return [...spot.floor,beams,...spot.emitters];
 }
 const UI_STATE_LAYERS = new Map([
 ['terminal',uiTerminalLayers],['core',uiCoreLayers],['cache',uiCacheLayers],['door',uiDoorLayers],
-['kernel-door',uiDoorLayers],['gate',uiGateLayers],
+['kernel-door',uiDoorLayers],['gate',uiGateLayers],['rig',uiRigLayers],
 ]);
 function uiCellLayers(frame,cell) {
 const index = uiIndexAt(frame.world,cell);
@@ -309,7 +297,7 @@ const cell = cellToward(pos,dir);
 return [{ sprite:'focus',accent:UI_SAFEHOUSE_ACCENT,alpha:uiPulse(frame),col:cell.col,row:cell.row }];
 }
 function uiTileOverlays(frame) {
-return [...uiGateBadges(frame),...uiKernelOverlays(frame),...uiFocusOverlays(frame)];
+return [...uiRigOverlays(frame),...uiGateBadges(frame),...uiKernelOverlays(frame),...uiFocusOverlays(frame)];
 }
 
 function uiSnap(pass,value) {
@@ -360,7 +348,7 @@ const right = camera.col + view.cols;
 const bottom = camera.row + view.rows;
 if (label.col + 1 <= camera.col || label.col >= right) return null;
 if (label.row + 1 <= camera.row || label.row >= bottom) return null;
-const width = label.text.length * UI_LABEL.scale * UI_LABEL.advance + (UI_LABEL.inset + 1) / UI_SPRITE_SIZE;
+const width = uiLabelWidth(label.text);
 return {
 col:Math.min(Math.max(label.col,camera.col),right - width),
 row:Math.min(Math.max(label.row,camera.row - UI_LABEL.top),bottom - UI_LABEL.bottom),
@@ -413,4 +401,4 @@ uiDrawLabels(pass);
 ctx.globalAlpha = 1;
 }
 
-export { UI_SECTOR_ACCENTS, UI_SAFEHOUSE_ACCENT, uiAccentOf, uiSectorAt, uiCellLayers, uiTileOverlays, uiDrawTiles, uiLabelPlace };
+export { UI_SECTOR_ACCENTS, UI_SAFEHOUSE_ACCENT, UI_RIG_ACCENTS, uiAccentOf, uiRigAccent, uiRigPlates, uiSectorAt, uiRigState, uiRigCleared, uiCellLayers, uiTileOverlays, uiDrawTiles, uiLabelPlace };

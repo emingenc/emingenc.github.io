@@ -2,7 +2,7 @@ import { uiEl } from './dom.js';
 
 const UI_FORGE_SCREEN_ID = 'forge';
 const UI_FORGE_BACK_KEY = 'forge-back';
-const UI_FORGE_LOADING_TEXT = 'Harness forge loading. Simulated agent, no real AI.';
+const UI_FORGE_LOADING_TEXT = 'The Checkpoint loading. The forge, replayed offline.';
 
 let uiForgeDelegate = null;
 let uiForgeLoading = null;

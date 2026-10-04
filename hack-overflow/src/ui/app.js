@@ -15,7 +15,7 @@ ui.audit = audit;
 }
 function uiCreateApp() {
 return {
-screen:'title',run:null,soundOn:uiLoadSoundOn(),trayFocusIndex:0,lastPanelKind:null,lastFocusKey:null,
+screen:'title',run:null,rig:null,soundOn:uiLoadSoundOn(),trayFocusIndex:0,lastPanelKind:null,lastFocusKey:null,
 onboardStage:uiLoadOnboarded() ? null :UI_ONBOARD_STAGE_CHIP,onboardMessage:null,menuOpen:false,rainState:null,
 pendingAnnounce:null,lastAnnouncedScreen:null,pendingScrollToVerdict:false,
 judging:false,

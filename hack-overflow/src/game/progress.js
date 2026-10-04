@@ -1,3 +1,5 @@
+import { rigMet } from './rig-reward.js';
+
 const BASE_XP = { Easy:40,Medium:60,Hard:100 };
 const STAR_PERCENT = { 0:50,1:75,2:100,3:150 };
 const PERCENT = 100;
@@ -73,6 +75,9 @@ for (const unlocksAt of UNLOCKS_AT_LEVEL) unlocks.push(...unlocksAt(level));
 }
 return unlocks;
 }
+function metRigs(world,save) {
+return new Set([...(save.met ?? []),...Object.keys(world.rigs ?? {}).filter((rigId) => rigMet(save,rigId))]);
+}
 function progressOf(world,save) {
 const level = levelFor(save.xp);
 const breached = new Set(Object.keys(save.locks));
@@ -80,7 +85,7 @@ const best = {};
 for (const key of breached) best[key] = save.locks[key].best;
 return {
 xp:save.xp,level,rank:rankFor(level),capacity:traceCapacity(level),exploits:exploitsAt(level),
-breached,best,caches:new Set(save.caches),cores:new Set(save.cores),
+breached,best,caches:new Set(save.caches),cores:new Set(save.cores),met:metRigs(world,save),
 left:world.placed.filter((key) => !breached.has(key)).length,ended:save.ended === true,
 };
 }

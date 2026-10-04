@@ -26,7 +26,7 @@ return Object.fromEntries(STAT_NAMES.map((name) => [name,wholeNumber(stats[name]
 }
 function createSave(world) {
 return {
-version:SAVE_VERSION,xp:0,locks:{},pending:{},entries:{},caches:[],cores:[],seenOpen:[],labs:{},story:[],
+version:SAVE_VERSION,xp:0,locks:{},pending:{},entries:{},caches:[],cores:[],seenOpen:[],met:[],labs:{},story:[],
 pos:{ col:world.spawn.col,row:world.spawn.row },facing:START_FACING,stats:statsFrom(null),ended:false,
 };
 }
@@ -110,6 +110,7 @@ entries:problemRecord(world,data.entries,repairEntry),
 caches:knownIds(data.caches,new Set(world.caches)),
 cores:knownIds(data.cores,new Set(Object.keys(world.cores))),
 seenOpen:knownIds(data.seenOpen,new Set(Object.keys(world.things))),
+met:knownIds(data.met,new Set(Object.keys(world.rigs))),
 };
 }
 function parseSave(raw,world) {
@@ -157,6 +158,9 @@ return { ...save,pos:{ col:avatar.pos.col,row:avatar.pos.row },facing:avatar.fac
 function markSeen(save,ids) {
 return { ...save,seenOpen:[...new Set([...save.seenOpen,...ids])] };
 }
+function markMet(save,rigId) {
+return { ...save,met:[...new Set([...save.met,rigId])] };
+}
 function markBeatsSeen(save,ids) {
 return { ...save,story:repairStory([...save.story,...ids]) };
 }
@@ -192,6 +196,7 @@ claimCache,
 claimCore,
 withPosition,
 markSeen,
+markMet,
 markBeatsSeen,
 bumpStat,
 markEnded,

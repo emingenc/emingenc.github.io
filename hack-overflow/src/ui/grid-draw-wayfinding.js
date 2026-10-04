@@ -36,7 +36,7 @@ ctx.restore();
 }
 function uiDrawRing(frame,marker,pulse) {
 const ctx = frame.ctx;
-const reach = frame.tile * (HALF_TILE + UI_WAY.ringGrow * pulse);
+const reach = frame.tile * (HALF_TILE + UI_WAY.ringGrow * pulse) + UI_WAY.ringPx / 2 + 1;
 ctx.save();
 ctx.globalAlpha = uiPulseAlpha(pulse);
 ctx.lineWidth = UI_WAY.ringPx;

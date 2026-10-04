@@ -6,7 +6,8 @@ import { uiStreamPaint } from './stream-paint.js';
 
 const STREAM_MAX_STARS = 3;
 const STREAM_MS_PER_S = 1000;
-const STREAM_SIM_TAG = 'ARCADE · SIMULATED MODEL · no real AI, no network';
+const STREAM_TITLE = 'THE INTAKE';
+const STREAM_SIM_TAG = 'REAL-TIME: the feed will not wait. GHOSTWRITER\'s input, replayed offline.';
 const STREAM_INTRO = 'Chunks fall toward a small window. Catch the facts the answer needs, flick the junk away.';
 const STREAM_DESKTOP_HINT = 'KEYS: 1 2 3 or ← ↓ → catch · SHIFT+key or Q W E flick · SPACE prune · P or ESC pause';
 const STREAM_LANE_NAMES = ['left','middle','right'];
@@ -65,7 +66,7 @@ uiEl('span',{ className:'stream-stage-best',text:bestText + ' · ' + meta }),
 function uiStreamRenderSelect(app) {
 const stages = CONTEXT_STREAM.stages.map(function (stage,index) { return uiStreamStageButton(app,stage,index); });
 return uiStreamShell([
-uiStreamHead(CONTEXT_STREAM.title,'Back to the Grid'),
+uiStreamHead(STREAM_TITLE,'Back to the Grid'),
 uiEl('p',{ className:'stream-sim',text:STREAM_SIM_TAG }),
 uiEl('p',{ className:'stream-intro',text:STREAM_INTRO }),
 uiEl('div',{ className:'stream-stages',children:stages }),
@@ -94,7 +95,7 @@ uiEl('p',{ className:'stream-meta',text:uiStreamXpLine() }),
 ],
 });
 const start = uiStreamButton('stream-start','START',{ kind:'btn-primary stream-start' });
-return uiStreamShell([uiStreamHead(CONTEXT_STREAM.title,'Back to the stage list'),card,start,uiStreamHint()]);
+return uiStreamShell([uiStreamHead(STREAM_TITLE,'Back to the stage list'),card,start,uiStreamHint()]);
 }
 function uiStreamClickAct(app,action) {
 return function (event) {
@@ -188,7 +189,7 @@ uiStreamButton('stream-replay','RESTART',{ kind:'stream-replay' }),
 uiStreamButton('stream-stages','STAGES',{ kind:'btn-ghost stream-stages' }),
 ],
 });
-return uiStreamShell([uiEl('h1',{ className:'stream-title',text:CONTEXT_STREAM.title }),card,actions]);
+return uiStreamShell([uiEl('h1',{ className:'stream-title',text:STREAM_TITLE }),card,actions]);
 }
 function uiStreamXpText(xp) {
 return xp.gained > 0 ? '+' + xp.gained + ' XP' :'NO NEW XP (best stays)';
@@ -244,7 +245,7 @@ uiStreamStat('SCORE',String(result.score)),
 function uiStreamRenderResult(app) {
 const result = app.stream.result;
 const card = result.stars > 0 ? uiStreamWinCard(app,result) :uiStreamFailCard(result);
-return uiStreamShell([uiEl('h1',{ className:'stream-title',text:CONTEXT_STREAM.title }),card,uiStreamResultActions(app,result)]);
+return uiStreamShell([uiEl('h1',{ className:'stream-title',text:STREAM_TITLE }),card,uiStreamResultActions(app,result)]);
 }
 function uiStreamRenderEmpty() {
 return uiStreamShell([]);

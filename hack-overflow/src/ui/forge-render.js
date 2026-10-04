@@ -7,10 +7,11 @@ import { uiForgeBoardNode } from './forge-board.js';
 
 const FORGE_MAX_STARS = 3;
 const FORGE_PERCENT = 100;
-const FORGE_SIM_TAG = 'SIMULATED RUN · no real AI, no network';
+const FORGE_TITLE = 'THE CHECKPOINT';
+const FORGE_SIM_TAG = 'GHOSTWRITER\'s runaway run, replayed offline.';
 const FORGE_STAR_RULE = '★ survived · ★★ integrity kept above 60% · ★★★ nothing got through';
 const FORGE_FIRST_HINT = 'Tap a green tile beside the path to place the selected piece, then START WAVE.';
-const FORGE_INTRO = 'A runaway agent marches down the path. Place harness pieces beside it so nothing reaches SHIP.';
+const FORGE_INTRO = 'A runaway agent marches down the path. Place pieces beside it so nothing reaches SHIP.';
 
 function uiForgeLevelOf(app) {
 return HARNESS_FORGE.levels[app.forge.levelIndex];
@@ -52,7 +53,7 @@ return uiEl('section',{
 className:'screen forge-screen',
 attrs:{ 'data-screen':'forge' },
 children:[
-uiForgeHead(HARNESS_FORGE.title),
+uiForgeHead(FORGE_TITLE),
 uiEl('p',{ className:'forge-sim',text:FORGE_SIM_TAG }),
 uiEl('p',{ className:'forge-intro',text:FORGE_INTRO }),
 uiEl('div',{ className:'forge-levels',children:levels }),
@@ -142,7 +143,7 @@ children:[uiEl('span',{ className:'forge-piece-label',text:piece.label + ' ' + p
 }
 function uiForgePalette(app) {
 const buttons = HARNESS_FORGE.pieceOrder.map(function (id) { return uiForgePieceButton(app,id); });
-return uiEl('div',{ className:'forge-palette',attrs:{ role:'group','aria-label':'Harness pieces' },children:buttons });
+return uiEl('div',{ className:'forge-palette',attrs:{ role:'group','aria-label':'Pieces' },children:buttons });
 }
 function uiForgeSellable(forge) {
 if (forge.game.phase !== 'build' || !forge.cursor) return null;
