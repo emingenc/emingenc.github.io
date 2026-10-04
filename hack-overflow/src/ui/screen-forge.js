@@ -14,7 +14,7 @@ import { uiStoryLabFinish, uiStoryLabOpen } from './story-dialogue.js';
 const FORGE_SEED_STRIDE = 1000;
 const FORGE_FOCUS_BACK = 'forge-back';
 const FORGE_STORY_ID = 'harness-forge';
-const FORGE_SIM_SPOKEN = 'Simulated, no real AI.';
+const FORGE_SPOKEN = 'The Checkpoint. Place pieces beside the path to stop the failures of a runaway agent. GHOSTWRITER\'s run, replayed offline.';
 const FORGE_LEVEL_ACTION = /^forge-level-(\d+)$/;
 const FORGE_PIECE_ACTION = /^forge-piece-(.+)$/;
 const FORGE_CELL_ACTION = /^forge-cell-(\d+)-(\d+)$/;
@@ -339,7 +339,7 @@ if (!app.forge) return uiForgeRenderEmpty();
 return app.forge.view === 'play' ? uiForgeRenderPlay(app) :uiForgeRenderSelect(app);
 }
 function uiForgeAnnounce() {
-return 'Harness forge. Place harness pieces beside the path to stop the failures of a runaway agent. ' + FORGE_SIM_SPOKEN;
+return FORGE_SPOKEN;
 }
 function uiForgeSync(app,active,root) {
 uiSyncForgeBoard(app,active,root);

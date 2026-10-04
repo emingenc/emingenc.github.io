@@ -1,7 +1,8 @@
 import { cellKey, findPath, reachable } from './path.js';
 import { DIRS, cellToward } from './move.js';
+import { rigOf } from './rig-catalog.js';
 import { coreState, LEVEL_XP, unlocksBetween } from './progress.js';
-import { lockName, sectorName } from './messages.js';
+import { lockName, placePhrase, sectorName } from './messages.js';
 
 const REPLAY_TEXT = 'Replay a breached lock for a better star.';
 function cellOf(thing) {
@@ -26,6 +27,14 @@ function readyCoreCandidates(world,progress) {
 return Object.values(world.cores).filter((core) => coreState(world,progress,core.family) === 'ready')
 .map((core) => ({ family:core.family,cell:cellOf(core) }));
 }
+function isGuided(rig) {
+const entry = rigOf(rig.rig);
+return entry !== null && (entry.guided ?? entry.id === 'ledger');
+}
+function unmetRigCandidates(world,progress) {
+if (progress.breached.size === 0) return [];
+return Object.values(world.rigs).filter((rig) => isGuided(rig) && !progress.met?.has(rig.rig)).map((rig) => ({ rig,cell:cellOf(rig) }));
+}
 function unbreachedLockCandidates(world,progress) {
 return world.placed.filter((key) => !progress.breached.has(key)).map((key) => ({ key,cell:cellOf(world.terminals[key]) }));
 }
@@ -42,6 +51,9 @@ return { text:'Open the KERNEL in the SAFEHOUSE.',targetId:world.kernel ? world.
 function coreObjective(world,core) {
 return { text:'Claim the ' + sectorName(world,core.family) + ' CORE.',targetId:world.cores[core.family].id };
 }
+function rigObjective(world,found) {
+return { text:'Find ' + found.rig.name + ' in ' + placePhrase(world,found.rig.family) + '.',targetId:found.rig.id };
+}
 function lockObjective(world,lock) {
 const terminal = world.terminals[lock.key];
 return { text:'Breach ' + lockName(lock.key) + ' in ' + sectorName(world,terminal.family) + '.',targetId:terminal.id };
@@ -55,6 +67,8 @@ if (progress.ended) return { text:'ROOT ACCESS complete. ' + REPLAY_TEXT,targetI
 if (progress.left === 0) return kernelObjective(world);
 const core = nearestReachable({ world,progress,from },readyCoreCandidates(world,progress));
 if (core) return coreObjective(world,core);
+const rig = nearestReachable({ world,progress,from },unmetRigCandidates(world,progress));
+if (rig) return rigObjective(world,rig);
 const lock = nearestReachable({ world,progress,from },unbreachedLockCandidates(world,progress));
 if (lock) return lockObjective(world,lock);
 const gate = nextGate(world,progress);

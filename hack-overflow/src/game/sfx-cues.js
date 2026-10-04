@@ -5,6 +5,7 @@ const PIN_CLIMB_SEMITONES = PIN_CLIMB_OCTAVES * SEMITONES_PER_OCTAVE;
 const STAR_BASE_FREQ = 415.3;
 const XP_TICK_FREQ = 740;
 const XP_TICK_INTERVAL_MS = 40;
+const RIG_CHAIN_CAP = 8;
 const SFX_CUES = {
 STEP_A:{ type:'tone',wave:'triangle',freq:220,durationMs:18 },
 STEP_B:{ type:'tone',wave:'triangle',freq:262,durationMs:18 },
@@ -32,6 +33,12 @@ EXPLOIT:{ type:'sweep',wave:'sawtooth',freq:1000,sweepTo:200,durationMs:90 },
 DISCONNECT:{ type:'sweep',wave:'triangle',freq:700,sweepTo:200,durationMs:200 },
 ENDING:{ type:'chord',wave:'triangle',notes:{ root:261.63,third:329.63,fifth:392,seventh:523.25,octave:659.25 },durationMs:900 },
 SHOW_LINE:{ type:'arpeggio',wave:'triangle',notes:{ first:466.16,second:392 },durationMs:110,stepMs:110 },
+RIG_ENTER:{ type:'arpeggio',wave:'square',notes:{ first:329.63,second:493.88 },durationMs:80,stepMs:90 },
+RIG_STORE:{ type:'sweep',wave:'triangle',freq:392,sweepTo:784,durationMs:80 },
+RIG_DROP:{ type:'sweep',wave:'sine',freq:520,sweepTo:180,durationMs:140 },
+RIG_EVICT:{ type:'arpeggio',wave:'square',notes:{ first:587.33,second:293.66 },durationMs:50,stepMs:60 },
+RIG_STALE:{ type:'arpeggio',wave:'triangle',notes:{ first:349.23,second:329.63,third:311.13 },durationMs:90,stepMs:80 },
+RIG_BOUNTY:{ type:'arpeggio',wave:'square',notes:{ first:1046.5,second:1318.5,third:1568 },durationMs:60,stepMs:50 },
 };
 function semitoneFreq(base,semitones) {
 return base * Math.pow(2,semitones / SEMITONES_PER_OCTAVE);
@@ -76,14 +83,24 @@ function cuesForXp(payload) {
 const ticks = Math.floor(payload.durationMs / XP_TICK_INTERVAL_MS) + 1;
 return Array.from({ length:ticks },(_,tick) => ({ cue:'XP_TICK',atMs:tick * XP_TICK_INTERVAL_MS }));
 }
+function cuesForRigGood(payload) {
+const links = Math.min(Math.max(Number(payload.chain) || 0,0),RIG_CHAIN_CAP);
+return [{ cue:'PIN_PASS',atMs:0,freq:semitoneFreq(PIN_BASE_FREQ,links) }];
+}
+const RIG_PLACE_CUES = { store:'RIG_STORE',drop:'RIG_DROP',evict:'RIG_EVICT',stale:'RIG_STALE','bounty-pair':'RIG_BOUNTY',arm:'CHIP_ADD',disarm:'CHIP_REMOVE' };
+function cuesForRigPlace(payload) {
+const verb = payload ? payload.verb :undefined;
+return [{ cue:Object.hasOwn(RIG_PLACE_CUES,verb) ? RIG_PLACE_CUES[verb] :'CHIP_ADD',atMs:0 }];
+}
 const STATIC_CUE_FOR_EVENT = {
 BUMP:'BUMP',BLOCKED:'BLOCKED',GATE_OPEN:'GATE_OPEN',KERNEL_OPEN:'KERNEL_OPEN',CACHE:'CACHE',JACK_IN:'JACK_IN',
 CHIP_ADD:'CHIP_ADD',CHIP_REMOVE:'CHIP_REMOVE',LINE_CLEAR:'CHIP_REMOVE',TRACE:'TRACE',ACCEPTED:'ACCEPTED',SHOW_LINE:'SHOW_LINE',
 LEVEL_UP:'LEVEL_UP',SECTOR_CLEAR:'SECTOR_CLEAR',EXPLOIT:'EXPLOIT',DISCONNECT:'DISCONNECT',ENDING:'ENDING',
+RIG_ENTER:'RIG_ENTER',RIG_BAD:'PIN_JAM',RIG_CLEAR:'ACCEPTED',RIG_FAIL:'TRACED_SWEEP',
 };
 const DYNAMIC_CUES_FOR_EVENT = {
 STEP:cuesForStep,PROBE:cuesForProbe,BREACH:cuesForBreach,STAR:cuesForStar,XP:cuesForXp,
-TRACED:() => [{ cue:'TRACED_SWEEP',atMs:0 },{ cue:'TRACED_NOISE',atMs:0 }],NEAR:() => [],
+TRACED:() => [{ cue:'TRACED_SWEEP',atMs:0 },{ cue:'TRACED_NOISE',atMs:0 }],NEAR:() => [],RIG_GOOD:cuesForRigGood,RIG_PLACE:cuesForRigPlace,
 };
 function cuesForEvent(type,payload) {
 const dynamic = DYNAMIC_CUES_FOR_EVENT[type];

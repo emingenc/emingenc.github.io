@@ -27,6 +27,7 @@ terminal:(world,progress,term) => ({ type:'terminal',id:term.id,key:term.key,bre
 core:coreEvent,
 encrypted:(world,progress,door) => ({ type:'encrypted',id:door.id,family:door.family,name:door.name }),
 kernel:() => ({ type:'kernel' }),
+rig:(world,progress,rig) => ({ type:'rig',id:rig.id,rigId:rig.rig,met:progress.met?.has(rig.rig) ?? false }),
 };
 function eventInto(world,progress,cell) {
 const thing = thingAt(world,cell);

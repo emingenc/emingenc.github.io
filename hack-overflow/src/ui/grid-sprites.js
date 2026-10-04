@@ -128,6 +128,44 @@ const UI_PIP_SHEET = uiSheet(['pip-1','pip-2','pip-3','focus'],`
 ................ ................ ................ GGG..........GGG
 `);
 
+const UI_RIG_SHEET = uiSheet(['rig-idle','rig-lit','rig-done','rig-pip','rig-halo'],`
+kkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkk ................ .LLLLLLLLLLLLLL.
+kLLLLLLLLLLLLLLk kLLLLLLLLLLLLLLk kLLLLLLLLLLLLLLk ................ L..............L
+kLAkAAkAAkAAkALk kLAAAAAAAAAAAALk kLAGAAGAAGAAGALk ................ L..............L
+kLLLLLLLLLLLLLLk kLLLLLLLLLLLLLLk kLLLLLLLLLLLLLLk ................ L..............L
+kkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkk ................ L..............L
+kpBBBBBBBBBBBBpk kpBBBBBBBBBBBBpk kpBBBBBBBBBBBBpk ................ L..............L
+kpBAAAAAAAAAAbpk kpBkkkkAkkkkkbpk kpBhhhhhhhhGhbpk ................ L..............L
+kpBAkAAAAAAAAbpk kpBkkkkAAkkkkbpk kpBhhhhhhhGhhbpk ................ L..............L
+kpBAAkAAAAAAAbpk kpBkkkkAAAkkkbpk kpBhGhhhhGhhhbpk ................ L..............L
+kpBAkAAkkkAAAbpk kpBkkkkAAkkkkbpk kpBhhGhhGhhhhbpk ................ L..............L
+kpBaaaaaaaaaabpk kpBkkkkAkkkkkbpk kpBhhhGGhhhhhbpk ................ L..............L
+kpbbbbbbbbbbbbpk kpbbbbbbbbbbbbpk kpbbbbbbbbbbbbpk ................ L..............L
+kaDDaDDaDDaaLLak kaDDaDDaDDaaLLak kaDDaDDaDDaaLLak ..yy............ L..............L
+kaDDaDDaDDaaLLak kaDDaDDaDDaaLLak kaDDaDDaDDaaLLak ..yy............ L..............L
+kssssssssssssssk kssssssssssssssk kssssssssssssssk ................ L..............L
+kkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkk kkkkkkkkkkkkkkkk ................ .LLLLLLLLLLLLLL.
+`);
+
+const UI_RIG_MAST_SHEET = uiSheet(['rig-mast','rig-mast-done','rig-beacon'],`
+................ ................ ................
+................ ................ ................
+................ ................ ................
+................ ................ ................
+................ ................ ................
+................ ................ ................
+......kkkk...... ......kkkk...... ...L........L...
+.....kLLLLk..... .....kGGGGk..... ..L..........L..
+.....kLttLk..... .....kGttGk..... .L............L.
+.....kLttLk..... .....kGttGk..... .L............L.
+.....kLLLLk..... .....kGGGGk..... ..L..........L..
+......kAAk...... ......kAAk...... ...L........L...
+.......kk....... .......kk....... ................
+.......BB....... .......BB....... ................
+.......BB....... .......BB....... ................
+......BBBB...... ......BBBB...... ................
+`);
+
 const UI_CORE_SHEET = uiSheet(['core-sealed','core-ready','core-claimed','core-glow'],`
 ................ ................ ................ ................
 ....kkkkkkkk.... ....kkkkkkkk.... ....kkkkkkkk.... ................
@@ -188,6 +226,8 @@ const UI_RING = { inner:4.5,outer:6.6,centre:8,pixelCentre:0.5,lit:'g',unlit:'R'
 
 const UI_BEAM_FRAMES = 4;
 const UI_BEAM_STEP = 2;
+const UI_RIG_PIPS = 3;
+const UI_RIG_PIP_STEP = 3;
 
 function uiTurn(rows) {
 return rows[0].split('').map(function (glyph,col) { return rows.map(function (row) { return row[col]; }).join(''); });
@@ -201,12 +241,22 @@ return [...rows].reverse();
 function uiScrollDown(rows,count) {
 return [...rows.slice(rows.length - count),...rows.slice(0,rows.length - count)];
 }
+function uiScrollRight(rows,count) {
+return rows.map(function (row) { return row.slice(row.length - count) + row.slice(0,row.length - count); });
+}
+function uiRigGlow(idle) {
+return idle.map(function (row) { return row.split('').map(function (glyph) { return glyph === 'A' ? 'L' :UI_TRANSPARENT; }).join(''); });
+}
+function uiRigPips(pip) {
+return Object.fromEntries(Array.from({ length:UI_RIG_PIPS },function (_,slot) { return ['rig-pip-' + (slot + 1),uiScrollRight(pip,slot * UI_RIG_PIP_STEP)]; }));
+}
 function uiDerivedSprites(drawn) {
 const derived = {
 'rim-left':uiTurn(drawn['rim-up']),'rim-right':uiMirror(uiTurn(drawn['rim-up'])),
 'rim-nw':uiMirror(drawn['rim-ne']),'rim-sw':uiMirror(drawn['rim-se']),
 'emitter-down':uiFlip(drawn['emitter-up']),'emitter-left':uiTurn(drawn['emitter-up']),
 'emitter-right':uiMirror(uiTurn(drawn['emitter-up'])),'door-turned':uiTurn(drawn.door),'jamb-turned':uiTurn(drawn.jamb),
+'rig-glow':uiRigGlow(drawn['rig-idle']),...uiRigPips(drawn['rig-pip']),
 };
 for (let frame = 0; frame < UI_BEAM_FRAMES; frame += 1) {
 derived['beams-' + frame] = uiScrollDown(drawn.beams,frame * UI_BEAM_STEP);
@@ -215,7 +265,8 @@ derived['beams-turned-' + frame] = uiTurn(derived['beams-' + frame]);
 return derived;
 }
 const UI_DRAWN_SPRITES = {
-...UI_FLOOR_SHEET,...UI_WALL_SHEET,...UI_BARRIER_SHEET,...UI_TERMINAL_SHEET,...UI_PIP_SHEET,...UI_CORE_SHEET,...UI_THINGS_SHEET,
+...UI_FLOOR_SHEET,...UI_WALL_SHEET,...UI_BARRIER_SHEET,...UI_TERMINAL_SHEET,...UI_PIP_SHEET,...UI_RIG_SHEET,...UI_RIG_MAST_SHEET,...UI_CORE_SHEET,
+...UI_THINGS_SHEET,
 };
 const UI_SPRITES = { ...UI_DRAWN_SPRITES,...uiDerivedSprites(UI_DRAWN_SPRITES) };
 
@@ -318,6 +369,7 @@ export {
 UI_SPRITE_SIZE,
 UI_SPRITE_PALETTE,
 UI_BEAM_FRAMES,
+UI_RIG_PIPS,
 UI_SPRITES,
 uiSpriteRuns,
 uiSpriteRows,

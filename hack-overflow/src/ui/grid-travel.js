@@ -13,6 +13,7 @@ const UI_TRAVEL_PANEL_ID = 'grid-travel-panel';
 const UI_TRAVEL_CLOSE_KEY = 'travel-close';
 let uiTravelListScroll = 0;
 function uiTravelState(target) {
+if (target.kind === 'rig') return 'MACHINE';
 if (target.kind === 'terminal') return target.state === 'breached' ? 'BREACHED ' + uiStarGlyphs(target.stars) :'LOCKED';
 return target.kind === 'core' ? 'READY' :'OPEN';
 }
@@ -25,7 +26,7 @@ const thing = game.world.things[id];
 return findPath(game.world,game.progress,{ from:game.avatar.pos,to:{ col:thing.col,row:thing.row } });
 }
 function uiTravelSectorText(world,target) {
-return target.kind === 'terminal' ? sectorName(world,target.sector) :'';
+return (target.kind === 'terminal' || target.kind === 'rig') && target.sector ? sectorName(world,target.sector) :'';
 }
 function uiTravelStepsText(target) {
 return target.steps + (target.steps === 1 ? ' step' :' steps');
@@ -92,7 +93,7 @@ const list = panel.querySelector('.grid-travel-list');
 queueMicrotask(function () { list.scrollTop = uiTravelListScroll; });
 }
 function uiGridTravel(app) {
-const targets = travelTargets(app.game.world,app.game.progress,app.game.avatar.pos);
+const targets = travelTargets(app.game.world,app.game.progress,app.game.avatar.pos,app.game.save);
 const panel = uiTravelPanel(app,targets);
 if (app.game.travelOpen) uiRestoreTravelScroll(panel);
 else panel.setAttribute('hidden','');

@@ -1,7 +1,8 @@
 import { findPath } from './path.js';
 import { coreState } from './progress.js';
+import { rigOf,rigStars } from './rig-catalog.js';
 import { isOpen } from './world.js';
-import { lockLabel, sectorName } from './messages.js';
+import { isPlace, lockLabel, sectorName } from './messages.js';
 
 const KERNEL_LABEL = 'KERNEL';
 const CORE_SUFFIX = ' CORE';
@@ -36,13 +37,37 @@ const door = ctx.world.kernelDoor;
 if (!ctx.world.kernel || !door || !isOpen(ctx.world,ctx.progress,door.id)) return [];
 return [{ id:ctx.world.kernel.id,kind:'kernel',label:KERNEL_LABEL,sector:null,state:'open',stars:null,place:0 }];
 }
+const NO_SAVE = { labs:{} };
+function plural(count,word) {
+return count + ' ' + word + (count === 1 ? '' :'s');
+}
+function rigLabel(ctx,rig) {
+const entry = rigOf(rig.rig);
+if (!ctx.progress.met?.has(rig.rig)) return rig.name + ': NEW';
+if (!entry || !entry.levels) return rig.name;
+const held = rigStars(ctx.save ?? NO_SAVE,rig.rig);
+return rig.name + ': ' + held.cleared + '/' + held.levels + ', ' + plural(held.stars,'star');
+}
+function rigSector(world,family) {
+return Object.hasOwn(world.sectors,family) || isPlace(family) ? family :null;
+}
+function rigRow(ctx,rig) {
+const met = ctx.progress.met?.has(rig.rig) === true;
+const sector = rigSector(ctx.world,rig.family);
+const live = Object.hasOwn(ctx.world.sectors,rig.family);
+return {
+id:rig.id,kind:'rig',label:rigLabel(ctx,rig),sector,state:met ? 'met' :'new',stars:null,
+place:live ? ctx.world.sectors[sector].keys.length + 1 :0,
+};
+}
 function allRows(ctx) {
 const terminals = ctx.world.placed.map((key) => terminalRow(ctx,key));
 const cores = readyCores(ctx).map((core) => coreRow(ctx,core));
-return [...terminals,...cores,...kernelRows(ctx)];
+const rigs = Object.values(ctx.world.rigs).map((rig) => rigRow(ctx,rig));
+return [...terminals,...cores,...rigs,...kernelRows(ctx)];
 }
 function groupRank(row) {
-return row.state === 'breached' ? 1 :0;
+return row.state === 'breached' || row.state === 'met' ? 1 :0;
 }
 function sectorRank(order,sector) {
 return sector === null ? order.length :order.indexOf(sector);
@@ -57,8 +82,8 @@ function reachableRow(ctx,row) {
 const steps = stepsTo(ctx,ctx.world.things[row.id]);
 return steps === null ? null :{ ...row,steps };
 }
-function travelTargets(world,progress,from) {
-const ctx = { world,progress,from };
+function travelTargets(world,progress,from,save) {
+const ctx = { world,progress,from,save };
 const order = Object.keys(world.sectors);
 const reached = allRows(ctx).map((row) => reachableRow(ctx,row)).filter((row) => row !== null);
 return reached.sort((left,right) => byPlace(order,left,right)).map(({ place,...rest }) => rest);

@@ -4,15 +4,26 @@ import { labBest } from '../game/save.js';
 import { uiEl } from './dom.js';
 
 const LAB_MAX_STARS = 3;
-const LAB_SIM_TAG = 'SIMULATED MODEL · no real AI, no network';
+const LAB_FRAME = 'GHOSTWRITER\'s memory, replayed offline.';
 const LAB_STAR_RULE = '★ solved · ★★ nothing cut · ★★★ within par, no failed run';
+const LAB_KEY_SEP = ' · ';
 const LAB_RULES = [
 'The window is a list: the first chunk you tap is the top.',
 'Over budget? Whole chunks are cut from the TOP until the rest fits.',
-'The reader reads top to bottom. A later fact on a key overrides an earlier one.',
+'The bank reads top to bottom. A later fact on a key overrides an earlier one.',
 'SUM makes a chunk smaller but keeps only its summary facts.',
-'You win when the reader holds every needed fact, exactly.',
+'You win when the bank holds every needed fact, exactly.',
 ];
+const LAB_COACH = {
+first:(chunk,key) => 'Tap ' + chunk.label + ': it holds ' + key + ', a fact the bank must hold. Your first tap goes on top.',
+start:() => 'Tap the chunks that hold what the bank must hold. Your first tap goes on top.',
+over:() => 'Over budget: whole chunks fall off the TOP until the rest fits.',
+overSum:() => 'Over budget: chunks fall off the TOP. SUM a big one in the window below, or take one out.',
+override:(key) => 'Two chunks set ' + key + '. The LOWER one wins: the bank reads top to bottom.',
+sum:(missing) => 'Too big? SUM shrinks a chunk but keeps only its summary facts. Still missing: ' + missing + '.',
+below:(missing) => 'Each tap adds a chunk BELOW the last. Still missing: ' + missing + '.',
+ready:() => 'Every needed fact is in. PROBE for a free dry read, or RUN it.',
+};
 
 function uiLabLevelOf(app) {
 return CONTEXT_WINDOW.levels[app.lab.levelIndex];
@@ -36,13 +47,14 @@ function uiLabButton(action,label,spec) {
 const attrs = { type:'button','data-action':action,'data-focus-key':action,...spec.extra };
 return uiEl('button',{ className:'btn lab-btn ' + spec.kind,text:label,attrs });
 }
-function uiLabHead(title) {
+function uiLabHead() {
+const names = uiEl('div',{
+className:'lab-names',
+children:[uiEl('h1',{ className:'lab-title',text:CONTEXT_WINDOW.title }),uiEl('p',{ className:'lab-frame',text:LAB_FRAME })],
+});
 return uiEl('header',{
 className:'lab-head',
-children:[
-uiLabButton('lab-back','◄ BACK',{ kind:'btn-ghost lab-back',extra:{ 'aria-label':'Back' } }),
-uiEl('h1',{ className:'lab-title',text:title }),
-],
+children:[uiLabButton('lab-back','◄ BACK',{ kind:'btn-ghost lab-back',extra:{ 'aria-label':'Back' } }),names],
 });
 }
 function uiLabLevelButton(app,level,index) {
@@ -66,9 +78,8 @@ return uiEl('section',{
 className:'screen lab-screen',
 attrs:{ 'data-screen':'lab' },
 children:[
-uiLabHead(CONTEXT_WINDOW.title),
-uiEl('p',{ className:'lab-sim',text:LAB_SIM_TAG }),
-uiEl('p',{ className:'lab-intro',text:'Pick what the model reads. It has a small window and a short memory.' }),
+uiLabHead(),
+uiEl('p',{ className:'lab-intro',text:'Load the right memories. The bank holds only so many tokens.' }),
 uiEl('div',{ className:'lab-levels',children:levels }),
 ],
 });
@@ -76,23 +87,68 @@ uiEl('div',{ className:'lab-levels',children:levels }),
 function uiLabRenderEmpty() {
 return uiEl('section',{ className:'screen lab-screen',attrs:{ 'data-screen':'lab' } });
 }
-function uiLabTaskCard(level) {
-const needed = Object.keys(level.expect).join(' · ');
+function uiLabTaskCard(app,level) {
+const needed = Object.keys(level.expect).join(LAB_KEY_SEP);
 return uiEl('section',{
-className:'lab-card lab-task',
+className:'lab-task',
 children:[
-uiEl('h2',{ className:'lab-card-title',text:level.title }),
-uiEl('p',{ className:'lab-task-text',text:level.task }),
-uiEl('p',{ className:'lab-needed',text:'READER MUST HOLD: ' + needed }),
+uiEl('p',{ className:'lab-task-text',children:[uiEl('span',{ className:'lab-task-tag',text:(app.lab.levelIndex + 1) + ' ' + level.title }),uiEl('span',{ text:level.task })] }),
+uiEl('p',{ className:'lab-needed',text:'MUST HOLD: ' + needed }),
 ],
 });
 }
-function uiLabRulesCard() {
+function uiLabRulesCard(app) {
+const open = app.lab.rulesOpen;
+const toggle = uiLabButton('lab-rules','HOW THE BANK READS ' + (open ? '▾' :'▸'),{ kind:'btn-ghost lab-rules-toggle',extra:{ 'aria-expanded':String(open) } });
 const items = LAB_RULES.map(function (rule) { return uiEl('li',{ text:rule }); });
-return uiEl('section',{
-className:'lab-card lab-rules',
-children:[uiEl('h2',{ className:'lab-card-title',text:'HOW THE MODEL READS' }),uiEl('ol',{ className:'lab-rules-list',children:items })],
-});
+const list = open ? uiEl('ol',{ className:'lab-rules-list',children:items }) :null;
+return uiEl('section',{ className:'lab-rules',children:[toggle,list] });
+}
+function uiLabCoachChunk(app) {
+const { run,levelIndex } = app.lab;
+if (levelIndex !== 0 || run.window.length || run.fails) return null;
+const level = uiLabLevelOf(app);
+const key = Object.keys(level.expect)[0];
+const source = level.chunks.find(function (chunk) { return chunk.facts[key] === level.expect[key]; });
+return source ? source.id :null;
+}
+function uiLabMissing(level,reading) {
+return Object.keys(level.expect).filter(function (key) { return !Object.hasOwn(reading.facts,key); });
+}
+function uiLabCanSum(level,window) {
+return window.some(function (entry) { return !entry.summarized && Boolean(uiLabChunk(level,entry.id).summary); });
+}
+function uiLabBuildCoach(app,reading) {
+const level = uiLabLevelOf(app);
+const window = app.lab.run.window;
+const coached = uiLabCoachChunk(app);
+if (coached) return LAB_COACH.first(uiLabChunk(level,coached),Object.keys(level.expect)[0]);
+if (!window.length) return LAB_COACH.start();
+if (reading.total > reading.budget) return uiLabCanSum(level,window) ? LAB_COACH.overSum() :LAB_COACH.over();
+if (reading.overridden.length) return LAB_COACH.override(reading.overridden[0].key);
+const missing = uiLabMissing(level,reading).join(LAB_KEY_SEP);
+if (!missing) return LAB_COACH.ready();
+return uiLabCanSum(level,window) ? LAB_COACH.sum(missing) :LAB_COACH.below(missing);
+}
+function uiLabProbeLine(reading) {
+const cut = reading.cutIds.length ? reading.cutIds.length + ' cut' :'nothing cut';
+return 'PROBE: ' + reading.used + '/' + reading.budget + ' tokens, ' + cut + '. The dry read is below the window.';
+}
+function uiLabCoachText(app,reading) {
+const { run,probe } = app.lab;
+if (run.status === 'won') return 'THE BANK REMEMBERS ' + uiLabStars(run.stars) + ' · ' + uiLabXpText(app);
+if (run.failure) return 'RUN FAILED: ' + run.failure.text;
+return probe ? uiLabProbeLine(probe) :uiLabBuildCoach(app,reading);
+}
+function uiLabCoach(app,reading) {
+const kind = app.lab.run.failure ? ' is-fail' :'';
+return uiEl('p',{ className:'lab-coach' + kind,text:uiLabCoachText(app,reading) });
+}
+function uiLabXpText(app) {
+const note = app.lab.xpNote;
+const gained = app.lab.gained > 0 ? '+' + app.lab.gained + ' XP' :'No new XP: only more stars than your best pay';
+const up = note && note.levelAfter > note.levelBefore ? ' · LEVEL UP on the way out' :'';
+return gained + up;
 }
 function uiLabMeter(reading) {
 const over = reading.total > reading.budget;
@@ -149,50 +205,67 @@ const { run,probe } = app.lab;
 const level = uiLabLevelOf(app);
 const flags = { level,cutIds:probe ? probe.cutIds :[],culpritId:uiLabCulpritId(run),won:run.status === 'won' };
 const rows = reading.entries.map(function (entry,position) { return uiLabRow(flags,entry,position); });
-const empty = uiEl('p',{ className:'lab-empty',text:'The window is empty. Tap a chunk below to add it.' });
+const empty = uiEl('p',{ className:'lab-empty',text:'The window is empty. Tap a chunk above to add it.' });
 return uiEl('section',{
 className:'lab-window',
 attrs:{ 'aria-label':'Window' },
 children:[uiEl('h2',{ className:'lab-card-title',text:'WINDOW (top first)' }),rows.length ? uiEl('ol',{ className:'lab-rows',children:rows }) :empty],
 });
 }
+function uiLabChipClass(ctx,id,placed) {
+const culprit = uiLabCulpritId(ctx.run) === id ? ' is-culprit' :'';
+const coach = ctx.coached === id ? ' is-coach' :'';
+return 'lab-chip' + (placed ? ' is-placed' :'') + culprit + coach;
+}
 function uiLabChip(ctx,id,index) {
 const { level,run } = ctx;
 const chunk = uiLabChunk(level,id);
-const placed = run.window.some(function (entry) { return entry.id === id; });
-const culprit = uiLabCulpritId(run) === id;
-const attrs = { type:'button','data-action':'lab-add-' + id,'data-focus-key':'lab-add-' + id };
-if (placed || run.status === 'won') attrs.disabled = 'disabled';
+const at = run.window.findIndex(function (entry) { return entry.id === id; });
+const verb = at >= 0 ? 'lab-drop-' :'lab-add-';
+const attrs = { type:'button','data-action':verb + id,'data-focus-key':'lab-add-' + id,'aria-pressed':String(at >= 0) };
+if (run.status === 'won') attrs.disabled = 'disabled';
 return uiEl('button',{
-className:'lab-chip' + (placed ? ' is-placed' :'') + (culprit ? ' is-culprit' :''),
+className:uiLabChipClass(ctx,id,at >= 0),
 attrs,
 children:[
 uiEl('span',{ className:'lab-chip-head',text:(index + 1) + ' ' + chunk.label + ' · ' + chunk.tokens + 't' }),
 uiLabFactChips(chunk.facts),
+at >= 0 ? uiEl('span',{ className:'lab-chip-in',text:'IN #' + (at + 1) }) :null,
 ],
 });
 }
 function uiLabTray(app) {
 const { run } = app.lab;
 const level = uiLabLevelOf(app);
-const chips = run.tray.map(function (id,index) { return uiLabChip({ level,run },id,index); });
+const ctx = { level,run,coached:uiLabCoachChunk(app) };
+const chips = run.tray.map(function (id,index) { return uiLabChip(ctx,id,index); });
 return uiEl('section',{
 className:'lab-tray',
 attrs:{ 'aria-label':'Chunks' },
 children:[uiEl('h2',{ className:'lab-card-title',text:'CHUNKS' }),uiEl('div',{ className:'lab-chips',children:chips })],
 });
 }
-function uiLabActionBar(run) {
-const idle = run.window.length === 0 || run.status === 'won';
+function uiLabBuildVerbs(run) {
+const idle = run.window.length === 0;
 const extra = idle ? { disabled:'disabled' } :{};
-return uiEl('div',{
-className:'lab-bar',
-attrs:{ role:'group','aria-label':'Actions' },
-children:[
+return [
 uiLabButton('lab-probe','PROBE',{ kind:'btn-ghost lab-probe',extra }),
 uiLabButton('lab-run','RUN',{ kind:'btn-primary lab-run',extra }),
 uiLabButton('lab-clear','CLEAR',{ kind:'btn-ghost lab-clear',extra }),
-],
+];
+}
+function uiLabWinVerbs(app) {
+const buttons = [uiLabButton('lab-replay','REPLAY',{ kind:'btn-ghost lab-replay' })];
+if (app.lab.levelIndex < CONTEXT_WINDOW.levels.length - 1) buttons.push(uiLabButton('lab-next','NEXT',{ kind:'btn-primary lab-next' }));
+buttons.push(uiLabButton('lab-levels','LEVELS',{ kind:'btn-ghost lab-levels' }));
+return buttons;
+}
+function uiLabActionBar(app) {
+const run = app.lab.run;
+return uiEl('div',{
+className:'lab-bar',
+attrs:{ role:'group','aria-label':'Actions' },
+children:run.status === 'won' ? uiLabWinVerbs(app) :uiLabBuildVerbs(run),
 });
 }
 function uiLabFactRow(level,reading,key) {
@@ -248,12 +321,6 @@ uiEl('p',{ className:'lab-practice',text:'IN PRACTICE: ' + failure.practice }),
 ],
 });
 }
-function uiLabWinButtons(app) {
-const buttons = [uiLabButton('lab-replay','REPLAY',{ kind:'btn-ghost lab-replay' })];
-if (app.lab.levelIndex < CONTEXT_WINDOW.levels.length - 1) buttons.push(uiLabButton('lab-next','NEXT LEVEL',{ kind:'btn-primary lab-next' }));
-buttons.push(uiLabButton('lab-levels','LEVELS',{ kind:'btn-ghost lab-levels' }));
-return uiEl('div',{ className:'lab-win-actions',children:buttons });
-}
 function uiLabWinPanel(app) {
 const { run } = app.lab;
 const level = uiLabLevelOf(app);
@@ -261,11 +328,11 @@ const summary = 'PAR ' + level.par + ' · YOU USED ' + movesUsed(run.window) + '
 return uiEl('section',{
 className:'lab-result lab-win',
 children:[
-uiEl('h2',{ className:'lab-card-title',text:'THE READER GOT IT' }),
+uiEl('h2',{ className:'lab-card-title',text:'THE BANK REMEMBERS' }),
 uiEl('p',{ className:'lab-stars',text:uiLabStars(run.stars),attrs:{ role:'img','aria-label':run.stars + ' of ' + LAB_MAX_STARS + ' stars' } }),
+uiEl('p',{ className:'lab-xp',text:uiLabXpText(app) }),
 uiEl('p',{ className:'lab-note',text:summary }),
 uiEl('p',{ className:'lab-note',text:LAB_STAR_RULE }),
-uiLabWinButtons(app),
 ],
 });
 }
@@ -279,15 +346,15 @@ function uiLabRenderPlay(app) {
 const level = uiLabLevelOf(app);
 const reading = read(level,app.lab.run.window);
 const children = [
-uiLabHead(CONTEXT_WINDOW.title),
-uiEl('p',{ className:'lab-sim',text:LAB_SIM_TAG }),
-uiLabTaskCard(level),
-uiLabRulesCard(),
+uiLabHead(),
+uiLabTaskCard(app,level),
+uiLabCoach(app,reading),
+uiLabTray(app),
 uiLabMeter(reading),
 uiLabWindow(app,reading),
 uiLabResult(app),
-uiLabTray(app),
-uiLabActionBar(app.lab.run),
+uiLabRulesCard(app),
+uiLabActionBar(app),
 ];
 return uiEl('section',{
 className:'screen lab-screen lab-play',
@@ -296,4 +363,4 @@ children:children.filter(Boolean),
 });
 }
 
-export { uiLabLevelOf, uiLabStars, uiLabRenderSelect, uiLabRenderPlay, uiLabRenderEmpty };
+export { LAB_FRAME, uiLabCoachChunk, uiLabLevelOf, uiLabStars, uiLabRenderSelect, uiLabRenderPlay, uiLabRenderEmpty };

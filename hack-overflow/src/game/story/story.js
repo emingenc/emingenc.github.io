@@ -1,5 +1,5 @@
 import {
-INTRO,GATE_BEATS,KERNEL_DOOR,FINAL,FINAL_LINE,LAB_BEATS,GENERIC_LAB,QUIPS,ENCRYPTED_HOOKS,ENCRYPTED_FALLBACK,
+INTRO,GATE_BEATS,KERNEL_DOOR,FINAL,FINAL_LINE,LAB_BEATS,RIG_BEATS,GENERIC_LAB,QUIPS,ENCRYPTED_HOOKS,ENCRYPTED_FALLBACK,
 } from './beats.js';
 
 
@@ -26,6 +26,14 @@ function labBeat(labId,phase) {
 if (!Object.hasOwn(LAB_PHASES,phase)) throw new Error('unknown lab phase: ' + phase);
 const own = Object.hasOwn(LAB_BEATS,labId) ? LAB_BEATS[labId] :GENERIC_LAB;
 return beatOf('lab-' + labId + '-' + phase,own[phase]);
+}
+function rigBeat(rigId) {
+return Object.hasOwn(RIG_BEATS,rigId) ? beatOf('rig-' + rigId + '-intro',RIG_BEATS[rigId].intro) :null;
+}
+function rigMeeting(rigId,labId) {
+const own = rigBeat(rigId);
+const lab = labBeat(labId,'intro');
+return own ? { show:[own],skip:[lab.id] } :{ show:[lab],skip:[] };
 }
 function finalBeat() {
 return beatOf(FINAL.id,FINAL.lines);
@@ -66,6 +74,6 @@ return flow.queue.slice(flow.beat).map((beat) => beat.id);
 }
 
 export {
-TYPE_MS_PER_CHAR,FINAL_LINE,beatsDue,labBeat,finalBeat,unseenBeats,mistakeQuip,successQuip,encryptedHook,typedChars,
+TYPE_MS_PER_CHAR,FINAL_LINE,beatsDue,labBeat,rigBeat,rigMeeting,finalBeat,unseenBeats,mistakeQuip,successQuip,encryptedHook,typedChars,
 startFlow,lineAt,advanceFlow,pendingIds,
 };

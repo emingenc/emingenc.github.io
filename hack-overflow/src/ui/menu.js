@@ -1,6 +1,9 @@
+import { RIG_CATALOG } from '../game/rig-catalog.js';
+import { rigMet } from '../game/rig-reward.js';
 import { uiEl } from './dom.js';
 import { uiBreachInert } from './render-submit-panel.js';
 
+const UI_MENU_RIG_PREFIX = 'menu-rig-';
 const UI_RESET_CONFIRM_TEXT = 'Reset all progress? This clears your XP, levels, breached locks and position.';
 const UI_RESET_CONFIRM_ID = 'menu-confirm-text';
 const UI_ROVE_ARROWS = { ArrowUp:-1,ArrowDown:1 };
@@ -32,25 +35,16 @@ function uiDisconnectButton(app) {
 if (app.screen !== 'breach') return null;
 return uiMenuButton('menu-disconnect','DISCONNECT',uiBreachInert(app));
 }
-function uiLabsButton(app) {
-if (app.screen !== 'grid') return null;
-return uiMenuButton('menu-labs','CONTEXT LAB');
-}
-function uiForgeButton(app) {
-if (app.screen !== 'grid') return null;
-return uiMenuButton('menu-forge','HARNESS FORGE');
-}
-function uiStreamButton(app) {
-if (app.screen !== 'grid') return null;
-return uiMenuButton('menu-stream','CONTEXT STREAM');
+function uiReplayButtons(app) {
+if (app.screen !== 'grid') return [];
+return Object.values(RIG_CATALOG).filter((rig) => rigMet(app.game.save,rig.id))
+.map((rig) => uiMenuButton(UI_MENU_RIG_PREFIX + rig.id,'REPLAY: ' + rig.title));
 }
 function uiMenuFace(app) {
 const stops = [
 uiMenuButton('menu-close','RESUME'),
 uiMenuButton('toggle-sound',app.soundOn ? 'SOUND: ON' :'SOUND: OFF'),
-uiLabsButton(app),
-uiForgeButton(app),
-uiStreamButton(app),
+...uiReplayButtons(app),
 uiDisconnectButton(app),
 uiMenuButton('reset-progress','RESET PROGRESS'),
 ].filter(Boolean);
@@ -89,4 +83,4 @@ function uiMenuIfOpen(app) {
 return app.menuOpen ? uiMenuPanel(app) :null;
 }
 
-export { uiMenuIfOpen, uiRoveKeyDown };
+export { UI_MENU_RIG_PREFIX, uiMenuIfOpen, uiRoveKeyDown };

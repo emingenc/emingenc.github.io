@@ -1,5 +1,5 @@
 .forge-screen {
-  --forge-chrome:380px;
+  --forge-chrome:404px;
   max-width:720px;
   display:flex;
   flex-direction:column;
@@ -43,6 +43,15 @@
 .forge-btn,
 .forge-level,
 .forge-piece {
+  min-height:56px;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.forge-back {
   min-height:44px;
 }
 
@@ -90,7 +99,7 @@
 }
 
 .forge-play {
-  --forge-chrome:calc(380px + env(safe-area-inset-top,0px) + env(safe-area-inset-bottom,0px));
+  --forge-chrome:calc(404px + env(safe-area-inset-top,0px) + env(safe-area-inset-bottom,0px));
 }
 
 .forge-play > * {

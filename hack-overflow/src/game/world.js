@@ -1,4 +1,5 @@
 import { gateLevel } from './progress.js';
+import { rigOf } from './rig-catalog.js';
 
 
 const GLYPH_KINDS = { '#':'wall',' ':'void','.':'floor','@':'floor','$':'cache',Y:'kernel-door',Z:'kernel','?':'encrypted' };
@@ -7,6 +8,7 @@ const GLYPH_RANGES = [
 { kind:'door',pattern:/^[A-X]$/ },
 { kind:'gate',pattern:/^[1-4]$/ },
 { kind:'core',pattern:/^[5-9]$/ },
+{ kind:'rig',pattern:/^[&%*+=^~]$/ },
 ];
 const SPAWN_GLYPH = '@';
 const KERNEL_DOOR_ID = 'kernel-door';
@@ -85,6 +87,16 @@ const id = 'cache-' + spot.col + '-' + spot.row;
 ctx.world.caches.push(id);
 return addThingOnce(ctx,{ id,kind:'cache',col:spot.col,row:spot.row });
 }
+function placeRig(ctx,spot) {
+if (!Object.hasOwn(ctx.legend.rigs,spot.glyph)) fail('unknown rig glyph "' + spot.glyph + '" at ' + where(spot) + ' (not in WORLD_RIGS)');
+const rig = rigOf(ctx.legend.rigs[spot.glyph]);
+if (!rig) fail('unknown rig "' + ctx.legend.rigs[spot.glyph] + '" for "' + spot.glyph + '" at ' + where(spot) + ' (not in the rig catalog)');
+if (ctx.world.rigs[rig.id]) fail('duplicate rig "' + rig.id + '" ("' + spot.glyph + '" at ' + where(spot) + ')');
+const id = 'rig-' + rig.id;
+const thing = { id,kind:'rig',col:spot.col,row:spot.row,rig:rig.id,family:rig.family,name:rig.title };
+ctx.world.rigs[rig.id] = thing;
+return addThingOnce(ctx,thing);
+}
 function placeKernelDoor(ctx,spot) {
 ctx.world.kernelDoor ||= { id:KERNEL_DOOR_ID,cells:[] };
 ctx.world.kernelDoor.cells.push(cellOf(spot));
@@ -104,7 +116,7 @@ return addThingOnce(ctx,{ ...entry,kind:'encrypted' });
 }
 const PLACERS = {
 floor:placeSpawn,cache:placeCache,terminal:placeTerminal,door:placeDoor,gate:placeGate,core:placeCore,
-'kernel-door':placeKernelDoor,kernel:placeKernel,encrypted:placeEncrypted,
+'kernel-door':placeKernelDoor,kernel:placeKernel,encrypted:placeEncrypted,rig:placeRig,
 };
 function cellFor(ctx,spot) {
 const kind = kindOf(spot.glyph);
@@ -145,6 +157,7 @@ return {
 terminals:data.WORLD_TERMINALS || {},
 gates:data.WORLD_GATES || {},
 cores:data.WORLD_CORES || {},
+rigs:data.WORLD_RIGS || {},
 live,
 sealed:content.route.filter((family) => !live.has(family.key)),
 };
@@ -160,7 +173,7 @@ return sectors;
 function emptyWorld(rows,content) {
 return {
 cols:rows[0].length,rows:rows.length,spawn:null,cells:[],things:{},terminals:{},doors:{},gates:{},cores:{},
-caches:[],kernelDoor:null,kernel:null,encrypted:[],labels:[],placed:[],problems:problemsOf(content),sectors:{},
+caches:[],kernelDoor:null,kernel:null,encrypted:[],rigs:{},labels:[],placed:[],problems:problemsOf(content),sectors:{},
 };
 }
 function buildWorld(content,data) {
