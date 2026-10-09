@@ -108,7 +108,7 @@ game.view = { camera,tile:stage.tile,cols:view.cols,rows:view.rows,width:stage.w
 return {
 ctx:stage.ctx,world:game.world,progress:game.progress,save:game.save,camera,tile:stage.tile,view,avatar,now,
 doorOpenness:function (id) { return uiDoorOpenness(app,id); },reducedMotion:uiPrefersReducedMotion(),
-rootRank:game.progress.level >= MAX_LEVEL,targetId:game.objectiveTarget,palette:stage.palette,width:stage.width,height:stage.height,dpr:stage.dpr,
+rootRank:game.progress.level >= MAX_LEVEL,targetId:game.coach ? null :game.objectiveTarget,palette:stage.palette,width:stage.width,height:stage.height,dpr:stage.dpr,
 };
 }
 function uiDrawFrame(app,now) {
@@ -116,9 +116,10 @@ if (!app.game.stage.tile) return;
 const frame = uiFrameFor(app,now);
 uiDrawTiles(frame);
 uiDrawAvatar(frame);
+if (app.game.drawActors) app.game.drawActors(frame.ctx,app,frame);
 uiDrawFx(frame);
 uiDrawWayfinding(frame);
-uiSyncHint(app.game);
+uiSyncHint(app.game,Boolean(app.story));
 uiSyncNearPlate(app.game);
 uiGameDebug().frames += 1;
 }

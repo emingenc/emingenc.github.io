@@ -33,6 +33,7 @@ t:'lc121',u:'lc219',v:'lc3',w:'lc424',x:'lc567',
 const WORLD_GATES = { '1':'two-pointers','2':'stack','3':'binary-search','4':'window' };
 const WORLD_CORES = { '5':'hash','6':'two-pointers','7':'stack','8':'binary-search','9':'window' };
 const WORLD_RIGS = { '&':'ledger','+':'context','%':'forge','*':'stream' };
+const WORLD_RIG_SPOTS = [{ rig:'turret',col:37,row:15 }];
 const WORLD_LABELS = [
 { text:'SAFEHOUSE',col:19,row:13 },
 { text:'KERNEL',col:24,row:22 },
@@ -43,4 +44,4 @@ const WORLD_LABELS = [
 { text:'SLIDING WINDOW',col:35,row:10 },
 ];
 
-export { WORLD_MAP, WORLD_TERMINALS, WORLD_GATES, WORLD_CORES, WORLD_RIGS, WORLD_LABELS };
+export { WORLD_MAP, WORLD_TERMINALS, WORLD_GATES, WORLD_CORES, WORLD_RIGS, WORLD_RIG_SPOTS, WORLD_LABELS };

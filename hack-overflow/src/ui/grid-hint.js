@@ -8,21 +8,27 @@ const UI_HINT_TOUCH = 'Tap the map to walk. Follow the pulsing arrow.';
 const UI_HINT_KEYS = 'Arrow keys walk. Follow the pulsing arrow.';
 
 function uiCreateHint() {
-return uiEl('p',{
-className:'grid-hint',
-text:uiPointerIsCoarse() ? UI_HINT_TOUCH :UI_HINT_KEYS,
-attrs:{ 'aria-hidden':'true' },
-});
+const base = uiPointerIsCoarse() ? UI_HINT_TOUCH :UI_HINT_KEYS;
+const node = uiEl('p',{ className:'grid-hint',text:base,attrs:{ 'aria-hidden':'true' } });
+node.baseText = base;
+return node;
 }
-function uiHintWanted(game) {
+function uiHintQuiet(game,storyOpen) {
+const opening = game.opening;
+return storyOpen || (Boolean(opening) && (opening.state.phase === 'alarm' || opening.state.phase === 'done'));
+}
+function uiHintWanted(game,storyOpen = false) {
 const spawn = game.world.spawn;
 const pos = game.avatar.pos;
-return game.progress.breached.size === 0 && pos.col === spawn.col && pos.row === spawn.row;
+const fresh = game.progress.breached.size === 0 && pos.col === spawn.col && pos.row === spawn.row;
+return Boolean(game.coach) || (fresh && !uiHintQuiet(game,storyOpen));
 }
-function uiSyncHint(game) {
+function uiSyncHint(game,storyOpen = false) {
 const node = game.stage.hint;
-const hidden = !uiHintWanted(game);
+const hidden = !uiHintWanted(game,storyOpen);
 if (node.hidden !== hidden) node.hidden = hidden;
+const text = game.coach || node.baseText;
+if (text) uiSetText(node,text);
 }
 
 const UI_NEAR_KINDS = new Set(['terminal','core','kernel','rig']);

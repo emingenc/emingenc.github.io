@@ -1,5 +1,6 @@
 import { migrateV1, migrationNotice } from '../game/save-migrate.js';
 import { createSave, parseSave } from '../game/save.js';
+import { uiClearExt } from './ext-storage.js';
 import { uiLoadProfile, uiResetProgress } from './storage.js';
 
 const UI_GRID_SAVE_KEY = 'ho-grid-v1';
@@ -43,6 +44,7 @@ return data.xp > 0 || uiCountKeys(data.locks) > 0 || uiCountKeys(data.pending) >
 function uiResetGame(world) {
 const save = createSave(world);
 uiStoreGame(save);
+uiClearExt();
 uiResetProgress();
 return save;
 }

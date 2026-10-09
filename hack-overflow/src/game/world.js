@@ -87,15 +87,18 @@ const id = 'cache-' + spot.col + '-' + spot.row;
 ctx.world.caches.push(id);
 return addThingOnce(ctx,{ id,kind:'cache',col:spot.col,row:spot.row });
 }
-function placeRig(ctx,spot) {
-if (!Object.hasOwn(ctx.legend.rigs,spot.glyph)) fail('unknown rig glyph "' + spot.glyph + '" at ' + where(spot) + ' (not in WORLD_RIGS)');
-const rig = rigOf(ctx.legend.rigs[spot.glyph]);
-if (!rig) fail('unknown rig "' + ctx.legend.rigs[spot.glyph] + '" for "' + spot.glyph + '" at ' + where(spot) + ' (not in the rig catalog)');
-if (ctx.world.rigs[rig.id]) fail('duplicate rig "' + rig.id + '" ("' + spot.glyph + '" at ' + where(spot) + ')');
+function placeRigById(ctx,{ rigId,spot,source }) {
+const rig = rigOf(rigId);
+if (!rig) fail('unknown rig "' + rigId + '" for ' + source + ' at ' + where(spot) + ' (not in the rig catalog)');
+if (ctx.world.rigs[rig.id]) fail('duplicate rig "' + rig.id + '" (' + source + ' at ' + where(spot) + ')');
 const id = 'rig-' + rig.id;
 const thing = { id,kind:'rig',col:spot.col,row:spot.row,rig:rig.id,family:rig.family,name:rig.title };
 ctx.world.rigs[rig.id] = thing;
 return addThingOnce(ctx,thing);
+}
+function placeRig(ctx,spot) {
+if (!Object.hasOwn(ctx.legend.rigs,spot.glyph)) fail('unknown rig glyph "' + spot.glyph + '" at ' + where(spot) + ' (not in WORLD_RIGS)');
+return placeRigById(ctx,{ rigId:ctx.legend.rigs[spot.glyph],spot,source:'"' + spot.glyph + '"' });
 }
 function placeKernelDoor(ctx,spot) {
 ctx.world.kernelDoor ||= { id:KERNEL_DOOR_ID,cells:[] };
@@ -123,6 +126,16 @@ const kind = kindOf(spot.glyph);
 if (!kind) fail('unknown glyph "' + spot.glyph + '" at ' + where(spot));
 const place = PLACERS[kind];
 return { kind,id:place ? place(ctx,spot) :null,glyph:spot.glyph };
+}
+function placeRigSpot(ctx,spot) {
+const entry = cellAt(ctx.world,spot);
+if (!entry) fail('rig spot "' + spot.rig + '" at ' + where(spot) + ' is off the map');
+if (entry.kind !== 'wall') fail('rig spot "' + spot.rig + '" at ' + where(spot) + ' is not a wall');
+const id = placeRigById(ctx,{ rigId:spot.rig,spot,source:'spot' });
+ctx.world.cells[spot.row * ctx.world.cols + spot.col] = { kind:'rig',id,glyph:entry.glyph };
+}
+function placeRigSpots(ctx,spots) {
+for (const spot of spots) placeRigSpot(ctx,spot);
 }
 function checkRows(rows) {
 if (!Array.isArray(rows) || rows.length === 0) fail('the map has no rows');
@@ -182,6 +195,7 @@ checkRows(rows);
 const world = emptyWorld(rows,content);
 const ctx = { world,legend:legendOf(content,data),doorSpots:{} };
 scanRows(ctx,rows);
+placeRigSpots(ctx,data.WORLD_RIG_SPOTS || []);
 if (!world.spawn) fail('no spawn (@)');
 pairDoors(ctx);
 world.sectors = sectorsOf(ctx);

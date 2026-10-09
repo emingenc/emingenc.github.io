@@ -29,6 +29,14 @@ levels:['stream-1','stream-2','stream-3'],
 pitch:'REAL-TIME triage of a live context feed',
 guided:false,
 },
+turret:{
+id:'turret',title:'LOOKUP TURRET',family:'hash',host:'rig',
+labId:'turret',
+levels:['turret-1'],
+rank:{ 0:0,1:10,2:20,3:30 },
+pitch:'answer each drone with one look-up',
+guided:false,
+},
 };
 const STARS_PER_LEVEL = 3;
 function rigOf(rigId) {

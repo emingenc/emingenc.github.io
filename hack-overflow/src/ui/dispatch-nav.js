@@ -12,8 +12,10 @@ import { UI_MENU_RIG_PREFIX } from './menu.js';
 import { uiOpenRigHost } from './rig-loader.js';
 import { uiBreachInert } from './render-submit-panel.js';
 import { uiStoryNext, uiStorySkip } from './story-dialogue.js';
+import { uiHistoryPush } from './history.js';
 
 function uiStartGame(app) {
+uiHistoryPush(app);
 uiEnterGrid(app);
 if (!app.game.notice) return;
 uiShowToast(app,{ text:app.game.notice,kind:'info' });

@@ -2,9 +2,13 @@ import { tapIntent, tapCellFor, createDpadGesture, dpadDown, dpadUp, dpadClickIs
 import { uiEl, uiPointerIsCoarse } from './dom.js';
 import { uiDpadDirFor } from './grid-dpad.js';
 import { uiWalkPath, uiWalkPress, uiWalkRelease } from './grid-walk.js';
+import { uiGridPing } from './grid-actors.js';
+import { uiFireCancel, uiFireClick, uiFireTouchDown, uiFireTouchUp } from './grid-fire.js';
 
 
 const UI_TAP_MARKER_MS = 500;
+const UI_PING_REACH_TILES = 1;
+const HALF = 0.5;
 
 function uiCreateTouchState() {
 const marker = uiEl('div',{ className:'tap-marker' });
@@ -21,9 +25,12 @@ function uiStageRectFor(app,node) {
 const canvas = app.game.stage ? app.game.stage.canvas :null;
 return (canvas || node).getBoundingClientRect();
 }
-function uiCellForEvent(app,node,event) {
+function uiPointForEvent(app,node,event) {
 const rect = uiStageRectFor(app,node);
-return tapCellFor(app.game.world,app.game.view,{ left:event.clientX - rect.left,top:event.clientY - rect.top });
+return { left:event.clientX - rect.left,top:event.clientY - rect.top };
+}
+function uiCellForEvent(app,node,event) {
+return tapCellFor(app.game.world,app.game.view,uiPointForEvent(app,node,event));
 }
 function uiMarkerRect(view,cell) {
 return { left:(cell.col - view.camera.col) * view.tile,top:(cell.row - view.camera.row) * view.tile,size:view.tile };
@@ -60,6 +67,22 @@ uiWalkPath(app,{ dirs:intent.dirs });
 uiPlaceMarker(app,state,cell);
 return true;
 }
+function uiDroneNearPoint(app,point) {
+const view = app.game.view;
+return app.game.fight.actors.find(function (actor) {
+const away = Math.hypot((actor.col + HALF - view.camera.col) * view.tile - point.left,(actor.row + HALF - view.camera.row) * view.tile - point.top);
+return actor.hp > 0 && away <= view.tile * UI_PING_REACH_TILES;
+}) || null;
+}
+function uiTapPing(app,event) {
+const state = uiTouchState(app);
+if (!app.game.view || !app.game.fight || !state.node.contains(event.target) || app.game.travelOpen) return false;
+const actor = uiDroneNearPoint(app,uiPointForEvent(app,state.node,event));
+if (!actor) return false;
+uiGridPing(app,actor.id,1);
+uiPlaceMarker(app,state,{ col:actor.col,row:actor.row });
+return true;
+}
 function uiClearDpadOnRelease(app) {
 const state = uiTouchState(app);
 state.holdTimers.forEach(function (timer) { window.clearTimeout(timer); });
@@ -72,6 +95,7 @@ const el = event.target && event.target.closest ? event.target.closest('[data-fo
 return el ? el.getAttribute('data-focus-key') :null;
 }
 function uiSwallowDpadGhostClick(app,event) {
+if (uiFireClick(app,event)) return;
 const state = uiTouchState(app);
 if (Date.now() < state.swallowClickUntil) {
 state.swallowClickUntil = 0;
@@ -144,6 +168,7 @@ if (app.screen !== 'grid') { uiLeaveDpadScreen(state,{ pointerId:event.pointerId
 uiStartHoldTimer(app,state,{ pointerId:event.pointerId,dir,delayMs:down.holdAt - at });
 }
 function uiGridPointerDown(event,app) {
+if (uiFireTouchDown(app,event)) return true;
 const dir = uiDpadDirFor(event.target);
 if (dir && !app.game.travelOpen) uiPressDpad(app,event,dir);
 return Boolean(dir);
@@ -158,9 +183,10 @@ uiWalkRelease(app,up.release);
 return true;
 }
 function uiGridPointerUp(event,app) {
-return uiReleaseDpad(app,event) || uiHandleTap(app,event);
+return uiFireTouchUp(app) || uiReleaseDpad(app,event) || uiTapPing(app,event) || uiHandleTap(app,event);
 }
 function uiGridPointerCancel(event,app) {
+uiFireCancel(app);
 return uiReleaseDpad(app,event);
 }
 

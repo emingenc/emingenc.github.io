@@ -6,6 +6,7 @@ import { uiWireFeedback } from './feedback.js';
 import { uiGameDebug, uiGameSnapshot, uiSolveSteps } from './game-state.js';
 import { uiInitAudio } from './audio.js';
 import { warmJudgeWorker } from './judge-client.js';
+import { uiWireHistory } from './history.js';
 
 async function uiHandleAction(app,actionId) {
 await uiApplyAction(app,actionId);
@@ -75,6 +76,7 @@ document.addEventListener(type,function (event) { uiHandlePointer(app,event); })
 });
 window.addEventListener('blur',function () { uiReleaseInput(app); });
 document.addEventListener('visibilitychange',function () { uiHandleVisibility(app); });
+uiWireHistory(app,(id) => uiHandleAction(app,id));
 }
 function uiExposeDebug(app) {
 window.HO_GAME = Object.assign(uiGameDebug(),{
