@@ -17,6 +17,7 @@ import { uiOpenLevelUp } from './screen-levelup.js';
 import { uiOpenEnding } from './screen-ending.js';
 import { uiOpenRigHost } from './rig-loader.js';
 import { uiStoryShow } from './story-dialogue.js';
+import { uiActorsTick, uiNoteDoorway } from './grid-actors.js';
 
 const UI_STORY_FOCUS_KEY = 'story-next';
 const UI_NEAR_KINDS = { terminal:1,core:1,kernel:1,rig:1 };
@@ -162,6 +163,7 @@ app.story.returnKey = app.lastFocusKey;
 app.lastFocusKey = UI_STORY_FOCUS_KEY;
 }
 function uiOpenRigScreen(app,rig) {
+app.entering = true;
 uiOpenRigHost(app,rig).then(function () {
 if (app.screen === 'grid') return;
 uiStoryKeepsFocus(app);
@@ -169,6 +171,8 @@ uiRenderApp(app);
 }).catch(function () {
 uiShowToast(app,{ text:rig.title + ' could not load. Try again.',kind:'info' });
 uiRenderKeepingFocus(app);
+}).finally(function () {
+app.entering = false;
 });
 }
 function uiRigMeeting(app,rig) {
@@ -179,6 +183,7 @@ if (unseen.length > 0) uiCommitSave(app,markBeatsSeen(app.game.save,unseen));
 }
 function uiOnRig(app,info) {
 const game = app.game;
+if (app.entering) return false;
 uiActedOn(game);
 if (uiLevelUpBeforeLeaving(app)) return true;
 const rig = rigOf(info.event.rigId);
@@ -188,6 +193,7 @@ uiRigMeeting(app,rig);
 uiOpenRigScreen(app,rig);
 return true;
 }
+const UI_TICKING_EVENTS = new Set(['step','bump']);
 const UI_STEP_HANDLERS = {
 step:uiOnStep,cache:uiOnCache,bump:uiOnBump,blocked:uiBlock,encrypted:uiBlock,
 terminal:uiOnTerminal,core:uiOnCore,kernel:uiOnKernel,rig:uiOnRig,
@@ -197,8 +203,10 @@ const game = app.game;
 const from = game.avatar.pos;
 game.avatar = { pos:result.pos,facing:result.facing };
 uiCommitSave(app,withPosition(game.save,game.avatar));
+uiNoteDoorway(app,result.pos);
+const hurt = UI_TICKING_EVENTS.has(result.event.type) && uiActorsTick(app);
 const rerender = UI_STEP_HANDLERS[result.event.type](app,{ event:result.event,from });
-if (rerender) uiRenderKeepingFocus(app);
+if (rerender || hurt) uiRenderKeepingFocus(app);
 }
 
 export { uiApplyStepEvent, uiNearDir, uiOpenReadyLevelUp, uiLevelUpAfterRender, uiLevelUpAfter };

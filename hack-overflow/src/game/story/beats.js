@@ -80,6 +80,15 @@ outro:[
 [GHOST,'Signal over noise. If I had learned that, there would be no Grid to fix.'],
 ],
 },
+turret:{
+intro:[
+[GHOST,'The Lookup Turret. A drone swarm is coming, and I never taught it to knock.'],
+[GHOST,'Clear the swarm to open the way. Answer each drone with one look-up. Aim, fire, next.'],
+],
+outro:[
+[GHOST,'Swarm down. One look-up each. That is what a hash map is for.'],
+],
+},
 'harness-forge':{
 intro:[
 [GHOST,'The Checkpoint. This is where my guardrails should have been built. Go on, build them.'],

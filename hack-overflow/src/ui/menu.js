@@ -4,7 +4,7 @@ import { uiEl } from './dom.js';
 import { uiBreachInert } from './render-submit-panel.js';
 
 const UI_MENU_RIG_PREFIX = 'menu-rig-';
-const UI_RESET_CONFIRM_TEXT = 'Reset all progress? This clears your XP, levels, breached locks and position.';
+const UI_RESET_CONFIRM_TEXT = 'Reset all progress? This clears your XP, levels, rank, breached locks and position.';
 const UI_RESET_CONFIRM_ID = 'menu-confirm-text';
 const UI_ROVE_ARROWS = { ArrowUp:-1,ArrowDown:1 };
 function uiRoveDelta(event) {

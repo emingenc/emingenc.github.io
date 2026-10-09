@@ -2,7 +2,7 @@
   grid-area:hud;
   flex-wrap:wrap;
   row-gap:var(--sp-2);
-  padding:0 0 var(--sp-3);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) var(--sp-3) env(safe-area-inset-left,0px);
   margin-bottom:0;
 }
 
@@ -265,4 +265,14 @@
   .grid-toast-line {
     font-size:var(--fs-2xl);
   }
+}
+
+.grid-hearts {
+  flex-shrink:0;
+  align-self:center;
+  font-family:var(--font-display);
+  font-size:var(--fs-xl);
+  letter-spacing:0.1em;
+  color:var(--red);
+  white-space:nowrap;
 }
