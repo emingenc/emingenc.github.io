@@ -4,7 +4,6 @@ import { nextUnlockText } from '../game/messages.js';
 import { countUpValue } from '../game/ease.js';
 import { uiEl, uiPrefersReducedMotion } from './dom.js';
 import { uiHudSoundButton, uiHudMenuButton } from './render-lock-left.js';
-import { uiGridHearts } from './grid-actors.js';
 
 const UI_PERCENT = 100;
 const UI_XP_TWEEN_MS = 500;
@@ -75,7 +74,7 @@ const text = nextUnlockText(game.world,nextUnlock(game.progress));
 return text ? uiEl('p',{ className:'grid-hud-hint',text }) :null;
 }
 function uiGridHud(app) {
-const children = [uiGridHearts(app),uiHudStats(app.game),uiMapButton(),uiHudSoundButton(app),uiHudMenuButton(),uiHudHint(app.game)];
+const children = [uiHudStats(app.game),uiMapButton(),uiHudSoundButton(app),uiHudMenuButton(),uiHudHint(app.game)];
 return uiEl('header',{ className:'hud grid-hud',children:children.filter(Boolean) });
 }
 

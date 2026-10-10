@@ -126,6 +126,10 @@
   background:var(--border);
 }
 
+.grid-fire-idle {
+  visibility:hidden;
+}
+
 .grid-fire-pulse {
   box-shadow:0 0 0 4px rgba(255,77,94,0.35),0 0 14px var(--red);
 }

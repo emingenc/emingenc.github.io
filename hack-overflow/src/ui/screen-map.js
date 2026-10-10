@@ -2,22 +2,10 @@ import { sectorLocksLeft } from '../game/progress.js';
 import { isOpen } from '../game/world.js';
 import { encryptedHook } from '../game/story/story.js';
 import { uiEl } from './dom.js';
-import { uiWalkReleaseAll } from './grid-walk.js';
-import { uiEnterGrid } from './screen-grid.js';
 import { uiDrawMapInto } from './map-draw.js';
 
 let uiMapResizer = null;
 
-function uiOpenMap(app) {
-if (app.screen !== 'grid') return;
-uiWalkReleaseAll(app);
-app.game.travelOpen = false;
-app.screen = 'map';
-app.lastFocusKey = 'map-close';
-}
-function uiCloseMap(app) {
-if (app.screen === 'map') uiEnterGrid(app);
-}
 function uiMapSectorEntry(game,sector) {
 const gate = game.world.gates[sector.key];
 return {
@@ -112,4 +100,4 @@ sync:uiSyncMap,
 };
 }
 
-export { uiMapScreen, uiOpenMap, uiCloseMap };
+export { uiMapScreen };

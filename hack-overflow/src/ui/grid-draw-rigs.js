@@ -3,6 +3,7 @@ import { UI_RIG_PIPS } from './grid-sprites.js';
 import { UI_SAFEHOUSE_ACCENT, uiIsGround, uiLabelWidth, uiPulse, uiRigAccent, uiWallAt } from './grid-draw-common.js';
 
 const UI_NO_SAVE = Object.freeze({ labs:{} });
+const UI_ACROSS = { col:-2,row:2 };
 
 function uiRigPlan(world,spot) {
 const base = [{ sprite:'wall-top',accent:UI_SAFEHOUSE_ACCENT }];
@@ -18,7 +19,10 @@ const run = Math.ceil(width);
 if (uiWallRun(world,{ col:rig.col - run,row:rig.row },run)) return { col:rig.col - width,row:rig.row };
 if (uiWallRun(world,{ col:rig.col + 1,row:rig.row },run)) return { col:rig.col + 1,row:rig.row };
 const under = { col:rig.col,row:rig.row + 1 };
-return uiWallAt(world,under) ? under :null;
+if (uiWallAt(world,under)) return under;
+const across = { col:rig.col + UI_ACROSS.col,row:rig.row + UI_ACROSS.row };
+if (uiWallRun(world,across,run)) return across;
+return uiWallRun(world,{ col:rig.col - run,row:rig.row - 1 },run) ? { col:rig.col - width,row:rig.row - 1 } :null;
 }
 function uiRigPlates(world) {
 return Object.values(world.rigs).flatMap(function (rig) {

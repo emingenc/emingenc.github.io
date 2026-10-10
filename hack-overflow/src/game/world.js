@@ -1,4 +1,4 @@
-import { gateLevel } from './progress.js';
+import { barrierOpen, gateLevel } from './progress.js';
 import { rigOf } from './rig-catalog.js';
 
 
@@ -13,6 +13,7 @@ const GLYPH_RANGES = [
 const SPAWN_GLYPH = '@';
 const KERNEL_DOOR_ID = 'kernel-door';
 const KERNEL_ID = 'kernel';
+const BARRIER_NAME = 'SENTRY FIELD';
 function fail(reason) {
 throw new Error('world: ' + reason);
 }
@@ -83,7 +84,7 @@ ctx.world.cores[family] = { id,family,col:spot.col,row:spot.row };
 return addThingOnce(ctx,{ id,kind:'core',col:spot.col,row:spot.row,family,name:ctx.legend.live.get(family).name });
 }
 function placeCache(ctx,spot) {
-const id = 'cache-' + spot.col + '-' + spot.row;
+const id = ctx.legend.cacheIds[where(spot)] ?? 'cache-' + spot.col + '-' + spot.row;
 ctx.world.caches.push(id);
 return addThingOnce(ctx,{ id,kind:'cache',col:spot.col,row:spot.row });
 }
@@ -137,6 +138,19 @@ ctx.world.cells[spot.row * ctx.world.cols + spot.col] = { kind:'rig',id,glyph:en
 function placeRigSpots(ctx,spots) {
 for (const spot of spots) placeRigSpot(ctx,spot);
 }
+function placeBarrierSpot(ctx,spot) {
+const entry = cellAt(ctx.world,spot);
+if (!entry) fail('barrier spot "' + spot.id + '" at ' + where(spot) + ' is off the map');
+if (entry.kind !== 'floor') fail('barrier spot "' + spot.id + '" at ' + where(spot) + ' is not a floor cell');
+const id = 'barrier-' + spot.id;
+const { opens,family } = spot;
+ctx.world.barriers[spot.id] = { id,opens,family,cells:[cellOf(spot)] };
+addThingOnce(ctx,{ id,kind:'barrier',col:spot.col,row:spot.row,opens,family,name:BARRIER_NAME });
+ctx.world.cells[spot.row * ctx.world.cols + spot.col] = { kind:'barrier',id,glyph:entry.glyph };
+}
+function placeBarrierSpots(ctx,spots) {
+for (const spot of spots) placeBarrierSpot(ctx,spot);
+}
 function checkRows(rows) {
 if (!Array.isArray(rows) || rows.length === 0) fail('the map has no rows');
 const width = rows[0].length;
@@ -171,6 +185,7 @@ terminals:data.WORLD_TERMINALS || {},
 gates:data.WORLD_GATES || {},
 cores:data.WORLD_CORES || {},
 rigs:data.WORLD_RIGS || {},
+cacheIds:data.WORLD_CACHE_IDS || {},
 live,
 sealed:content.route.filter((family) => !live.has(family.key)),
 };
@@ -186,7 +201,7 @@ return sectors;
 function emptyWorld(rows,content) {
 return {
 cols:rows[0].length,rows:rows.length,spawn:null,cells:[],things:{},terminals:{},doors:{},gates:{},cores:{},
-caches:[],kernelDoor:null,kernel:null,encrypted:[],rigs:{},labels:[],placed:[],problems:problemsOf(content),sectors:{},
+caches:[],kernelDoor:null,kernel:null,encrypted:[],rigs:{},barriers:{},labels:[],placed:[],problems:problemsOf(content),sectors:{},
 };
 }
 function buildWorld(content,data) {
@@ -196,6 +211,7 @@ const world = emptyWorld(rows,content);
 const ctx = { world,legend:legendOf(content,data),doorSpots:{} };
 scanRows(ctx,rows);
 placeRigSpots(ctx,data.WORLD_RIG_SPOTS || []);
+placeBarrierSpots(ctx,data.WORLD_BARRIER_SPOTS || []);
 if (!world.spawn) fail('no spawn (@)');
 pairDoors(ctx);
 world.sectors = sectorsOf(ctx);
@@ -215,6 +231,7 @@ const OPENERS = {
 door:(world,progress,thing) => progress.breached.has(thing.key),
 gate:(world,progress,thing) => progress.level >= world.gates[thing.family].level,
 'kernel-door':(world,progress) => progress.left === 0,
+barrier:barrierOpen,
 };
 function isOpen(world,progress,id) {
 const thing = Object.hasOwn(world.things,id) ? world.things[id] :null;

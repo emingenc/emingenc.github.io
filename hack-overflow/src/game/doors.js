@@ -4,11 +4,13 @@ import { clamp01, easeOutCubic } from './ease.js';
 
 const REVEAL_TIMING = { stepMs:450,staggerMs:150 };
 const REVEAL_WORDS = { door:'Door',gate:'Gate','kernel-door':'KERNEL door' };
+const BARRIER_REVEAL = 'SENTRY FIELD down. The way is open.';
 function openablesOf(world) {
 const doors = Object.values(world.doors).map((door) => ({ id:door.id,kind:'door',key:door.key,cells:door.cells }));
 const gates = Object.values(world.gates).map((gate) => ({ id:gate.id,kind:'gate',name:gate.name,cells:gate.cells }));
+const barriers = Object.values(world.barriers).map((barrier) => ({ id:barrier.id,kind:'barrier',name:world.things[barrier.id].name,cells:barrier.cells }));
 const kernelDoor = world.kernelDoor ? [{ id:world.kernelDoor.id,kind:'kernel-door',cells:world.kernelDoor.cells }] :[];
-return [...doors,...gates,...kernelDoor];
+return [...doors,...gates,...barriers,...kernelDoor];
 }
 function withLabel(world,progress,item) {
 return item.kind === 'door' ? { ...item,label:lockLabel(world,progress,item.key) } :item;
@@ -19,6 +21,7 @@ const opened = openablesOf(world).filter((item) => !seen.has(item.id) && isOpen(
 return opened.map((item) => withLabel(world,progress,item));
 }
 function revealText(item) {
+if (item.kind === 'barrier') return BARRIER_REVEAL;
 const word = REVEAL_WORDS[item.kind] || REVEAL_WORDS.door;
 if (item.kind === 'door') return word + ' open: ' + (item.label || lockName(item.key)) + '.';
 if (item.kind === 'gate') return word + ' open: ' + item.name + '.';

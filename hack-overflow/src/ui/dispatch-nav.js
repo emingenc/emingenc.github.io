@@ -7,12 +7,14 @@ import { uiWalkReleaseAll } from './grid-walk.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiEnterGrid } from './screen-grid.js';
 import { uiLeaveBreach, uiDisconnect } from './breach-flow.js';
-import { uiOpenMap, uiCloseMap } from './screen-map.js';
+import { uiOpenMap, uiCloseMap } from './map-loader.js';
 import { UI_MENU_RIG_PREFIX } from './menu.js';
 import { uiOpenRigHost } from './rig-loader.js';
 import { uiBreachInert } from './render-submit-panel.js';
 import { uiStoryNext, uiStorySkip } from './story-dialogue.js';
 import { uiHistoryPush } from './history.js';
+
+const UI_MAP_FAIL_TEXT = 'MAP could not load. Try again.';
 
 function uiStartGame(app) {
 uiHistoryPush(app);
@@ -68,8 +70,12 @@ if (app.screen !== 'breach' || uiBreachInert(app)) return;
 app.menuOpen = false;
 uiDisconnect(app);
 }
-function uiHandleMapOpen(app) {
-uiOpenMap(app);
+async function uiHandleMapOpen(app) {
+try {
+await uiOpenMap(app);
+} catch (error) {
+uiShowToast(app,{ text:UI_MAP_FAIL_TEXT,kind:'info' });
+}
 }
 function uiHandleMapClose(app) {
 uiCloseMap(app);

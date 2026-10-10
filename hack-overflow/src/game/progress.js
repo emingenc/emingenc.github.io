@@ -1,3 +1,4 @@
+import { rigStars } from './rig-catalog.js';
 import { rigMet } from './rig-reward.js';
 
 const BASE_XP = { Easy:40,Medium:60,Hard:100 };
@@ -78,6 +79,10 @@ return unlocks;
 function metRigs(world,save) {
 return new Set([...(save.met ?? []),...Object.keys(world.rigs ?? {}).filter((rigId) => rigMet(save,rigId))]);
 }
+function wonRigs(world,save) {
+const record = { labs:save.labs ?? {} };
+return new Set(Object.keys(world.rigs ?? {}).filter((rigId) => rigStars(record,rigId).cleared > 0));
+}
 function progressOf(world,save) {
 const level = levelFor(save.xp);
 const breached = new Set(Object.keys(save.locks));
@@ -85,7 +90,7 @@ const best = {};
 for (const key of breached) best[key] = save.locks[key].best;
 return {
 xp:save.xp,level,rank:rankFor(level),capacity:traceCapacity(level),exploits:exploitsAt(level),
-breached,best,caches:new Set(save.caches),cores:new Set(save.cores),met:metRigs(world,save),
+breached,best,caches:new Set(save.caches),cores:new Set(save.cores),met:metRigs(world,save),won:wonRigs(world,save),
 left:world.placed.filter((key) => !breached.has(key)).length,ended:save.ended === true,
 };
 }
@@ -97,6 +102,13 @@ function coreState(world,progress,family) {
 if (progress.cores.has(family)) return 'claimed';
 const sector = world.sectors[family];
 return sector && sector.keys.length > 0 && sectorLocksLeft(world,progress,family) === 0 ? 'ready' :'sealed';
+}
+function passedBarrier(world,progress,thing) {
+const keys = world.sectors[thing.family]?.keys ?? [];
+return keys.slice(1).some((key) => progress.breached.has(key));
+}
+function barrierOpen(world,progress,thing) {
+return progress.won.has(thing.opens) || passedBarrier(world,progress,thing);
 }
 
 export {
@@ -117,6 +129,7 @@ exploitsAt,
 gateLevel,
 unlocksBetween,
 progressOf,
+barrierOpen,
 sectorLocksLeft,
 coreState,
 };

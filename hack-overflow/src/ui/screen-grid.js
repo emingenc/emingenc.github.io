@@ -12,6 +12,7 @@ import { uiWalkPress, uiWalkRelease, uiWalkReleaseAll, uiWalkInteract } from './
 import { uiOpenReadyLevelUp, uiLevelUpAfterRender } from './grid-events.js';
 import { uiStoryOnGrid } from './story-dialogue.js';
 import { openingDue } from '../game/opening.js';
+import { isOpen } from '../game/world.js';
 import { uiHasGame } from './game-storage.js';
 import { uiRenderKeepingFocus } from './app.js';
 
@@ -38,10 +39,22 @@ app.game.openingLoad = import('./grid-opening.js')
 .then(function (opening) { uiOpeningLoaded(app,opening); },function () { uiOpeningFailed(app); })
 .finally(function () { app.game.openingLoad = null; });
 }
+function uiSentryWanted(game) {
+const barrier = game.world.barriers.sentry;
+return Boolean(barrier) && !game.sentry && !game.sentryLoad && !isOpen(game.world,game.progress,barrier.id);
+}
+function uiLoadSentry(app) {
+if (!uiSentryWanted(app.game)) return;
+app.game.sentryLoad = import('./grid-sentry.js')
+.then(function (sentry) { sentry.uiInstallSentry(app); })
+.catch(function () {})
+.finally(function () { app.game.sentryLoad = null; });
+}
 function uiEnterGrid(app) {
 app.screen = 'grid';
 app.lastFocusKey = 'grid-stage';
 uiOpenReadyLevelUp(app);
+uiLoadSentry(app);
 if (uiOpeningWanted(app)) uiLoadOpening(app);
 else uiStoryOnGrid(app);
 }

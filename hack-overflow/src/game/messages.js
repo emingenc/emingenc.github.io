@@ -32,10 +32,14 @@ return isPlace(family) ? PLACE_NAMES[family] :family;
 function placePhrase(world,family) {
 return (isPlace(family) ? 'the ' :'') + sectorName(world,family);
 }
+function sentryText(world,need) {
+return 'SENTRY FIELD is on. Use the ' + rigOf(need.opens).title + ' console to switch it off.';
+}
 const NEED_TEXTS = {
 breach:(world,need) => 'Breach ' + lockName(need.key),
 level:(world,need) => 'Needs LV ' + need.level + ' (' + need.xpToGo + ' XP to go)',
 all:(world,need) => 'Breach all ' + plural(world.placed.length,'lock') + ' (' + need.left + ' left)',
+sentry:sentryText,
 };
 const BLOCKING_TEXTS = {
 blocked:(world,event) => NEED_TEXTS[event.need.kind](world,event.need),

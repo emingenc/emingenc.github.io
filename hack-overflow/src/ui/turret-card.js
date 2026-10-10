@@ -9,6 +9,7 @@ const STAR_ON = '★';
 const STAR_OFF = '☆';
 const PERCENT = 100;
 const MIN_BAR_PERCENT = 6;
+const FIELD_DOWN = 'The SENTRY FIELD is down. The hash sector is open.';
 const CARD_ACTIONS = [{ action: 'turret-replay', label: 'REPLAY' }, { action: 'rig-back', label: 'LEAVE' }];
 
 function uiTurretStar(index, stars) {
@@ -65,7 +66,8 @@ function uiTurretCard(app, result) {
     const lines = [result.why || '', 'Every drone needs one look-up: slot T - v.'].filter(Boolean);
     return uiArenaCard(app, { title: TURRET_TEXTS.card.failTitle, tone: 'fail', lines, body: [uiTurretScore(state)], actions: CARD_ACTIONS });
   }
-  return uiArenaCard(app, { title: TURRET_TEXTS.card.title, lines: [TURRET_TEXTS.card.next], body: uiTurretWinBody(state, result), actions: CARD_ACTIONS });
+  const lines = result.lookupNew ? [FIELD_DOWN, TURRET_TEXTS.card.next] : [TURRET_TEXTS.card.next];
+  return uiArenaCard(app, { title: TURRET_TEXTS.card.title, lines, body: uiTurretWinBody(state, result), actions: CARD_ACTIONS });
 }
 
 export { uiTurretCard };

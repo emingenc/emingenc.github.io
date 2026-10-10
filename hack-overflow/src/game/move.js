@@ -16,6 +16,7 @@ const NEEDS = {
 door:(world,progress,door) => ({ kind:'breach',key:door.key }),
 gate:gateNeed,
 'kernel-door':(world,progress) => ({ kind:'all',left:progress.left }),
+barrier:(world,progress,barrier) => ({ kind:'sentry',opens:barrier.opens }),
 };
 function coreEvent(world,progress,core) {
 const left = sectorLocksLeft(world,progress,core.family);

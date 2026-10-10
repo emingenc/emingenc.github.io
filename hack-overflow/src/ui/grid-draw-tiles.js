@@ -8,7 +8,7 @@ import { uiRigCleared, uiRigLayers, uiRigOverlays, uiRigPlan, uiRigPlates, uiRig
 
 const UI_ENCRYPTED_ACCENT = 'dim';
 const UI_WALKABLE = new Set(['floor','cache']);
-const UI_FAMILY_SEEDS = new Set(['terminal','door','core','gate','rig']);
+const UI_FAMILY_SEEDS = new Set(['terminal','door','core','gate','barrier','rig']);
 const UI_NEAR_KINDS = new Set(['terminal','core','kernel','rig']);
 const UI_WALL_EDGES = [
 { dir:'down',sprite:'wall-face' },{ dir:'up',sprite:'rim-up' },{ dir:'left',sprite:'rim-left' },{ dir:'right',sprite:'rim-right' },
@@ -18,6 +18,8 @@ const UI_WALL_CORNERS = [
 { dirs:['down','right'],sprite:'rim-se' },{ dirs:['down','left'],sprite:'rim-sw' },
 ];
 const UI_BARRIER_SPRITES = { door:{ flat:'door',turned:'door-turned' },'kernel-door':{ flat:'kernel-door',turned:'kernel-door' } };
+const UI_SPANNING_KINDS = new Set(['door','gate','kernel-door','barrier']);
+const UI_SENTRY = { closed:'red',open:'primary' };
 const UI_NO_LAYERS = Object.freeze([]);
 const UI_HALF = UI_SPRITE_SIZE / 2;
 const UI_FULL_STARS = 3;
@@ -143,7 +145,7 @@ return [{ sprite:'wall-top',accent:UI_SAFEHOUSE_ACCENT },...layers,...uiCornerLa
 }
 function uiIsBlock(world,cell,id) {
 const entry = cellAt(world,cell);
-return !entry || !UI_GROUND.has(entry.kind) || entry.id === id;
+return !entry || !UI_GROUND.has(entry.kind) || entry.kind === 'terminal' || entry.id === id;
 }
 function uiTurned(world,spot) {
 const left = cellToward(spot.cell,'left');
@@ -172,8 +174,7 @@ if (kind === 'wall') return { kind,layers:uiWallLayers(world,spot) };
 if (kind === 'rig') return uiRigPlan(world,spot);
 if (kind === 'encrypted') return { kind,layers:[{ sprite:'encrypted',accent:UI_ENCRYPTED_ACCENT }] };
 if (!UI_GROUND.has(kind)) return { kind,layers:UI_NO_LAYERS };
-const barrier = kind === 'door' || kind === 'gate' || kind === 'kernel-door';
-return uiGroundPlan(world,{ ...spot,turned:barrier ? uiTurned(world,spot) :null });
+return uiGroundPlan(world,{ ...spot,turned:UI_SPANNING_KINDS.has(kind) ? uiTurned(world,spot) :null });
 }
 function uiLabelPlan(world,label) {
 const sector = Object.values(world.sectors).find(function (entry) { return entry.name.toUpperCase() === label.text.toUpperCase(); });
@@ -229,16 +230,34 @@ if (openness >= 1) return layers;
 const slide = { axis:spot.turned ? 'col' :'row',shift:Math.round(Math.max(openness,0) * UI_HALF) };
 return [...layers,{ sprite:spot.sprite,accent:spot.accent,slide }];
 }
+function uiBeamFrame(frame) {
+return frame.reducedMotion ? 0 :Math.floor(frame.now / UI_TILE_MOTION.beamMs) % UI_BEAM_FRAMES;
+}
 function uiGateLayers(frame,spot) {
 const openness = frame.doorOpenness(spot.id);
 if (openness >= 1) return [...spot.floor,...spot.emitters];
-const beam = frame.reducedMotion ? 0 :Math.floor(frame.now / UI_TILE_MOTION.beamMs) % UI_BEAM_FRAMES;
+const beam = uiBeamFrame(frame);
 const beams = { sprite:(spot.turned ? 'beams-turned-' :'beams-') + beam,accent:spot.accent,alpha:1 - Math.max(openness,0) };
 return [...spot.floor,beams,...spot.emitters];
 }
+function uiSentryField(spot,look) {
+return { sprite:(spot.turned ? 'beams-turned-' :'beams-') + look.beam,accent:look.accent,alpha:look.alpha };
+}
+function uiSentryOpenLayers(spot) {
+const chevrons = { sprite:spot.turned ? 'chevrons-turned' :'chevrons',accent:UI_SENTRY.open };
+const posts = spot.emitters.map(function (emitter) { return { sprite:emitter.sprite.replace('emitter','post'),accent:UI_SENTRY.open }; });
+return [...spot.floor,chevrons,...posts];
+}
+function uiSentryLayers(frame,spot) {
+const openness = frame.doorOpenness(spot.id);
+if (openness >= 1) return uiSentryOpenLayers(spot);
+const field = uiSentryField(spot,{ beam:uiBeamFrame(frame),accent:UI_SENTRY.closed,alpha:1 - Math.max(openness,0) });
+const emitters = spot.emitters.map(function (emitter) { return { ...emitter,accent:UI_SENTRY.closed }; });
+return [...spot.floor,field,...emitters];
+}
 const UI_STATE_LAYERS = new Map([
 ['terminal',uiTerminalLayers],['core',uiCoreLayers],['cache',uiCacheLayers],['door',uiDoorLayers],
-['kernel-door',uiDoorLayers],['gate',uiGateLayers],['rig',uiRigLayers],
+['kernel-door',uiDoorLayers],['gate',uiGateLayers],['barrier',uiSentryLayers],['rig',uiRigLayers],
 ]);
 function uiCellLayers(frame,cell) {
 const index = uiIndexAt(frame.world,cell);

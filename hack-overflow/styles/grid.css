@@ -144,6 +144,13 @@
     row-gap:var(--sp-1);
     padding-top:var(--sp-2);
   }
+
+  .grid-hint {
+    bottom:var(--sp-1);
+    padding:var(--sp-1) var(--sp-2);
+    font-size:var(--fs-xs);
+    line-height:1.15;
+  }
 }
 
 @media (pointer:coarse) and (orientation:landscape) and (max-height:480px) {

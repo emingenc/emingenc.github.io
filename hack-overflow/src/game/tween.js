@@ -18,12 +18,12 @@ function stepRunning(walk,now) {
 return walk.tween !== null && now < walk.tween.until;
 }
 function takeDir(walk) {
-if (walk.queued) return { dir:walk.queued,walk:{ ...walk,queued:null } };
+if (walk.queued) return { dir:walk.queued,auto:false,walk:{ ...walk,queued:null } };
 const held = walk.held.filter((dir) => dir !== walk.stalled);
-if (held.length > 0) return { dir:held[held.length - 1],walk };
+if (held.length > 0) return { dir:held[held.length - 1],auto:true,walk };
 const dirs = walk.plan ? walk.plan.dirs :[];
-if (dirs.length === 0) return { dir:null,walk };
-return { dir:dirs[0],walk:{ ...walk,plan:{ dirs:dirs.slice(1) } } };
+if (dirs.length === 0) return { dir:null,auto:true,walk };
+return { dir:dirs[0],auto:true,walk:{ ...walk,plan:{ dirs:dirs.slice(1) } } };
 }
 function startTween(last,step) {
 const continues = last !== null && step.now - last.until < WALK_FEEL.stepMs;
@@ -45,7 +45,7 @@ function advanceWalk(walk,frame) {
 if (stepRunning(walk,frame.now)) return { walk,step:null };
 const next = takeDir(walk);
 if (!next.dir) return { walk:next.walk.tween === null ? next.walk :{ ...next.walk,tween:null },step:null };
-const step = frame.move(next.dir);
+const step = frame.move(next.dir,next.auto);
 const spec = { from:frame.from,to:step.pos,now:frame.now,dir:next.dir,reducedMotion:frame.reducedMotion };
 return { walk:afterStep(next.walk,spec),step };
 }

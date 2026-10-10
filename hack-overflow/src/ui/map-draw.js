@@ -5,7 +5,7 @@ import { uiAccentOf, uiRigAccent, uiRigCleared, uiRigPlates, uiRigState, uiSecto
 const UI_MAP_PALETTE_NAMES = ['bg','panel','border','primary','bright','text','dim','cyan','magenta','amber','red'];
 const UI_MAP_GROUND_KINDS = new Set(['floor','cache']);
 const UI_MAP_INSET_KINDS = new Set(['terminal','core','kernel','rig']);
-const UI_MAP_RESERVED_KINDS = new Set(['door','gate','terminal','core','kernel-door','kernel','rig']);
+const UI_MAP_RESERVED_KINDS = new Set(['door','gate','barrier','terminal','core','kernel-door','kernel','rig']);
 const UI_MAP_STATE_COLORS = { open:'primary',locked:'amber',encrypted:'dim',avatar:'cyan' };
 const UI_MAP_CELL = { insetRatio:0.6,groundTint:0.3 };
 const UI_MAP_RIG = { ratio:1.6,minPx:9,outline:1,hollow:0.5,core:0.4 };
@@ -95,6 +95,7 @@ core:function (world,progress,thing) { return coreState(world,progress,thing.fam
 kernel:function (world,progress) { return Boolean(world.kernelDoor) && isOpen(world,progress,world.kernelDoor.id); },
 door:uiOpenerOpen,
 gate:uiOpenerOpen,
+barrier:uiOpenerOpen,
 'kernel-door':uiOpenerOpen,
 };
 function uiMapThingState(world,progress,thing) {
