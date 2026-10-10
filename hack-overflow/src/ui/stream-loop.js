@@ -4,7 +4,7 @@ import { allStagesCleared,recordStream } from '../game/labs/stream-reward.js';
 import { uiCommitSave } from './game-state.js';
 import { uiLevelUpAfter } from './grid-events.js';
 import { uiRenderApp } from './app.js';
-import { uiStoryLabFinish } from './story-dialogue.js';
+import { uiStoryLabFinish } from './machine-dialogue.js';
 import { uiStreamCue,uiStreamPaint } from './stream-paint.js';
 
 

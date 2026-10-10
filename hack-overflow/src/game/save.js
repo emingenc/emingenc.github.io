@@ -2,6 +2,7 @@ import { MAX_STARS_PER_LOCK } from '../logic/stars.js';
 import { DIRS } from './move.js';
 import { EXPLOITS } from './exploits.js';
 import { cellKey, reachable } from './path.js';
+import { RIG_CATALOG } from './rig-catalog.js';
 import { CACHE_XP, CORE_XP, levelFor, progressOf, replayGain, traceCapacity, xpForBreach } from './progress.js';
 
 
@@ -110,7 +111,7 @@ entries:problemRecord(world,data.entries,repairEntry),
 caches:knownIds(data.caches,new Set(world.caches)),
 cores:knownIds(data.cores,new Set(Object.keys(world.cores))),
 seenOpen:knownIds(data.seenOpen,new Set(Object.keys(world.things))),
-met:knownIds(data.met,new Set(Object.keys(world.rigs))),
+met:knownIds(data.met,new Set(Object.keys(RIG_CATALOG))),
 };
 }
 function parseSave(raw,world) {

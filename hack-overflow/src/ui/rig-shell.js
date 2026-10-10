@@ -5,7 +5,7 @@ import { uiEl, uiPrefersReducedMotion } from './dom.js';
 import { uiEmit } from './bus.js';
 import { uiRenderApp } from './app.js';
 import { uiRigHostLeave, uiRigHostRecordWin } from './rig-host-common.js';
-import { uiStoryLabFinish } from './story-dialogue.js';
+import { uiStoryLabFinish } from './machine-dialogue.js';
 import { RIG_MAX_STARS, RIG_STAR_FIRST_MS, RIG_STAR_STEP_MS, uiRigResultCard, uiRigStars } from './rig-result.js';
 
 const RIG_BACK = 'rig-back';

@@ -1,5 +1,5 @@
 import { GAME_EVENT } from '../game/game-events.js';
-import { createOpening, openingDroneCell, stepOpening } from '../game/opening-steps.js';
+import { createOpening, openingDroneCell, shiftOpening, stepOpening } from '../game/opening-steps.js';
 import { createExt, markOpeningDone } from '../game/save-ext.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiEmit } from './bus.js';
@@ -13,10 +13,10 @@ import { uiStoryOnGrid } from './story-dialogue.js';
 const OPENING_PULSE_MS = 100;
 const OPENING_RIG_ID = 'grid';
 const ALARM_TOAST = 'ALARM. Something is coming through the wall.';
-const DONE_TOAST = 'lc217 flickered: ROOT is rewriting it.';
+const DONE_TOAST = 'The wall is quiet again.';
 const COACH = {
-first:{ touch:'A drone crashed in! Tap it, or press A, to ping it.',keys:'A drone crashed in! Press F to ping it.' },
-again:{ touch:'Tap the drone to ping it, or press A.',keys:'Press F to ping the drone.' },
+first:{ touch:'A drone! Tap it, or press Fire (A).',keys:'A drone crashed in! Press F to ping it.' },
+again:{ touch:'Tap the drone, or press Fire (A).',keys:'Press F to ping the drone.' },
 };
 
 function uiDefaultClock() {
@@ -44,6 +44,11 @@ const cell = openingDroneCell(app.game.world,app.game.avatar.pos);
 if (!cell) { uiOpeningFinish(app); return; }
 uiClearToast(app.game);
 uiSpawnDrone(app,cell);
+app.game.fight.calm = true;
+}
+function uiOpeningWake(app) {
+app.game.fight.calm = false;
+uiRenderKeepingFocus(app);
 }
 function uiOpeningIdleTick(app) {
 if (uiActorsTick(app)) uiRenderKeepingFocus(app);
@@ -55,6 +60,7 @@ function uiOpeningFinish(app) {
 const game = app.game;
 window.clearTimeout(game.opening.timer);
 game.opening = null;
+if (game.fight) game.fight.calm = false;
 uiRestoreHearts(game);
 uiCommitExt(app,markOpeningDone(game.ext || createExt()));
 uiOpeningToast(app,{ text:DONE_TOAST,kind:'info' });
@@ -75,6 +81,7 @@ game.coach = text;
 const UI_CUE_HANDLERS = {
 alarm:uiOpeningAlarm,
 crash:uiOpeningCrash,
+wake:uiOpeningWake,
 'idle-tick':uiOpeningIdleTick,
 finish:uiOpeningFinish,
 };
@@ -84,10 +91,10 @@ if (!opening) return;
 const elapsed = now - opening.last;
 opening.last = now;
 if (uiOpeningPaused(app)) {
-opening.state = { ...opening.state,since:opening.state.since + elapsed };
+opening.state = shiftOpening(opening.state,elapsed);
 return;
 }
-const step = stepOpening(opening.state,{ now,droneAlive:uiDroneAlive(app) });
+const step = stepOpening(opening.state,{ now,droneAlive:uiDroneAlive(app),moved:opening.moved });
 opening.state = step.state;
 if (step.cue && UI_CUE_HANDLERS[step.cue]) UI_CUE_HANDLERS[step.cue](app);
 uiOpeningCoach(app);
@@ -106,7 +113,7 @@ function uiStartOpening(app,clock = uiDefaultClock) {
 if (app.game.opening) return;
 const now = clock();
 app.game.drawActors = uiDrawActors;
-app.game.opening = { state:createOpening(now),last:now,clock,timer:null };
+app.game.opening = { state:createOpening(now),last:now,clock,timer:null,moved:false };
 uiSchedulePulse(app);
 uiRenderKeepingFocus(app);
 }

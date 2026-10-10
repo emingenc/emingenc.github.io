@@ -13,16 +13,27 @@ return guarded || stepAvatar(game.world,game.progress,{ pos:game.avatar.pos,faci
 }
 function uiWalkAdvance(app,now) {
 const game = app.game;
+const deliberate = uiWalkIsDeliberate(game.walk);
 const turn = advanceWalk(game.walk,{
 now,from:game.avatar.pos,reducedMotion:uiPrefersReducedMotion(),
 move:function (dir,auto) { return uiGuardedStep(app,dir,auto); },
 });
-game.walk = turn.walk;
-if (turn.step) uiApplyStepEvent(app,turn.step);
+game.walk = turn.step ? { ...turn.walk,deliberate:false } :turn.walk;
+if (turn.step) uiApplyStepEvent(app,{ ...turn.step,deliberate });
+}
+function uiWalkIsDeliberate(walk) {
+return walk.deliberate === true || Boolean(walk.plan && walk.plan.dirs.length > 0);
+}
+function uiNoteMoved(app) {
+if (app.game.opening) app.game.opening.moved = true;
+}
+function uiWalkStart(app,press) {
+uiNoteMoved(app);
+app.game.walk = { ...pressWalk(app.game.walk,press.dir),deliberate:press.deliberate };
+uiWalkAdvance(app,performance.now());
 }
 function uiWalkPress(app,dir) {
-app.game.walk = pressWalk(app.game.walk,dir);
-uiWalkAdvance(app,performance.now());
+uiWalkStart(app,{ dir,deliberate:false });
 }
 function uiWalkRelease(app,dir) {
 app.game.walk = releaseWalk(app.game.walk,dir);
@@ -31,9 +42,10 @@ function uiWalkHolds(app,dir) {
 return app.game.walk.held.includes(dir);
 }
 function uiWalkReleaseAll(app) {
-Object.assign(app.game.walk,{ held:[],queued:null,stalled:null });
+Object.assign(app.game.walk,{ held:[],queued:null,stalled:null,deliberate:false });
 }
 function uiWalkPath(app,plan) {
+uiNoteMoved(app);
 Object.assign(app.game.walk,{ plan:{ dirs:[...plan.dirs] },held:[],queued:null,stalled:null });
 }
 function uiIsSolidThing(game,cell) {
@@ -47,7 +59,7 @@ function uiWalkInteract(app) {
 const game = app.game;
 const dir = uiInteractDir(game);
 if (!dir) return uiSentryWait(app);
-uiWalkPress(app,dir);
+uiWalkStart(app,{ dir,deliberate:true });
 uiWalkRelease(app,dir);
 return true;
 }

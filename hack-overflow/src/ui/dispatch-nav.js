@@ -1,5 +1,4 @@
 import { rigOf } from '../game/rig-catalog.js';
-import { rigMet } from '../game/rig-reward.js';
 import { uiToggleSound } from './audio.js';
 import { uiResetGame } from './game-storage.js';
 import { uiResetGameState } from './game-state.js';
@@ -8,7 +7,7 @@ import { uiShowToast } from './grid-toast.js';
 import { uiEnterGrid } from './screen-grid.js';
 import { uiLeaveBreach, uiDisconnect } from './breach-flow.js';
 import { uiOpenMap, uiCloseMap } from './map-loader.js';
-import { UI_MENU_RIG_PREFIX } from './menu.js';
+import { UI_MENU_RIG_PREFIX, uiRigReplayable } from './menu.js';
 import { uiOpenRigHost } from './rig-loader.js';
 import { uiBreachInert } from './render-submit-panel.js';
 import { uiStoryNext, uiStorySkip } from './story-dialogue.js';
@@ -93,7 +92,7 @@ uiShowToast(app,{ text:spec.failText,kind:'info' });
 }
 async function uiHandleRigReplay(app,actionId) {
 const rig = rigOf(actionId.slice(UI_MENU_RIG_PREFIX.length));
-if (!rig || !rigMet(app.game.save,rig.id)) return;
+if (!rig || !uiRigReplayable(app,rig)) return;
 await uiOpenFromMenu(app,{ open:(target) => uiOpenRigHost(target,rig),failText:rig.title + ' could not load. Try again.' });
 }
 const UI_NAV_HANDLERS = {

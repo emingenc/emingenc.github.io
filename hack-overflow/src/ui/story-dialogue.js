@@ -1,7 +1,8 @@
 import { markBeatsSeen } from '../game/save.js';
-import { advanceFlow,beatsDue,finalBeat,labBeat,lineAt,pendingIds,startFlow,unseenBeats } from '../game/story/story.js';
+import { advanceFlow,beatsDue,earnedToastIds,finalBeat,labBeat,lineAt,pendingIds,startFlow,toastText,unseenBeats } from '../game/story/story.js';
 import { uiAnnounce } from './dom.js';
 import { uiCommitSave } from './game-state.js';
+import { uiShowToast } from './grid-toast.js';
 import { uiWalkReleaseAll } from './grid-walk.js';
 import { uiStoryLineDone,uiStoryStopTimer } from './story-render.js';
 
@@ -25,23 +26,40 @@ uiStoryAnnounceLine(app.story);
 }
 function uiStoryClose(app) {
 uiStoryStopTimer();
-app.lastFocusKey = app.story.returnKey;
+const { returnKey,onClose } = app.story;
+app.lastFocusKey = returnKey;
 app.story = null;
+if (onClose) onClose();
+}
+function uiStoryClosed(app) {
+return new Promise(function (resolve) {
+if (app.story) app.story.onClose = resolve;
+else resolve();
+});
+}
+function uiStoryToast(app,beat) {
+uiStoryMarkSeen(app,[beat.id]);
+if (app.screen === 'grid') uiShowToast(app,{ text:toastText(beat),kind:'info' });
+return true;
 }
 function uiStoryShow(app,beats) {
 if (app.story) return false;
-const flow = startFlow(unseenBeats(app.game.save.story,beats));
-if (!flow) return false;
+const unseen = unseenBeats(app.game.save.story,beats);
+const flow = startFlow(unseen.filter((beat) => !beat.toast));
+if (flow) {
 uiStoryOpenFlow(app,flow);
 return true;
+}
+return unseen.length > 0 ? uiStoryToast(app,unseen[0]) :false;
 }
 function uiStoryOnGrid(app) {
 if (app.screen !== 'grid' || app.menuOpen) return false;
 const progress = app.game.progress;
 return uiStoryShow(app,beatsDue({ seen:app.game.save.story,level:progress.level,locksLeft:progress.left,ended:progress.ended }));
 }
-function uiStoryLabOpen(app,labId) {
-return uiStoryShow(app,[labBeat(labId,'intro')]);
+function uiStoryMarkEarnedToasts(app) {
+const progress = app.game.progress;
+uiStoryMarkSeen(app,earnedToastIds({ level:progress.level,locksLeft:progress.left }));
 }
 function uiStoryLabFinish(app,labId) {
 return uiStoryShow(app,[labBeat(labId,'outro')]);
@@ -71,4 +89,4 @@ uiStoryMarkSeen(app,pendingIds(app.story.flow));
 uiStoryClose(app);
 }
 
-export { uiStoryShow,uiStoryOnGrid,uiStoryLabOpen,uiStoryLabFinish,uiStoryFinal,uiStoryNext,uiStorySkip };
+export { uiStoryShow,uiStoryClosed,uiStoryOnGrid,uiStoryMarkEarnedToasts,uiStoryLabFinish,uiStoryFinal,uiStoryNext,uiStorySkip };

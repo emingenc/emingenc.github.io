@@ -8,9 +8,11 @@ import { uiCommitSave } from './game-state.js';
 import { uiForgeLevelOf, uiForgeRenderEmpty, uiForgeRenderPlay, uiForgeRenderSelect } from './forge-render.js';
 import { uiForgeBoardRelease, uiSyncForgeBoard } from './forge-board.js';
 import { uiEnterGrid } from './screen-grid.js';
+import { uiLinkStyles } from './lazy-style.js';
 import { uiOpenLevelUp } from './screen-levelup.js';
-import { uiStoryLabFinish, uiStoryLabOpen } from './story-dialogue.js';
+import { uiStoryLabFinish, uiStoryLabOpen } from './machine-dialogue.js';
 
+const STYLESHEETS = ['styles/rooms/forge.css'];
 const FORGE_SEED_STRIDE = 1000;
 const FORGE_FOCUS_BACK = 'forge-back';
 const FORGE_STORY_ID = 'harness-forge';
@@ -360,4 +362,8 @@ release:uiForgeRelease,
 };
 }
 
-export { uiForgeScreen, uiForgeOpen, uiForgeOnCell, uiForgeOnPhase };
+function uiRigReady() {
+return uiLinkStyles(STYLESHEETS);
+}
+
+export { uiForgeScreen, uiForgeOpen, uiForgeOnCell, uiForgeOnPhase, uiRigReady };

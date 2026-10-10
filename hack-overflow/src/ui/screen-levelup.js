@@ -89,7 +89,7 @@ return true;
 function uiLevelUpAnnounce(app) {
 const lines = uiUnlockLines(app);
 const unlocked = lines.length > 0 ? ' Unlocked: ' + lines.join('; ') + '.' :'';
-return 'Rank: ' + rankFor(app.game.levelUp.after) + '.' + unlocked;
+return 'Title: ' + rankFor(app.game.levelUp.after) + '.' + unlocked;
 }
 function uiLevelUpScreen() {
 return {

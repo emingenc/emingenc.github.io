@@ -229,14 +229,9 @@
 }
 
 .turret-rule,
-.turret-why,
-.turret-no-rank {
+.turret-why {
   color:var(--dim);
   font-size:var(--fs-md);
-}
-
-.arena-card .turret-lookup {
-  font-size:var(--fs-lg);
 }
 
 .turret-how-summary {

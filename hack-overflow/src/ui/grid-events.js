@@ -4,7 +4,7 @@ import { thingAt } from '../game/world.js';
 import { withPosition, claimCache, claimCore, markBeatsSeen, markMet } from '../game/save.js';
 import { rigOf } from '../game/rig-catalog.js';
 import { unlocksBetween } from '../game/progress.js';
-import { rigMeeting } from '../game/story/story.js';
+import { TURRET_LAB_ID,rigMeeting } from '../game/story/story.js';
 import { blockedText, nearText, sectorName } from '../game/messages.js';
 import { uiPointerIsCoarse, uiPrefersReducedMotion } from './dom.js';
 import { uiEmit } from './bus.js';
@@ -16,10 +16,9 @@ import { uiJackIn } from './breach-flow.js';
 import { uiOpenLevelUp } from './screen-levelup.js';
 import { uiOpenEnding } from './screen-ending.js';
 import { uiOpenRigHost } from './rig-loader.js';
-import { uiStoryShow } from './story-dialogue.js';
+import { uiStoryClosed,uiStoryShow } from './story-dialogue.js';
 import { uiActorsTick, uiHitFoe, uiNoteDoorway } from './grid-actors.js';
 
-const UI_STORY_FOCUS_KEY = 'story-next';
 const UI_NEAR_KINDS = { terminal:1,core:1,kernel:1,rig:1 };
 function uiNearThingAt(game,dir) {
 const thing = thingAt(game.world,cellToward(game.avatar.pos,dir));
@@ -147,7 +146,13 @@ if (!info.event.claimed) return uiClaimCore(app,info.event);
 uiShowToast(app,{ text:sectorName(app.game.world,info.event.family) + ' CORE already claimed',kind:'info' });
 return true;
 }
+function uiOnBreachedBump(app) {
+uiShowToast(app,{ text:'BREACHED. ' + uiActWord() + ' to replay.',kind:'info' });
+uiOnBump(app);
+return true;
+}
 function uiOnTerminal(app,info) {
+if (info.event.breached && !info.deliberate) return uiOnBreachedBump(app);
 uiActedOn(app.game);
 if (!uiLevelUpBeforeLeaving(app)) uiJackIn(app,info.event.key);
 return true;
@@ -157,16 +162,10 @@ uiActedOn(app.game);
 if (!uiLevelUpBeforeLeaving(app)) uiOpenEnding(app);
 return true;
 }
-function uiStoryKeepsFocus(app) {
-if (!app.story) return;
-app.story.returnKey = app.lastFocusKey;
-app.lastFocusKey = UI_STORY_FOCUS_KEY;
-}
 function uiOpenRigScreen(app,rig) {
 app.entering = true;
-uiOpenRigHost(app,rig).then(function () {
+uiRigMeeting(app,rig).then(function () { return uiOpenRigHost(app,rig); }).then(function () {
 if (app.screen === 'grid') return;
-uiStoryKeepsFocus(app);
 uiRenderApp(app);
 }).catch(function () {
 uiShowToast(app,{ text:rig.title + ' could not load. Try again.',kind:'info' });
@@ -175,11 +174,16 @@ uiRenderKeepingFocus(app);
 app.entering = false;
 });
 }
-function uiRigMeeting(app,rig) {
-const meeting = rigMeeting(rig.id,rig.storyId ?? rig.labId);
+function uiShowMeeting(app,meeting) {
 uiStoryShow(app,meeting.show);
 const unseen = meeting.skip.filter((id) => !app.game.save.story.includes(id));
 if (unseen.length > 0) uiCommitSave(app,markBeatsSeen(app.game.save,unseen));
+return uiStoryClosed(app);
+}
+function uiRigMeeting(app,rig) {
+const labId = rig.storyId ?? rig.labId;
+if (labId === TURRET_LAB_ID) return uiShowMeeting(app,rigMeeting(rig.id,labId));
+return import('../game/story/machine-beats.js').then(function (machine) { return uiShowMeeting(app,rigMeeting(rig.id,labId,machine)); });
 }
 function uiOnRig(app,info) {
 const game = app.game;
@@ -189,7 +193,6 @@ if (uiLevelUpBeforeLeaving(app)) return true;
 const rig = rigOf(info.event.rigId);
 if (!info.event.met) uiCommitSave(app,markMet(game.save,rig.id));
 uiEmit(GAME_EVENT.RIG_ENTER,{ rigId:rig.id,cell:{ ...game.avatar.pos } });
-uiRigMeeting(app,rig);
 uiOpenRigScreen(app,rig);
 return true;
 }
@@ -213,7 +216,7 @@ uiCommitSave(app,withPosition(game.save,game.avatar));
 uiNoteDoorway(app,result.pos);
 if (result.event.zap) uiHitFoe(app,result.event.zap,ZAP_DAMAGE);
 const hurt = UI_TICKING_EVENTS.has(result.event.type) && uiActorsTick(app);
-const rerender = UI_STEP_HANDLERS[result.event.type](app,{ event:result.event,from });
+const rerender = UI_STEP_HANDLERS[result.event.type](app,{ event:result.event,from,deliberate:result.deliberate });
 if (rerender || hurt) uiRenderKeepingFocus(app);
 }
 

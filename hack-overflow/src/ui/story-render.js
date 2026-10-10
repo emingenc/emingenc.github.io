@@ -1,4 +1,4 @@
-import { TYPE_MS_PER_CHAR,lineAt,typedChars } from '../game/story/story.js';
+import { TYPE_MS_PER_CHAR,isOneLine,lineAt,typedChars } from '../game/story/story.js';
 import { uiEl, uiPrefersReducedMotion } from './dom.js';
 
 const STORY_NEXT_KEY = 'story-next';
@@ -12,7 +12,7 @@ uiStoryTimer = 0;
 }
 function uiStoryTyped(story) {
 const line = lineAt(story.flow);
-if (story.revealed) return line.text.length;
+if (story.revealed || isOneLine(story.flow)) return line.text.length;
 const elapsedMs = performance.now() - story.lineStartedAt;
 return typedChars({ length:line.text.length,elapsedMs,reduced:Boolean(uiPrefersReducedMotion()) });
 }
@@ -71,12 +71,13 @@ text:'SKIP',
 attrs:{ type:'button','data-action':STORY_SKIP_KEY,'data-focus-key':STORY_SKIP_KEY,'aria-label':'Skip the story' },
 });
 }
-function uiStoryTrapFocus(overlay,tapButton,skipButton) {
+function uiStoryTrapFocus(overlay,controls) {
 overlay.addEventListener('keydown',function (event) {
 if (event.key !== 'Tab') return;
 event.preventDefault();
-const onTap = globalThis.document.activeElement === tapButton;
-(onTap ? skipButton :tapButton).focus();
+const step = event.shiftKey ? controls.length - 1 :1;
+const at = controls.indexOf(globalThis.document.activeElement);
+controls[(at + step) % controls.length].focus();
 });
 overlay.addEventListener('mousedown',function (event) {
 event.preventDefault();
@@ -84,7 +85,14 @@ event.preventDefault();
 }
 function uiStoryPanel(story,button,skip) {
 const count = uiEl('span',{ className:'story-count',attrs:{ 'aria-hidden':'true' },text:uiStoryCountText(story.flow) });
-return uiEl('div',{ className:'story-panel',children:[button,uiEl('div',{ className:'story-foot',children:[count,skip] })] });
+return uiEl('div',{ className:'story-panel',children:[button,uiEl('div',{ className:'story-foot',children:[count,skip].filter(Boolean) })] });
+}
+function uiStorySkipIfMore(story) {
+return uiStoryIsLastLine(story) ? null :uiStorySkipButton();
+}
+function uiStoryClaimFocus(app,skip) {
+const keys = skip ? [STORY_NEXT_KEY,STORY_SKIP_KEY] :[STORY_NEXT_KEY];
+if (!keys.includes(app.lastFocusKey)) app.lastFocusKey = STORY_NEXT_KEY;
 }
 function uiStoryIfOpen(app) {
 const story = app.story;
@@ -95,12 +103,14 @@ return null;
 const textNode = uiStoryTextNode(story);
 const button = uiStoryTapButton(story,textNode);
 uiStoryStartTyping(story,textNode,button);
-const skip = uiStorySkipButton();
+const skip = uiStorySkipIfMore(story);
 const panel = uiStoryPanel(story,button,skip);
 const entering = !story.entered;
 story.entered = true;
 const overlay = uiEl('div',{ className:'story-overlay' + (entering ? ' is-entering' :''),attrs:{ role:'dialog','aria-modal':'true','aria-label':'Transmission' },children:[panel] });
-uiStoryTrapFocus(overlay,button,skip);
+const controls = [button,skip].filter(Boolean);
+uiStoryTrapFocus(overlay,controls);
+uiStoryClaimFocus(app,skip);
 return overlay;
 }
 

@@ -1,4 +1,5 @@
 import { lockName } from '../game/messages.js';
+import { gateLevel } from '../game/progress.js';
 import { uiEl } from './dom.js';
 import { ui } from './app.js';
 import { uiLockBody } from './render-lock.js';
@@ -15,9 +16,12 @@ const attrs = { type:'button','data-action':'breach-disconnect','data-focus-key'
 if (uiBreachInert(app)) attrs.disabled = 'disabled';
 return uiEl('button',{ className:'btn btn-ghost breach-back',text:'◄ GRID',attrs });
 }
+function uiHudClass(family) {
+return gateLevel(family) === null ? 'hud breach-hud breach-hud-compact' :'hud breach-hud';
+}
 function uiBreachHud(app,view) {
 return uiEl('div',{
-className:'hud breach-hud',
+className:uiHudClass(view.lock.family),
 children:[
 uiGridButton(app),
 uiEl('span',{ className:'hud-family hud-title',text:uiFamilyName(view.lock.family) }),

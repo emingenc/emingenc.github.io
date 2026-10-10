@@ -3,10 +3,12 @@ import { apply, createRun, movesUsed, read } from '../game/labs/context-reader.j
 import { rigOf } from '../game/rig-catalog.js';
 import { labBest } from '../game/save.js';
 import { uiRigHostLeave, uiRigHostRecordWin } from './rig-host-common.js';
-import { uiStoryLabFinish, uiStoryLabOpen } from './story-dialogue.js';
+import { uiLinkStyles } from './lazy-style.js';
+import { uiStoryLabFinish, uiStoryLabOpen } from './machine-dialogue.js';
 import { LAB_FRAME, uiLabCoachChunk, uiLabLevelOf, uiLabRenderEmpty, uiLabRenderPlay, uiLabRenderSelect } from './lab-render.js';
 
 const LAB_RIG = rigOf('context');
+const STYLESHEETS = ['styles/rooms/lab.css'];
 const LAB_SEED_STRIDE = 1000;
 const LAB_FOCUS_BACK = 'lab-back';
 const LAB_LEVEL_ACTION = /^lab-level-(\d+)$/;
@@ -201,4 +203,8 @@ applyAction:uiLabApplyAction,
 };
 }
 
-export { uiLabScreen, uiLabOpen };
+function uiRigReady() {
+return uiLinkStyles(STYLESHEETS);
+}
+
+export { uiLabScreen, uiLabOpen, uiRigReady };

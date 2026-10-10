@@ -2,10 +2,12 @@ import { CONTEXT_STREAM } from '../game/labs/data/context-stream.js';
 import { createRun } from '../game/labs/stream-sim.js';
 import { uiRenderApp } from './app.js';
 import { uiEnterGrid } from './screen-grid.js';
-import { uiStoryLabOpen } from './story-dialogue.js';
+import { uiLinkStyles } from './lazy-style.js';
+import { uiStoryLabOpen } from './machine-dialogue.js';
 import { uiStreamAct,uiStreamIsPlaying,uiStreamLoopStart,uiStreamLoopStop } from './stream-loop.js';
 import { uiStreamFocusFor,uiStreamRenderView } from './stream-render.js';
 
+const STYLESHEETS = ['styles/rooms/stream.css'];
 const STREAM_SEED_STRIDE = 1000;
 const STREAM_FLICK_PX = 24;
 const STREAM_HIT_WINDOW = 3;
@@ -231,4 +233,8 @@ release:uiStreamRelease,
 };
 }
 
-export { uiStreamScreen,uiStreamOpen };
+function uiRigReady() {
+return uiLinkStyles(STYLESHEETS);
+}
+
+export { uiStreamScreen,uiStreamOpen,uiRigReady };

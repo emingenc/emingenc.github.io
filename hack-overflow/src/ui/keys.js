@@ -1,5 +1,4 @@
 import { BUILD_PHASE } from '../logic/run-phase.js';
-import { uiLineRemovePosition } from './line-actions.js';
 import { UI_LOCK_HEADING_KEY } from './render-lock-left.js';
 
 const UI_TRAY_NEXT_KEYS = { ArrowRight:1,ArrowDown:1 };
@@ -29,11 +28,6 @@ const length = app.run.lock.tray.order.length;
 app.trayFocusIndex = (current + step + length) % length;
 return true;
 }
-function uiFocusedLineRemoveAction() {
-const active = document.activeElement;
-const actionId = active && active.getAttribute('data-action');
-return actionId && uiLineRemovePosition(actionId) !== null ? actionId :null;
-}
 function uiSimpleBuildKeyAction(event) {
 if (event.key === 'Backspace') return event.shiftKey ? 'clear' :'backspace';
 if (event.key === 'r' || event.key === 'R') return 'run';
@@ -43,10 +37,6 @@ function uiBuildKeyAction(event,app) {
 const step = uiTrayStep(event.key);
 if (step !== 0) return uiMoveTrayFocus(app,step) ? { type:'render' } :null;
 if (event.key === 'Escape') return { type:'toggle-menu' };
-if (event.key === 'Delete') {
-const removeId = uiFocusedLineRemoveAction();
-return removeId ? { type:'action',id:removeId } :null;
-}
 const actionId = uiSimpleBuildKeyAction(event);
 return actionId ? { type:'action',id:actionId } :null;
 }

@@ -4,7 +4,7 @@ import { uiEl } from './dom.js';
 import { uiBreachInert } from './render-submit-panel.js';
 
 const UI_MENU_RIG_PREFIX = 'menu-rig-';
-const UI_RESET_CONFIRM_TEXT = 'Reset all progress? This clears your XP, levels, rank, breached locks and position.';
+const UI_RESET_CONFIRM_TEXT = 'Reset all progress? This clears your XP, levels, breached locks and position.';
 const UI_RESET_CONFIRM_ID = 'menu-confirm-text';
 const UI_ROVE_ARROWS = { ArrowUp:-1,ArrowDown:1 };
 function uiRoveDelta(event) {
@@ -35,9 +35,12 @@ function uiDisconnectButton(app) {
 if (app.screen !== 'breach') return null;
 return uiMenuButton('menu-disconnect','DISCONNECT',uiBreachInert(app));
 }
+function uiRigReplayable(app,rig) {
+return Object.hasOwn(app.game.world.rigs,rig.id) && rigMet(app.game.save,rig.id);
+}
 function uiReplayButtons(app) {
 if (app.screen !== 'grid') return [];
-return Object.values(RIG_CATALOG).filter((rig) => rigMet(app.game.save,rig.id))
+return Object.values(RIG_CATALOG).filter((rig) => uiRigReplayable(app,rig))
 .map((rig) => uiMenuButton(UI_MENU_RIG_PREFIX + rig.id,'REPLAY: ' + rig.title));
 }
 function uiMenuFace(app) {
@@ -83,4 +86,4 @@ function uiMenuIfOpen(app) {
 return app.menuOpen ? uiMenuPanel(app) :null;
 }
 
-export { UI_MENU_RIG_PREFIX, uiMenuIfOpen, uiRoveKeyDown };
+export { UI_MENU_RIG_PREFIX, uiMenuIfOpen, uiRigReplayable, uiRoveKeyDown };

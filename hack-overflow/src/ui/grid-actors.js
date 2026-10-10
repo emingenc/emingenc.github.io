@@ -97,7 +97,7 @@ game.fight.actors = ticked.actors;
 return ticked.hits;
 }
 function uiActorsTick(app) {
-if (app.game.travelOpen) return false;
+if (app.game.travelOpen || app.game.fight?.calm) return false;
 const droneHits = uiTickDrones(app.game);
 const miteHits = app.game.sentry ? app.game.sentry.tick(app) :0;
 if (droneHits + miteHits > 0) uiHurt(app,droneHits + miteHits,droneHits > 0);

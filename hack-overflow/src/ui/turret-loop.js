@@ -34,7 +34,7 @@ function uiTurretLive(app) {
 }
 function uiTurretRemount(app) {
   const arena = app.rig.arena;
-  if (arena.banner || arena.view !== 'play') uiRenderApp(app);
+  if (arena.view !== 'play') uiRenderApp(app);
   else uiRenderKeepingFocus(app);
 }
 function uiTurretStep(app, dt, now) {

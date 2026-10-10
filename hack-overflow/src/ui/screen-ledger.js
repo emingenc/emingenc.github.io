@@ -9,8 +9,10 @@ import { uiLedgerCoachNow, uiLedgerLines } from './ledger-coach.js';
 import { uiLedgerIntegrity, uiLedgerLevelTag, uiLedgerPlayView } from './ledger-board.js';
 import { LG_RIG_ID, uiLedgerFeedback, uiLedgerOverflow, uiLedgerPlace } from './ledger-feedback.js';
 import { uiLedgerCard, uiLedgerEnding } from './ledger-result.js';
+import { uiLinkStyles } from './lazy-style.js';
 import { uiRigEnd, uiRigFocusKey, uiRigHeader, uiRigResult, uiRigSelect, uiRigShellAction, uiRigShellOpen, uiRigShellSync, uiRigVariant } from './rig-shell.js';
 
+const STYLESHEETS = ['styles/rooms/rig-shell.css','styles/rooms/ledger.css'];
 const LG_STORE = 'ledger-store';
 const LG_DROP = 'ledger-drop';
 const LG_EVICT = 'ledger-evict';
@@ -223,4 +225,8 @@ keyAction:uiLedgerKeyAction,applyAction:uiLedgerApplyAction,pointerDown:uiLedger
 };
 }
 
-export { uiRigScreen, uiRigOpen };
+function uiRigReady() {
+return uiLinkStyles(STYLESHEETS);
+}
+
+export { uiRigScreen, uiRigOpen, uiRigReady };

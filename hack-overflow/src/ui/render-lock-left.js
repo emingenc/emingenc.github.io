@@ -78,13 +78,23 @@ className:'constraints-list',
 children:constraints.map(function (line) { return uiEl('li',{ text:line }); }),
 });
 }
-function uiStatementBlock(viewLock) {
+const UI_PHONE_QUERY = '(max-width: 767px)';
+function uiIsPhone() {
+return Boolean(window.matchMedia && window.matchMedia(UI_PHONE_QUERY).matches);
+}
+function uiStatementFold(app,statement) {
+const details = uiEl('details',{
+className:'statement-fold',
+children:[uiEl('summary',{ text:'STATEMENT' }),uiEl('p',{ className:'statement',text:statement })],
+});
+if (!uiIsPhone() || app.statementOpen) details.setAttribute('open','open');
+details.addEventListener('toggle',function () { if (uiIsPhone()) app.statementOpen = details.open; });
+return details;
+}
+function uiStatementBlock(ctx) {
 return uiEl('div',{
 className:'statement-block',
-children:[
-uiEl('p',{ className:'statement',text:viewLock.statement }),
-uiConstraintsList(viewLock.constraints),
-],
+children:[uiStatementFold(ctx.app,ctx.view.lock.statement),uiConstraintsList(ctx.view.lock.constraints)],
 });
 }
 function uiExampleCases(problem) {
@@ -102,7 +112,7 @@ return uiExampleItem(problem,testCase,index);
 return uiEl('ul',{ className:'examples-list',children:items });
 }
 function uiLockLeftColumn(ctx) {
-return uiEl('div',{ className:'lock-left',children:[uiLockHeader(ctx),uiStatementBlock(ctx.view.lock),uiExamplesList(ctx.problem)] });
+return uiEl('div',{ className:'lock-left',children:[uiLockHeader(ctx),uiStatementBlock(ctx),uiExamplesList(ctx.problem)] });
 }
 
 export { UI_LOCK_HEADING_KEY, uiFamilyName, uiProblemByKey, uiFirstTryPill, uiHudSoundButton, uiHudMenuButton, uiLockLeftColumn };
