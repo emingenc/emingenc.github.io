@@ -29,9 +29,6 @@ const encrypted = world.encrypted.find((entry) => entry.family === family);
 if (encrypted) return encrypted.name;
 return isPlace(family) ? PLACE_NAMES[family] :family;
 }
-function placePhrase(world,family) {
-return (isPlace(family) ? 'the ' :'') + sectorName(world,family);
-}
 function sentryText(world,need) {
 return 'SENTRY FIELD is on. Use the ' + rigOf(need.opens).title + ' console to switch it off.';
 }
@@ -105,4 +102,4 @@ const label = next.unlocks.map((unlock) => unlockHint(world,unlock)).join(', ');
 return 'LV' + next.level + ' · ' + label + ' in ' + next.xpToGo + ' XP';
 }
 
-export { lockName, lockLabel, sectorName, isPlace, placePhrase, blockedText, nearText, rigPlate, unlockText, nextUnlockText };
+export { lockName, lockLabel, sectorName, isPlace, blockedText, nearText, rigPlate, unlockText, nextUnlockText };

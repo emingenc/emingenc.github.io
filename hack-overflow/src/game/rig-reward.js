@@ -8,9 +8,6 @@ return Object.hasOwn(levels,levelId) ? levels[levelId] :null;
 function rigXpGain(rig,bestBefore,stars) {
 return Math.max(0,rig.xp[stars] - rig.xp[bestBefore]);
 }
-function rigRankGain(rig,bestBefore,stars) {
-return Math.max(0,rig.rank[stars] - rig.rank[bestBefore]);
-}
 function rigUnlocked(save,rig,levelIndex) {
 return levelIndex === 0 || levelRecord(save,rig,rig.levels[levelIndex - 1]) !== null;
 }
@@ -25,4 +22,4 @@ if (!rig) return false;
 return (save.met ?? []).includes(rigId) || Object.hasOwn(save.labs ?? {},rig.labId);
 }
 
-export { rigOf,rigMet,rigXpGain,rigRankGain,rigUnlocked,rigVariant };
+export { rigOf,rigMet,rigXpGain,rigUnlocked,rigVariant };

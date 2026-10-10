@@ -8,7 +8,7 @@ import { uiClearExt,uiCommitMapRev,uiLoadExt,uiLoadExtMapRev,uiStampMapRev } fro
 import { uiHasGame,uiLoadGame,uiMigratedSave,uiStoreGame } from './game-storage.js';
 
 function uiIdleWalk() {
-return { held:[],queued:null,plan:null,tween:null,nudge:null,stalled:null,nearId:null };
+return { held:[],queued:null,plan:null,tween:null,nudge:null,stalled:null,nearId:null,deliberate:false };
 }
 function uiSaveFields(world,save) {
 return {
@@ -58,7 +58,7 @@ return game.toast && game.toast.until > Date.now() ? game.toast.text :null;
 }
 function uiExtSnapshot(ext) {
 const live = ext || createExt();
-return { rank:live.rank,opening:live.opening,assist:live.assist };
+return { opening:live.opening,assist:live.assist };
 }
 function uiGameSnapshot(app) {
 const game = app.game;

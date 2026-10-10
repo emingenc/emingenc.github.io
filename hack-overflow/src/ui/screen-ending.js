@@ -31,7 +31,7 @@ return [
 uiStatLine('LOCKS',stats.locks + ' / ' + stats.placed),
 uiStatLine('STARS',stats.stars + ' / ' + stats.maxStars),
 uiStatLine('XP',String(stats.xp)),
-uiStatLine('RANK','LV ' + stats.level + ' · ' + stats.rank),
+uiStatLine('LV',stats.level + ' · ' + stats.rank),
 uiStatLine('PERFECT LOCKS',stats.perfect + ' / ' + stats.placed),
 uiStatLine('TRACED',String(stats.traced)),
 uiStatLine('FAILS',String(stats.fails)),

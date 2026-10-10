@@ -55,10 +55,7 @@ attrs:{ type:'button','data-action':'map-open','data-focus-key':'map-open','aria
 function uiHudTop(progress) {
 return uiEl('div',{
 className:'grid-hud-top',
-children:[
-uiEl('span',{ className:'grid-hud-rank',text:progress.rank }),
-uiEl('span',{ className:'grid-hud-level',text:'LV ' + progress.level }),
-],
+children:[uiEl('span',{ className:'grid-hud-level',text:'LV ' + progress.level + ' · ' + progress.rank })],
 });
 }
 function uiHudStats(game) {

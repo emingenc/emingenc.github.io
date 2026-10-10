@@ -45,12 +45,6 @@ function uiTurretLessons(state) {
   const values = { steps: state.steps, n: count, last: count - 1, compares };
   return [fillText(TURRET_TEXTS.card.used, values), TURRET_TEXTS.card.stars, fillText(TURRET_TEXTS.card.why, values)];
 }
-function uiTurretRewards(result) {
-  const rank = uiEl('p', { className: 'turret-rank', text: 'RANK +' + result.rankGain });
-  const reason = result.rankGain === 0 ? [uiTurretLine('turret-no-rank', TURRET_TEXTS.card.noRank)] : [];
-  const lookup = result.lookupNew ? [uiEl('p', { className: 'turret-lookup', text: TURRET_TEXTS.card.lookup })] : [];
-  return [rank, ...reason, ...lookup];
-}
 function uiTurretHow(rule, why) {
   const summary = uiEl('summary', { className: 'turret-how-summary', text: TURRET_TEXTS.card.how });
   return uiEl('details', { className: 'turret-how', children: [summary, uiTurretLine('turret-rule', rule), uiTurretLine('turret-why', why)] });
@@ -58,7 +52,7 @@ function uiTurretHow(rule, why) {
 function uiTurretWinBody(state, result) {
   const [used, rule, why] = uiTurretLessons(state);
   const head = [uiTurretStars(result.stars), uiTurretScore(state), uiTurretLine('turret-used', used), uiTurretVersus(state)];
-  return [...head, ...uiTurretRewards(result), uiTurretHow(rule, why)];
+  return [...head, uiTurretHow(rule, why)];
 }
 function uiTurretCard(app, result) {
   const state = app.rig.arena.state;
@@ -66,7 +60,7 @@ function uiTurretCard(app, result) {
     const lines = [result.why || '', 'Every drone needs one look-up: slot T - v.'].filter(Boolean);
     return uiArenaCard(app, { title: TURRET_TEXTS.card.failTitle, tone: 'fail', lines, body: [uiTurretScore(state)], actions: CARD_ACTIONS });
   }
-  const lines = result.lookupNew ? [FIELD_DOWN, TURRET_TEXTS.card.next] : [TURRET_TEXTS.card.next];
+  const lines = result.firstClear ? [FIELD_DOWN, TURRET_TEXTS.card.next] : [TURRET_TEXTS.card.next];
   return uiArenaCard(app, { title: TURRET_TEXTS.card.title, lines, body: uiTurretWinBody(state, result), actions: CARD_ACTIONS });
 }
 

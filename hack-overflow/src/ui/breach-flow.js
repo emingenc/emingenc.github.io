@@ -35,7 +35,7 @@ game.breach = { key,attempt,level:game.progress.level,trace,used,known,pinCount:
 Object.assign(game,{ revealing:false,traced:null,outcome:null,travelOpen:false });
 game.walk.plan = null;
 uiWalkReleaseAll(app);
-Object.assign(app,{ trayFocusIndex:0,lastPanelKind:null,screen:'breach',lastFocusKey:UI_LOCK_HEADING_KEY });
+Object.assign(app,{ trayFocusIndex:0,lastPanelKind:null,probedLine:null,statementOpen:false,screen:'breach',lastFocusKey:UI_LOCK_HEADING_KEY });
 if (app.onboardStage === UI_ONBOARD_STAGE_RULE) app.onboardStage = null;
 uiEmit(GAME_EVENT.JACK_IN,{ key,lockName:lockName(key) });
 }
@@ -133,6 +133,7 @@ const UI_OUTCOME_HANDLERS = { none:uiOnQuiet,probe:uiOnProbe,fail:uiOnFail,trace
 function uiAfterBreachAction(app,ctx,nextRun) {
 const breach = app.game.breach;
 if (!breach) return;
+if (ctx.actionId === 'run') app.probedLine = nextRun.lock.line.join();
 const change = { before:ctx.previousRun,after:nextRun,actionId:ctx.actionId };
 const step = breachStep(change,{ trace:breach.trace,used:breach.used,pinCount:breach.pinCount,reducedMotion:uiPrefersReducedMotion() });
 breach.trace = step.trace;

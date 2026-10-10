@@ -78,29 +78,22 @@ return chips.map(function (chip) { return uiChipGhost(chip,Math.round(now - chip
 function uiCodeLineIndent(line) {
 return line.length - line.trimStart().length;
 }
+function uiSetIndent(node,spaces) {
+node.style.setProperty('--indent',String(spaces));
+}
 function uiPlainCodeLine(line,lineNumber) {
-const indent = uiCodeLineIndent(line);
 const textSpan = uiEl('span',{ className:'code-line-text',text:line.trimStart() });
-textSpan.style.paddingLeft = indent + 'ch';
+uiSetIndent(textSpan,uiCodeLineIndent(line));
 return uiEl('div',{
 className:'code-line',
 children:[uiEl('span',{ className:'code-line-num',text:String(lineNumber) }),textSpan],
 });
 }
-function uiLineChip(text,position,hasError) {
-return uiEl('button',{
-className:'chip line-chip' + (hasError ? ' chip-error' :''),
-text:text,
-attrs:{
-type:'button',
-'data-action':'line-remove-' + position,
-'data-focus-key':'line-chip-' + position,
-'aria-label':'Remove ' + text + ' from the line',
-},
-});
+function uiLineChip(text,hasError) {
+return uiEl('span',{ className:'line-chip' + (hasError ? ' line-chip-error' :''),text:text });
 }
 function uiEditorChips(lineTexts,markIndex) {
-return lineTexts.map(function (text,position) { return uiLineChip(text,position,position === markIndex); });
+return lineTexts.map(function (text,position) { return uiLineChip(text,position === markIndex); });
 }
 function uiSlotIndent(skeleton) {
 const slotLine = skeleton.find(function (line) { return line.indexOf(UI_SLOT_MARKER) !== -1; });
@@ -116,7 +109,7 @@ const content = uiEl('span',{
 className:'code-line-text editor-content',
 children:chips.concat([caret]),
 });
-content.style.paddingLeft = indent + 'ch';
+uiSetIndent(content,indent);
 return uiEl('div',{
 className:'code-line editor-row',
 children:[uiEl('span',{ className:'code-line-num',text:String(lineNumber) }),content],

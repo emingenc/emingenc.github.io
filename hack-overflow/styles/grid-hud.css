@@ -24,25 +24,12 @@
   min-width:0;
 }
 
-.grid-hud-rank {
-  flex-shrink:0;
-  padding:var(--sp-1) var(--sp-3);
-  border:1px solid var(--primary);
-  border-radius:var(--radius-pill);
-  font-family:var(--font-display);
-  font-size:var(--fs-lg);
-  line-height:1.1;
-  letter-spacing:0.03em;
-  color:var(--primary);
-  white-space:nowrap;
-}
-
 .grid-hud-level {
-  flex-shrink:0;
+  min-width:0;
   font-family:var(--font-display);
   font-size:var(--fs-xl);
   color:var(--bright);
-  white-space:nowrap;
+  overflow-wrap:anywhere;
 }
 
 .grid-hud-xp {
@@ -218,9 +205,6 @@
 @media (max-width:767px) {
   .grid-hud-level {
     font-size:var(--fs-lg);
-  }
-  .grid-hud-rank {
-    font-size:var(--fs-md);
   }
   .grid-hud-map {
     padding:var(--sp-3);

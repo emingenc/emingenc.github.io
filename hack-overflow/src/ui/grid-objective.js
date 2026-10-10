@@ -1,15 +1,9 @@
 import { uiEl } from './dom.js';
 import { uiGridHearts } from './grid-actors.js';
-import { closedBarrierRig, goalLine, objectiveFor } from '../game/objective.js';
-import { rigMet } from '../game/rig-reward.js';
+import { goalLine, objectiveFor } from '../game/objective.js';
 
-const SIGNPOST_TEXT = 'Find the LOOKUP TURRET (corridor)';
-function uiSignpostDue(game) {
-return Boolean(game.world.rigs.turret) && game.progress.breached.size > 0 && !rigMet(game.save,'turret') && closedBarrierRig(game.world,game.progress) === null;
-}
 function uiCurrentObjective(app) {
 const game = app.game;
-if (uiSignpostDue(game)) return { text:SIGNPOST_TEXT,targetId:game.world.rigs.turret.id };
 return objectiveFor(game.world,game.progress,game.avatar.pos);
 }
 function uiStripPeriod(text) {

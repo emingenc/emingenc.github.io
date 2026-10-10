@@ -38,6 +38,7 @@
   align-self:end;
   justify-self:end;
   margin-top:6px;
+  margin-right:calc(80px + 24px + var(--sp-3));
   display:grid;
   grid-template-columns:repeat(3,var(--dpad-btn));
   grid-template-rows:repeat(3,var(--dpad-btn));
@@ -172,10 +173,6 @@
   to {
     background-size:100% 100%;
   }
-}
-
-.grid-dpad:has(~ .grid-fire) {
-  margin-right:calc(80px + 24px + var(--sp-3));
 }
 
 @media (pointer:fine) {

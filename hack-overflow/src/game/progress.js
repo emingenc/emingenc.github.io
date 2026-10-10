@@ -1,4 +1,4 @@
-import { rigStars } from './rig-catalog.js';
+import { RIG_CATALOG, rigStars } from './rig-catalog.js';
 import { rigMet } from './rig-reward.js';
 
 const BASE_XP = { Easy:40,Medium:60,Hard:100 };
@@ -76,8 +76,8 @@ for (const unlocksAt of UNLOCKS_AT_LEVEL) unlocks.push(...unlocksAt(level));
 }
 return unlocks;
 }
-function metRigs(world,save) {
-return new Set([...(save.met ?? []),...Object.keys(world.rigs ?? {}).filter((rigId) => rigMet(save,rigId))]);
+function metRigs(save) {
+return new Set([...(save.met ?? []),...Object.keys(RIG_CATALOG).filter((rigId) => rigMet(save,rigId))]);
 }
 function wonRigs(world,save) {
 const record = { labs:save.labs ?? {} };
@@ -90,7 +90,7 @@ const best = {};
 for (const key of breached) best[key] = save.locks[key].best;
 return {
 xp:save.xp,level,rank:rankFor(level),capacity:traceCapacity(level),exploits:exploitsAt(level),
-breached,best,caches:new Set(save.caches),cores:new Set(save.cores),met:metRigs(world,save),won:wonRigs(world,save),
+breached,best,caches:new Set(save.caches),cores:new Set(save.cores),met:metRigs(save),won:wonRigs(world,save),
 left:world.placed.filter((key) => !breached.has(key)).length,ended:save.ended === true,
 };
 }

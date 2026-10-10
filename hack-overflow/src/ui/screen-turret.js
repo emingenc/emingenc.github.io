@@ -3,12 +3,11 @@ import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
 import { uiRenderApp } from './app.js';
 import { ARENA_FOCUS_KEY, uiArenaCoach, uiArenaHeader, uiArenaLeave, uiArenaLeaveTooSoon, uiArenaOpen, uiArenaRule, uiArenaToastNode } from './arena-shell.js';
 import { uiEl } from './dom.js';
-import { uiLinkStyle } from './lazy-style.js';
+import { uiLinkStyles } from './lazy-style.js';
 import { PICK_ACTION, SLOT_ACTION, TAG_ACTION, uiTurretBoard, uiTurretTag } from './turret-board.js';
 import { uiTurretCard } from './turret-card.js';
 import { uiTurretDragAttach, uiTurretDragCancel, uiTurretDragDetach, uiTurretDragDown, uiTurretDragKeep, uiTurretDragUp } from './turret-drag.js';
 import { TURRET_RIG_ID, uiTurretCommit, uiTurretCreate, uiTurretSetAssist, uiTurretSpoken } from './turret-flow.js';
-import { ASSIST_ACTION, KEEP_ACTION, uiTurretBannerFocus, uiTurretFuseBanner } from './turret-fuse-banner.js';
 import { uiTurretNow, uiTurretStart, uiTurretStop } from './turret-loop.js';
 import { uiTurretScene, uiTurretSceneNodes } from './turret-scene.js';
 import { uiStoryLabFinish } from './story-dialogue.js';
@@ -20,7 +19,7 @@ const SLOT_PATTERN = /^turret-slot-([1-9])$/;
 const PICK_PATTERN = /^turret-pick-(\d)$/;
 const SLOT_KEY = /^[1-9]$/;
 const CLICK_SWALLOW_MS = 600;
-const STYLESHEETS = ['styles/rooms/arena.css', 'styles/rooms/turret.css'];
+const STYLESHEETS = ['styles/rooms/rig-shell.css', 'styles/rooms/arena.css', 'styles/rooms/turret.css'];
 
 function uiTurretArena(app) {
   return app.rig && app.rig.rigId === TURRET_RIG_ID && app.rig.arena ? app.rig.arena : null;
@@ -29,7 +28,7 @@ function uiTurretArena(app) {
 
 function uiTurretPlayView(app) {
   const arena = app.rig.arena;
-  return [uiArenaRule(fillText(TURRET_TEXTS.rule, { n: arena.state.stream.length })), uiArenaCoach(arena.coach), uiTurretScene(app), uiTurretBoard(app), uiTurretTag(app), uiTurretFuseBanner(app)];
+  return [uiArenaRule(fillText(TURRET_TEXTS.rule, { n: arena.state.stream.length })), uiArenaCoach(arena.coach), uiTurretScene(app), uiTurretBoard(app), uiTurretTag(app)];
 }
 function uiTurretRender(app) {
   const arena = uiTurretArena(app);
@@ -52,7 +51,7 @@ function uiTurretFocusKey(app) {
   const arena = uiTurretArena(app);
   if (!arena) return BACK_ACTION;
   if (arena.view === 'card') return REPLAY_ACTION;
-  return arena.banner ? uiTurretBannerFocus(arena.reduced) : ARENA_FOCUS_KEY;
+  return ARENA_FOCUS_KEY;
 }
 
 
@@ -95,18 +94,11 @@ function uiTurretReplay(app) {
   app.lastFocusKey = TAG_ACTION;
   app.pendingAnnounce = uiTurretSpoken(app.rig.arena) + ' ' + app.rig.arena.coach;
 }
-function uiTurretChoose(app, on) {
-  if (!app.rig.arena.banner) return;
-  uiTurretSetAssist(app, on);
-  app.lastFocusKey = TAG_ACTION;
-}
 const UI_TURRET_ACTIONS = {
   [BACK_ACTION]: uiTurretLeave,
   'arena-assist': (app) => uiTurretSetAssist(app, app.game.ext.assist !== true),
   [TAG_ACTION]: (app) => uiTurretPlay(app, 'tag:' + app.rig.arena.picked, TAG_ACTION),
   [REPLAY_ACTION]: uiTurretReplay,
-  [KEEP_ACTION]: (app) => uiTurretChoose(app, false),
-  [ASSIST_ACTION]: (app) => uiTurretChoose(app, true),
 };
 function uiTurretApplyAction(app, actionId) {
   if (!uiTurretArena(app)) return false;
@@ -141,7 +133,7 @@ function uiTurretPointerCancel() {
 function uiTurretKeyId(event, app) {
   const arena = app.rig.arena;
   if (event.key === 'Escape') return BACK_ACTION;
-  if (arena.view !== 'play' || arena.banner) return null;
+  if (arena.view !== 'play') return null;
   if (SLOT_KEY.test(event.key)) return SLOT_ACTION + event.key;
   const lower = String(event.key).toLowerCase();
   if (lower === 't') return TAG_ACTION;
@@ -186,7 +178,7 @@ function uiRigOpen(app, rigId) {
   uiArenaOpen(app, { rigId, create: (opened) => uiTurretCreate(opened, rig, { now: uiTurretNow(), lastIndex: null }) });
 }
 function uiRigReady() {
-  return Promise.all(STYLESHEETS.map((href) => uiLinkStyle(href))).then(() => undefined);
+  return uiLinkStyles(STYLESHEETS);
 }
 
 export { uiRigScreen, uiRigOpen, uiRigReady };

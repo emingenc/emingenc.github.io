@@ -6,11 +6,10 @@ import { VERDICT_WORDS } from '../logic/index.js';
 const STAR_CAP_WITH_EXPLOIT = 2;
 const BREACH_OUTCOME = { NONE:'none',PROBE:'probe',FAIL:'fail',TRACED:'traced',ACCEPTED:'accepted' };
 const CHIP_ACTION = /^chip-(\d+)$/;
-const LINE_REMOVE_ACTION = /^line-remove-\d+$/;
 
 function actionKind(actionId) {
 if (CHIP_ACTION.test(actionId)) return 'chip';
-if (actionId === 'backspace' || LINE_REMOVE_ACTION.test(actionId)) return 'remove';
+if (actionId === 'backspace') return 'remove';
 if (actionId === 'clear' || actionId === 'run' || actionId === 'submit') return actionId;
 return 'other';
 }

@@ -5,6 +5,7 @@ import { testCounts } from '../judge/counts.js';
 import { uiInputAssignments } from './format.js';
 
 const UI_BREACH_TRACE_CLAUSE = 'a failed BREACH fills TRACE';
+const UI_PASS_COLLAPSE_MIN = 2;
 
 function uiSyntaxCheck(ctx) {
 const line = ctx.run.lock.line;
@@ -58,9 +59,21 @@ const counts = testCounts(ctx.problem.cases);
 const text = uiExamplesPassSentence(counts.examples,'all ' + counts.hidden + ' hidden tests');
 return uiEl('p',{ className:'panel-summary',text:text });
 }
+function uiPassedRow(passed) {
+const numbers = passed.map(function (entry) { return entry.index + 1; }).join(', ');
+return uiEl('li',{ className:'example-result pass',text:'Examples ' + numbers + ': ✓ PASS' });
+}
+function uiExampleRows(ctx,panelData) {
+const entries = panelData.examples.map(function (example,index) { return { example,index }; });
+const passed = entries.filter(function (entry) { return entry.example.pass; });
+if (passed.length < UI_PASS_COLLAPSE_MIN) return entries.map(function (entry) { return uiExampleRow(ctx.problem,entry.example,entry.index); });
+const failed = entries.filter(function (entry) { return !entry.example.pass; });
+const rows = failed.map(function (entry) { return uiExampleRow(ctx.problem,entry.example,entry.index); });
+return failed.length === 0 ? rows :[uiPassedRow(passed)].concat(rows);
+}
 function uiRunResultsBody(ctx,panelData) {
-const rows = panelData.examples.map(function (example,index) { return uiExampleRow(ctx.problem,example,index); });
-const children = [uiEl('ol',{ className:'example-results-list',children:rows })];
+const rows = uiExampleRows(ctx,panelData);
+const children = rows.length === 0 ? [] :[uiEl('ol',{ className:'example-results-list',children:rows })];
 const summary = uiRunSummary(ctx,panelData);
 if (summary) children.push(summary);
 return uiEl('div',{ className:'test-panel-body',children:children });

@@ -15,7 +15,7 @@ return ctx;
 }
 function uiLockRightColumn(ctx) {
 const onboarding = uiOnboardingBanner(ctx.app);
-const children = [uiCodePanel(ctx),onboarding,uiTraySection(ctx),uiActionRows(ctx)].concat(uiChipDropGhosts(ctx));
+const children = [uiCodePanel(ctx),uiTraySection(ctx),onboarding,uiActionRows(ctx)].concat(uiChipDropGhosts(ctx));
 return uiEl('div',{ className:'lock-right',children:children.filter(Boolean) });
 }
 function uiLockBody(app,run,view) {

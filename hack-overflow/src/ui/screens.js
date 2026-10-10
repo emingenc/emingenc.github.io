@@ -7,10 +7,7 @@ import { uiLevelUpScreen } from './screen-levelup.js';
 import { uiTracedScreen } from './screen-traced.js';
 import { uiEndingScreen } from './screen-ending.js';
 import { uiMapStubScreen } from './map-loader.js';
-import { uiLabStubScreen } from './lab-loader.js';
-import { uiForgeStubScreen } from './forge-loader.js';
-import { uiStreamStubScreen } from './stream-loader.js';
-import { uiRigStubScreen } from './rig-loader.js';
+import { uiRigStubScreens } from './rig-loader.js';
 
 
 function uiSyncTitleRain(app,active,root) {
@@ -28,7 +25,7 @@ id:'title',render:uiRenderTitle,focusKey:() => 'title-start',announce:() => 'Tit
 let uiScreenTable = null;
 function uiScreens() {
 if (uiScreenTable) return uiScreenTable;
-const screens = [uiTitleScreen(),uiGridScreen(),uiBreachScreen(),uiDebriefScreen(),uiLevelUpScreen(),uiTracedScreen(),uiEndingScreen(),uiMapStubScreen(),uiLabStubScreen(),uiStreamStubScreen(),uiForgeStubScreen(),uiRigStubScreen()];
+const screens = [uiTitleScreen(),uiGridScreen(),uiBreachScreen(),uiDebriefScreen(),uiLevelUpScreen(),uiTracedScreen(),uiEndingScreen(),uiMapStubScreen(),...uiRigStubScreens()];
 uiScreenTable = Object.fromEntries(screens.map(function (screen) { return [screen.id,screen]; }));
 return uiScreenTable;
 }

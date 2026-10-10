@@ -1,7 +1,6 @@
-import { BUILD_PHASE } from '../logic/run-phase.js';
 import { ui, uiSyncJudgeDataBadge, uiRenderApp } from './app.js';
 import { uiHasOption } from './render-actions.js';
-import { uiChipPosition, uiLineRemovePosition, uiRemoveLineChipAt } from './line-actions.js';
+import { uiChipPosition } from './line-actions.js';
 import { UI_ONBOARD_STAGE_CHIP, UI_ONBOARD_STAGE_VERDICT, UI_ONBOARD_STAGE_RULE, uiOnboardStage3Message } from './onboarding.js';
 import { uiMarkOnboarded } from './storage.js';
 import { uiPanelAnnounceText, uiBreachInert } from './render-submit-panel.js';
@@ -12,10 +11,6 @@ const UI_WORKER_ACTION_IDS = { run:1,submit:1 };
 
 function uiActionIsLegal(run,actionId) {
 return uiHasOption(ui.audit.view(run),actionId);
-}
-function uiAuditActionIsLegal(run,actionId) {
-if (uiLineRemovePosition(actionId) !== null) return run.phase === BUILD_PHASE;
-return uiActionIsLegal(run,actionId);
 }
 function uiOnboardChipAdded(app,info) {
 if (app.onboardStage !== UI_ONBOARD_STAGE_CHIP) return false;
@@ -38,12 +33,8 @@ uiMarkOnboarded();
 function uiFocusKeyAfterAction(app,actionId) {
 const chipPos = uiChipPosition(actionId);
 if (chipPos !== null) return 'chip-' + chipPos;
-if (uiLineRemovePosition(actionId) !== null) return 'backspace';
 if (actionId === 'clear') return 'chip-' + app.trayFocusIndex;
 return actionId;
-}
-function uiRunAfterAction(run,actionId,removePos) {
-return removePos !== null ? uiRemoveLineChipAt(run,removePos) :ui.audit.act(run,actionId);
 }
 function uiAnnounceVerdict(app,actionId,run) {
 if (actionId !== 'run' && actionId !== 'submit') return;
@@ -84,16 +75,15 @@ return !app.run || uiBreachInert(app);
 }
 async function uiApplyAuditAction(app,actionId) {
 if (uiAuditRefused(app)) return;
-if (!uiAuditActionIsLegal(app.run,actionId)) return;
+if (!uiActionIsLegal(app.run,actionId)) return;
 const before = app.run.lock ? app.run.lock.line.length :0;
 const previousLockKey = uiLockKeyOf(app.run);
 const previousRun = app.run;
 const chipPos = uiChipPosition(actionId);
-const removePos = uiLineRemovePosition(actionId);
 if (actionId === 'submit' && previousLockKey) uiSyncJudgeDataBadge(previousLockKey);
 const ctx = { actionId,before,previousLockKey,previousRun,chipPos };
 if (!UI_WORKER_ACTION_IDS[actionId]) {
-uiFinishAuditAction(app,ctx,uiRunAfterAction(app.run,actionId,removePos));
+uiFinishAuditAction(app,ctx,ui.audit.act(app.run,actionId));
 return;
 }
 app.judging = true;

@@ -2,7 +2,7 @@ import { uiEl } from './dom.js';
 import { uiGridHud } from './grid-hud.js';
 import { uiGridObjective, uiObjectiveText } from './grid-objective.js';
 import { uiGridStage, uiSyncGridLoop } from './grid-canvas.js';
-import { uiGridToast } from './grid-toast.js';
+import { uiGridToast, uiShowToast } from './grid-toast.js';
 import { uiGridTravel, uiToggleTravel, uiIsTravelAction, uiTravelTo } from './grid-travel.js';
 import { uiGridTouchLayer, uiGridPointerDown, uiGridPointerUp, uiGridPointerCancel } from './grid-touch.js';
 import { uiGridDpad, uiDpadDirOf } from './grid-dpad.js';
@@ -10,17 +10,23 @@ import { uiGridFire } from './grid-fire.js';
 import { uiGridKeyAction, uiGridKeyUp } from './grid-keys.js';
 import { uiWalkPress, uiWalkRelease, uiWalkReleaseAll, uiWalkInteract } from './grid-walk.js';
 import { uiOpenReadyLevelUp, uiLevelUpAfterRender } from './grid-events.js';
-import { uiStoryOnGrid } from './story-dialogue.js';
-import { openingDue } from '../game/opening.js';
+import { uiStoryMarkEarnedToasts,uiStoryOnGrid } from './story-dialogue.js';
+import { openingPlan } from '../game/opening.js';
 import { isOpen } from '../game/world.js';
-import { uiHasGame } from './game-storage.js';
+import { createExt, markOpeningDone } from '../game/save-ext.js';
+import { uiCommitExt } from './ext-storage.js';
 import { uiRenderKeepingFocus } from './app.js';
 
-function uiMainHasProgress(app) {
-return uiHasGame() || app.game.save.story.length > 0;
+const TURRET_TOAST = 'LOOKUP TURRET: corridor';
+
+function uiEntryPlan(app) {
+if (app.game.opening) return 'play';
+return openingPlan(app.game.ext || createExt(),{ breached:app.game.progress.breached.size });
 }
-function uiOpeningWanted(app) {
-return Boolean(app.game.opening) || openingDue(app.game.ext || { opening:false },uiMainHasProgress(app));
+function uiSignpostTurret(app) {
+uiStoryMarkEarnedToasts(app);
+uiCommitExt(app,markOpeningDone(app.game.ext || createExt()));
+uiShowToast(app,{ text:TURRET_TOAST,kind:'info' });
 }
 function uiHasPage() {
 return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -55,7 +61,9 @@ app.screen = 'grid';
 app.lastFocusKey = 'grid-stage';
 uiOpenReadyLevelUp(app);
 uiLoadSentry(app);
-if (uiOpeningWanted(app)) uiLoadOpening(app);
+const plan = uiEntryPlan(app);
+if (plan === 'signpost') uiSignpostTurret(app);
+if (plan === 'play') uiLoadOpening(app);
 else uiStoryOnGrid(app);
 }
 function uiRenderGrid(app) {

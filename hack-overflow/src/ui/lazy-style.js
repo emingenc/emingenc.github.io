@@ -17,4 +17,8 @@ if (!UI_LINKED.has(href)) UI_LINKED.set(href,new Promise(function (resolve) { ui
 return UI_LINKED.get(href);
 }
 
-export { uiLinkStyle };
+function uiLinkStyles(hrefs) {
+return Promise.all(hrefs.map(function (href) { return uiLinkStyle(href); })).then(function () {});
+}
+
+export { uiLinkStyle, uiLinkStyles };

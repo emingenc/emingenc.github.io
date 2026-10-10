@@ -1,8 +1,12 @@
 import { uiEl } from './dom.js';
 
 const UI_RIG_SCREEN_ID = 'rig';
-const UI_RIG_BACK_KEY = 'rig-back';
-const UI_RIG_LOADING_TEXT = 'Machine loading.';
+const UI_RIG_STUBS = {
+rig:{ section:'rig-screen',backKey:'rig-back',loading:'Machine loading.' },
+lab:{ section:'lab-screen',backKey:'lab-back',loading:'MEMORY BANK loading.' },
+forge:{ section:'forge-screen',backKey:'forge-back',loading:'The Checkpoint loading. The forge, replayed offline.' },
+stream:{ section:'stream-screen',backKey:'stream-back',loading:'The Intake loading. Real-time arcade game, simulated model, replayed offline.' },
+};
 
 const UI_RIG_HOOK_FALLBACKS = {
 keyAction:null,keyUp:false,applyAction:false,sync:undefined,pointerDown:false,pointerUp:false,pointerCancel:false,release:undefined,
@@ -15,34 +19,48 @@ forge:async (app) => (await import('./forge-loader.js')).uiOpenForge(app),
 stream:async (app) => (await import('./stream-loader.js')).uiOpenStream(app),
 };
 
-let uiRigDelegate = null;
+const uiRigDelegates = new Map();
 const uiRigLoading = new Map();
 
-function uiRigCall(hook,fallback,args) {
-if (!uiRigDelegate || !uiRigDelegate[hook]) return fallback;
-return uiRigDelegate[hook](...args);
+function uiSetRigDelegate(screenId,screen) {
+uiRigDelegates.set(screenId,screen);
 }
-function uiRigRender(app) {
-if (uiRigDelegate) return uiRigDelegate.render(app);
-return uiEl('section',{ className:'rig-screen' });
+function uiRigCall(screenId,hook,args) {
+const delegate = uiRigDelegates.get(screenId);
+if (!delegate || !delegate[hook]) return UI_RIG_HOOK_FALLBACKS[hook];
+return delegate[hook](...args);
 }
-function uiRigFocusKey(app) {
-return uiRigDelegate ? uiRigDelegate.focusKey(app) :UI_RIG_BACK_KEY;
-}
-function uiRigAnnounce(app) {
-return uiRigDelegate ? uiRigDelegate.announce(app) :UI_RIG_LOADING_TEXT;
-}
-function uiRigStubScreen() {
-const stub = { id:UI_RIG_SCREEN_ID,render:uiRigRender,focusKey:uiRigFocusKey,announce:uiRigAnnounce };
+function uiRigStubScreen(screenId = UI_RIG_SCREEN_ID) {
+const { section,backKey,loading } = UI_RIG_STUBS[screenId];
+const real = () => uiRigDelegates.get(screenId);
+const stub = {
+id:screenId,
+render:(app) => (real() ? real().render(app) :uiEl('section',{ className:section })),
+focusKey:(app) => (real() ? real().focusKey(app) :backKey),
+announce:(app) => (real() ? real().announce(app) :loading),
+};
 Object.keys(UI_RIG_HOOK_FALLBACKS).forEach(function (hook) {
-stub[hook] = function (...args) { return uiRigCall(hook,UI_RIG_HOOK_FALLBACKS[hook],args); };
+stub[hook] = function (...args) { return uiRigCall(screenId,hook,args); };
 });
 return stub;
+}
+function uiRigStubScreens() {
+return Object.keys(UI_RIG_STUBS).map((screenId) => uiRigStubScreen(screenId));
 }
 function uiLoadRigModule(rigId) {
 if (!Object.hasOwn(UI_RIG_MODULES,rigId)) throw new Error('unknown rig screen: ' + rigId);
 if (!uiRigLoading.has(rigId)) uiRigLoading.set(rigId,UI_RIG_MODULES[rigId]());
 return uiRigLoading.get(rigId);
+}
+function uiRigWalkedAway(app) {
+return app.screen !== 'grid' || app.game.breach || app.menuOpen;
+}
+async function uiOpenRigScreen(app,{ id,screen,ready,open }) {
+if (uiRigWalkedAway(app)) return;
+uiSetRigDelegate(id,screen());
+await ready?.();
+if (uiRigWalkedAway(app)) return;
+open(app);
 }
 async function uiOpenRig(app,rigId) {
 let mod;
@@ -52,15 +70,11 @@ mod = await uiLoadRigModule(rigId);
 uiRigLoading.delete(rigId);
 throw error;
 }
-if (app.screen !== 'grid' || app.game.breach || app.menuOpen) return;
-uiRigDelegate = mod.uiRigScreen();
-await mod.uiRigReady?.();
-if (app.screen !== 'grid' || app.game.breach || app.menuOpen) return;
-mod.uiRigOpen(app,rigId);
+await uiOpenRigScreen(app,{ id:UI_RIG_SCREEN_ID,screen:mod.uiRigScreen,ready:mod.uiRigReady,open:(target) => mod.uiRigOpen(target,rigId) });
 }
 function uiOpenRigHost(app,rig) {
 if (!Object.hasOwn(UI_RIG_HOSTS,rig.host)) return Promise.reject(new Error('unknown rig host: ' + rig.host));
 return UI_RIG_HOSTS[rig.host](app,rig);
 }
 
-export { uiRigStubScreen, uiOpenRig, uiOpenRigHost };
+export { uiRigStubScreen,uiRigStubScreens,uiSetRigDelegate,uiOpenRig,uiOpenRigScreen,uiOpenRigHost };

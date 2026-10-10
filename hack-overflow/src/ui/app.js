@@ -1,4 +1,4 @@
-import { uiQs, uiMount, uiAnnounce, uiFindByFocusKey, uiRestoreFocus, UI_ROOT_ID, UI_BADGE_ID } from './dom.js';
+import { uiQs, uiMount, uiAnnounce, uiFindByFocusKey, uiRestoreFocus, uiPrefersReducedMotion, UI_ROOT_ID, UI_BADGE_ID } from './dom.js';
 import { uiLoadSoundOn, uiLoadOnboarded } from './storage.js';
 import { UI_ONBOARD_STAGE_CHIP } from './onboarding.js';
 import { uiMenuIfOpen } from './menu.js';
@@ -15,7 +15,7 @@ ui.audit = audit;
 }
 function uiCreateApp() {
 return {
-screen:'title',run:null,rig:null,soundOn:uiLoadSoundOn(),trayFocusIndex:0,lastPanelKind:null,lastFocusKey:null,
+screen:'title',run:null,rig:null,soundOn:uiLoadSoundOn(),trayFocusIndex:0,lastPanelKind:null,probedLine:null,statementOpen:false,lastFocusKey:null,
 onboardStage:uiLoadOnboarded() ? null :UI_ONBOARD_STAGE_CHIP,onboardMessage:null,menuOpen:false,rainState:null,
 pendingAnnounce:null,lastAnnouncedScreen:null,pendingScrollToVerdict:false,
 judging:false,
@@ -27,9 +27,26 @@ const UI_NARROW_VIEWPORT_MAX = 768;
 function uiIsNarrowViewport() {
 return window.innerWidth < UI_NARROW_VIEWPORT_MAX;
 }
-function uiScrollVerdictIntoView(root) {
-const panel = root.querySelector('.test-panel');
-if (panel && typeof panel.scrollIntoView === 'function') panel.scrollIntoView({ block:'start' });
+function uiScrollIntoView(root,selector,block) {
+const node = root.querySelector(selector);
+if (node && typeof node.scrollIntoView === 'function') node.scrollIntoView({ block,behavior:'auto' });
+}
+const UI_SWEEP_KINDS = ['probe','fail'];
+function uiSweepMs(app) {
+const anim = app.game.breach ? app.game.breach.anim :null;
+if (!anim || !UI_SWEEP_KINDS.includes(anim.kind) || uiPrefersReducedMotion()) return 0;
+return Math.max(0,anim.plan.durationMs - (performance.now() - anim.startedAt));
+}
+let uiSweepScrollTimer = 0;
+function uiScrollToSweepResult(waitMs) {
+if (uiSweepScrollTimer) window.clearTimeout(uiSweepScrollTimer);
+uiSweepScrollTimer = waitMs > 0 ? window.setTimeout(function () { uiScrollIntoView(uiQs(UI_ROOT_ID),'.test-panel','nearest'); },waitMs) :0;
+}
+function uiScrollToRun(app,root) {
+const sweepMs = uiSweepMs(app);
+uiScrollToSweepResult(sweepMs);
+if (uiVerdictHeld(app) || sweepMs > 0) uiScrollIntoView(root,'.breach-hud','start');
+else if (!app.game.revealing) uiScrollIntoView(root,'.test-panel','nearest');
 }
 function uiKeepFocusInView() {
 const focused = document.activeElement;
@@ -40,7 +57,7 @@ if (screenChanged) {
 window.scrollTo(0,0);
 uiKeepFocusInView();
 } else if (app.pendingScrollToVerdict && uiIsNarrowViewport()) {
-uiScrollVerdictIntoView(root);
+uiScrollToRun(app,root);
 }
 app.pendingScrollToVerdict = false;
 }
