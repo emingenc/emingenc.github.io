@@ -1,7 +1,7 @@
 import { cellKey, findPath, reachable } from './path.js';
 import { DIRS, cellToward } from './move.js';
 import { rigOf } from './rig-catalog.js';
-import { coreState, LEVEL_XP, unlocksBetween } from './progress.js';
+import { barrierOpen, coreState, LEVEL_XP, unlocksBetween } from './progress.js';
 import { lockName, placePhrase, sectorName } from './messages.js';
 
 const REPLAY_TEXT = 'Replay a breached lock for a better star.';
@@ -45,6 +45,13 @@ const level = Math.min(...gates.map((gate) => gate.level));
 const atLevel = gates.filter((gate) => gate.level === level);
 return { level,families:atLevel.map((gate) => gate.family),xpToGo:LEVEL_XP[level] - progress.xp,targetId:atLevel[0].id };
 }
+function closedBarrierRig(world,progress) {
+const closed = Object.values(world.barriers ?? {}).find((barrier) => !barrierOpen(world,progress,barrier) && world.rigs[barrier.opens]);
+return closed ? world.rigs[closed.opens] :null;
+}
+function barrierObjective(rig) {
+return { text:'Switch off the ' + rigOf(rig.rig).title,targetId:rig.id };
+}
 function kernelObjective(world) {
 return { text:'Open the KERNEL in the SAFEHOUSE.',targetId:world.kernel ? world.kernel.id :null };
 }
@@ -67,10 +74,12 @@ if (progress.ended) return { text:'ROOT ACCESS complete. ' + REPLAY_TEXT,targetI
 if (progress.left === 0) return kernelObjective(world);
 const core = nearestReachable({ world,progress,from },readyCoreCandidates(world,progress));
 if (core) return coreObjective(world,core);
-const rig = nearestReachable({ world,progress,from },unmetRigCandidates(world,progress));
+const barrierRig = closedBarrierRig(world,progress);
+const rig = barrierRig ? null :nearestReachable({ world,progress,from },unmetRigCandidates(world,progress));
 if (rig) return rigObjective(world,rig);
 const lock = nearestReachable({ world,progress,from },unbreachedLockCandidates(world,progress));
 if (lock) return lockObjective(world,lock);
+if (barrierRig) return barrierObjective(barrierRig);
 const gate = nextGate(world,progress);
 if (gate) return gateObjective(world,gate);
 return { text:REPLAY_TEXT,targetId:null };
@@ -85,4 +94,4 @@ if (!Object.hasOwn(LEVEL_XP,level)) return null;
 return { level,xpToGo:LEVEL_XP[level] - progress.xp,unlocks:unlocksBetween(progress.level,level) };
 }
 
-export { objectiveFor, goalLine, nextUnlock };
+export { objectiveFor, goalLine, nextUnlock, closedBarrierRig };

@@ -5,7 +5,7 @@ import { UI_SPRITE_SIZE } from './grid-sprites.js';
 const UI_SECTOR_ACCENTS = { hash:'primary','two-pointers':'cyan',stack:'magenta','binary-search':'amber',window:'bright' };
 const UI_SAFEHOUSE_ACCENT = 'dim';
 const UI_RIG_ACCENTS = { ledger:'cyan',context:'magenta',forge:'red',stream:'amber' };
-const UI_GROUND = new Set(['floor','cache','terminal','door','gate','core','kernel-door','kernel']);
+const UI_GROUND = new Set(['floor','cache','terminal','door','gate','barrier','core','kernel-door','kernel']);
 const UI_PULSE = { ms:1600,low:0.45,rest:0.8 };
 const UI_LABEL = { scale:0.5,advance:0.4,inset:2,font:'px VT323, monospace',top:0.37,bottom:0.72 };
 

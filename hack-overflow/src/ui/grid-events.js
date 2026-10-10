@@ -17,7 +17,7 @@ import { uiOpenLevelUp } from './screen-levelup.js';
 import { uiOpenEnding } from './screen-ending.js';
 import { uiOpenRigHost } from './rig-loader.js';
 import { uiStoryShow } from './story-dialogue.js';
-import { uiActorsTick, uiNoteDoorway } from './grid-actors.js';
+import { uiActorsTick, uiHitFoe, uiNoteDoorway } from './grid-actors.js';
 
 const UI_STORY_FOCUS_KEY = 'story-next';
 const UI_NEAR_KINDS = { terminal:1,core:1,kernel:1,rig:1 };
@@ -193,9 +193,16 @@ uiRigMeeting(app,rig);
 uiOpenRigScreen(app,rig);
 return true;
 }
+const DANGER_BUZZ_MS = 40;
+const ZAP_DAMAGE = 1;
+function uiOnDanger(app) {
+if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') navigator.vibrate(DANGER_BUZZ_MS);
+if (app.game.sentry) app.game.sentry.danger(app);
+return false;
+}
 const UI_TICKING_EVENTS = new Set(['step','bump']);
 const UI_STEP_HANDLERS = {
-step:uiOnStep,cache:uiOnCache,bump:uiOnBump,blocked:uiBlock,encrypted:uiBlock,
+step:uiOnStep,cache:uiOnCache,bump:uiOnBump,danger:uiOnDanger,blocked:uiBlock,encrypted:uiBlock,
 terminal:uiOnTerminal,core:uiOnCore,kernel:uiOnKernel,rig:uiOnRig,
 };
 function uiApplyStepEvent(app,result) {
@@ -204,6 +211,7 @@ const from = game.avatar.pos;
 game.avatar = { pos:result.pos,facing:result.facing };
 uiCommitSave(app,withPosition(game.save,game.avatar));
 uiNoteDoorway(app,result.pos);
+if (result.event.zap) uiHitFoe(app,result.event.zap,ZAP_DAMAGE);
 const hurt = UI_TICKING_EVENTS.has(result.event.type) && uiActorsTick(app);
 const rerender = UI_STEP_HANDLERS[result.event.type](app,{ event:result.event,from });
 if (rerender || hurt) uiRenderKeepingFocus(app);

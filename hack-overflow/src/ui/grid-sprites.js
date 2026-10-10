@@ -90,6 +90,25 @@ const UI_BARRIER_SHEET = uiSheet(['door','jamb','beams','emitter-up'],`
 .kkkkkkkkkkkkkk. kkkkkkkkkkkkkkkk .zrzzzrzzrzzzrz. ................
 `);
 
+const UI_PASSAGE_SHEET = uiSheet(['chevrons'],`
+................
+................
+................
+................
+...hh....gg.....
+....hh....gg....
+.....hh....gg...
+......hh....gg..
+......hh....gg..
+.....hh....gg...
+....hh....gg....
+...hh....gg.....
+................
+................
+................
+................
+`);
+
 const UI_TERMINAL_SHEET = uiSheet(['terminal-idle','terminal-breached','terminal-replay','led'],`
 ................ ................ ................ ................
 .kkkkkkkkkkkkkk. .kkkkkkkkkkkkkk. .kkkkkkkkkkkkkk. ................
@@ -238,6 +257,9 @@ return rows.map(function (row) { return row.split('').reverse().join(''); });
 function uiFlip(rows) {
 return [...rows].reverse();
 }
+function uiRecolor(rows,from,to) {
+return rows.map(function (row) { return row.split(from).join(to); });
+}
 function uiScrollDown(rows,count) {
 return [...rows.slice(rows.length - count),...rows.slice(0,rows.length - count)];
 }
@@ -250,13 +272,18 @@ return idle.map(function (row) { return row.split('').map(function (glyph) { ret
 function uiRigPips(pip) {
 return Object.fromEntries(Array.from({ length:UI_RIG_PIPS },function (_,slot) { return ['rig-pip-' + (slot + 1),uiScrollRight(pip,slot * UI_RIG_PIP_STEP)]; }));
 }
+function uiPosts(emitter) {
+const post = uiRecolor(emitter,'r','k');
+return { 'post-up':post,'post-down':uiFlip(post),'post-left':uiTurn(post),'post-right':uiMirror(uiTurn(post)) };
+}
 function uiDerivedSprites(drawn) {
 const derived = {
 'rim-left':uiTurn(drawn['rim-up']),'rim-right':uiMirror(uiTurn(drawn['rim-up'])),
 'rim-nw':uiMirror(drawn['rim-ne']),'rim-sw':uiMirror(drawn['rim-se']),
 'emitter-down':uiFlip(drawn['emitter-up']),'emitter-left':uiTurn(drawn['emitter-up']),
 'emitter-right':uiMirror(uiTurn(drawn['emitter-up'])),'door-turned':uiTurn(drawn.door),'jamb-turned':uiTurn(drawn.jamb),
-'rig-glow':uiRigGlow(drawn['rig-idle']),...uiRigPips(drawn['rig-pip']),
+'rig-glow':uiRigGlow(drawn['rig-idle']),...uiRigPips(drawn['rig-pip']),...uiPosts(drawn['emitter-up']),
+'chevrons-turned':uiTurn(drawn.chevrons),
 };
 for (let frame = 0; frame < UI_BEAM_FRAMES; frame += 1) {
 derived['beams-' + frame] = uiScrollDown(drawn.beams,frame * UI_BEAM_STEP);
@@ -265,7 +292,7 @@ derived['beams-turned-' + frame] = uiTurn(derived['beams-' + frame]);
 return derived;
 }
 const UI_DRAWN_SPRITES = {
-...UI_FLOOR_SHEET,...UI_WALL_SHEET,...UI_BARRIER_SHEET,...UI_TERMINAL_SHEET,...UI_PIP_SHEET,...UI_RIG_SHEET,...UI_RIG_MAST_SHEET,...UI_CORE_SHEET,
+...UI_FLOOR_SHEET,...UI_WALL_SHEET,...UI_BARRIER_SHEET,...UI_PASSAGE_SHEET,...UI_TERMINAL_SHEET,...UI_PIP_SHEET,...UI_RIG_SHEET,...UI_RIG_MAST_SHEET,...UI_CORE_SHEET,
 ...UI_THINGS_SHEET,
 };
 const UI_SPRITES = { ...UI_DRAWN_SPRITES,...uiDerivedSprites(UI_DRAWN_SPRITES) };

@@ -3,13 +3,19 @@ import { thingAt, isPassable } from '../game/world.js';
 import { pressWalk, releaseWalk, advanceWalk, stepPose, nudgeAt } from '../game/tween.js';
 import { uiPrefersReducedMotion } from './dom.js';
 import { uiApplyStepEvent, uiNearDir } from './grid-events.js';
+import { uiSentryWait } from './grid-actors.js';
 
 
+function uiGuardedStep(app,dir,auto) {
+const game = app.game;
+const guarded = game.sentry ? game.sentry.guardStep(app,dir,auto) :null;
+return guarded || stepAvatar(game.world,game.progress,{ pos:game.avatar.pos,facing:game.avatar.facing,dir });
+}
 function uiWalkAdvance(app,now) {
 const game = app.game;
 const turn = advanceWalk(game.walk,{
 now,from:game.avatar.pos,reducedMotion:uiPrefersReducedMotion(),
-move:function (dir) { return stepAvatar(game.world,game.progress,{ pos:game.avatar.pos,facing:game.avatar.facing,dir }); },
+move:function (dir,auto) { return uiGuardedStep(app,dir,auto); },
 });
 game.walk = turn.walk;
 if (turn.step) uiApplyStepEvent(app,turn.step);
@@ -33,11 +39,14 @@ Object.assign(app.game.walk,{ plan:{ dirs:[...plan.dirs] },held:[],queued:null,s
 function uiIsSolidThing(game,cell) {
 return thingAt(game.world,cell) !== null && !isPassable(game.world,game.progress,cell);
 }
+function uiInteractDir(game) {
+const faced = cellToward(game.avatar.pos,game.avatar.facing);
+return uiIsSolidThing(game,faced) ? game.avatar.facing :uiNearDir(game);
+}
 function uiWalkInteract(app) {
 const game = app.game;
-const faced = cellToward(game.avatar.pos,game.avatar.facing);
-const dir = uiIsSolidThing(game,faced) ? game.avatar.facing :uiNearDir(game);
-if (!dir) return false;
+const dir = uiInteractDir(game);
+if (!dir) return uiSentryWait(app);
 uiWalkPress(app,dir);
 uiWalkRelease(app,dir);
 return true;

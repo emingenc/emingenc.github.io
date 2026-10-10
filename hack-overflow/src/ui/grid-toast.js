@@ -3,6 +3,10 @@ import { uiRenderKeepingFocus } from './app.js';
 
 const UI_TOAST_MS = { line:2500,sector:3500 };
 const UI_TOAST_PENDING_MAX = 1;
+const UI_REPLACEABLE = new Set(['info','reward']);
+function uiReplaces(game,toast) {
+return Boolean(toast.replace) && Boolean(game.toast) && UI_REPLACEABLE.has(game.toast.kind);
+}
 function uiToastQueue(game) {
 if (!game.toastQueue) game.toastQueue = [];
 return game.toastQueue;
@@ -29,7 +33,7 @@ uiRenderKeepingFocus(app);
 function uiShowToast(app,toast) {
 const game = app.game;
 if (!toast.announced) uiAnnounce(toast.text);
-if (!game.toast) { window.clearTimeout(game.toastTimer); uiToastQueue(game).length = 0; uiStartToast(app,toast); return; }
+if (!game.toast || uiReplaces(game,toast)) { window.clearTimeout(game.toastTimer); uiToastQueue(game).length = 0; uiStartToast(app,toast); return; }
 if (toast.text === uiLastToastText(game)) return;
 const queue = uiToastQueue(game);
 queue.push(toast);

@@ -1,10 +1,11 @@
 import * as WORLD_DATA from '../game/world-data.js';
 import { buildWorld } from '../game/world.js';
+import { MAP_REV } from '../game/map-rev.js';
 import { progressOf } from '../game/progress.js';
-import { createExt,reconcileExt } from '../game/save-ext.js';
+import { createExt,reconcileExt,withMapRev } from '../game/save-ext.js';
 import { createCatalog } from '../logic/index.js';
-import { uiClearExt,uiLoadExt } from './ext-storage.js';
-import { uiHasGame,uiLoadGame,uiStoreGame } from './game-storage.js';
+import { uiClearExt,uiCommitMapRev,uiLoadExt,uiLoadExtMapRev,uiStampMapRev } from './ext-storage.js';
+import { uiHasGame,uiLoadGame,uiMigratedSave,uiStoreGame } from './game-storage.js';
 
 function uiIdleWalk() {
 return { held:[],queued:null,plan:null,tween:null,nudge:null,stalled:null,nearId:null };
@@ -12,7 +13,7 @@ return { held:[],queued:null,plan:null,tween:null,nudge:null,stalled:null,nearId
 function uiSaveFields(world,save) {
 return {
 save,progress:progressOf(world,save),avatar:{ pos:{ ...save.pos },facing:save.facing },walk:uiIdleWalk(),
-view:null,travelOpen:false,toast:null,notice:null,breach:null,revealing:false,outcome:null,traced:null,levelUp:null,
+view:null,travelOpen:false,toast:null,notice:null,breach:null,revealing:false,outcome:null,traced:null,levelUp:null,fight:null,sentry:null,
 };
 }
 function uiLoadReconciledExt() {
@@ -22,19 +23,25 @@ return ext;
 }
 function uiCreateGame(content) {
 const world = buildWorld(content,WORLD_DATA);
-const loaded = uiLoadGame(world);
-return { world,catalog:createCatalog(content),stage:null,stageVisible:true,...uiSaveFields(world,loaded.save),notice:loaded.notice,ext:uiLoadReconciledExt() };
+const mapRev = uiLoadExtMapRev();
+const loaded = uiLoadGame(world,{ mapRev });
+const legacy = loaded.stored && mapRev !== MAP_REV;
+const save = legacy ? uiMigratedSave(world,loaded) :loaded.save;
+const ext = uiLoadReconciledExt();
+return { world,catalog:createCatalog(content),stage:null,stageVisible:true,...uiSaveFields(world,save),notice:loaded.notice,ext:legacy ? uiCommitMapRev(ext) :withMapRev(ext) };
 }
 function uiResetGameState(app,save) {
-Object.assign(app.game,uiSaveFields(app.game.world,save),{ ext:createExt() });
+Object.assign(app.game,uiSaveFields(app.game.world,save),{ ext:createExt(),coach:null,doorway:null,drawActors:null,sentryLoad:null });
 }
 function uiSetSave(app,save) {
 app.game.save = save;
 app.game.progress = progressOf(app.game.world,save);
+if (app.game.sentry && app.game.sentry.settle) app.game.sentry.settle(app);
 }
 function uiCommitSave(app,save) {
 uiSetSave(app,save);
 uiStoreGame(save);
+uiStampMapRev(app.game.ext);
 }
 const UI_DEBUG_RING = 100;
 let uiDebug = null;

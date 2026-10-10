@@ -1,13 +1,15 @@
 import { GAME_EVENT } from '../game/game-events.js';
 import { isOpen } from '../game/world.js';
 import { markSeen } from '../game/save.js';
-import { drawnOpenness, isRevealing, newlyOpened, revealDone, revealableOnCamera, startBatch, wholeCellsOnCamera } from '../game/doors.js';
+import { drawnOpenness, isRevealing, newlyOpened, revealDone, revealText, revealableOnCamera, startBatch, wholeCellsOnCamera } from '../game/doors.js';
 import { uiAnnounce, uiPrefersReducedMotion } from './dom.js';
 import { uiEmit } from './bus.js';
 import { uiCommitSave } from './game-state.js';
+import { uiShowToast } from './grid-toast.js';
 
-function uiEmitOpened(item) {
+function uiEmitOpened(app,item) {
 uiEmit(GAME_EVENT.GATE_OPEN,{ id:item.id,kind:item.kind,cells:item.cells });
+if (item.kind === 'barrier') uiShowToast(app,{ text:revealText(item),kind:'reward',announced:true });
 if (item.kind === 'kernel-door') uiEmit(GAME_EVENT.KERNEL_OPEN,{});
 }
 function uiDropReveal(game,id) {
@@ -23,7 +25,7 @@ if (app.screen !== 'grid') {
 uiDropReveal(game,step.item.id);
 return;
 }
-uiEmitOpened(step.item);
+uiEmitOpened(app,step.item);
 if (step.announce) uiAnnounce(step.announce);
 uiCommitSave(app,markSeen(game.save,[step.item.id]));
 }

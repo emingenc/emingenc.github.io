@@ -2,7 +2,7 @@ import { tapIntent, tapCellFor, createDpadGesture, dpadDown, dpadUp, dpadClickIs
 import { uiEl, uiPointerIsCoarse } from './dom.js';
 import { uiDpadDirFor } from './grid-dpad.js';
 import { uiWalkPath, uiWalkPress, uiWalkRelease } from './grid-walk.js';
-import { uiGridPing } from './grid-actors.js';
+import { uiGridPing, uiLiveFoes } from './grid-actors.js';
 import { uiFireCancel, uiFireClick, uiFireTouchDown, uiFireTouchUp } from './grid-fire.js';
 
 
@@ -69,14 +69,14 @@ return true;
 }
 function uiDroneNearPoint(app,point) {
 const view = app.game.view;
-return app.game.fight.actors.find(function (actor) {
+return uiLiveFoes(app.game).find(function (actor) {
 const away = Math.hypot((actor.col + HALF - view.camera.col) * view.tile - point.left,(actor.row + HALF - view.camera.row) * view.tile - point.top);
 return actor.hp > 0 && away <= view.tile * UI_PING_REACH_TILES;
 }) || null;
 }
 function uiTapPing(app,event) {
 const state = uiTouchState(app);
-if (!app.game.view || !app.game.fight || !state.node.contains(event.target) || app.game.travelOpen) return false;
+if (!app.game.view || !state.node.contains(event.target) || app.game.travelOpen) return false;
 const actor = uiDroneNearPoint(app,uiPointForEvent(app,state.node,event));
 if (!actor) return false;
 uiGridPing(app,actor.id,1);
