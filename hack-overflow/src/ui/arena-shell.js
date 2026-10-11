@@ -99,7 +99,7 @@ const lines = (result.lines || []).map(function (line) { return uiEl('p',{ class
 return uiEl('section',{
 className:'arena-card arena-scroll' + (result.tone ? ' arena-card-' + result.tone :''),
 attrs:{ 'data-rig':app.rig ? app.rig.rigId :'' },
-children:[uiEl('h2',{ className:'arena-card-title',text:result.title }),...lines,...(result.body || []),uiArenaCardButtons(result.actions)],
+children:[uiEl('h2',{ className:'arena-card-title',text:result.title }),...(result.lead || []),...lines,...(result.body || []),uiArenaCardButtons(result.actions)],
 });
 }
 function uiArenaPaidLine(rank,className) {
