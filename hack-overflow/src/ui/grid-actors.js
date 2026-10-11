@@ -77,7 +77,7 @@ fight.revives = (fight.revives || 0) + 1;
 function uiRevive(app) {
 const game = app.game;
 if (game.sentry) game.sentry.reset(app);
-const doorway = game.doorway || game.fight.hp.doorway;
+const doorway = game.reviveAt || game.doorway || game.fight.hp.doorway;
 const revived = reviveHp({ ...game.fight.hp,doorway });
 uiReviveFight(game.fight,revived.hp);
 game.avatar = { pos:revived.pos,facing:game.avatar.facing };
@@ -181,4 +181,4 @@ attrs:{ role:'img','aria-label':'Hearts ' + hearts + ' of ' + max },
 });
 }
 
-export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiSentryWait,uiGridHearts };
+export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiSentryWait,uiGridHearts,uiHurt };

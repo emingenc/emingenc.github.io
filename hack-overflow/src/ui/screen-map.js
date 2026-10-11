@@ -3,6 +3,7 @@ import { isOpen } from '../game/world.js';
 import { encryptedHook } from '../game/story/story.js';
 import { uiEl } from './dom.js';
 import { uiDrawMapInto } from './map-draw.js';
+import { hasBeat } from '../game/ext/ops.js';
 
 let uiMapResizer = null;
 
@@ -72,6 +73,11 @@ event.preventDefault();
 if (event.repeat) return { type:'handled' };
 return { type:'action',id:'map-close' };
 }
+function uiPaintMap(app,canvas) {
+const state = { world:app.game.world,progress:app.game.progress,save:app.game.save,avatar:app.game.avatar.pos };
+if (!hasBeat(app.game.ext,'halted')) { uiDrawMapInto(canvas,state); return; }
+import('./screen-halt.js').then((halt) => halt.uiDrawHaltedMap(canvas,state));
+}
 function uiSyncMap(app,active,root) {
 if (uiMapResizer) uiMapResizer.disconnect();
 uiMapResizer = null;
@@ -79,7 +85,7 @@ if (!active) return;
 const canvas = root.querySelector('.map-canvas');
 if (!canvas) return;
 uiMapResizer = new ResizeObserver(function () {
-uiDrawMapInto(canvas,{ world:app.game.world,progress:app.game.progress,save:app.game.save,avatar:app.game.avatar.pos });
+uiPaintMap(app,canvas);
 });
 uiMapResizer.observe(canvas);
 }

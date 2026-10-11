@@ -1,0 +1,240 @@
+.review-screen {
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  text-align:left;
+  gap:var(--sp-3);
+  min-width:0;
+  max-width:100%;
+  padding:max(var(--sp-4),env(safe-area-inset-top,0px)) max(var(--sp-4),env(safe-area-inset-right,0px)) max(var(--sp-4),env(safe-area-inset-bottom,0px)) max(var(--sp-4),env(safe-area-inset-left,0px));
+  overflow-x:hidden;
+}
+
+.review-head {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+}
+
+.review-title {
+  margin:0;
+  color:var(--primary);
+  font-size:var(--fs-xl);
+}
+
+.review-prompt {
+  margin:0;
+  color:var(--dim);
+  font-size:var(--fs-sm);
+}
+
+.review-watch {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:var(--sp-2) var(--sp-4);
+  padding:var(--sp-3);
+  border:2px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--panel);
+}
+
+.review-watch-text {
+  flex:1 1 auto;
+  min-width:0;
+  margin:0;
+  color:var(--cyan);
+  font-family:var(--font-body);
+  font-size:var(--fs-sm);
+  overflow-wrap:anywhere;
+}
+
+.review-flood {
+  display:flex;
+  flex:0 0 auto;
+  gap:var(--sp-1);
+}
+
+.review-tile {
+  width:14px;
+  height:14px;
+  border:1px solid var(--border);
+  background:transparent;
+}
+
+.review-tile.is-flood {
+  border-color:var(--red);
+  background:var(--red);
+}
+
+.review-tile.is-hero {
+  border-color:var(--primary);
+}
+
+.review-tile.is-hero.is-hit {
+  border-color:var(--bright);
+}
+
+.review-hearts {
+  margin:0;
+  color:var(--red);
+  font-size:var(--fs-lg);
+}
+
+.review-listing,.review-log {
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+
+.review-listing {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+}
+
+.review-line,.review-draft {
+  display:flex;
+  align-items:flex-start;
+  gap:var(--sp-3);
+  width:100%;
+  min-width:44px;
+  min-height:44px;
+  padding:var(--sp-3);
+  border:2px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--panel);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:var(--fs-sm);
+  text-align:left;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+.review-line.is-selected,.review-draft.is-picked {
+  border-color:var(--amber);
+  color:var(--amber);
+}
+
+.review-line.is-stamped {
+  border-color:var(--red);
+}
+
+.review-num {
+  flex:0 0 auto;
+  min-width:1.5em;
+  color:var(--dim);
+}
+
+.review-code {
+  min-width:0;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+
+.review-drafts {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+}
+
+.review-draft.is-typing {
+  color:var(--dim);
+}
+
+.review-notes {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+  min-height:44px;
+}
+
+.review-stamp {
+  align-self:flex-start;
+  margin:0;
+  padding:var(--sp-1) var(--sp-3);
+  border:2px solid var(--red);
+  color:var(--red);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  transform:rotate(-3deg);
+}
+
+.review-hint {
+  margin:0;
+  color:var(--amber);
+  font-size:var(--fs-sm);
+  overflow-wrap:anywhere;
+}
+
+.review-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--sp-3);
+}
+
+.review-act,.review-hold {
+  position:relative;
+  overflow:hidden;
+  min-width:44px;
+  min-height:44px;
+  -webkit-touch-callout:none;
+  user-select:none;
+  touch-action:manipulation;
+}
+
+.review-hold.is-holding::after {
+  content:'';
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:0;
+  width:100%;
+  background:var(--bright);
+  opacity:0.4;
+  pointer-events:none;
+}
+
+.review-log {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-1);
+  color:var(--dim);
+  font-size:var(--fs-sm);
+}
+
+.review-log-line {
+  overflow-wrap:anywhere;
+}
+
+.review-who {
+  color:var(--magenta);
+}
+
+@keyframes review-hold {
+  from {
+    width:0;
+  }
+
+  to {
+    width:100%;
+  }
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .review-hold.is-holding::after {
+    animation:review-hold 600ms linear forwards;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .review-hold.is-holding::after {
+    animation:none;
+  }
+
+  .review-stamp {
+    transform:none;
+  }
+}

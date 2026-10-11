@@ -1,4 +1,4 @@
-import { withBeat } from '../game/ext/ops.js';
+import { hasBeat,withBeat } from '../game/ext/ops.js';
 import { AMBUSH,ambushDue,ambushState,ambushText,standAmbush,withoutAmbush } from '../game/power/ambush.js';
 import { uiCommitExt } from './ext-storage.js';
 import { ensureFight } from './grid-actors.js';
@@ -16,6 +16,7 @@ fight.actors = [...withoutAmbush(fight.actors),...standAmbush()];
 Object.assign(ambush,{ live:true,revives:fight.revives || 0 });
 uiSay(app,{ text:ambushText().start });
 uiPowerRefresh(app);
+if (hasBeat(app.game.ext,'ordeal')) import('./finale-offer.js').then((module) => module.uiGhostOffer(app,{ kind:'ambush' })).catch(console.error);
 }
 function uiOnEnterCell(info) {
 const app = info.app;
