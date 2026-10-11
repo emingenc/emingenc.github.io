@@ -1,7 +1,7 @@
-import { growHp,maxHeartsFor,passDoorway } from '../game/hp.js';
+import { growHp,maxHeartsOf,passDoorway } from '../game/hp.js';
 import { cellToward } from '../game/move.js';
 import { dangerCells,mitesView,miteAt,resetMites,sentryMites,tickMites,zapMite } from '../game/mites.js';
-import { COACH_RANGE,CORRIDOR_MOUTH,MITE_RANGE,SHOT_COOLDOWN_MS,SHOT_RANGE } from '../game/sentry-lanes.js';
+import { COACH_RANGE,CORRIDOR_MOUTH,MITE_RANGE,SENTRY_REGION,SHOT_COOLDOWN_MS,SHOT_RANGE } from '../game/sentry-lanes.js';
 import { createExt,withZap } from '../game/save-ext.js';
 import { isOpen } from '../game/world.js';
 import { analytics } from '../analytics.js';
@@ -10,7 +10,8 @@ import { uiAnnounce,uiPointerIsCoarse } from './dom.js';
 import { uiCommitExt } from './ext-storage.js';
 import { ensureFight,uiDroneAlive } from './grid-actors.js';
 import { uiDrawMites } from './grid-draw-mites.js';
-import { uiDrawHitFlash,uiNoteHit,uiShakeStage } from './grid-drone-fx.js';
+import { uiDrawHitFlash } from './grid-drone-fx.js';
+import { uiDrawActors } from './grid-draw-actors.js';
 import { DANGER_HINT,WAIT_TEXT,sentryCoachLine } from './grid-sentry-coach.js';
 import { uiShowToast } from './grid-toast.js';
 
@@ -37,15 +38,10 @@ if (game.drawActors === state.painter) return;
 state.inner = game.drawActors || null;
 game.drawActors = state.painter;
 }
-function uiStrikeFx(ctx,app,frame) {
-const notes = uiNoteHit(app.game.fight,frame.now);
-uiDrawHitFlash(ctx,frame,notes.hitAt);
-uiShakeStage(app,frame,notes.hitAt);
-}
 function uiPainterFor(state) {
 return function (ctx,app,frame) {
 if (state.inner) state.inner(ctx,app,frame);
-else if (app.game.fight) uiStrikeFx(ctx,app,frame);
+else uiDrawActors(ctx,app,frame);
 uiDrawMites(ctx,app,frame);
 uiDrawHitFlash(ctx,frame,state.dangerAt);
 };
@@ -70,8 +66,11 @@ if (near.length === 0 || fight.engaged) return;
 fight.engaged = true;
 uiRenderKeepingFocus(app);
 }
+function uiInRegion(region,cell) {
+return cell.col >= region.minCol && cell.col <= region.maxCol && cell.row >= region.minRow && cell.row <= region.maxRow;
+}
 function uiNoteMouth(game) {
-if (game.avatar.pos.col < CORRIDOR_MOUTH.col) return;
+if (!uiInRegion(SENTRY_REGION,game.avatar.pos)) return;
 game.doorway = { ...CORRIDOR_MOUTH };
 game.fight.hp = passDoorway(game.fight.hp,CORRIDOR_MOUTH);
 }
@@ -103,12 +102,16 @@ const mite = miteAt(uiMitesOf(game),target);
 if (mite && !move.auto) return uiBump(game,move.dir,{ type:'bump',zap:mite.id });
 return move.auto && uiDangerAt(game,target,mite) ? uiBump(game,move.dir,{ type:'danger' }) :null;
 }
+function uiStrikers(ticked) {
+return mitesView(ticked.mites).filter(function (foe) { return ticked.struck.includes(foe.id); }).map(function (foe) { return { col:foe.col,row:foe.row,kind:'mite' }; });
+}
 function uiTick(app,state) {
 if (!uiActive(app,state)) return 0;
 const game = app.game;
 uiPaint(game,state);
 const ticked = tickMites(uiMitesOf(game),game.avatar.pos,{ range:MITE_RANGE });
 game.fight.mites = ticked.mites;
+game.fight.strikers = uiStrikers(ticked);
 uiNoteMouth(game);
 const near = uiNear(game,COACH_RANGE);
 uiRefreshCoach(game,state,near);
@@ -119,7 +122,7 @@ function uiCountZap(app) {
 const game = app.game;
 const ext = withZap(game.ext || createExt());
 uiCommitExt(app,ext);
-const max = maxHeartsFor(ext.zaps);
+const max = maxHeartsOf(ext);
 if (max <= game.fight.hp.max) return;
 game.fight.hp = growHp(game.fight.hp,max);
 uiShowToast(app,{ text:GROW_TOAST.replace('#',max),kind:'reward' });

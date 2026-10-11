@@ -11,7 +11,14 @@ stream:{ section:'stream-screen',backKey:'stream-back',loading:'The Intake loadi
 const UI_RIG_HOOK_FALLBACKS = {
 keyAction:null,keyUp:false,applyAction:false,sync:undefined,pointerDown:false,pointerUp:false,pointerCancel:false,release:undefined,
 };
-const UI_RIG_MODULES = { ledger:() => import('./screen-ledger.js'),turret:() => import('./screen-turret.js'),shield:() => import('./screen-shield.js'),pincer:() => import('./screen-pincer.js') };
+const RIG_SHELL_SHEET = 'styles/rooms/rig-shell.css';
+const ARENA_SHEET = 'styles/rooms/arena.css';
+const UI_ROOMS = {
+ledger:{ load:() => import('./screen-ledger.js'),sheets:[RIG_SHELL_SHEET,'styles/rooms/ledger.css'] },
+turret:{ load:() => import('./screen-turret.js'),sheets:[RIG_SHELL_SHEET,ARENA_SHEET,'styles/rooms/turret.css'] },
+shield:{ load:() => import('./screen-shield.js'),sheets:[RIG_SHELL_SHEET,ARENA_SHEET,'styles/rooms/shield.css'] },
+pincer:{ load:() => import('./screen-pincer.js'),sheets:[RIG_SHELL_SHEET,ARENA_SHEET,'styles/rooms/pincer.css'] },
+};
 const UI_RIG_HOSTS = {
 rig:(app,rig) => uiOpenRig(app,rig.id),
 lab:async (app) => (await import('./lab-loader.js')).uiOpenLabs(app),
@@ -48,8 +55,8 @@ function uiRigStubScreens() {
 return Object.keys(UI_RIG_STUBS).map((screenId) => uiRigStubScreen(screenId));
 }
 function uiLoadRigModule(rigId) {
-if (!Object.hasOwn(UI_RIG_MODULES,rigId)) throw new Error('unknown rig screen: ' + rigId);
-if (!uiRigLoading.has(rigId)) uiRigLoading.set(rigId,UI_RIG_MODULES[rigId]());
+if (!Object.hasOwn(UI_ROOMS,rigId)) throw new Error('unknown rig screen: ' + rigId);
+if (!uiRigLoading.has(rigId)) uiRigLoading.set(rigId,UI_ROOMS[rigId].load());
 return uiRigLoading.get(rigId);
 }
 function uiRigWalkedAway(app) {
@@ -77,4 +84,4 @@ if (!Object.hasOwn(UI_RIG_HOSTS,rig.host)) return Promise.reject(new Error('unkn
 return UI_RIG_HOSTS[rig.host](app,rig);
 }
 
-export { uiRigStubScreen,uiRigStubScreens,uiSetRigDelegate,uiOpenRig,uiOpenRigScreen,uiOpenRigHost };
+export { UI_ROOMS,uiRigStubScreen,uiRigStubScreens,uiSetRigDelegate,uiOpenRig,uiOpenRigScreen,uiOpenRigHost };

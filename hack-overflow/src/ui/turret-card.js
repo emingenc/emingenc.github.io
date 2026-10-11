@@ -1,6 +1,6 @@
 import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
 import { bruteCompares } from '../game/rooms/turret.js';
-import { uiArenaCard } from './arena-shell.js';
+import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
 import { uiTurretOtherModes } from './turret-modes.js';
 
@@ -70,7 +70,7 @@ function uiTurretHow(rule, why) {
 function uiTurretWinBody(state, result) {
   const [used, rule, why] = uiTurretLessons(state);
   const head = [uiTurretStars(result.stars), uiTurretScore(state), ...uiTurretBestLine(result), uiTurretLine('turret-used', used), uiTurretVersus(state)];
-  return [...head, ...uiTurretBilledLine(state), uiTurretHow(rule, why)];
+  return [...head, ...uiTurretBilledLine(state), uiArenaPaidLine(result.rank, 'turret-paid'), uiTurretHow(rule, why)].filter(Boolean);
 }
 function uiTurretOverflowBody(state, result) {
   const [used, rule, why] = uiTurretLessons(state);

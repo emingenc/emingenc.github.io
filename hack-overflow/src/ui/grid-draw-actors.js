@@ -1,4 +1,4 @@
-import { actorIntent } from '../game/actors.js';
+import { actorIntent,intentLabel } from '../game/actors.js';
 import { pulseAt } from '../game/wayfinding.js';
 import { uiCrashDrop,uiDrawBurst,uiDrawDust,uiDrawHitFlash,uiDroneClock,uiNoteHit,uiShakeStage } from './grid-drone-fx.js';
 
@@ -45,12 +45,18 @@ ctx.stroke();
 function uiTagCentre(frame,spot,half) {
 return Math.min(Math.max(spot.left + frame.tile * HALF,half),frame.width - half);
 }
-function uiDrawTag(ctx,frame,spot) {
+function uiTagText(spot) {
+if (spot.calm) return CALM_LABEL;
+const intent = actorIntent(spot.actor);
+return intent ? intentLabel(intent) :'';
+}
+function uiDrawActorTag(ctx,frame,spot) {
+const label = uiTagText(spot);
+if (label === '') return;
 const size = Math.round(frame.tile * TAG_FONT_TILES);
 const gap = frame.tile * TAG_GAP_TILES;
 const above = spot.top >= size + gap;
 const baseline = above ? spot.top - gap :spot.top + frame.tile + gap;
-const label = spot.calm ? CALM_LABEL :actorIntent(spot.actor).label;
 ctx.font = size + TAG_FONT;
 ctx.textRendering = TAG_TEXT_RENDERING;
 ctx.textAlign = 'center';
@@ -69,12 +75,18 @@ const cell = { actor,calm:spot.calm,left:(actor.col - frame.camera.col) * frame.
 const drop = uiCrashDrop(frame,{ top:cell.top,age:spot.age });
 uiDrawArt(ctx,frame,{ ...cell,drop,colour:actor.arm <= ALERT_ARM ? frame.palette.red :frame.palette.cyan });
 uiDrawRing(ctx,frame,cell);
-uiDrawTag(ctx,frame,cell);
+uiDrawActorTag(ctx,frame,cell);
 uiDrawDust(ctx,frame,spot);
 }
+const PAINTERS = new Map([['drone',uiDrawDrone]]);
+function uiRegisterActorPainter(kind,painter) {
+PAINTERS.set(kind,painter);
+}
 function uiDrawActor(ctx,frame,spot) {
+const painter = PAINTERS.get(spot.actor.kind ?? 'drone');
+if (!painter) return;
 const clock = uiDroneClock(spot.notes,spot.actor,frame.now);
-if (spot.actor.hp > 0) uiDrawDrone(ctx,frame,{ actor:spot.actor,calm:spot.calm,age:frame.now - clock.born });
+if (spot.actor.hp > 0) painter(ctx,frame,{ actor:spot.actor,calm:spot.calm,age:frame.now - clock.born });
 else uiDrawBurst(ctx,frame,{ actor:spot.actor,age:frame.now - clock.died });
 }
 function uiDrawActors(ctx,app,frame) {
@@ -86,4 +98,4 @@ uiDrawHitFlash(ctx,frame,notes.hitAt);
 uiShakeStage(app,frame,notes.hitAt);
 }
 
-export { uiDrawActors };
+export { uiDrawActors,uiDrawActorTag,uiRegisterActorPainter };

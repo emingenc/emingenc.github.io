@@ -2,7 +2,7 @@ import { SHIELD_W1 } from '../game/rooms/data/shield-wave1.js';
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
 import { bruteReads, shieldPar } from '../game/rooms/shield.js';
-import { uiArenaCard } from './arena-shell.js';
+import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
 
 
@@ -48,7 +48,7 @@ function uiShieldHow(rule, why) {
 function uiShieldWinBody(state, result) {
   const values = { steps: state.steps, par: shieldPar(state.wave), reads: bruteReads(state.wave), n: SHIELD_W1.length };
   const head = [uiShieldStars(result.stars), uiShieldScore(state), uiShieldLine('turret-used', fillText(SHIELD_TEXTS.card.used, values)), uiShieldVersus(state)];
-  return [...head, uiShieldHow(SHIELD_TEXTS.card.stars, fillText(SHIELD_TEXTS.card.why, values))];
+  return [...head, uiArenaPaidLine(result.rank, 'shield-paid'), uiShieldHow(SHIELD_TEXTS.card.stars, fillText(SHIELD_TEXTS.card.why, values))].filter(Boolean);
 }
 function uiShieldCard(app, result) {
   const state = app.rig.arena.state;

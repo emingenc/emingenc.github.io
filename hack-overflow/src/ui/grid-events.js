@@ -7,7 +7,7 @@ import { unlocksBetween } from '../game/progress.js';
 import { TURRET_LAB_ID,rigMeeting } from '../game/story/story.js';
 import { blockedText, nearText, sectorName } from '../game/messages.js';
 import { uiPointerIsCoarse, uiPrefersReducedMotion } from './dom.js';
-import { uiEmit } from './bus.js';
+import { uiEmit, uiGridEmit } from './bus.js';
 import { uiCommitSave } from './game-state.js';
 import { uiRenderApp, uiRenderKeepingFocus } from './app.js';
 import { uiObjectiveChanged } from './grid-objective.js';
@@ -204,6 +204,15 @@ if (app.game.sentry) app.game.sentry.danger(app);
 return false;
 }
 const UI_TICKING_EVENTS = new Set(['step','bump']);
+const UI_EVENT_HOOKS = { step:'step',cache:'step',bump:'bump',terminal:'interact',core:'interact',kernel:'interact',rig:'interact' };
+function uiHookEvent(app,info) {
+const hook = UI_EVENT_HOOKS[info.event.type];
+if (hook) uiGridEmit(app,hook,info);
+}
+function uiHookEntered(app,from) {
+const pos = app.game.avatar.pos;
+if (pos.col !== from.col || pos.row !== from.row) uiGridEmit(app,'enter-cell',{ pos,from });
+}
 const UI_STEP_HANDLERS = {
 step:uiOnStep,cache:uiOnCache,bump:uiOnBump,danger:uiOnDanger,blocked:uiBlock,encrypted:uiBlock,
 terminal:uiOnTerminal,core:uiOnCore,kernel:uiOnKernel,rig:uiOnRig,
@@ -215,8 +224,10 @@ game.avatar = { pos:result.pos,facing:result.facing };
 uiCommitSave(app,withPosition(game.save,game.avatar));
 uiNoteDoorway(app,result.pos);
 if (result.event.zap) uiHitFoe(app,result.event.zap,ZAP_DAMAGE);
+uiHookEvent(app,{ event:result.event,pos:game.avatar.pos,from });
 const hurt = UI_TICKING_EVENTS.has(result.event.type) && uiActorsTick(app);
 const rerender = UI_STEP_HANDLERS[result.event.type](app,{ event:result.event,from,deliberate:result.deliberate });
+uiHookEntered(app,from);
 if (rerender || hurt) uiRenderKeepingFocus(app);
 }
 

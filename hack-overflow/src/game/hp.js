@@ -1,11 +1,17 @@
+import { rankHearts,rankLevel } from './rank.js';
 
 const HP_MAX = 3;
 const FIRST_HEART_ZAPS = 2;
 const SECOND_HEART_ZAPS = 8;
 const HEART_ZAPS = [FIRST_HEART_ZAPS,SECOND_HEART_ZAPS];
+const HEARTS_CAP = 7;
 
-function maxHeartsFor(zaps) {
-return HP_MAX + HEART_ZAPS.filter(function (need) { return zaps >= need; }).length;
+function maxHeartsFor(zaps,level) {
+const earned = HP_MAX + HEART_ZAPS.filter(function (need) { return zaps >= need; }).length;
+return Math.min(HEARTS_CAP,earned + rankHearts(level));
+}
+function maxHeartsOf(ext) {
+return ext ? maxHeartsFor(ext.zaps,ext.rank ? rankLevel(ext.rank.r) :undefined) :HP_MAX;
 }
 function createHp(spawn,max = HP_MAX) {
 return { hearts:max,max,doorway:{ col:spawn.col,row:spawn.row } };
@@ -24,4 +30,4 @@ function reviveHp(hp) {
 return { hp:{ ...hp,hearts:hp.max },pos:{ ...hp.doorway } };
 }
 
-export { HP_MAX, maxHeartsFor, createHp, growHp, hurtHp, passDoorway, reviveHp };
+export { HP_MAX, maxHeartsFor, maxHeartsOf, createHp, growHp, hurtHp, passDoorway, reviveHp };

@@ -14,6 +14,9 @@ const FIRE_LIT_CLASS = 'grid-fire-lit';
 const FIRE_IDLE_CLASS = 'grid-fire-idle';
 const NO_FOE_TEXT = 'Nothing in range.';
 
+function uiHasBolt(game) {
+return Boolean(game.ext?.beats?.includes('bolt'));
+}
 function uiIsFirePressed(app) {
 return app.game.fireDownAt !== null && app.game.fireDownAt !== undefined;
 }
@@ -31,7 +34,7 @@ if (uiIsFirePressed(app) && button && button.classList) button.classList.toggle(
 }
 function uiFireNodeClass(app) {
 if (!uiFoeAlive(app)) return FIRE_BASE_CLASS + ' ' + FIRE_IDLE_CLASS;
-if (!uiIsFirePressed(app)) return FIRE_BASE_CLASS;
+if (!uiIsFirePressed(app) || !uiHasBolt(app.game)) return FIRE_BASE_CLASS;
 const charged = performance.now() - app.game.fireDownAt >= FIRE_CHARGE_MS;
 return FIRE_BASE_CLASS + ' ' + FIRE_CHARGING_CLASS + (charged ? ' ' + FIRE_LIT_CLASS :'');
 }
@@ -62,8 +65,9 @@ uiGridPing(app,foe.id,dmg);
 function uiFireDown(app,now) {
 const first = !uiIsFirePressed(app);
 app.game.fireDownAt = app.game.fireDownAt ?? now;
-if (first) app.game.fireLitTimer = window.setTimeout(function () { uiFireLit(app); },FIRE_CHARGE_MS);
-uiFireCharging(true);
+const bolt = uiHasBolt(app.game);
+if (first && bolt) app.game.fireLitTimer = window.setTimeout(function () { uiFireLit(app); },FIRE_CHARGE_MS);
+uiFireCharging(bolt);
 }
 function uiFireUp(app,now) {
 const downAt = app.game.fireDownAt;
@@ -71,7 +75,7 @@ app.game.fireDownAt = null;
 window.clearTimeout(app.game.fireLitTimer);
 if (downAt === null || downAt === undefined) return false;
 uiFireCharging(false);
-uiFireShot(app,now - downAt >= FIRE_CHARGE_MS ? CHARGED_DMG :1);
+uiFireShot(app,now - downAt >= FIRE_CHARGE_MS && uiHasBolt(app.game) ? CHARGED_DMG :1);
 return true;
 }
 function uiFireCancel(app) {

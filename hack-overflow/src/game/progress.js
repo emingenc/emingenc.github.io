@@ -9,7 +9,7 @@ const CORE_XP = 40;
 const LEVEL_XP = { 1:0,2:50,3:120,4:220,5:390,6:560,7:760,8:990,9:1250,10:1550 };
 const MAX_LEVEL = Object.keys(LEVEL_XP).length;
 const RANKS = { 1:'SCRIPT KIDDIE',2:'PACKET PUSHER',3:'PORT SCANNER',4:'SHELL JOCKEY',5:'EXPLOIT DEV',
-6:'CIPHER BREAKER',7:'GHOST',8:'ZERO-DAY',9:'SYSOP',10:'ROOT' };
+6:'CIPHER BREAKER',7:'GHOST',8:'ZERO-DAY',9:'SYSOP',10:'SUPERUSER' };
 const GATE_LEVELS = { 'two-pointers':3,stack:3,'binary-search':5,window:5 };
 const TRACE_BY_LEVEL = { 1:3,2:3,3:3,4:4,5:4,6:4,7:5,8:5,9:6,10:6 };
 const EXPLOIT_LEVELS = { scan:2,decrypt:6,scanMk2:8 };

@@ -6,7 +6,7 @@ import { OVERFLOW_PACE_DRONES, REVEAL_MS } from '../game/rooms/data/turret-waves
 import {
   applyTurret, bruteCompares, hintOffer, keyFor, paceAt, swarmReady, swarmWindowMs, turretStars, turretTarget, verifyHint,
 } from '../game/rooms/turret.js';
-import { uiArenaRecordWin } from './arena-reward.js';
+import { uiArenaPayRank, uiArenaRecordWin } from './arena-reward.js';
 import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiPrefersReducedMotion } from './dom.js';
@@ -216,6 +216,7 @@ function uiTurretWin(app, arena) {
   const result = { won: true, stars, firstClear: false, starsImproved: false };
   if (arena.mode === 'w1') {
     const reward = uiArenaRecordWin(app, { rig: arena.rig, levelId: arena.levelId, stars });
+    uiArenaPayRank(app, { rig: arena.rig, stars }, reward);
     Object.assign(result, { firstClear: reward.bestBefore === 0, starsImproved: reward.improved });
     app.rig.outroDue = true;
   }

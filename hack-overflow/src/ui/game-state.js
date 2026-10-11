@@ -28,10 +28,17 @@ const loaded = uiLoadGame(world,{ mapRev });
 const legacy = loaded.stored && mapRev !== MAP_REV;
 const save = legacy ? uiMigratedSave(world,loaded) :loaded.save;
 const ext = uiLoadReconciledExt();
-return { world,catalog:createCatalog(content),stage:null,stageVisible:true,...uiSaveFields(world,save),notice:loaded.notice,ext:legacy ? uiCommitMapRev(ext) :withMapRev(ext) };
+return {
+world,catalog:createCatalog(content),stage:null,stageVisible:true,...uiSaveFields(world,save),notice:loaded.notice,
+ext:legacy ? uiCommitMapRev(ext) :withMapRev(ext),
+};
 }
+const UI_LAZY_RESET = {
+coach:null,doorway:null,drawActors:null,sentryLoad:null,hudRank:null,hudPill:null,hudLoad:null,hudLoaded:false,questRuns:null,
+cast:null,fork:null,journey:null,drawCast:null,castGuard:null,drawFork:null,
+};
 function uiResetGameState(app,save) {
-Object.assign(app.game,uiSaveFields(app.game.world,save),{ ext:createExt(),coach:null,doorway:null,drawActors:null,sentryLoad:null });
+Object.assign(app.game,uiSaveFields(app.game.world,save),{ ext:createExt(),gen:{} },UI_LAZY_RESET);
 }
 function uiSetSave(app,save) {
 app.game.save = save;

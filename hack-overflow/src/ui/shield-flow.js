@@ -5,7 +5,7 @@ import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
 import { answerFor, applyShield, bruteReads, createShield, glyphOf, isOpener, paceAt, shieldStars } from '../game/rooms/shield.js';
 import { buildPool, pickWave } from '../game/rooms/shield-stream.js';
-import { uiArenaRecordWin } from './arena-reward.js';
+import { uiArenaPayRank, uiArenaRecordWin } from './arena-reward.js';
 import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiPrefersReducedMotion } from './dom.js';
@@ -140,6 +140,7 @@ function uiShieldAfterMove(app) {
 function uiShieldWin(app, arena) {
   const stars = shieldStars(arena.state);
   const reward = uiArenaRecordWin(app, { rig: arena.rig, levelId: arena.levelId, stars });
+  uiArenaPayRank(app, { rig: arena.rig, stars }, reward);
   uiEmit(GAME_EVENT.RIG_CLEAR, { rigId: SHIELD_RIG_ID, levelId: arena.levelId, stars });
   arena.result = { won: true, stars, firstClear: reward.bestBefore === 0 };
 }

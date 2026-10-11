@@ -1,6 +1,6 @@
 import { PINCER_TEXTS, fillText } from '../game/rooms/data/pincer-texts.js';
 import { bruteChecks } from '../game/rooms/pincer.js';
-import { uiArenaCard } from './arena-shell.js';
+import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
 
 
@@ -34,7 +34,8 @@ function uiPincerHow() {
   return uiEl('details', { className: 'pincer-how', children: [summary, ...lines] });
 }
 function uiPincerWinBody(state, result) {
-  return [uiPincerStars(result.stars), uiPincerScore(state), uiPincerLine('pincer-used', uiPincerUsed(state)), uiPincerHow()];
+  const head = [uiPincerStars(result.stars), uiPincerScore(state), uiPincerLine('pincer-used', uiPincerUsed(state))];
+  return [...head, uiArenaPaidLine(result.rank, 'pincer-paid'), uiPincerHow()].filter(Boolean);
 }
 function uiPincerFailLines(result) {
   const why = FAILS_WITH_WHY.has(result.fail) ? result.why : '';

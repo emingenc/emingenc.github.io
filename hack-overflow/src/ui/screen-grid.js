@@ -56,11 +56,16 @@ app.game.sentryLoad = import('./grid-sentry.js')
 .catch(function () {})
 .finally(function () { app.game.sentryLoad = null; });
 }
+function uiLoadHeroes(app) {
+import('./grid-cast.js').then(function (cast) { cast.uiInstallCast(app); }).catch(function () {});
+import('./grid-fork.js').then(function (fork) { fork.uiInstallFork(app); }).catch(function () {});
+}
 function uiEnterGrid(app) {
 app.screen = 'grid';
 app.lastFocusKey = 'grid-stage';
 uiOpenReadyLevelUp(app);
 uiLoadSentry(app);
+uiLoadHeroes(app);
 const plan = uiEntryPlan(app);
 if (plan === 'signpost') uiSignpostTurret(app);
 if (plan === 'play') uiLoadOpening(app);
