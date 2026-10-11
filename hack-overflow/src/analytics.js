@@ -28,14 +28,10 @@ function noBrowser(env) {
 function notWeb(loc) {
   return loc.protocol !== 'http:' && loc.protocol !== 'https:';
 }
-function privacyOptOut(nav) {
-  return Boolean(nav && nav.globalPrivacyControl === true);
-}
 function analyticsOff(env, id = ANALYTICS_ID) {
   if (!id) return 'no-id';
   if (noBrowser(env)) return 'no-browser';
   if (notWeb(env.loc)) return 'protocol';
-  if (privacyOptOut(env.nav)) return 'gpc';
   if (isLocalHost(env.loc.hostname) && !debugRequested(env.loc)) return 'local-host';
   return null;
 }
