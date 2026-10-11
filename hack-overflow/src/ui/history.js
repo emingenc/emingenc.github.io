@@ -2,7 +2,7 @@
 const UI_HISTORY_STATE = { ho:'grid' };
 const UI_GESTURE_EVENTS = ['pointerdown','pointerup','keydown','click'];
 const UI_BACK_BY_SCREEN = {
-rig:'rig-back',lab:'lab-back',forge:'forge-back',stream:'stream-back',map:'map-close',breach:'breach-disconnect',grid:'open-menu',
+rig:'rig-back',lab:'lab-back',forge:'forge-back',stream:'stream-back',map:'map-close',review:'review-back',breach:'breach-disconnect',grid:'open-menu',
 };
 const uiPushedWindows = new WeakSet();
 const UI_RESTORE_MS = 1000;

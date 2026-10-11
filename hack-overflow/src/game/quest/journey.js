@@ -10,6 +10,8 @@ room:'Room cleared. Ground taken.',
 const MILESTONE_LINES = Object.freeze({
 m1:Object.freeze(['BIT: The map is filling in. Keep going.','PATCH: Good commit. Read before you merge.']),
 m2:Object.freeze(['PATCH: Right is not the same as reviewed.','BIT: ROOT sees you now.']),
+m4:Object.freeze(['BIT: BRUTE is yelling by the east wall.','BIT: His fan is smoking. Go and see.']),
+m5:Object.freeze(['BIT: That PATCH commit is still in the ROOT log!','BIT: I tagged it. patch-0. Keep it safe.']),
 });
 const SAFEHOUSE = Object.freeze({ minCol:17,maxCol:31,minRow:14,maxRow:21 });
 const NOTHING = Object.freeze({ write:false,text:null });

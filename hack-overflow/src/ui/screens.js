@@ -7,6 +7,7 @@ import { uiLevelUpScreen } from './screen-levelup.js';
 import { uiTracedScreen } from './screen-traced.js';
 import { uiEndingScreen } from './screen-ending.js';
 import { uiMapStubScreen } from './map-loader.js';
+import { uiReviewStubScreen } from './review-loader.js';
 import { uiRigStubScreens } from './rig-loader.js';
 
 
@@ -25,7 +26,7 @@ id:'title',render:uiRenderTitle,focusKey:() => 'title-start',announce:() => 'Tit
 let uiScreenTable = null;
 function uiScreens() {
 if (uiScreenTable) return uiScreenTable;
-const screens = [uiTitleScreen(),uiGridScreen(),uiBreachScreen(),uiDebriefScreen(),uiLevelUpScreen(),uiTracedScreen(),uiEndingScreen(),uiMapStubScreen(),...uiRigStubScreens()];
+const screens = [uiTitleScreen(),uiGridScreen(),uiBreachScreen(),uiDebriefScreen(),uiLevelUpScreen(),uiTracedScreen(),uiEndingScreen(),uiMapStubScreen(),uiReviewStubScreen(),...uiRigStubScreens()];
 uiScreenTable = Object.fromEntries(screens.map(function (screen) { return [screen.id,screen]; }));
 return uiScreenTable;
 }

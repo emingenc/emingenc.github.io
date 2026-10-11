@@ -1,7 +1,7 @@
 import { uiEl } from './dom.js';
 import { uiJackIn } from './breach-flow.js';
 import { uiEnterGrid } from './screen-grid.js';
-import { uiTracedQuip } from './story-quip.js';
+import { uiGhostQuip,uiTracedQuip } from './story-quip.js';
 import { SHOW_LINE_THRESHOLD } from '../logic/run-judge.js';
 
 const TRACED_HEADLINE = 'TRACE COMPLETE — connection dropped';
@@ -9,7 +9,7 @@ const TRACED_HEADLINE = 'TRACE COMPLETE — connection dropped';
 function uiOpenTraced(app,traced) {
 app.game.traced = traced;
 app.screen = 'traced';
-app.lastFocusKey = 'traced-retry';
+app.lastFocusKey = traced.scene ? 'traced-reconnect' :'traced-retry';
 }
 function uiCarriedLines(traced) {
 return traced.failed + ' distinct failed line' + (traced.failed === 1 ? '' :'s') + ' carried over';
@@ -35,18 +35,18 @@ return uiEl('button',{ className:'btn ' + kind,text:label,attrs:{ type:'button',
 }
 function uiRenderTraced(app) {
 const traced = app.game.traced;
+const lock = !traced.scene;
 return uiEl('section',{
 className:'screen screen-card traced-screen',
 attrs:{ 'data-screen':'traced' },
 children:[
 uiEl('h1',{ className:'traced-title',text:'TRACED' }),
-uiTracedQuip(traced),
-uiEl('p',{ className:'traced-lead',text:TRACED_HEADLINE + ' at ' + traced.lockName + '.' }),
-uiEl('p',{ className:'traced-carried',text:uiCarriedText(traced) }),
-uiEl('p',{ className:'traced-note',text:'RETRY: fresh TRACE, reshuffled chips.' }),
+traced.quip ? uiGhostQuip(traced.quip) :uiTracedQuip(traced),
+uiEl('p',{ className:'traced-lead',text:traced.scene || TRACED_HEADLINE + ' at ' + traced.lockName + '.' }),
+...(lock ? [uiEl('p',{ className:'traced-carried',text:uiCarriedText(traced) }),uiEl('p',{ className:'traced-note',text:'RETRY: fresh TRACE, reshuffled chips.' })] :[]),
 uiEl('div',{
 className:'traced-actions',
-children:[uiTracedButton('traced-retry','RETRY','btn-primary'),uiTracedButton('traced-reconnect','BACK TO GRID','btn-ghost')],
+children:[...(lock ? [uiTracedButton('traced-retry','RETRY','btn-primary')] :[]),uiTracedButton('traced-reconnect','BACK TO GRID','btn-ghost')],
 }),
 ],
 });
@@ -59,13 +59,14 @@ return true;
 }
 function uiTracedAnnounce(app) {
 const traced = app.game.traced;
+if (traced.scene) return traced.scene;
 return 'Dropped at ' + traced.lockName + '. ' + uiCarriedTextWith(traced,uiStarsWord);
 }
 function uiTracedScreen() {
 return {
 id:'traced',
 render:uiRenderTraced,
-focusKey:function () { return 'traced-retry'; },
+focusKey:function (app) { return app && app.game && app.game.traced && app.game.traced.scene ? 'traced-reconnect' :'traced-retry'; },
 announce:uiTracedAnnounce,
 applyAction:uiApplyTracedAction,
 };

@@ -1,3 +1,4 @@
+import { fanDue } from '../game/cast/brute-fan.js';
 import { BARK,BRUTE_CELL,MEET_ID,TOASTS,brutePlan,inBarkRange,sameCell,talkSheet } from '../game/cast/brute.js';
 import { hasMet,withMet } from '../game/ext/ops.js';
 import { cellToward } from '../game/move.js';
@@ -47,6 +48,10 @@ brute.busy = true;
 try {
 const plan = brutePlan(app.game.ext,brute.race);
 if (!plan.met) uiCommitExt(app,withMet(app.game.ext,MEET_ID));
+if (fanDue(app.game.ext)) {
+await (await import('./grid-brute-fan.js')).uiBruteFan(app);
+return;
+}
 const pick = await uiStoryChoice(app,talkSheet(plan));
 if (app.game.brute === brute) uiBruteAnswer(app,pick);
 } finally {

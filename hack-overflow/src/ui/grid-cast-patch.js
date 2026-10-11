@@ -1,5 +1,5 @@
 import {
-BOLT_BEAT,BOLT_TOAST,BUSY_TOAST,CRATES_TOAST,DONE_TOAST,EAST_BEAT,EAST_TOAST,PATCH_CELL,QUEST_ID,TALK_LINES,TELL_TOAST,
+BOLT_BEAT,BOLT_TOAST,BUSY_TOAST,OFFLINE_TOAST,CRATES_TOAST,DONE_TOAST,EAST_BEAT,EAST_TOAST,PATCH_CELL,QUEST_ID,TALK_LINES,TELL_TOAST,
 crateText,eastWingDue,trailAt,trailStep,
 } from '../game/cast/patch.js';
 import { withBeat } from '../game/ext/ops.js';
@@ -75,6 +75,7 @@ await uiCastSay(app,{ text:CRATES_TOAST,kind:'info' });
 function uiPatchBump(app,prop) {
 const game = app.game;
 if (prop === 'patch' && game.cast.role === 'busy') uiShowToast(app,{ text:BUSY_TOAST,kind:'info' });
+else if (game.cast.role === 'offline' && prop.startsWith('bench-')) uiShowToast(app,{ text:OFFLINE_TOAST,kind:'info' });
 else if (prop === 'patch' && game.cast.role === 'talk') uiPatchTalk(app).catch(console.error);
 else if (prop.startsWith('crate-')) uiShowToast(app,{ text:crateText(prop),kind:'info' });
 else return false;

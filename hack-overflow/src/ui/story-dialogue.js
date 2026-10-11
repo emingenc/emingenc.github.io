@@ -71,8 +71,8 @@ uiStoryMarkSeen(app,earnedToastIds({ level:progress.level,locksLeft:progress.lef
 function uiStoryLabFinish(app,labId) {
 return uiStoryShow(app,[labBeat(labId,'outro')]);
 }
-function uiStoryFinal(app) {
-return uiStoryShow(app,[finalBeat()]);
+function uiStoryFinal(app,beat = finalBeat()) {
+return uiStoryShow(app,[beat]);
 }
 function uiStoryGoOn(app,next) {
 const story = app.story;

@@ -1,5 +1,6 @@
 import { hasBeat,questState } from '../ext/ops.js';
 import { STAGE } from '../quest/quests.js';
+import { BEATS,flagOf } from '../finale/contract.js';
 import { REFUSAL_BEAT,isVeteran } from './refusal.js';
 
 const BOLT_BEAT = 'bolt';
@@ -14,6 +15,7 @@ const TRAIL_MS = 130;
 const YOU = 'ENGINEER';
 const PATCH = 'PATCH';
 const BUSY_TOAST = 'Keys clacking. Busy.';
+const OFFLINE_TOAST = 'PATCH: $ commit -m "LG';
 const TALK_LINES = Object.freeze([
 { who:YOU,text:'I ship code. Fast. Reading is for reviewers.' },
 { who:PATCH,text:'So did I. One click approved a whole batch. Green checks. I never opened the diff.' },
@@ -26,8 +28,12 @@ const DONE_TOAST = 'PATCH: Good. Now the turret door.';
 const EAST_TOAST = 'PATCH: East wing opens as you level.';
 const CRATE_TOASTS = Object.freeze({ kill:{ text:'CRATE BROKEN',kind:'reward' },dent:{ text:'Crate cracked.',kind:'info' } });
 
+function taken(ext) {
+return (hasBeat(ext,BEATS.home) || (hasBeat(ext,BEATS.ordeal) && flagOf(ext) !== null)) && !hasBeat(ext,BEATS.roadback);
+}
 function patchRole(ext,facts) {
 if (!hasBeat(ext,REFUSAL_BEAT)) return isVeteran(facts) ? 'none' :'busy';
+if (taken(ext)) return 'offline';
 return hasBeat(ext,BOLT_BEAT) ? 'follow' :'talk';
 }
 function hasBolt(ext) {
@@ -74,6 +80,6 @@ return Math.max(Math.abs(trail.col - hero.col),Math.abs(trail.row - hero.row)) >
 
 export {
 BOLT_BEAT,EAST_BEAT,QUEST_ID,PATCH_CELL,WARP_CELL,BENCH_CELLS,CRATE_CELLS,FOLLOW_REACH,
-BUSY_TOAST,TALK_LINES,BOLT_TOAST,TELL_TOAST,CRATES_TOAST,DONE_TOAST,EAST_TOAST,CRATE_TOASTS,
+BUSY_TOAST,OFFLINE_TOAST,TALK_LINES,BOLT_TOAST,TELL_TOAST,CRATES_TOAST,DONE_TOAST,EAST_TOAST,CRATE_TOASTS,
 patchRole,hasBolt,boltOwed,commitActive,eastWingDue,solidProps,crateActors,propAt,crateText,trailAt,trailStep,trailPose,trailLost,
 };

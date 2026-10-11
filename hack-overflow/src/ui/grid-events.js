@@ -157,9 +157,12 @@ uiActedOn(app.game);
 if (!uiLevelUpBeforeLeaving(app)) uiJackIn(app,info.event.key);
 return true;
 }
+function uiFinaleRoute(app) {
+return import('./finale-router.js').then(function (router) { return router.uiFinaleRoute(app); },function () { uiOpenEnding(app); }).catch(console.error);
+}
 function uiOnKernel(app) {
 uiActedOn(app.game);
-if (!uiLevelUpBeforeLeaving(app)) uiOpenEnding(app);
+if (!uiLevelUpBeforeLeaving(app)) uiFinaleRoute(app);
 return true;
 }
 function uiOpenRigScreen(app,rig) {
@@ -231,4 +234,4 @@ uiHookEntered(app,from);
 if (rerender || hurt) uiRenderKeepingFocus(app);
 }
 
-export { uiApplyStepEvent, uiNearDir, uiOpenReadyLevelUp, uiLevelUpAfterRender, uiLevelUpAfter };
+export { uiApplyStepEvent, uiNearDir, uiOpenReadyLevelUp, uiLevelUpAfterRender, uiLevelUpAfter, uiFinaleRoute };
