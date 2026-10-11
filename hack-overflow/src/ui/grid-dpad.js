@@ -1,4 +1,4 @@
-import { uiEl, uiPointerIsCoarse } from './dom.js';
+import { uiEl } from './dom.js';
 
 const UI_DPAD_DIRS = { 'dpad-up':'up','dpad-down':'down','dpad-left':'left','dpad-right':'right' };
 const UI_DPAD_BUTTONS = [
@@ -15,7 +15,6 @@ attrs:{ type:'button','data-action':spec.id,'data-focus-key':spec.id,'aria-label
 });
 }
 function uiGridDpad() {
-if (!uiPointerIsCoarse()) return null;
 return uiEl('div',{ className:'grid-dpad',attrs:{ role:'group','aria-label':'Movement' },children:UI_DPAD_BUTTONS.map(uiDpadButton) });
 }
 function uiDpadDirOf(actionId) {

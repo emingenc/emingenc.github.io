@@ -36,7 +36,7 @@ return event.key === 's' || event.key === 'S' ? 'submit' :null;
 function uiBuildKeyAction(event,app) {
 const step = uiTrayStep(event.key);
 if (step !== 0) return uiMoveTrayFocus(app,step) ? { type:'render' } :null;
-if (event.key === 'Escape') return { type:'toggle-menu' };
+if (event.key === 'Escape') return { type:'action',id:'breach-disconnect' };
 const actionId = uiSimpleBuildKeyAction(event);
 return actionId ? { type:'action',id:actionId } :null;
 }

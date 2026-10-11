@@ -4,6 +4,7 @@ import { dangerCells,mitesView,miteAt,resetMites,sentryMites,tickMites,zapMite }
 import { COACH_RANGE,CORRIDOR_MOUTH,MITE_RANGE,SHOT_COOLDOWN_MS,SHOT_RANGE } from '../game/sentry-lanes.js';
 import { createExt,withZap } from '../game/save-ext.js';
 import { isOpen } from '../game/world.js';
+import { analytics } from '../analytics.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiAnnounce,uiPointerIsCoarse } from './dom.js';
 import { uiCommitExt } from './ext-storage.js';
@@ -135,7 +136,10 @@ app.game.fight.shotAt = now;
 const zapped = zapMite(uiMitesOf(app.game),zap.id,zap.dmg);
 app.game.fight.mites = zapped.mites;
 uiEndCoach(app.game,state);
-if (zapped.killed) uiCountZap(app);
+if (zapped.killed) {
+analytics.track('zap',{ lane:zap.id });
+uiCountZap(app);
+}
 return zapped.killed ? 'kill' :'dent';
 }
 function uiDanger(app,state) {

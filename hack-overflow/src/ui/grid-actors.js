@@ -3,6 +3,7 @@ import { REVIVE_ARM, createDrone, tickActors, rearmActors, hitActor, nearestAwak
 import { createHp, hurtHp, maxHeartsFor, passDoorway, reviveHp } from '../game/hp.js';
 import { thingAt } from '../game/world.js';
 import { withPosition } from '../game/save.js';
+import { analytics } from '../analytics.js';
 import { uiEl } from './dom.js';
 import { uiEmit } from './bus.js';
 import { uiCommitSave } from './game-state.js';
@@ -87,7 +88,7 @@ const fight = app.game.fight;
 const result = hurtHp(fight.hp,hits);
 fight.hp = result.hp;
 uiEmit(GAME_EVENT.RIG_BAD,{ rigId:GRID_RIG_ID,reason:'hit' });
-if (result.down) { uiRevive(app); return; }
+if (result.down) { analytics.track('hearts_zero'); uiRevive(app); return; }
 uiShowToast(app,{ text:uiHurtText(result.hp,drone),kind:'warn' });
 }
 function uiTickDrones(game) {

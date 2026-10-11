@@ -3,6 +3,16 @@
   padding:var(--sp-3) var(--sp-4);
   font-size:var(--fs-lg);
 }
+.key-hint {
+  display:none;
+  margin-left:var(--sp-3);
+  font:inherit;
+  font-size:var(--fs-sm);
+  opacity:0.6;
+}
+@media (hover:hover) and (pointer:fine) {
+  .key-hint { display:inline; }
+}
 
 .breach-status {
   position:sticky;

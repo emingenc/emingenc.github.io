@@ -41,7 +41,7 @@ if (!ctx.view.lock.revealed) return null;
 return uiEl('p',{ className:'revealed-line',text:'Answer: ' + ctx.view.lock.revealedText });
 }
 function uiKeyLegend() {
-const text = 'ARROWS move chip | ENTER/SPACE add | ⌫ backspace | SHIFT+⌫ clear | R PROBE | S BREACH | 1/2 exploits | M sound | ESC menu';
+const text = 'ARROWS move chip | ENTER/SPACE add | ⌫ backspace | SHIFT+⌫ clear | R PROBE | S BREACH | 1/2 exploits | M sound | ESC back to the Grid';
 return uiEl('p',{ className:'key-legend',text:text });
 }
 function uiTraySection(ctx) {

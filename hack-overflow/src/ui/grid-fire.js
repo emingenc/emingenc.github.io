@@ -1,5 +1,5 @@
 import { CHARGED_DMG, nearestAwakeFoe } from '../game/actors.js';
-import { uiEl, uiPointerIsCoarse } from './dom.js';
+import { uiEl } from './dom.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiFoeAlive, uiLiveFoes, uiGridPing } from './grid-actors.js';
@@ -47,7 +47,7 @@ attrs:{ type:'button','data-fire':'1','data-focus-key':'grid-fire','aria-label':
 });
 }
 function uiGridFire(app) {
-if (!uiPointerIsCoarse() || !(uiFoeAlive(app) || uiFireSlot(app))) return null;
+if (!(uiFoeAlive(app) || uiFireSlot(app))) return null;
 return uiGridFireNode(app);
 }
 function uiFireShot(app,dmg) {

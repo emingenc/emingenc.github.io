@@ -29,7 +29,7 @@ const dirs = [game.avatar.facing,...Object.keys(DIRS)];
 return dirs.find(function (dir) { return uiNearThingAt(game,dir) !== null; }) || null;
 }
 function uiActWord() {
-return uiPointerIsCoarse() ? 'Interact' :'Enter';
+return uiPointerIsCoarse() ? 'Interact' :'Interact or Enter';
 }
 function uiWalkGoesOn(game) {
 const plan = game.walk.plan;

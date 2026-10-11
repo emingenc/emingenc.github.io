@@ -1,5 +1,5 @@
 import { tapIntent, tapCellFor, createDpadGesture, dpadDown, dpadUp, dpadClickIsGhost, dpadLeaveScreen } from '../game/tap.js';
-import { uiEl, uiPointerIsCoarse } from './dom.js';
+import { uiEl } from './dom.js';
 import { uiDpadDirFor } from './grid-dpad.js';
 import { uiWalkPath, uiWalkPress, uiWalkRelease } from './grid-walk.js';
 import { uiGridPing, uiLiveFoes } from './grid-actors.js';
@@ -146,7 +146,6 @@ if (document.hidden) uiClearDpadOnRelease(app);
 });
 }
 function uiGridTouchLayer(app) {
-if (!uiPointerIsCoarse()) return null;
 uiWireDpadGuards(app);
 return uiTouchState(app).node;
 }
@@ -168,10 +167,17 @@ if (app.screen !== 'grid') { uiLeaveDpadScreen(state,{ pointerId:event.pointerId
 uiStartHoldTimer(app,state,{ pointerId:event.pointerId,dir,delayMs:down.holdAt - at });
 }
 function uiGridPointerDown(event,app) {
+if (event.button > 0) return false;
 if (uiFireTouchDown(app,event)) return true;
 const dir = uiDpadDirFor(event.target);
 if (dir && !app.game.travelOpen) uiPressDpad(app,event,dir);
 return Boolean(dir);
+}
+function uiFocusStage(app) {
+if (app.story || app.menuOpen || app.game.travelOpen) return;
+const stage = app.game.stage;
+if (stage) stage.node.focus({ preventScroll:true });
+app.lastFocusKey = 'grid-stage';
 }
 function uiReleaseDpad(app,event) {
 const state = uiTouchState(app);
@@ -183,11 +189,17 @@ uiWalkRelease(app,up.release);
 return true;
 }
 function uiGridPointerUp(event,app) {
-return uiFireTouchUp(app) || uiReleaseDpad(app,event) || uiTapPing(app,event) || uiHandleTap(app,event);
+const fired = uiFireTouchUp(app);
+const released = uiReleaseDpad(app,event);
+if (fired || released) { uiFocusStage(app); return true; }
+if (event.button > 0) return false;
+return uiTapPing(app,event) || uiHandleTap(app,event);
 }
 function uiGridPointerCancel(event,app) {
-uiFireCancel(app);
-return uiReleaseDpad(app,event);
+const dropped = uiFireCancel(app);
+const released = uiReleaseDpad(app,event);
+if (dropped || released) uiFocusStage(app);
+return released;
 }
 
 export { uiGridTouchLayer, uiGridPointerDown, uiGridPointerUp, uiGridPointerCancel };

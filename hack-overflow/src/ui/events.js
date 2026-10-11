@@ -4,9 +4,11 @@ import { uiApplyAction } from './actions.js';
 import { uiScreenFor, uiSyncScreens } from './screens.js';
 import { uiWireFeedback } from './feedback.js';
 import { uiGameDebug, uiGameSnapshot, uiSolveSteps } from './game-state.js';
+import { analytics } from '../analytics.js';
 import { uiInitAudio } from './audio.js';
 import { warmJudgeWorker } from './judge-client.js';
 import { uiWireHistory } from './history.js';
+import { uiHasGame } from './game-storage.js';
 
 async function uiHandleAction(app,actionId) {
 await uiApplyAction(app,actionId);
@@ -18,7 +20,8 @@ return target && target.closest ? target.closest('[data-action]') :null;
 function uiHandleClick(app,event) {
 const el = uiActionElement(event.target);
 if (!el || el.disabled) return;
-uiHandleAction(app,el.getAttribute('data-action'));
+app.clickByPointer = event.detail > 0;
+return uiHandleAction(app,el.getAttribute('data-action'));
 }
 function uiGlobalKeyAction(event,app) {
 if (event.key === 'm' || event.key === 'M') return 'toggle-sound';
@@ -85,14 +88,22 @@ state:function () { return uiGameSnapshot(app); },
 solveSteps:function () { return uiSolveSteps(app); },
 });
 }
+function uiStartAnalytics(app,returning) {
+if (!analytics.wanted()) return;
+analytics.whenIdle(function () {
+import('./analytics-wire.js').then(function (wire) { wire.uiStartAnalytics(app,returning); }).catch(function () {   });
+});
+}
 function uiBoot() {
 uiInitAudio();
 warmJudgeWorker();
 uiWireFeedback();
+const returning = uiHasGame();
 const app = uiCreateApp();
 uiExposeDebug(app);
 uiWireEvents(app);
 uiRenderApp(app);
+uiStartAnalytics(app,returning);
 }
 
-export { uiBoot };
+export { uiBoot, uiHandleClick, uiHandleKeydown };

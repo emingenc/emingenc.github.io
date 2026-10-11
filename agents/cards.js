@@ -66,7 +66,7 @@ export function gameCard(game, playing) {
   const acts = make('div', 'acts');
   start.addEventListener('click', () => play(card, game));
   acts.append(start, makeLink(game.path, 'btn', 'Open full screen ↗'));
-  card.append(make('p', 'meta', 'web game · keyboard'), make('h3', '', game.name), make('p', 'desc', game.desc), acts);
+  card.append(make('p', 'meta', 'web game · keyboard, mouse or touch'), make('h3', '', game.name), make('p', 'desc', game.desc), acts);
   if (playing) play(card, game);
   return card;
 }
