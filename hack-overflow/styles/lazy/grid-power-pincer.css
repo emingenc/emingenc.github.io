@@ -1,0 +1,14 @@
+.grid-power-chip.is-dock {
+  min-width:72px;
+  min-height:44px;
+}
+
+.grid-power-chip.is-dock-fire {
+  min-width:88px;
+  min-height:44px;
+}
+
+.grid-power-chip.is-pair {
+  min-width:72px;
+  min-height:44px;
+}

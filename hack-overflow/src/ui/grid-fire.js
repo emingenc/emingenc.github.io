@@ -32,8 +32,11 @@ function uiFireLit(app) {
 const button = uiFireButton();
 if (uiIsFirePressed(app) && button && button.classList) button.classList.toggle(FIRE_LIT_CLASS,true);
 }
+function uiCanFire(app) {
+return uiFoeAlive(app) || Boolean(app.game.aimLabel);
+}
 function uiFireNodeClass(app) {
-if (!uiFoeAlive(app)) return FIRE_BASE_CLASS + ' ' + FIRE_IDLE_CLASS;
+if (!uiCanFire(app)) return FIRE_BASE_CLASS + ' ' + FIRE_IDLE_CLASS;
 if (!uiIsFirePressed(app) || !uiHasBolt(app.game)) return FIRE_BASE_CLASS;
 const charged = performance.now() - app.game.fireDownAt >= FIRE_CHARGE_MS;
 return FIRE_BASE_CLASS + ' ' + FIRE_CHARGING_CLASS + (charged ? ' ' + FIRE_LIT_CLASS :'');
@@ -41,19 +44,21 @@ return FIRE_BASE_CLASS + ' ' + FIRE_CHARGING_CLASS + (charged ? ' ' + FIRE_LIT_C
 function uiFireSlot(app) {
 const game = app.game;
 const barrier = game.world.barriers.sentry;
-return Boolean(game.fight) || (Boolean(barrier) && !isOpen(game.world,game.progress,barrier.id));
+return Boolean(game.fight) || Boolean(game.aimLabel) || (Boolean(barrier) && !isOpen(game.world,game.progress,barrier.id));
 }
 function uiGridFireNode(app) {
+const aim = app.game.aimLabel;
 return uiEl('button',{
-className:uiFireNodeClass(app),text:'A',
-attrs:{ type:'button','data-fire':'1','data-focus-key':'grid-fire','aria-label':'Fire' },
+className:uiFireNodeClass(app) + (aim ? ' grid-fire-aim' :''),text:aim ? aim.text :'A',
+attrs:{ type:'button','data-fire':'1','data-focus-key':'grid-fire','aria-label':aim ? aim.aria :'Fire' },
 });
 }
 function uiGridFire(app) {
-if (!(uiFoeAlive(app) || uiFireSlot(app))) return null;
+if (!(uiCanFire(app) || uiFireSlot(app))) return null;
 return uiGridFireNode(app);
 }
 function uiFireShot(app,dmg) {
+if (app.game.aimFire && app.game.aimFire(app,dmg)) return;
 const foe = nearestAwakeFoe(uiLiveFoes(app.game),app.game.avatar.pos);
 if (!foe) {
 uiShowToast(app,{ text:NO_FOE_TEXT,kind:'info' });
@@ -87,7 +92,7 @@ uiFireCharging(false);
 return true;
 }
 function uiFireKey(app,event) {
-if (!uiFoeAlive(app) || app.game.travelOpen) return false;
+if (!uiCanFire(app) || app.game.travelOpen) return false;
 if (!event.repeat) uiFireDown(app,performance.now());
 return true;
 }
@@ -110,7 +115,7 @@ return fired;
 function uiFireClick(app,event) {
 if (!uiIsFireTarget(event.target)) return false;
 event.stopPropagation();
-if (Date.now() >= (app.game.fireGhostUntil || 0) && uiFoeAlive(app)) uiFireShot(app,1);
+if (Date.now() >= (app.game.fireGhostUntil || 0) && uiCanFire(app)) uiFireShot(app,1);
 return true;
 }
 

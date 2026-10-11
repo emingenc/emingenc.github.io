@@ -77,6 +77,7 @@ return actor.hp > 0 && away <= view.tile * UI_PING_REACH_TILES;
 function uiTapPing(app,event) {
 const state = uiTouchState(app);
 if (!app.game.view || !state.node.contains(event.target) || app.game.travelOpen) return false;
+if (app.game.aimTap && app.game.aimTap(app,uiCellForEvent(app,state.node,event))) return true;
 const actor = uiDroneNearPoint(app,uiPointForEvent(app,state.node,event));
 if (!actor) return false;
 uiGridPing(app,actor.id,1);

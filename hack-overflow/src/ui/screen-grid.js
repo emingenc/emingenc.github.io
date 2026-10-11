@@ -60,6 +60,7 @@ function uiLoadHeroes(app) {
 import('./grid-cast.js').then(function (cast) { cast.uiInstallCast(app); }).catch(function () {});
 import('./grid-fork.js').then(function (fork) { fork.uiInstallFork(app); }).catch(function () {});
 import('./grid-brute.js').then(function (brute) { brute.uiInstallBrute(app); }).catch(function () {});
+import('./grid-power.js').then(function (power) { power.uiInstallPower(app); }).catch(function () {});
 }
 function uiEnterGrid(app) {
 app.screen = 'grid';
@@ -74,7 +75,7 @@ else uiStoryOnGrid(app);
 }
 function uiRenderGrid(app) {
 const children = [
-uiGridHud(app),uiGridObjective(app),uiGridStage(app),uiGridToast(app),uiGridTouchLayer(app),uiGridDpad(app),uiGridFire(app),uiGridTravel(app),
+uiGridHud(app),uiGridObjective(app),uiGridStage(app),uiGridToast(app),uiGridTouchLayer(app),app.game.drawPower ? app.game.drawPower(app) :null,uiGridDpad(app),uiGridFire(app),uiGridTravel(app),
 ];
 return uiEl('section',{ className:'screen grid-screen',attrs:{ 'data-screen':'grid' },children:children.filter(Boolean) });
 }
