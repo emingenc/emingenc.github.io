@@ -1,11 +1,12 @@
 import { GAME_EVENT } from '../game/game-events.js';
-import { REVIVE_ARM, createDrone, tickActors, rearmActors, hitActor, nearestAwakeFoe } from '../game/actors.js';
-import { createHp, hurtHp, maxHeartsFor, passDoorway, reviveHp } from '../game/hp.js';
-import { thingAt } from '../game/world.js';
+import { REVIVE_ARM, createDrone, knockbackCell, tickActors, rearmActors, hitActor, nearestAwakeFoe } from '../game/actors.js';
+import { createHp, hurtHp, maxHeartsOf, passDoorway, reviveHp } from '../game/hp.js';
+import { WALK_FEEL } from '../game/tween.js';
+import { cellAt, thingAt } from '../game/world.js';
 import { withPosition } from '../game/save.js';
 import { analytics } from '../analytics.js';
-import { uiEl } from './dom.js';
-import { uiEmit } from './bus.js';
+import { uiEl, uiPrefersReducedMotion } from './dom.js';
+import { uiEmit, uiGridEmit } from './bus.js';
 import { uiCommitSave } from './game-state.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiShowToast } from './grid-toast.js';
@@ -14,6 +15,8 @@ const GRID_RIG_ID = 'grid';
 const DOORWAY_KINDS = new Set(['door','gate']);
 const FULL_HEART = '♥';
 const EMPTY_HEART = '♡';
+const HURT_LINES = { drone:'Drone hit.',mite:'OUCH! A mite stung you.' };
+const HURT_LINE = 'OUCH! You were hit.';
 const REVIVE_TOAST = 'Rebooted at the last doorway.';
 const MITE_ID_PREFIX = 'mite';
 const MITE_SHOT_TOASTS = {
@@ -23,8 +26,12 @@ far:{ text:'Too far. Zap it from up close.',kind:'info',replace:true },
 cool:{ text:'Recharging.',kind:'info',replace:true },
 };
 const DRONE_SHOT_TOASTS = { kill:{ text:'DRONE DOWN',kind:'reward' },dent:{ text:'Drone hit.',kind:'info' } };
+const SHOT_TOASTS = new Map();
 const FIZZLES = new Set(['far','cool']);
 
+function uiRegisterShotToasts(kind,toasts) {
+SHOT_TOASTS.set(kind,toasts);
+}
 function uiActors(game) {
 return game.fight ? game.fight.actors :[];
 }
@@ -38,7 +45,7 @@ function uiDroneAlive(app) {
 return uiActors(app.game).some(uiIsLiveDrone);
 }
 function ensureFight(game) {
-if (!game.fight) game.fight = { hp:createHp(game.doorway || game.world.spawn || game.avatar.pos,maxHeartsFor(game.ext ? game.ext.zaps : 0)),actors:[] };
+if (!game.fight) game.fight = { hp:createHp(game.doorway || game.world.spawn || game.avatar.pos,maxHeartsOf(game.ext)),actors:[] };
 return game.fight;
 }
 function uiLiveFoes(game) {
@@ -79,39 +86,67 @@ if (game.stage) game.stage.follow = null;
 uiCommitSave(app,withPosition(game.save,game.avatar));
 uiShowToast(app,{ text:REVIVE_TOAST,kind:'warn' });
 }
-function uiHurtText(hearts,drone) {
-const count = 'Hearts ' + hearts.hearts + ' of ' + hearts.max;
-return drone ? 'Drone hit. ' + count + '.' :'OUCH! A mite stung you. ' + count + '.';
+function uiHurtText(hearts,kind) {
+return (Object.hasOwn(HURT_LINES,kind) ? HURT_LINES[kind] :HURT_LINE) + ' Hearts ' + hearts.hearts + ' of ' + hearts.max + '.';
 }
-function uiHurt(app,hits,drone) {
+function uiHurt(app,hits,kind) {
 const fight = app.game.fight;
 const result = hurtHp(fight.hp,hits);
 fight.hp = result.hp;
 uiEmit(GAME_EVENT.RIG_BAD,{ rigId:GRID_RIG_ID,reason:'hit' });
-if (result.down) { analytics.track('hearts_zero'); uiRevive(app); return; }
-uiShowToast(app,{ text:uiHurtText(result.hp,drone),kind:'warn' });
+if (result.down) { analytics.track('hearts_zero'); uiRevive(app); return false; }
+uiShowToast(app,{ text:uiHurtText(result.hp,kind),kind:'warn' });
+return true;
 }
 function uiTickDrones(game) {
-if (!uiDroneAlive({ game })) return 0;
-const ticked = tickActors(game.fight.actors);
+if (!uiActors(game).some(uiIsLive)) return { hits:0,strikers:[] };
+const ticked = tickActors(game.fight.actors,game.avatar.pos);
 game.fight.actors = ticked.actors;
-return ticked.hits;
+return ticked;
+}
+function uiIsFreeFloor(game,cell) {
+const entry = cellAt(game.world,cell);
+const held = uiLiveFoes(game).some((foe) => foe.col === cell.col && foe.row === cell.row);
+return Boolean(entry) && entry.kind === 'floor' && thingAt(game.world,cell) === null && !held;
+}
+function uiPushTween(from,to) {
+const now = performance.now();
+return { from,to,start:now,until:now + WALK_FEEL.stepMs,glideMs:uiPrefersReducedMotion() ? 0 :WALK_FEEL.stepMs,curve:'ease',stride:0 };
+}
+function uiKnockBack(app,attacker) {
+const game = app.game;
+const from = game.avatar.pos;
+const to = knockbackCell((cell) => uiIsFreeFloor(game,cell),from,attacker);
+if (to.col === from.col && to.row === from.row) return;
+game.avatar = { pos:to,facing:game.avatar.facing };
+Object.assign(game.walk,{ tween:uiPushTween(from,to),plan:null });
+uiCommitSave(app,withPosition(game.save,game.avatar));
+}
+function uiMiteStrikers(game,miteHits) {
+return miteHits > 0 ? game.fight.strikers || [] :[];
+}
+function uiStruck(app,blow) {
+const first = blow.strikers[0];
+if (uiHurt(app,blow.hits,first ? first.kind :'mite') && first) uiKnockBack(app,first);
 }
 function uiActorsTick(app) {
 if (app.game.travelOpen || app.game.fight?.calm) return false;
-const droneHits = uiTickDrones(app.game);
+const drones = uiTickDrones(app.game);
 const miteHits = app.game.sentry ? app.game.sentry.tick(app) :0;
-if (droneHits + miteHits > 0) uiHurt(app,droneHits + miteHits,droneHits > 0);
-return droneHits + miteHits > 0;
+const hurt = drones.hits + miteHits > 0;
+if (hurt) uiStruck(app,{ hits:drones.hits + miteHits,strikers:[...drones.strikers,...uiMiteStrikers(app.game,miteHits)] });
+uiGridEmit(app,'tick',{ hurt });
+return hurt;
 }
 function uiIsMiteId(app,actorId) {
 return Boolean(app.game.sentry) && actorId.startsWith(MITE_ID_PREFIX);
 }
 function uiDamageFoe(app,actorId,dmg) {
 if (uiIsMiteId(app,actorId)) return { outcome:app.game.sentry.hit(app,actorId,dmg),toasts:MITE_SHOT_TOASTS };
+const target = app.game.fight.actors.find((actor) => actor.id === actorId);
 const hit = hitActor(app.game.fight.actors,actorId,dmg);
 app.game.fight.actors = hit.actors;
-return { outcome:hit.killed ? 'kill' :'dent',toasts:DRONE_SHOT_TOASTS };
+return { outcome:hit.killed ? 'kill' :'dent',toasts:SHOT_TOASTS.get(target?.kind) || DRONE_SHOT_TOASTS };
 }
 function uiHitFoe(app,actorId,dmg) {
 const maxBefore = ensureFight(app.game).hp.max;
@@ -146,4 +181,4 @@ attrs:{ role:'img','aria-label':'Hearts ' + hearts + ' of ' + max },
 });
 }
 
-export { ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiSentryWait,uiGridHearts };
+export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiSentryWait,uiGridHearts };

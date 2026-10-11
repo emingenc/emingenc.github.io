@@ -52,26 +52,39 @@ text:'MAP',
 attrs:{ type:'button','data-action':'map-open','data-focus-key':'map-open','aria-label':'Map' },
 });
 }
-function uiHudTop(progress) {
-return uiEl('div',{
-className:'grid-hud-top',
-children:[uiEl('span',{ className:'grid-hud-level',text:'LV ' + progress.level + ' · ' + progress.rank })],
-});
+function uiTextNode(tag,className,text) {
+return text ? uiEl(tag,{ className,text }) :null;
+}
+function uiHudTop(game) {
+const level = uiEl('span',{ className:'grid-hud-level',text:'LV ' + game.progress.level + ' · ' + game.progress.rank });
+return uiEl('div',{ className:'grid-hud-top',children:[level,uiTextNode('span','grid-hud-rank',game.hudRank)].filter(Boolean) });
 }
 function uiHudStats(game) {
 const progress = game.progress;
 const band = levelBand(progress.xp);
 return uiEl('div',{
 className:'grid-hud-stats',
-children:[uiHudTop(progress),uiEl('span',{ className:'grid-hud-xp',text:uiXpText(band,progress.xp) }),uiXpBar(game,band)],
+children:[uiHudTop(game),uiEl('span',{ className:'grid-hud-xp',text:uiXpText(band,progress.xp) }),uiXpBar(game,band)],
 });
 }
 function uiHudHint(game) {
 const text = nextUnlockText(game.world,nextUnlock(game.progress));
 return text ? uiEl('p',{ className:'grid-hud-hint',text }) :null;
 }
+function uiHudWantsRank(game) {
+const ext = game.ext;
+return Boolean(ext) && !game.hudLoad && !game.hudLoaded && ((ext.rank && ext.rank.r > 0) || Boolean(ext.pin));
+}
+function uiLoadHudRank(app) {
+if (!uiHudWantsRank(app.game)) return;
+app.game.hudLoad = import('./rank-hud.js')
+.then(function (hud) { app.game.hudLoaded = true; return hud.uiRefreshHud(app); })
+.catch(function () {})
+.finally(function () { app.game.hudLoad = null; });
+}
 function uiGridHud(app) {
-const children = [uiHudStats(app.game),uiMapButton(),uiHudSoundButton(app),uiHudMenuButton(),uiHudHint(app.game)];
+uiLoadHudRank(app);
+const children = [uiHudStats(app.game),uiMapButton(),uiHudSoundButton(app),uiHudMenuButton(),uiHudHint(app.game),uiTextNode('p','grid-hud-pill',app.game.hudPill)];
 return uiEl('header',{ className:'hud grid-hud',children:children.filter(Boolean) });
 }
 

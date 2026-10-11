@@ -12,6 +12,10 @@ function uiHistoryApi() {
 if (typeof window === 'undefined' || !window.history) return null;
 return typeof window.history.pushState === 'function' ? window.history : null;
 }
+function uiBackOnStory(story) {
+if (!story.choice) return 'story-skip';
+return story.choice.choices.some((choice) => choice.default === true) ? 'story-skip' :null;
+}
 function uiBackOnMenu(app) {
 return app.confirmReset ? 'reset-cancel' :'menu-close';
 }
@@ -20,7 +24,7 @@ if (app.screen === 'grid' && app.game && app.game.travelOpen) return 'travel-clo
 return Object.hasOwn(UI_BACK_BY_SCREEN,app.screen) ? UI_BACK_BY_SCREEN[app.screen] :null;
 }
 function uiBackActionFor(app) {
-if (app.story) return 'story-skip';
+if (app.story) return uiBackOnStory(app.story);
 if (app.menuOpen) return uiBackOnMenu(app);
 return uiBackOnScreen(app);
 }

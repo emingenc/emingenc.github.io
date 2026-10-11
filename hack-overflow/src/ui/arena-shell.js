@@ -26,28 +26,28 @@ uiArenaNow = now || uiArenaDefaultNow;
 function uiArenaButton(action,label,kind) {
 return uiEl('button',{ className:'btn arena-btn ' + kind,text:label,attrs:{ type:'button','data-action':action,'data-focus-key':action } });
 }
-function uiArenaHearts(hearts) {
-const full = Math.max(0,Math.min(ARENA_HEARTS_MAX,hearts));
-const text = ARENA_HEART_FULL.repeat(full) + ARENA_HEART_EMPTY.repeat(ARENA_HEARTS_MAX - full);
-return uiEl('span',{ className:'arena-hearts',text,attrs:{ 'aria-label':'Integrity ' + full + ' of ' + ARENA_HEARTS_MAX } });
+function uiArenaHearts(hearts,max) {
+const full = Math.max(0,Math.min(max,hearts));
+const text = ARENA_HEART_FULL.repeat(full) + ARENA_HEART_EMPTY.repeat(max - full);
+return uiEl('span',{ className:'arena-hearts',text,attrs:{ 'aria-label':'Integrity ' + full + ' of ' + max } });
 }
 function uiArenaMute(app) {
 const button = uiArenaButton(ARENA_SOUND_ACTION,app.soundOn ? 'SND ON' :'SND OFF','arena-mute');
 button.setAttribute('aria-pressed',String(!!app.soundOn));
 return button;
 }
-function uiArenaAssist(assist) {
+function uiArenaAssist(assist,hint) {
 const button = uiArenaButton(ARENA_ASSIST_ACTION,ARENA_ASSIST_LABEL,'arena-assist');
 button.setAttribute('aria-pressed',String(assist === true));
-button.setAttribute('title',ARENA_ASSIST_HINT);
-button.setAttribute('aria-label',ARENA_ASSIST_HINT);
+button.setAttribute('title',hint);
+button.setAttribute('aria-label',hint);
 return button;
 }
 function uiArenaHeader(app,view) {
 const score = uiEl('span',{ className:'arena-score',text:String(view.score),attrs:{ 'aria-label':'Score ' + view.score } });
-const top = uiEl('div',{ className:'arena-row',children:[uiArenaHearts(view.hearts),score,uiArenaMute(app)] });
+const top = uiEl('div',{ className:'arena-row',children:[uiArenaHearts(view.hearts,view.heartsMax ?? ARENA_HEARTS_MAX),score,uiArenaMute(app)] });
 const title = uiEl('span',{ className:'arena-title',text:view.title });
-const bottom = uiEl('div',{ className:'arena-row',children:[uiArenaButton(ARENA_BACK,'LEAVE','arena-back'),title,uiArenaAssist(view.assist)] });
+const bottom = uiEl('div',{ className:'arena-row',children:[uiArenaButton(ARENA_BACK,'LEAVE','arena-back'),title,uiArenaAssist(view.assist,view.assistHint ?? ARENA_ASSIST_HINT)] });
 return uiEl('header',{ className:'arena-header',children:[top,bottom] });
 }
 function uiArenaRule(text) {
@@ -102,6 +102,10 @@ attrs:{ 'data-rig':app.rig ? app.rig.rigId :'' },
 children:[uiEl('h2',{ className:'arena-card-title',text:result.title }),...lines,...(result.body || []),uiArenaCardButtons(result.actions)],
 });
 }
+function uiArenaPaidLine(rank,className) {
+if (!rank || rank.gain <= 0) return null;
+return uiEl('p',{ className:'arena-card-line ' + className,text:['+' + rank.gain + ' R',rank.up].filter(Boolean).join(' · ') });
+}
 function uiArenaOpen(app,spec) {
 if (app.rig) uiArenaClearToast(app.rig);
 app.rig = { rigId:spec.rigId,view:'play',root:'play',levelIndex:0,xpNote:null,gained:0,toast:null,toastTimer:null,toastNode:null,arena:null,openedAt:uiArenaNow() };
@@ -122,6 +126,6 @@ uiRigHostLeave(app,note,rig ? rig.title :'');
 }
 
 export {
-ARENA_FOCUS_KEY,uiArenaSetClock,uiArenaOpen,uiArenaHeader,uiArenaRule,uiArenaCoach,uiArenaToast,uiArenaClearToast,uiArenaToastNode,uiArenaCard,
+ARENA_FOCUS_KEY,uiArenaSetClock,uiArenaOpen,uiArenaHeader,uiArenaRule,uiArenaCoach,uiArenaToast,uiArenaClearToast,uiArenaToastNode,uiArenaCard,uiArenaPaidLine,
 uiArenaLeaveTooSoon,uiArenaLeave,
 };

@@ -8,7 +8,7 @@ import { uiSentryWait } from './grid-actors.js';
 
 function uiGuardedStep(app,dir,auto) {
 const game = app.game;
-const guarded = game.sentry ? game.sentry.guardStep(app,dir,auto) :null;
+const guarded = (game.castGuard && game.castGuard(app,dir)) || (game.sentry ? game.sentry.guardStep(app,dir,auto) :null);
 return guarded || stepAvatar(game.world,game.progress,{ pos:game.avatar.pos,facing:game.avatar.facing,dir });
 }
 function uiWalkAdvance(app,now) {

@@ -3,7 +3,7 @@ import { PINCER_BUSY_MS } from '../game/rooms/data/pincer-w1.js';
 import { PINCER_TEXTS, fillText } from '../game/rooms/data/pincer-texts.js';
 import { applyPincer, createPincer, pincerMoves, pincerStars, pincerSum } from '../game/rooms/pincer.js';
 import { buildPool, pickStream } from '../game/rooms/pincer-stream.js';
-import { uiArenaRecordWin } from './arena-reward.js';
+import { uiArenaPayRank, uiArenaRecordWin } from './arena-reward.js';
 import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 
@@ -115,6 +115,7 @@ function uiPincerAfterMove(app) {
 function uiPincerWin(app, arena) {
   const stars = pincerStars(arena.state);
   const reward = uiArenaRecordWin(app, { rig: arena.rig, levelId: arena.levelId, stars });
+  uiArenaPayRank(app, { rig: arena.rig, stars }, reward);
   uiEmit(GAME_EVENT.RIG_CLEAR, { rigId: PINCER_RIG_ID, levelId: arena.levelId, stars });
   arena.result = { won: true, stars, firstClear: reward.bestBefore === 0 };
 }

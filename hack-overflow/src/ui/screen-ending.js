@@ -31,7 +31,7 @@ return [
 uiStatLine('LOCKS',stats.locks + ' / ' + stats.placed),
 uiStatLine('STARS',stats.stars + ' / ' + stats.maxStars),
 uiStatLine('XP',String(stats.xp)),
-uiStatLine('LV',stats.level + ' · ' + stats.rank),
+uiStatLine('CALLSIGN','LV ' + stats.level + ' · ' + stats.rank),
 uiStatLine('PERFECT LOCKS',stats.perfect + ' / ' + stats.placed),
 uiStatLine('TRACED',String(stats.traced)),
 uiStatLine('FAILS',String(stats.fails)),
@@ -73,7 +73,7 @@ return true;
 }
 function uiEndingAnnounce(app) {
 const stats = app.game.ending.stats;
-return ENDING_TITLE + '. ' + stats.locks + ' of ' + stats.placed + ' locks, ' + stats.stars + ' of ' + stats.maxStars + ' stars, LV ' + stats.level + ' ' + stats.rank + '.';
+return ENDING_TITLE + '. ' + stats.locks + ' of ' + stats.placed + ' locks, ' + stats.stars + ' of ' + stats.maxStars + ' stars, LV ' + stats.level + ', callsign ' + stats.rank + '.';
 }
 function uiEndingScreen() {
 return {

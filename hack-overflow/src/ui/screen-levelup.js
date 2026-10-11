@@ -69,7 +69,7 @@ attrs:{ 'data-screen':'levelup' },
 children:[
 uiEl('p',{ className:'levelup-kicker',text:'LEVEL UP' }),
 uiEl('h1',{ className:'levelup-title',text:'LV ' + levelUp.after }),
-uiEl('p',{ className:'levelup-rank',text:rankFor(levelUp.after) }),
+uiEl('p',{ className:'levelup-rank',text:'CALLSIGN: ' + rankFor(levelUp.after) }),
 uiEl('div',{ className:'levelup-unlocks',attrs:{ role:'group','aria-label':'Unlocked' },children:uiUnlockGroups(app) }),
 uiEl('button',{
 className:'btn btn-primary levelup-continue',
@@ -89,7 +89,7 @@ return true;
 function uiLevelUpAnnounce(app) {
 const lines = uiUnlockLines(app);
 const unlocked = lines.length > 0 ? ' Unlocked: ' + lines.join('; ') + '.' :'';
-return 'Title: ' + rankFor(app.game.levelUp.after) + '.' + unlocked;
+return 'Callsign: ' + rankFor(app.game.levelUp.after) + '.' + unlocked;
 }
 function uiLevelUpScreen() {
 return {
