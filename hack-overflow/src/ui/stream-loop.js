@@ -1,17 +1,17 @@
-import { CONTEXT_STREAM,STREAM_XP } from '../game/labs/data/context-stream.js';
+import { CONTEXT_STREAM } from '../game/labs/data/context-stream.js';
 import { advance,reduce,resultOf } from '../game/labs/stream-sim.js';
 import { allStagesCleared,recordStream } from '../game/labs/stream-reward.js';
 import { uiCommitSave } from './game-state.js';
-import { uiLevelUpAfter } from './grid-events.js';
 import { uiRenderApp } from './app.js';
+import { uiLabPayRank } from './lab-rank.js';
 import { uiStoryLabFinish } from './machine-dialogue.js';
+import { rigOf } from '../game/rig-catalog.js';
 import { uiStreamCue,uiStreamPaint } from './stream-paint.js';
 
 
 const MAX_DT_MS = 100;
 const FALLBACK_FRAME_MS = 16;
 const NO_HANDLE = null;
-const NO_GAIN = 0;
 
 function uiStreamDefaultNow() {
 return typeof performance !== 'undefined' ? performance.now() :Date.now();
@@ -34,22 +34,19 @@ function uiStreamIsPlaying(app) {
 const stream = app.stream;
 return Boolean(stream && stream.view === 'play' && stream.sim && stream.sim.status === 'running');
 }
-function uiStreamAward(app,result) {
+function uiStreamAward(app,result,spoken) {
 const stream = app.stream;
-if (stream.awarded || result.stars <= 0) return { gained:0,improved:false,bestBefore:0 };
+if (stream.awarded || result.stars <= 0) return;
 stream.awarded = true;
-const levelBefore = app.game.progress.level;
-const paid = recordStream(app.game.save,{ stageId:stream.sim.stageId,stars:result.stars,score:result.score,xpTable:STREAM_XP });
-uiCommitSave(app,paid.save);
-if (paid.gained > 0) uiLevelUpAfter(app,{ gained:paid.gained,levelBefore,source:'core' });
-return { gained:paid.gained,improved:paid.improved,bestBefore:paid.bestBefore };
+const stageId = stream.sim.stageId;
+uiCommitSave(app,recordStream(app.game.save,{ stageId,stars:result.stars,score:result.score }).save);
+uiLabPayRank(app,'stream',{ rig:rigOf('stream'),levelId:stageId,stars:result.stars,spoken });
 }
 const STREAM_MAX_STARS = 3;
-function uiStreamSpoken(result,xp) {
+function uiStreamSpoken(result) {
 if (result.stars <= 0) return 'Stream failed. ' + (result.failure ? result.failure.text :'');
-const bonus = xp.gained > 0 ? ' Plus ' + xp.gained + ' XP.' :'';
 const held = result.keysHeld + ' of ' + result.keysTotal + ' keys held.';
-return 'Stage clear. ' + result.stars + ' of ' + STREAM_MAX_STARS + ' stars. Score ' + result.score + '. ' + held + bonus;
+return 'Stage clear. ' + result.stars + ' of ' + STREAM_MAX_STARS + ' stars. Score ' + result.score + '. ' + held;
 }
 function uiStreamFocusAfter(app,result) {
 const hasNext = app.stream.stageIndex < app.stream.stageCount - 1;
@@ -63,9 +60,10 @@ stream.view = 'result';
 stream.result = result;
 stream.nodes = null;
 stream.pointers = {};
-stream.xp = uiStreamAward(app,result);
+stream.rank = null;
 app.lastFocusKey = uiStreamFocusAfter(app,result);
-app.pendingAnnounce = uiStreamSpoken(result,stream.xp);
+app.pendingAnnounce = uiStreamSpoken(result);
+uiStreamAward(app,result,app.pendingAnnounce);
 if (allStagesCleared(app.game.save,CONTEXT_STREAM.stages.map(function (stage) { return stage.id; }))) uiStoryLabFinish(app,CONTEXT_STREAM.id);
 uiRenderApp(app);
 }

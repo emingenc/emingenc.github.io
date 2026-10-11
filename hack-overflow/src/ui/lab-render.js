@@ -2,6 +2,7 @@ import { CONTEXT_WINDOW } from '../game/labs/data/context-window.js';
 import { labelOf, movesUsed, read } from '../game/labs/context-reader.js';
 import { labBest } from '../game/save.js';
 import { uiEl } from './dom.js';
+import { uiLabRankText } from './lab-rank.js';
 
 const LAB_MAX_STARS = 3;
 const LAB_FRAME = 'GHOSTWRITER\'s memory, replayed offline.';
@@ -134,21 +135,20 @@ function uiLabProbeLine(reading) {
 const cut = reading.cutIds.length ? reading.cutIds.length + ' cut' :'nothing cut';
 return 'PROBE: ' + reading.used + '/' + reading.budget + ' tokens, ' + cut + '. The dry read is below the window.';
 }
+function uiLabWonText(app) {
+const stars = 'THE BANK REMEMBERS ' + uiLabStars(app.lab.run.stars);
+const rank = uiLabRankText(app.lab.rank);
+return rank ? stars + ' · ' + rank :stars;
+}
 function uiLabCoachText(app,reading) {
 const { run,probe } = app.lab;
-if (run.status === 'won') return 'THE BANK REMEMBERS ' + uiLabStars(run.stars) + ' · ' + uiLabXpText(app);
+if (run.status === 'won') return uiLabWonText(app);
 if (run.failure) return 'RUN FAILED: ' + run.failure.text;
 return probe ? uiLabProbeLine(probe) :uiLabBuildCoach(app,reading);
 }
 function uiLabCoach(app,reading) {
 const kind = app.lab.run.failure ? ' is-fail' :'';
 return uiEl('p',{ className:'lab-coach' + kind,text:uiLabCoachText(app,reading) });
-}
-function uiLabXpText(app) {
-const note = app.lab.xpNote;
-const gained = app.lab.gained > 0 ? '+' + app.lab.gained + ' XP' :'No new XP: only more stars than your best pay';
-const up = note && note.levelAfter > note.levelBefore ? ' · LEVEL UP on the way out' :'';
-return gained + up;
 }
 function uiLabMeter(reading) {
 const over = reading.total > reading.budget;
@@ -324,13 +324,14 @@ uiEl('p',{ className:'lab-practice',text:'IN PRACTICE: ' + failure.practice }),
 function uiLabWinPanel(app) {
 const { run } = app.lab;
 const level = uiLabLevelOf(app);
+const rank = uiLabRankText(app.lab.rank);
 const summary = 'PAR ' + level.par + ' · YOU USED ' + movesUsed(run.window) + ' · FAILED RUNS ' + run.fails;
 return uiEl('section',{
 className:'lab-result lab-win',
 children:[
 uiEl('h2',{ className:'lab-card-title',text:'THE BANK REMEMBERS' }),
 uiEl('p',{ className:'lab-stars',text:uiLabStars(run.stars),attrs:{ role:'img','aria-label':run.stars + ' of ' + LAB_MAX_STARS + ' stars' } }),
-uiEl('p',{ className:'lab-xp',text:uiLabXpText(app) }),
+rank ? uiEl('p',{ className:'lab-rank',text:rank }) :null,
 uiEl('p',{ className:'lab-note',text:summary }),
 uiEl('p',{ className:'lab-note',text:LAB_STAR_RULE }),
 ],

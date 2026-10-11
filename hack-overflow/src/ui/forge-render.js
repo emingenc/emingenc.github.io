@@ -4,6 +4,7 @@ import { runSummary } from '../game/labs/forge-score.js';
 import { labBest } from '../game/save.js';
 import { uiEl } from './dom.js';
 import { uiForgeBoardNode } from './forge-board.js';
+import { uiLabRankText } from './lab-rank.js';
 
 const FORGE_MAX_STARS = 3;
 const FORGE_PERCENT = 100;
@@ -168,12 +169,6 @@ uiForgeButton('forge-sell',sellLabel,{ kind:'btn-ghost forge-sell',extra:sellExt
 ],
 });
 }
-function uiForgeXpText(note) {
-if (!note) return '';
-const gained = note.gained > 0 ? 'XP +' + note.gained :'No new XP: your best run is already higher.';
-const up = note.levelAfter > note.levelBefore ? ' LEVEL UP: ' + note.levelBefore + ' → ' + note.levelAfter + '.' :'';
-return gained + up;
-}
 function uiForgeSummaryButtons(app,summary) {
 const buttons = [];
 const hasNext = summary.status === 'won' && app.forge.levelIndex < HARNESS_FORGE.levels.length - 1;
@@ -190,8 +185,8 @@ if (won) {
 children.push(uiEl('p',{ className:'forge-stars',text:uiForgeStars(summary.stars),attrs:{ role:'img','aria-label':summary.stars + ' of ' + FORGE_MAX_STARS + ' stars' } }));
 }
 summary.lines.forEach(function (line) { children.push(uiEl('p',{ className:'forge-note',text:line })); });
-const xp = uiForgeXpText(app.forge.xpNote);
-if (xp) children.push(uiEl('p',{ className:'forge-xp',text:xp }));
+const rank = won ? uiLabRankText(app.forge.rank) :'';
+if (rank) children.push(uiEl('p',{ className:'forge-rank',text:rank }));
 if (won) children.push(uiEl('p',{ className:'forge-note forge-rule',text:FORGE_STAR_RULE }));
 children.push(uiForgeSummaryButtons(app,summary));
 return uiEl('section',{ className:'forge-summary ' + (won ? 'is-won' :'is-lost'),attrs:{ 'aria-label':'Run summary' },children:children });
