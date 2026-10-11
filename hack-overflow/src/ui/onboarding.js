@@ -17,7 +17,7 @@ function uiOnboardNextStep(app) {
 return uiProbePassedOnLine(app) ? UI_ONBOARD_PASS_STEP :UI_ONBOARD_NEXT_STEP;
 }
 function uiOnboardStage1Text() {
-return uiPointerIsCoarse() ? 'Tap chips to write the missing line.' :'Arrow keys pick a chip, Enter adds it.';
+return uiPointerIsCoarse() ? 'Tap chips to write the missing line.' :'Click chips to write the missing line. Arrow keys pick a chip, Enter adds it.';
 }
 const UI_ONBOARD_RULE_MESSAGES = {
 ACCEPTED:'Accepted: it passed every hidden test, then the max test.',

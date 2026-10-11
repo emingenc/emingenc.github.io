@@ -12,9 +12,9 @@ import { uiDisconnect, uiClearBreachTimers } from './breach-flow.js';
 import { uiBreachInert } from './render-submit-panel.js';
 
 function uiGridButton(app) {
-const attrs = { type:'button','data-action':'breach-disconnect','data-focus-key':'breach-disconnect','aria-label':'Disconnect: back to the Grid' };
+const attrs = { type:'button','data-action':'breach-disconnect','data-focus-key':'breach-disconnect','aria-label':'Disconnect: back to the Grid (Escape)' };
 if (uiBreachInert(app)) attrs.disabled = 'disabled';
-return uiEl('button',{ className:'btn btn-ghost breach-back',text:'◄ GRID',attrs });
+return uiEl('button',{ className:'btn btn-ghost breach-back',attrs,children:['◄ GRID',uiEl('kbd',{ className:'key-hint',text:'Esc',attrs:{ 'aria-hidden':'true' } })] });
 }
 function uiHudClass(family) {
 return gateLevel(family) === null ? 'hud breach-hud breach-hud-compact' :'hud breach-hud';

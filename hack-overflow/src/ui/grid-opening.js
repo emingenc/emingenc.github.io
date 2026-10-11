@@ -1,6 +1,7 @@
 import { GAME_EVENT } from '../game/game-events.js';
 import { createOpening, openingDroneCell, shiftOpening, stepOpening } from '../game/opening-steps.js';
 import { createExt, markOpeningDone } from '../game/save-ext.js';
+import { analytics } from '../analytics.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiEmit } from './bus.js';
 import { uiAnnounce, uiPointerIsCoarse } from './dom.js';
@@ -15,8 +16,8 @@ const OPENING_RIG_ID = 'grid';
 const ALARM_TOAST = 'ALARM. Something is coming through the wall.';
 const DONE_TOAST = 'The wall is quiet again.';
 const COACH = {
-first:{ touch:'A drone! Tap it, or press Fire (A).',keys:'A drone crashed in! Press F to ping it.' },
-again:{ touch:'Tap the drone, or press Fire (A).',keys:'Press F to ping the drone.' },
+first:{ touch:'A drone! Tap it, or press Fire (A).',keys:'A drone crashed in! Click it or press F to ping it.' },
+again:{ touch:'Tap the drone, or press Fire (A).',keys:'Click the drone or press F to ping it.' },
 };
 
 function uiDefaultClock() {
@@ -63,6 +64,7 @@ game.opening = null;
 if (game.fight) game.fight.calm = false;
 uiRestoreHearts(game);
 uiCommitExt(app,markOpeningDone(game.ext || createExt()));
+analytics.track('opening_done');
 uiOpeningToast(app,{ text:DONE_TOAST,kind:'info' });
 uiStoryOnGrid(app);
 uiRenderKeepingFocus(app);

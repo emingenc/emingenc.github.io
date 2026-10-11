@@ -20,7 +20,7 @@ return EXPLOITS[exploit === 'scanMk2' ? 'scan' :exploit].key;
 }
 function uiUnlockCardMeta(unlock) {
 if (unlock.kind === 'trace') return '+' + (unlock.capacity - traceCapacity(unlock.level - 1));
-if (unlock.kind === 'exploit' && !uiPointerIsCoarse()) return 'KEY ' + uiUnlockExploitKey(unlock.exploit);
+if (unlock.kind === 'exploit' && !uiPointerIsCoarse()) return 'BUTTON or KEY ' + uiUnlockExploitKey(unlock.exploit);
 return '';
 }
 function uiUnlockCard(world,unlock,index) {

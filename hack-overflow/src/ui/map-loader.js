@@ -1,3 +1,4 @@
+import { analytics } from '../analytics.js';
 import { uiEl } from './dom.js';
 import { uiWalkReleaseAll } from './grid-walk.js';
 import { uiEnterGrid } from './screen-grid.js';
@@ -56,6 +57,7 @@ uiWalkReleaseAll(app);
 app.game.travelOpen = false;
 app.screen = UI_MAP_SCREEN_ID;
 app.lastFocusKey = UI_MAP_CLOSE_KEY;
+analytics.track('map_open');
 }
 function uiCloseMap(app) {
 if (app.screen === UI_MAP_SCREEN_ID) uiEnterGrid(app);

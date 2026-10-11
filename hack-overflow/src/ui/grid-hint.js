@@ -5,7 +5,7 @@ import { uiEl, uiPointerIsCoarse } from './dom.js';
 
 
 const UI_HINT_TOUCH = 'Tap the map to walk. Follow the pulsing arrow.';
-const UI_HINT_KEYS = 'Arrow keys walk. Follow the pulsing arrow.';
+const UI_HINT_KEYS = 'Click the map or press arrow keys to walk. Follow the pulsing arrow.';
 
 function uiCreateHint() {
 const base = uiPointerIsCoarse() ? UI_HINT_TOUCH :UI_HINT_KEYS;
@@ -61,7 +61,7 @@ if (!uiAtRest(game)) return null;
 const thing = uiNearThing(game);
 const plate = thing && thing.kind === 'rig' ? rigPlate(game.world,thing.id,game.save) :null;
 if (!plate) return null;
-const act = (coarse ? 'TAP ◆ TO ' :'ENTER TO ') + plate.verb;
+const act = (coarse ? 'TAP ◆ TO ' :'CLICK ◆ OR ENTER TO ') + plate.verb;
 return { rigId:plate.rigId,title:plate.title,line:plate.line,act,place:uiPlateSide(game,thing) };
 }
 function uiSetText(node,text) {

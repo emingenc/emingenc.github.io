@@ -96,7 +96,7 @@
   grid-row:3;
 }
 
-@media (pointer:coarse) and (max-height:640px) {
+@media (max-height:640px) {
   .grid-dpad {
     --dpad-btn:44px;
     gap:var(--sp-1);
@@ -175,10 +175,3 @@
   }
 }
 
-@media (pointer:fine) {
-  .grid-touch-layer,
-  .grid-dpad,
-  .grid-fire {
-    display:none;
-  }
-}

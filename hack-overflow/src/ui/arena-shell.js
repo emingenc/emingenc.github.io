@@ -112,7 +112,7 @@ app.lastFocusKey = ARENA_FOCUS_KEY;
 function uiArenaLeaveTooSoon(app) {
 const root = uiQs(UI_ROOT_ID);
 const onButton = Boolean(root) && uiFindByFocusKey(root,ARENA_BACK) === document.activeElement;
-return onButton && Boolean(app.rig) && uiArenaNow() - app.rig.openedAt < ARENA_LEAVE_GUARD_MS;
+return onButton && !app.clickByPointer && Boolean(app.rig) && uiArenaNow() - app.rig.openedAt < ARENA_LEAVE_GUARD_MS;
 }
 function uiArenaLeave(app,note) {
 const rig = RIG_CATALOG[app.rig.rigId];
