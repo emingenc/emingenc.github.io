@@ -1,0 +1,52 @@
+.grid-power-chip.is-plate {
+  min-width:60px;
+  padding:0 var(--sp-3);
+  border-color:var(--magenta);
+  color:var(--magenta);
+}
+
+.grid-power-chip.is-breach {
+  position:relative;
+  overflow:hidden;
+  min-width:84px;
+  padding:0 var(--sp-3);
+  border-color:var(--amber);
+  color:var(--amber);
+  -webkit-touch-callout:none;
+  user-select:none;
+  touch-action:manipulation;
+}
+
+.grid-power-chip.is-breach.is-holding::after {
+  content:'';
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:0;
+  width:100%;
+  background:var(--amber);
+  opacity:0.3;
+  pointer-events:none;
+}
+
+@keyframes plate-hold {
+  from {
+    width:0;
+  }
+
+  to {
+    width:100%;
+  }
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .grid-power-chip.is-breach.is-holding::after {
+    animation:plate-hold 400ms linear forwards;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .grid-power-chip.is-breach.is-holding::after {
+    animation:none;
+  }
+}

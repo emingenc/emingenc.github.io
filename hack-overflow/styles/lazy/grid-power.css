@@ -1,0 +1,191 @@
+.grid-screen:has(.grid-power) {
+  grid-template-rows:auto auto minmax(0,1fr) auto auto auto;
+  grid-template-areas:'hud' 'objective' 'stage' 'power' 'dpad' 'travel';
+}
+
+.grid-screen:has(.grid-power) .grid-power {
+  grid-area:power;
+}
+
+.grid-power {
+  display:flex;
+  align-items:center;
+  gap:var(--sp-3);
+  height:48px;
+  min-width:0;
+  margin-bottom:12px;
+}
+
+.grid-power-btn {
+  flex:none;
+  width:64px;
+  min-width:64px;
+  height:48px;
+  min-height:44px;
+  padding:0;
+  border:2px solid var(--amber);
+  border-radius:var(--radius-sm);
+  background:var(--panel);
+  color:var(--amber);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  letter-spacing:0.06em;
+  touch-action:manipulation;
+}
+
+.grid-power-btn.is-on {
+  background:var(--amber);
+  color:var(--bg);
+}
+
+.grid-power-btn:active {
+  background:var(--border);
+  color:var(--text);
+}
+
+.grid-power-chips {
+  flex:1;
+  min-width:0;
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  gap:var(--sp-3);
+  height:48px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  scrollbar-width:none;
+  scroll-padding-inline:var(--sp-3);
+  padding:0 var(--sp-1);
+}
+
+.grid-power-chips::-webkit-scrollbar {
+  display:none;
+}
+
+.grid-power-chip {
+  flex:none;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:44px;
+  min-height:44px;
+  padding:0 var(--sp-4);
+  border:2px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--panel);
+  color:var(--text);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  line-height:1;
+  white-space:nowrap;
+  touch-action:manipulation;
+}
+
+.grid-power-chip:active {
+  background:var(--border);
+}
+
+.grid-power-chip.is-selected {
+  border-color:var(--cyan);
+  color:var(--cyan);
+  box-shadow:0 0 0 2px var(--cyan);
+}
+
+.grid-power-chip.is-action {
+  border-color:var(--primary);
+  color:var(--primary);
+}
+
+.grid-power-chip.is-warn {
+  border-color:var(--red);
+  color:var(--red);
+}
+
+.grid-power-intent {
+  color:var(--dim);
+  font-family:var(--font-body);
+  font-size:var(--fs-xs);
+  line-height:1.1;
+}
+
+.grid-power-mode,
+.grid-power-badge {
+  flex:none;
+  color:var(--dim);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  letter-spacing:0.06em;
+  white-space:nowrap;
+}
+
+.grid-power-badge {
+  color:var(--amber);
+}
+
+.grid-fire-aim {
+  padding:var(--sp-2);
+  font-family:var(--font-body);
+  font-size:var(--fs-xs);
+  line-height:1.1;
+  overflow-wrap:anywhere;
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .grid-power-chip,
+  .grid-power-btn {
+    transition:border-color var(--ui-ease),background-color var(--ui-ease),color var(--ui-ease);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .grid-power-chip,
+  .grid-power-btn {
+    transition:none;
+  }
+}
+
+@media (max-height:560px) and (orientation:portrait) {
+  .grid-screen:has(.grid-power) .grid-power {
+    height:44px;
+    margin-bottom:10px;
+  }
+
+  .grid-screen:has(.grid-power) {
+    padding-bottom:calc(var(--sp-1) + env(safe-area-inset-bottom,0px));
+  }
+
+  .grid-screen:has(.grid-power) .grid-power-btn,
+  .grid-screen:has(.grid-power) .grid-power-chips {
+    height:44px;
+  }
+
+  .grid-screen:has(.grid-power) .grid-dpad {
+    margin-top:0;
+    gap:2px;
+  }
+
+  .grid-screen:has(.grid-power) .grid-travel-toggle {
+    min-height:44px;
+    height:44px;
+  }
+}
+
+@media (pointer:coarse) and (orientation:landscape) and (max-height:480px) {
+  .grid-screen:has(.grid-power) {
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto minmax(0,1fr) auto auto;
+    grid-template-areas:'hud hud' 'objective dpad' 'stage dpad' 'power dpad' 'travel dpad';
+  }
+}
+
+@media (max-width:420px) {
+  .grid-power-chips {
+    gap:var(--sp-2);
+  }
+
+  .grid-power-chip {
+    padding:0 var(--sp-3);
+  }
+}

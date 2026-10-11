@@ -1,5 +1,5 @@
 const ID_PATTERN = /^[a-z0-9-]{1,32}$/;
-const LIMITS = { rank:9999,paid:48,finds:32,beats:128,met:16,quests:16,state:3,count:99 };
+const LIMITS = { rank:9999,paid:48,finds:32,beats:128,met:16,quests:16,state:3,count:99,tags:6,trials:3,allies:4 };
 
 function isId(value) {
 return typeof value === 'string' && ID_PATTERN.test(value);
@@ -31,6 +31,11 @@ const quests = field('quests',(value) => {
 const entries = Object.entries(isRecord(value) ? value :{}).filter(([id,state]) => isId(id) && Number.isFinite(state));
 return Object.fromEntries(entries.slice(0,LIMITS.quests).map(([id,state]) => [id,clampInt(state,0,LIMITS.state)]));
 });
+const POWERS = ['lookup','pincer','plate'];
+function table(KEY,cap,{ keep,clean }) {
+return field(KEY,(value) => Object.fromEntries(Object.entries(isRecord(value) ? value :{}).filter(([id,item]) => keep(id) && clean(item) !== null).slice(0,cap).map(([id,item]) => [id,clean(item)])));
+}
+const upTo = (max) => (value) => (Number.isFinite(value) ? clampInt(value,0,max) :null);
 const EXT_FIELDS = [
 record('rank',{ r:whole(LIMITS.rank),paid:ids(LIMITS.paid) }),
 field('finds',ids(LIMITS.finds)),
@@ -40,6 +45,9 @@ record('ghost',{ first:pick(['go','check']),offered:count,trusted:count,verified
 record('npc',{ bruteHelped:isTrue,nullHome:isTrue }),
 field('beats',ids(LIMITS.beats)),
 field('met',ids(LIMITS.met)),
+table('tags',LIMITS.tags,{ keep:isId,clean:(value) => (typeof value === 'string' && /^\d{1,2},\d{1,2}$/.test(value) ? value :null) }),
+table('trials',LIMITS.trials,{ keep:(id) => POWERS.includes(id),clean:upTo(LIMITS.trials) }),
+table('lends',LIMITS.allies,{ keep:isId,clean:upTo(LIMITS.count) }),
 ];
 
 function makeExtFields() {
