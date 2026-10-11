@@ -366,13 +366,13 @@
 }
 
 .forge-note,
-.forge-xp {
+.forge-rank {
   margin:0 0 var(--sp-3);
   color:var(--dim);
   font-size:var(--fs-sm);
 }
 
-.forge-xp {
+.forge-rank {
   color:var(--cyan);
 }
 

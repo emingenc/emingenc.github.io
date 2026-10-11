@@ -13,7 +13,6 @@ const NO_COUNT = 0;
 const SINGLE = 1;
 const MAX_LEAK_LINES = 4;
 const MIN_INDEX = 0;
-export const XP_BY_STARS = {0:0,1:10,2:18,3:28};
 export const STARS_RULE = '1 star: ship the run. 2 stars: keep at least 60% integrity. 3 stars: let nothing through.';
 const MISSING = {
 guard:'nothing was guarding tool calls',
@@ -90,11 +89,6 @@ if (state.phase !== PHASE_WON) return STARS_NONE;
 if (state.leaks.length === NO_COUNT) return STARS_CLEAN;
 if (state.integrity >= steadyFloor(state)) return STARS_STEADY;
 return STARS_SURVIVED;
-}
-export function xpGain(bestBefore,stars) {
-const before = XP_BY_STARS[bestBefore] || NO_COUNT;
-const now = XP_BY_STARS[stars] || NO_COUNT;
-return Math.max(NO_COUNT,now - before);
 }
 function leaksOfWave(state,index) {
 return state.leaks.filter((leak) => leak.wave === index);

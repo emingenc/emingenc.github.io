@@ -1,6 +1,8 @@
-import { CONTEXT_STREAM,STREAM_XP } from '../game/labs/data/context-stream.js';
+import { CONTEXT_STREAM } from '../game/labs/data/context-stream.js';
 import { LANES } from '../game/labs/stream-sim.js';
+import { rigLevelRank,rigOf } from '../game/rig-reward.js';
 import { uiEl,uiPointerIsCoarse,uiPrefersReducedMotion } from './dom.js';
+import { uiLabRankText } from './lab-rank.js';
 import { uiStreamAct } from './stream-loop.js';
 import { uiStreamPaint } from './stream-paint.js';
 
@@ -76,9 +78,9 @@ function uiStreamStarLine(stage) {
 const need = stage.stars.map(function (keys,index) { return '★'.repeat(index + 1) + ' ' + keys; });
 return 'KEYS TO HOLD: ' + need.join(' · ') + ' of ' + stage.keyCount;
 }
-function uiStreamXpLine() {
-const pays = Object.keys(STREAM_XP).map(function (stars) { return '★'.repeat(Number(stars)) + ' ' + STREAM_XP[stars]; });
-return 'XP FOR A NEW BEST: ' + pays.join(' · ');
+function uiStreamRankLine(stage) {
+const pay = rigLevelRank(rigOf('stream'),stage.id,1);
+return 'R FOR A FIRST CLEAR: ' + (pay ? pay.amount :0);
 }
 function uiStreamRenderReady(app) {
 const stage = uiStreamStageOf(app);
@@ -91,7 +93,7 @@ uiEl('p',{ className:'stream-card-text',text:stage.blurb }),
 uiEl('ul',{ className:'stream-rules-list',children:rules }),
 uiEl('p',{ className:'stream-needed',text:uiStreamStarLine(stage) }),
 uiEl('p',{ className:'stream-meta',text:stage.durationMs / STREAM_MS_PER_S + 's · window ' + stage.budget + ' TOK · integrity ' + stage.lives }),
-uiEl('p',{ className:'stream-meta',text:uiStreamXpLine() }),
+uiEl('p',{ className:'stream-meta',text:uiStreamRankLine(stage) }),
 ],
 });
 const start = uiStreamButton('stream-start','START',{ kind:'btn-primary stream-start' });
@@ -191,8 +193,8 @@ uiStreamButton('stream-stages','STAGES',{ kind:'btn-ghost stream-stages' }),
 });
 return uiStreamShell([uiEl('h1',{ className:'stream-title',text:STREAM_TITLE }),card,actions]);
 }
-function uiStreamXpText(xp) {
-return xp.gained > 0 ? '+' + xp.gained + ' XP' :'NO NEW XP (best stays)';
+function uiStreamRankStat(rank) {
+return uiLabRankText(rank) || '—';
 }
 function uiStreamNextStar(stage,result) {
 if (result.stars >= STREAM_MAX_STARS) return 'Top rating.';
@@ -220,7 +222,7 @@ uiEl('p',{ className:'stream-stars',text:uiStreamStars(result.stars),attrs:{ 'ar
 uiStreamStat('SCORE',String(result.score)),
 uiStreamStat('KEYS HELD',result.keysHeld + ' of ' + result.keysTotal),
 uiStreamStat('BEST COMBO',String(result.bestCombo)),
-uiStreamStat('XP',uiStreamXpText(app.stream.xp)),
+uiStreamStat('RANK',uiStreamRankStat(app.stream.rank)),
 uiEl('p',{ className:'stream-note',text:uiStreamNextStar(stage,result) }),
 ],
 });

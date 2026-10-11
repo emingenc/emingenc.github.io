@@ -20,7 +20,7 @@ const STREAM_FLICK_LANE = { q:0,w:1,e:2 };
 
 function uiStreamOpen(app) {
 app.stream = {
-view:'select',stageIndex:0,sim:null,attempt:0,result:null,xp:null,awarded:false,nodes:null,pointers:{},
+view:'select',stageIndex:0,sim:null,attempt:0,result:null,rank:null,awarded:false,nodes:null,pointers:{},
 stageCount:CONTEXT_STREAM.stages.length,
 };
 app.screen = 'stream';
@@ -38,7 +38,7 @@ const stage = CONTEXT_STREAM.stages[stream.stageIndex];
 stream.sim = createRun(stage,(stream.stageIndex + 1) * STREAM_SEED_STRIDE + stream.attempt);
 stream.view = 'play';
 stream.result = null;
-stream.xp = null;
+stream.rank = null;
 stream.awarded = false;
 stream.nodes = null;
 stream.pointers = {};

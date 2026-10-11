@@ -156,6 +156,4 @@ bridges:BRIDGES,
 stages:[STAGE_1,STAGE_2,STAGE_3],
 };
 
-const STREAM_XP = { 1:10,2:20,3:30 };
-
-export { CONTEXT_STREAM,STREAM_XP,BRIDGES };
+export { CONTEXT_STREAM,BRIDGES };

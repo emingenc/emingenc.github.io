@@ -1,15 +1,15 @@
 import { HARNESS_FORGE } from '../game/labs/data/harness-forge.js';
 import { canPlace, createGame, pieceAt, placePiece, sellPiece, startWave } from '../game/labs/forge-sim.js';
-import { runSummary, starsFor, xpGain } from '../game/labs/forge-score.js';
+import { runSummary, starsFor } from '../game/labs/forge-score.js';
 import { labBest, recordLab } from '../game/save.js';
-import { levelFor, unlocksBetween } from '../game/progress.js';
+import { rigOf } from '../game/rig-catalog.js';
 import { uiRenderApp } from './app.js';
 import { uiCommitSave } from './game-state.js';
 import { uiForgeLevelOf, uiForgeRenderEmpty, uiForgeRenderPlay, uiForgeRenderSelect } from './forge-render.js';
 import { uiForgeBoardRelease, uiSyncForgeBoard } from './forge-board.js';
 import { uiEnterGrid } from './screen-grid.js';
 import { uiLinkStyles } from './lazy-style.js';
-import { uiOpenLevelUp } from './screen-levelup.js';
+import { uiLabPayRank } from './lab-rank.js';
 import { uiStoryLabFinish, uiStoryLabOpen } from './machine-dialogue.js';
 
 const STYLESHEETS = ['styles/rooms/forge.css'];
@@ -47,7 +47,7 @@ return HARNESS_FORGE.threats[type].label;
 function uiForgeOpen(app) {
 const forge = {
 view:'select',levelIndex:0,game:null,seed:0,attempt:0,speed:1,selected:HARNESS_FORGE.pieceOrder[0],
-cursor:null,summary:null,xpNote:null,
+cursor:null,summary:null,rank:null,
 };
 forge.onCell = function (...args) { uiForgeOnCell(app,...args); };
 forge.onPhase = function (...args) { uiForgeOnPhase(app,...args); };
@@ -61,6 +61,7 @@ const forge = app.forge;
 forge.seed = forge.levelIndex * FORGE_SEED_STRIDE + forge.attempt;
 forge.game = createGame(uiForgeLevelOf(app),forge.seed);
 forge.summary = null;
+forge.rank = null;
 forge.cursor = null;
 forge.speed = 1;
 forge.view = 'play';
@@ -80,13 +81,9 @@ app.forge.cursor = null;
 app.lastFocusKey = 'forge-level-' + app.forge.levelIndex;
 }
 function uiForgeLeave(app) {
-const note = app.forge.xpNote;
 uiForgeBoardRelease(app);
 app.forge = null;
 uiEnterGrid(app);
-if (!note || note.levelAfter <= note.levelBefore) return;
-const unlocks = unlocksBetween(note.levelBefore,note.levelAfter);
-uiOpenLevelUp(app,{ before:note.levelBefore,after:note.levelAfter,unlocks,source:'lab' });
 }
 function uiForgeBack(app) {
 if (app.forge.view === 'play') uiForgeToSelect(app);
@@ -197,22 +194,10 @@ function uiForgeThroughSpoken(summary) {
 if (summary.gotThrough.length === 0) return 'Nothing got through.';
 return summary.gotThrough.join(', ') + ' got through.';
 }
-function uiForgeRecordWin(app,stars) {
+function uiForgeRecordWin(app,stars,spoken) {
 const level = uiForgeLevelOf(app);
-const save = app.game.save;
-const bestBefore = labBest(save,HARNESS_FORGE.id,level.id);
-const gained = xpGain(bestBefore,stars);
-const recorded = recordLab(save,{ labId:HARNESS_FORGE.id,levelId:level.id },stars).save;
-const levelBefore = levelFor(save.xp);
-const next = { ...recorded,xp:save.xp + gained };
-uiCommitSave(app,next);
-const old = app.forge.xpNote;
-app.forge.xpNote = {
-gained:(old ? old.gained :0) + gained,
-levelBefore:old ? old.levelBefore :levelBefore,
-levelAfter:levelFor(next.xp),
-};
-return gained;
+uiCommitSave(app,recordLab(app.game.save,{ labId:HARNESS_FORGE.id,levelId:level.id },stars).save);
+uiLabPayRank(app,'forge',{ rig:rigOf(HARNESS_FORGE.id),levelId:level.id,stars,spoken });
 }
 function uiForgeAllCleared(save) {
 return HARNESS_FORGE.levels.every(function (level) { return labBest(save,HARNESS_FORGE.id,level.id) > 0; });
@@ -220,12 +205,11 @@ return HARNESS_FORGE.levels.every(function (level) { return labBest(save,HARNESS
 function uiForgeWon(app) {
 const forge = app.forge;
 const stars = starsFor(forge.game);
-const gained = uiForgeRecordWin(app,stars);
 forge.summary = runSummary(forge.game);
 const hasNext = forge.levelIndex < uiForgeLevelCount() - 1;
 app.lastFocusKey = hasNext ? 'forge-next' :'forge-levels';
-const xp = gained > 0 ? ' Plus ' + gained + ' XP.' :'';
-app.pendingAnnounce = 'Run shipped. ' + uiForgeStarsWord(stars) + '. ' + uiForgeThroughSpoken(forge.summary) + xp;
+app.pendingAnnounce = 'Run shipped. ' + uiForgeStarsWord(stars) + '. ' + uiForgeThroughSpoken(forge.summary);
+uiForgeRecordWin(app,stars,app.pendingAnnounce);
 if (uiForgeAllCleared(app.game.save)) uiStoryLabFinish(app,FORGE_STORY_ID);
 }
 function uiForgeLost(app) {

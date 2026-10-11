@@ -1,10 +1,12 @@
 import { CONTEXT_WINDOW } from '../game/labs/data/context-window.js';
 import { apply, createRun, movesUsed, read } from '../game/labs/context-reader.js';
 import { rigOf } from '../game/rig-catalog.js';
-import { labBest } from '../game/save.js';
-import { uiRigHostLeave, uiRigHostRecordWin } from './rig-host-common.js';
+import { labBest, recordLab } from '../game/save.js';
+import { uiCommitSave } from './game-state.js';
+import { uiLabPayRank } from './lab-rank.js';
 import { uiLinkStyles } from './lazy-style.js';
 import { uiStoryLabFinish, uiStoryLabOpen } from './machine-dialogue.js';
+import { uiEnterGrid } from './screen-grid.js';
 import { LAB_FRAME, uiLabCoachChunk, uiLabLevelOf, uiLabRenderEmpty, uiLabRenderPlay, uiLabRenderSelect } from './lab-render.js';
 
 const LAB_RIG = rigOf('context');
@@ -17,21 +19,21 @@ const LAB_DIGIT_KEY = /^[1-9]$/;
 
 function uiLabOpen(app) {
 const firstVisit = !Object.hasOwn(app.game.save.labs,LAB_RIG.labId);
-app.lab = { view:'select',root:firstVisit ? 'play' :'select',levelIndex:0,run:null,probe:null,attempt:0,rulesOpen:false,xpNote:null,gained:0 };
+app.lab = { view:'select',root:firstVisit ? 'play' :'select',levelIndex:0,run:null,probe:null,attempt:0,rulesOpen:false,rank:null };
 app.screen = 'lab';
 app.lastFocusKey = LAB_FOCUS_BACK;
 if (firstVisit) uiLabStartLevel(app,0);
 uiStoryLabOpen(app,CONTEXT_WINDOW.id);
 }
 function uiLabLeave(app) {
-const note = app.lab.xpNote;
 app.lab = null;
-uiRigHostLeave(app,note,LAB_RIG.title);
+uiEnterGrid(app);
 }
 function uiLabNewRun(app) {
 const lab = app.lab;
 lab.run = createRun(uiLabLevelOf(app),lab.levelIndex * LAB_SEED_STRIDE + lab.attempt);
 lab.probe = null;
+lab.rank = null;
 lab.view = 'play';
 app.lastFocusKey = uiLabEntryFocus(app);
 }
@@ -88,17 +90,17 @@ app.lastFocusKey = 'lab-probe';
 function uiLabAllCleared(save) {
 return CONTEXT_WINDOW.levels.every(function (level) { return labBest(save,CONTEXT_WINDOW.id,level.id) > 0; });
 }
-function uiLabRecordWin(app,stars) {
-return uiRigHostRecordWin(app,app.lab,{ rig:LAB_RIG,levelId:uiLabLevelOf(app).id,stars });
+function uiLabRecordWin(app,win) {
+uiCommitSave(app,recordLab(app.game.save,{ labId:LAB_RIG.labId,levelId:win.levelId },win.stars).save);
+uiLabPayRank(app,'lab',{ rig:LAB_RIG,...win });
 }
 function uiLabWin(app,run) {
 const level = uiLabLevelOf(app);
-const gained = uiLabRecordWin(app,run.stars);
 const hasNext = app.lab.levelIndex < CONTEXT_WINDOW.levels.length - 1;
 app.lastFocusKey = hasNext ? 'lab-next' :'lab-levels';
 const par = 'Par ' + level.par + ', you used ' + movesUsed(run.window) + '.';
-const xp = gained > 0 ? ' Plus ' + gained + ' XP.' :'';
-app.pendingAnnounce = 'Run passed. ' + uiLabStarsWord(run.stars) + '. ' + par + xp;
+app.pendingAnnounce = 'Run passed. ' + uiLabStarsWord(run.stars) + '. ' + par;
+uiLabRecordWin(app,{ levelId:level.id,stars:run.stars,spoken:app.pendingAnnounce });
 if (uiLabAllCleared(app.game.save)) uiStoryLabFinish(app,CONTEXT_WINDOW.id);
 }
 function uiLabFail(app,run) {

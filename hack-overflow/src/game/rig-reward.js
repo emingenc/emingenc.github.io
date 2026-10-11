@@ -6,7 +6,12 @@ const levels = Object.hasOwn(save.labs,rig.labId) ? save.labs[rig.labId] :{};
 return Object.hasOwn(levels,levelId) ? levels[levelId] :null;
 }
 function rigXpGain(rig,bestBefore,stars) {
-return Math.max(0,rig.xp[stars] - rig.xp[bestBefore]);
+return rig.xp ? Math.max(0,rig.xp[stars] - rig.xp[bestBefore]) :0;
+}
+function rigLevelRank(rig,levelId,stars) {
+const table = rig.levelRank;
+if (!table || stars <= 0 || !Object.hasOwn(table,levelId)) return null;
+return { source:levelId,amount:table[levelId] };
 }
 function rigRankPays(rig,bestBefore,stars) {
 const table = rig.rank;
@@ -28,4 +33,4 @@ if (!rig) return false;
 return (save.met ?? []).includes(rigId) || Object.hasOwn(save.labs ?? {},rig.labId);
 }
 
-export { rigOf,rigMet,rigRankPays,rigXpGain,rigUnlocked,rigVariant };
+export { rigOf,rigMet,rigRankPays,rigLevelRank,rigXpGain,rigUnlocked,rigVariant };

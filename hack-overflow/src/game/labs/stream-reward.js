@@ -9,9 +9,6 @@ function recordOf(save,stageId) {
 const levels = levelsOf(save);
 return Object.hasOwn(levels,stageId) ? levels[stageId] :null;
 }
-function xpFor(xpTable,stars) {
-return Object.hasOwn(xpTable,stars) ? xpTable[stars] :0;
-}
 function nextRecord(before,stars,score) {
 return {
 best:Math.max(before ? before.best :0,stars),
@@ -20,13 +17,12 @@ score:Math.max(before && before.score ? before.score :0,score),
 };
 }
 function recordStream(save,result) {
-const { stageId,stars,score,xpTable } = result;
+const { stageId,stars,score } = result;
 const before = recordOf(save,stageId);
 const bestBefore = before ? before.best :0;
-if (stars <= NO_STARS) return { save,gained:0,improved:false,bestBefore };
-const gained = Math.max(0,xpFor(xpTable,stars) - xpFor(xpTable,bestBefore));
+if (stars <= NO_STARS) return { save,improved:false,bestBefore };
 const labs = { ...save.labs,[LAB_ID]:{ ...levelsOf(save),[stageId]:nextRecord(before,stars,score) } };
-return { save:{ ...save,xp:save.xp + gained,labs },gained,improved:stars > bestBefore,bestBefore };
+return { save:{ ...save,labs },improved:stars > bestBefore,bestBefore };
 }
 
 function allStagesCleared(save,stageIds) {
