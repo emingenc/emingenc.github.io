@@ -10,6 +10,7 @@ import { uiTurretCard } from './turret-card.js';
 import { uiTurretDragAttach, uiTurretDragCancel, uiTurretDragDetach, uiTurretDragDown, uiTurretDragKeep, uiTurretDragUp } from './turret-drag.js';
 import { TURRET_RIG_ID, uiTurretCommit, uiTurretCreate, uiTurretSetAssist, uiTurretSpoken, uiTurretVerify } from './turret-flow.js';
 import { uiTurretNow, uiTurretStart, uiTurretStop } from './turret-loop.js';
+import { uiRaceRule, uiRaceSpoken, uiRaceTake } from './turret-race.js';
 import { uiTurretScene, uiTurretSceneNodes } from './turret-scene.js';
 import { uiStoryLabFinish } from './story-dialogue.js';
 
@@ -33,7 +34,7 @@ function uiTurretArena(app) {
 
 function uiTurretPlayView(app) {
   const arena = app.rig.arena;
-  const rule = fillText(RULES[arena.mode], { n: arena.state.stream.length });
+  const rule = arena.race ? uiRaceRule(arena) : fillText(RULES[arena.mode], { n: arena.state.stream.length });
   return [uiArenaRule(rule), uiArenaCoach(arena.coach), uiTurretScene(app), uiTurretBoard(app), uiTurretTag(app)];
 }
 function uiTurretRender(app) {
@@ -49,8 +50,9 @@ function uiTurretRender(app) {
 }
 function uiTurretCardAnnounce(arena) {
   if (arena.mode === 'overflow') return TURRET_TEXTS.card.overflowTitle + '.';
-  if (!arena.result.won) return 'Overrun.';
-  return arena.mode === 'w2' ? 'Wave 2 clear.' : 'Wave clear. The way is open.';
+  const race = uiRaceSpoken(arena.result);
+  if (!arena.result.won) return race + 'Overrun.';
+  return race + (arena.mode === 'w2' ? 'Wave 2 clear.' : 'Wave clear. The way is open.');
 }
 function uiTurretAnnounce(app) {
   const arena = uiTurretArena(app);
@@ -102,7 +104,7 @@ function uiTurretBegin(app, mode) {
   const arena = app.rig.arena;
   if (arena.view !== 'card') return;
   const lastIndex = mode === arena.mode ? arena.poolIndex : null;
-  app.rig.arena = uiTurretCreate(app, arena.rig, { now: uiTurretNow(), lastIndex, mode });
+  app.rig.arena = uiTurretCreate(app, arena.rig, { now: uiTurretNow(), lastIndex, mode, race: arena.race });
   app.lastFocusKey = TAG_ACTION;
   app.pendingAnnounce = uiTurretSpoken(app.rig.arena) + ' ' + app.rig.arena.coach;
 }
@@ -204,7 +206,7 @@ function uiRigScreen() {
 function uiRigOpen(app, rigId) {
   const rig = rigOf(rigId);
   if (!rig) throw new Error('unknown rig: ' + rigId);
-  uiArenaOpen(app, { rigId, create: (opened) => uiTurretCreate(opened, rig, { now: uiTurretNow(), lastIndex: null }) });
+  uiArenaOpen(app, { rigId, create: (opened) => uiTurretCreate(opened, rig, { now: uiTurretNow(), lastIndex: null, race: uiRaceTake(opened) }) });
 }
 function uiRigReady() {
   return uiLinkStyles(STYLESHEETS);

@@ -3,6 +3,7 @@ import { swarmReady, swarmWindowMs } from '../game/rooms/turret.js';
 import { uiEl } from './dom.js';
 import { uiTurretBayBand, uiTurretBoardClass, uiTurretSlotView } from './turret-board.js';
 import { TRAVEL_MS, uiTurretNoping } from './turret-flow.js';
+import { uiRaceStrip } from './turret-race.js';
 
 
 const PALETTE = {
@@ -374,7 +375,7 @@ function uiSceneRaceText(arena) {
   const total = state.spec.endless ? INFINITY : state.stream.length;
   return {
     drone: 'CLEARED ' + state.resolved + '/' + total,
-    score: 'SCORE ' + state.score,
+    score: arena.race ? uiRaceStrip(arena) : 'SCORE ' + state.score,
     combo: uiSceneComboText(state),
   };
 }

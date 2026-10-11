@@ -119,6 +119,7 @@ if (app.game.drawCast) app.game.drawCast(frame.ctx,app,frame);
 uiDrawAvatar(frame);
 if (app.game.drawActors) app.game.drawActors(frame.ctx,app,frame);
 if (app.game.drawFork) app.game.drawFork(frame.ctx,app,frame);
+if (app.game.drawBrute) app.game.drawBrute(frame.ctx,app,frame);
 uiDrawFx(frame);
 uiDrawWayfinding(frame);
 uiSyncHint(app.game,Boolean(app.story));

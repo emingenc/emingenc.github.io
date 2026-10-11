@@ -1,8 +1,9 @@
 import { GAME_EVENT } from '../game/game-events.js';
 import { withAssist } from '../game/save-ext.js';
-import { BRUTE_MS_PER_COMPARE, BUSY_MS, TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
+import { BUSY_MS, TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
 import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
 import { OVERFLOW_PACE_DRONES, REVEAL_MS } from '../game/rooms/data/turret-waves.js';
+import { bruteChecksAt } from '../game/rooms/turret-race.js';
 import {
   applyTurret, bruteCompares, hintOffer, keyFor, paceAt, swarmReady, swarmWindowMs, turretStars, turretTarget, verifyHint,
 } from '../game/rooms/turret.js';
@@ -13,12 +14,12 @@ import { uiPrefersReducedMotion } from './dom.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiTurretFirstMode, uiTurretRunFor } from './turret-modes.js';
 import { uiTurretRecordBest } from './turret-record.js';
+import { uiRaceFinish, uiRaceOn, uiRaceSpoken } from './turret-race.js';
 
 
 const TURRET_RIG_ID = 'turret';
 const TRAVEL_MS = 400;
 const NOPE_MS = 240;
-const ASSIST_BRUTE_PER_STEP = 3;
 const FIRST_DRONE = 1;
 const MAX_STARS = 3;
 const SECOND_DRONE = 2;
@@ -28,6 +29,7 @@ const BAD_KINDS = new Set(['wrong', 'walk', 'fuse', 'swarm']);
 const FIRST_SLOT = 1;
 const LAST_SLOT = 9;
 const TEACHING_RESULTS = { w1: 'turret-1', w2: 'turret-2' };
+const RACE_ASSIST_LOCKED = 'ASSIST is set when the race starts';
 
 function uiTurretFreshFx() {
   return { ramAt: NO_TIME, ramKind: 'dock', beam: null, pops: [], nopeAt: NO_TIME, shiftAt: NO_TIME, shifted: 0 };
@@ -36,7 +38,7 @@ function uiTurretCreate(app, rig, start) {
   const mode = start.mode || uiTurretFirstMode(app);
   const run = uiTurretRunFor({ mode, assist: app.game.ext.assist === true, lastIndex: start.lastIndex });
   const arena = {
-    rig, mode, levelId: rig.levels[0], poolIndex: run.index, state: run.state, reveal: {}, swarmLeft: 0,
+    rig, mode, race: uiRaceOn(start.race, mode), levelId: rig.levels[0], poolIndex: run.index, state: run.state, reveal: {}, swarmLeft: 0,
     playMs: 0, busyUntil: NO_TIME, picked: 0, travel: {}, fuse: {}, fx: uiTurretFreshFx(),
     view: 'play', result: null, swallow: null, coach: '', arrived: [], lastT: 0, reduced: uiPrefersReducedMotion(),
   };
@@ -235,6 +237,7 @@ function uiTurretFinish(app) {
   const result = arena.state.status === 'won' ? uiTurretWin(app, arena) : uiTurretLoss(arena);
   const record = uiTurretRecordBest(app, arena);
   arena.result = { ...result, mode: arena.mode, ...record };
+  if (arena.race) uiRaceFinish(app, arena);
   app.lastFocusKey = 'turret-replay';
   app.pendingAnnounce = uiTurretEndSpoken(arena);
   return null;
@@ -242,9 +245,10 @@ function uiTurretFinish(app) {
 function uiTurretEndSpoken(arena) {
   const { result, state } = arena;
   if (arena.mode === 'overflow') return TURRET_TEXTS.card.overflowTitle + '. ' + state.resolved + ' drones.';
-  if (!result.won) return TURRET_TEXTS.card.failTitle + '. ' + (result.why || '');
+  const race = uiRaceSpoken(result);
+  if (!result.won) return race + TURRET_TEXTS.card.failTitle + '. ' + (result.why || '');
   const wave = arena.mode === 'w2' ? 'Wave 2 clear. ' : 'Wave clear. The way is open. ';
-  return wave + result.stars + ' of ' + MAX_STARS + ' stars.';
+  return race + wave + result.stars + ' of ' + MAX_STARS + ' stars.';
 }
 
 
@@ -294,16 +298,16 @@ function uiTurretTick(app, dt, now) {
 
 
 function uiTurretSetAssist(app, on) {
-  uiCommitExt(app, withAssist(app.game.ext, on));
   const arena = app.rig && app.rig.arena;
+  if (arena && arena.race && arena.view === 'play') return uiArenaToast(app, RACE_ASSIST_LOCKED, 'info');
+  uiCommitExt(app, withAssist(app.game.ext, on));
   if (!arena) return;
   arena.state = Object.assign({}, arena.state, { assist: on });
 }
 function uiTurretBrute(arena) {
   const state = arena.state;
-  const total = bruteCompares(state.spec.endless ? state.resolved : state.stream.length);
-  const spent = state.assist ? state.steps * ASSIST_BRUTE_PER_STEP : Math.floor(arena.playMs / BRUTE_MS_PER_COMPARE);
-  return Math.min(total, spent);
+  const drones = state.spec.endless ? state.resolved : state.stream.length;
+  return bruteChecksAt({ assist: state.assist, playMs: arena.playMs, steps: state.steps, drones });
 }
 
 export {
