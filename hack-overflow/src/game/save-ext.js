@@ -1,3 +1,4 @@
+import { bestPart } from './ext-best.js';
 import { MAP_REV,clampMapRev } from './map-rev.js';
 
 const EXT_VERSION = 1;
@@ -25,7 +26,7 @@ return null;
 function parseExt(raw) {
 const data = parsedRecord(raw);
 if (!data) return createExt();
-return { v:EXT_VERSION,anchor:Boolean(data.anchor),opening:Boolean(data.opening),assist:assistOf(data.assist),mapRev:clampMapRev(data.mapRev),zaps:clampZaps(data.zaps) };
+return { v:EXT_VERSION,anchor:Boolean(data.anchor),opening:Boolean(data.opening),assist:assistOf(data.assist),mapRev:clampMapRev(data.mapRev),zaps:clampZaps(data.zaps),...bestPart(data.best) };
 }
 function extMapRev(raw) {
 const data = parsedRecord(raw);

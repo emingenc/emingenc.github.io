@@ -36,6 +36,21 @@ levels:['turret-1'],
 pitch:'answer each drone with one look-up',
 guided:false,
 },
+shield:{
+id:'shield',title:'PLATE SHIELD',family:'stack',host:'rig',
+labId:'shield',
+levels:['shield-1'],
+pitch:'stack the plates, breach what cannot match',
+guided:false,
+},
+pincer:{
+id:'pincer',title:'PINCER CANNONS',family:'two-pointers',host:'rig',
+labId:'pincer',
+levels:['pincer-1'],
+rank:{ 0:0,1:30,2:30,3:30 },
+pitch:'slide two cannons to the target sum',
+guided:false,
+},
 };
 const STARS_PER_LEVEL = 3;
 function rigOf(rigId) {

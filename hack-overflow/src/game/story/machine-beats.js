@@ -60,6 +60,12 @@ intro:[
 [GHOST,'It will not wait for you: catch what matters, flick the junk. Press START when you are ready.'],
 ],
 },
+shield:{
+intro:[
+[GHOST,'A dish rush. Orders come in as brackets, and my plates stack: only the top one comes off.'],
+[GHOST,'Match each closer to the top plate. If it cannot match, hold BREACH.'],
+],
+},
 };
 const GENERIC_LAB = {
 intro:[[GHOST,'A new lab. One more piece of me is stored in here. Tread lightly.']],
