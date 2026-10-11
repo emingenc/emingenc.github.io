@@ -1,4 +1,5 @@
 import { POOL,TURRET_W1 } from './data/turret-wave1.js';
+import { WAVES } from './data/turret-waves.js';
 
 
 const MIN_VALUE = 1;
@@ -21,23 +22,32 @@ mixed = (mixed + Math.imul(mixed ^ (mixed >>> MIX.b),MIX.c | mixed)) ^ mixed;
 return ((mixed ^ (mixed >>> MIX.d)) >>> 0) / UINT32;
 };
 }
+function targetAt(spec,drone) {
+if (spec.cycle) return spec.cycle[Math.floor((drone - 1) / spec.group) % spec.cycle.length];
+return spec.targets.reduce((target,step) => (drone >= step.from ? step.t :target),spec.targets[0].t);
+}
+function lastDrone(spec) {
+return spec.endless ? Infinity :spec.n;
+}
 function tAt(drone) {
-return drone >= TURRET_W1.tSwitch ? TURRET_W1.t1 :TURRET_W1.t0;
+return targetAt(WAVES.w1,drone);
+}
+function judgeTFor(spec,drone) {
+return targetAt(spec,drone >= spec.dualFrom ? Math.min(drone + 1,lastDrone(spec)) :drone);
 }
 function judgeT(drone) {
-return tAt(drone >= TURRET_W1.dualFrom ? Math.min(drone + 1,TURRET_W1.n) :drone);
+return judgeTFor(WAVES.w1,drone);
 }
-function firstSecondTargetDrone() {
+function firstCrossDrone(spec) {
 let drone = 1;
-while (judgeT(drone) !== TURRET_W1.t1) drone += 1;
+while (judgeTFor(spec,drone) === judgeTFor(spec,1) && drone < lastDrone(spec)) drone += 1;
 return drone;
 }
-const CROSS_FROM = firstSecondTargetDrone();
 
-function createSim() {
+function createSim(spec) {
 return {
-board:Array(TURRET_W1.slots + 1).fill(0),born:Array.from({ length:TURRET_W1.slots + 1 },() => []),
-pairs:0,walks:0,cross:0,early:0,dupOK:false,dupUsed:false,dupSlot:0,
+spec,crossFrom:firstCrossDrone(spec),board:Array(spec.slots + 1).fill(0),born:Array.from({ length:spec.slots + 1 },() => []),
+pairs:0,walks:0,cross:0,early:0,dupOK:false,dupUsed:false,dupSlot:0,dups:0,halves:0,goldPaired:false,
 };
 }
 function litSlot(sim,need) {
@@ -48,17 +58,26 @@ sim.board[need] -= 1;
 return sim.born[need].shift();
 }
 function recordPair(sim,drone,partnerBorn) {
+const { spec } = sim;
 sim.pairs += 1;
-if (drone.number < TURRET_W1.rushFrom) sim.early += 1;
-if (partnerBorn < CROSS_FROM && drone.number >= CROSS_FROM) sim.cross += 1;
-if (drone.need === sim.dupSlot && drone.number > TURRET_W1.dupAt) sim.dupUsed = true;
+if (drone.number < spec.rushFrom) sim.early += 1;
+if (partnerBorn < sim.crossFrom && drone.number >= sim.crossFrom) sim.cross += 1;
+if (drone.need === sim.dupSlot && drone.number > spec.dupAt) sim.dupUsed = true;
+if (spec.goldEvery > 0 && drone.number % spec.goldEvery === 0) sim.goldPaired = true;
+}
+function recordStore(sim,drone) {
+if (sim.board[drone.value] > 0) sim.dups += 1;
+if (2 * drone.value === judgeTFor(sim.spec,drone.number)) sim.halves += 1;
 }
 function simDrone(sim,drone,tagOnly) {
-if (drone.number === TURRET_W1.dupAt) {
+if (drone.number === sim.spec.dupAt) {
 sim.dupOK = sim.board[drone.value] > 0 && !drone.lit;
 sim.dupSlot = drone.value;
 }
-if (!drone.lit) return false;
+if (!drone.lit) {
+recordStore(sim,drone);
+return false;
+}
 const partnerBorn = takePartner(sim,drone.need);
 if (tagOnly) {
 sim.walks += 1;
@@ -67,19 +86,22 @@ return false;
 recordPair(sim,drone,partnerBorn);
 return true;
 }
-function simStream(stream,tagOnly = false) {
-const sim = createSim();
+function simStreamFor(spec,stream,tagOnly = false) {
+const sim = createSim(spec);
 stream.forEach(function (value,index) {
 const number = index + 1;
-const need = judgeT(number) - value;
+const need = judgeTFor(spec,number) - value;
 const stored = !simDrone(sim,{ number,value,need,lit:litSlot(sim,need) },tagOnly);
 if (stored) {
 sim.board[value] += 1;
 sim.born[value].push(number);
 }
 });
-const { pairs,walks,cross,early,dupOK,dupUsed } = sim;
-return { pairs,walks,cross,early,dupOK,dupUsed };
+const { pairs,walks,cross,early,dupOK,dupUsed,dups,halves,goldPaired } = sim;
+return { pairs,walks,cross,early,dupOK,dupUsed,dups,halves,goldPaired };
+}
+function simStream(stream,tagOnly = false) {
+return simStreamFor(WAVES.w1,stream,tagOnly);
 }
 function slotProblem(stream) {
 for (let index = 0; index < stream.length; index += 1) {
@@ -137,4 +159,4 @@ const index = choices[Math.floor(next() * choices.length)];
 return { stream:pool[index],index };
 }
 
-export { prng,tAt,judgeT,simStream,streamWhy,buildPool,pickStream };
+export { prng,tAt,targetAt,lastDrone,judgeT,judgeTFor,simStream,simStreamFor,streamWhy,buildPool,pickStream };

@@ -11,7 +11,7 @@ stream:{ section:'stream-screen',backKey:'stream-back',loading:'The Intake loadi
 const UI_RIG_HOOK_FALLBACKS = {
 keyAction:null,keyUp:false,applyAction:false,sync:undefined,pointerDown:false,pointerUp:false,pointerCancel:false,release:undefined,
 };
-const UI_RIG_MODULES = { ledger:() => import('./screen-ledger.js'),turret:() => import('./screen-turret.js') };
+const UI_RIG_MODULES = { ledger:() => import('./screen-ledger.js'),turret:() => import('./screen-turret.js'),shield:() => import('./screen-shield.js'),pincer:() => import('./screen-pincer.js') };
 const UI_RIG_HOSTS = {
 rig:(app,rig) => uiOpenRig(app,rig.id),
 lab:async (app) => (await import('./lab-loader.js')).uiOpenLabs(app),

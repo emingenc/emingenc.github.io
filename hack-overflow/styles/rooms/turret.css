@@ -32,6 +32,7 @@
 .turret-screen > .arena-header,
 .turret-screen > .arena-coach,
 .turret-screen > .turret-board,
+.turret-screen > .turret-verbs,
 .turret-screen > .turret-tag {
   flex:none;
 }
@@ -132,6 +133,11 @@
   -webkit-tap-highlight-color:transparent;
 }
 
+.turret-chip.is-gold {
+  border-color:var(--amber);
+  color:var(--amber);
+}
+
 .turret-chip.is-picked {
   border-color:var(--cyan);
   color:var(--cyan);
@@ -213,6 +219,10 @@
   outline-offset:-6px;
 }
 
+.turret-slot.is-dark:not(.is-lit) .turret-pip {
+  visibility:hidden;
+}
+
 .turret-slot.is-target {
   border-color:var(--amber);
   background:#2a1a08;
@@ -255,11 +265,56 @@
   font-size:var(--fs-xl);
 }
 
+.turret-verbs {
+  display:flex;
+  gap:var(--sp-2);
+  width:100%;
+}
+
+.turret-verbs > .arena-btn {
+  flex:1 1 0;
+  min-width:0;
+  padding-right:var(--sp-1);
+  padding-left:var(--sp-1);
+}
+
+.turret-trust,
+.turret-verify {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  height:56px;
+  min-height:56px;
+  line-height:1.1;
+}
+
+.turret-trust {
+  border-color:var(--cyan);
+}
+
+.turret-trust-word {
+  color:var(--cyan);
+}
+
+.turret-verify {
+  border-color:var(--amber);
+}
+
+.turret-verify-word {
+  color:var(--amber);
+}
+
 .turret-tag-hint {
   color:var(--dim);
   font-size:var(--fs-sm);
 }
 
+
+.turret-best {
+  color:var(--amber);
+}
 
 .turret-stars {
   margin:0;

@@ -1,12 +1,13 @@
 import { TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
+import { swarmReady, swarmWindowMs } from '../game/rooms/turret.js';
 import { uiEl } from './dom.js';
-import { uiTurretBayBand, uiTurretBoardClass } from './turret-board.js';
+import { uiTurretBayBand, uiTurretBoardClass, uiTurretSlotView } from './turret-board.js';
 import { TRAVEL_MS, uiTurretNoping } from './turret-flow.js';
 
 
 const PALETTE = {
   bg: '#030805', grid: '#0a1a10', lane: '#1d3a27', rush: '#ff4d5e', cyan: '#2de2ff', magenta: '#ff3ea5', amber: '#ffb020',
-  red: '#ff4d5e', text: '#e3f5e8', dim: '#86a38f', dockOff: '#3a1630', flash: '#ffffff', fuseBack: '#2a1a08', paired: '#86a38f',
+  red: '#ff4d5e', gold: '#ffd24a', text: '#e3f5e8', dim: '#86a38f', dockOff: '#3a1630', flash: '#ffffff', fuseBack: '#2a1a08', paired: '#86a38f',
 };
 const SCENE_FALLBACK = { width: 360, height: 200 };
 const LOG_BAND = 26;
@@ -65,6 +66,7 @@ const BOARD_COLS = 3;
 const HALF = 0.5;
 const FIRST_SLOT = 1;
 const GRID_STEP = 24;
+const SWARM_BAR = { h: 4, gap: 3, margin: 6, hot: 0.34 };
 const GRID_DRIFT_MS = 260;
 
 
@@ -159,6 +161,10 @@ function uiSceneLog(ctx, geo, state) {
     uiSceneText(ctx, entry.v + mark, { x: LOG_X + index * LOG_STEP, y: LOG_Y, color });
   });
 }
+function uiSceneGoldNext(state, lane) {
+  const every = state.spec.goldEvery;
+  return every > 0 && (state.next + lane + 1) % every === 0;
+}
 function uiSceneQueue(ctx, geo, view) {
   const { arena, frame } = view;
   const state = arena.state;
@@ -172,9 +178,19 @@ function uiSceneQueue(ctx, geo, view) {
   }
   ahead.forEach(function (value, j) {
     const at = uiSceneLane(geo, j + (1 - uiSceneEase(shift)) * arena.fx.shifted);
-    uiSceneDrone(ctx, at, { px: PX_LANE, color: PALETTE.magenta, v: value, font: FONT_SMALL });
+    const gold = uiSceneGoldNext(state, j);
+    uiSceneDrone(ctx, at, { px: PX_LANE, color: gold ? PALETTE.gold : PALETTE.magenta, v: value, font: FONT_SMALL });
   });
   return ahead.length;
+}
+function uiSceneSwarm(ctx, geo, arena) {
+  const state = arena.state;
+  const span = swarmWindowMs(state);
+  if (span <= 0 || state.assist || state.steps === 0 || !swarmReady(state)) return;
+  const share = Math.max(0, Math.min(1, arena.swarmLeft / span));
+  const left = geo.width * LANE_X0 - CORNER;
+  ctx.fillStyle = share < SWARM_BAR.hot ? PALETTE.red : PALETTE.amber;
+  ctx.fillRect(left, geo.top + SWARM_BAR.gap, (geo.width - SWARM_BAR.margin - left) * share, SWARM_BAR.h);
 }
 function uiSceneRam(frame, fx) {
   const age = frame.now - fx.ramAt;
@@ -236,7 +252,7 @@ function uiScenePicked(ctx, geo, view) {
 function uiSceneDockedDrone(ctx, at, view) {
   const { arena, drone, index, landed } = view;
   ctx.globalAlpha = uiSceneDragged(arena, index) ? DRAG_DIM_ALPHA : 1;
-  uiSceneDrone(ctx, at, { px: landed ? PX_BAY : PX_LANE + 1, color: PALETTE.magenta, v: drone.v, font: FONT_BAY });
+  uiSceneDrone(ctx, at, { px: landed ? PX_BAY : PX_LANE + 1, color: drone.gold ? PALETTE.gold : PALETTE.magenta, v: drone.v, font: FONT_BAY });
   ctx.globalAlpha = 1;
 }
 function uiSceneBayDrone(ctx, geo, view) {
@@ -334,6 +350,7 @@ function uiPaintTurretScene(canvas, arena, frame) {
   uiSceneLog(ctx, geo, arena.state);
   const view = { arena, frame };
   const queue = uiSceneQueue(ctx, geo, view);
+  uiSceneSwarm(ctx, geo, arena);
   uiSceneDocks(ctx, geo, view);
   const bay = arena.state.bay.map((drone, index) => uiSceneBayDrone(ctx, geo, { arena, drone, index, frame }));
   const tip = uiSceneTurret(ctx, geo, arena);
@@ -347,13 +364,18 @@ function uiPaintTurretScene(canvas, arena, frame) {
 const RACE_CELLS = ['drone', 'score', 'combo'];
 const COMBO_SHOWN_FROM = 2;
 
+const INFINITY = '∞';
+function uiSceneComboText(state) {
+  if (state.double) return 'DOUBLE READY';
+  return state.combo >= COMBO_SHOWN_FROM ? 'COMBO x' + state.combo : '';
+}
 function uiSceneRaceText(arena) {
   const state = arena.state;
-  const total = state.stream.length;
+  const total = state.spec.endless ? INFINITY : state.stream.length;
   return {
     drone: 'CLEARED ' + state.resolved + '/' + total,
     score: 'SCORE ' + state.score,
-    combo: state.combo >= COMBO_SHOWN_FROM ? 'COMBO x' + state.combo : '',
+    combo: uiSceneComboText(state),
   };
 }
 function uiSceneSet(node, text) {
@@ -383,6 +405,19 @@ function uiTurretSceneNodes(arena, root) {
     board: find('.turret-board'), field: find('.turret-field'), ghost: find('.turret-ghost'),
   };
 }
+function uiSceneSlots(arena, now) {
+  Object.keys(arena.reveal).forEach(function (slot) {
+    if (arena.reveal[slot] <= now) delete arena.reveal[slot];
+  });
+  const board = arena.nodes.board;
+  if (!board) return;
+  Array.from(board.children).forEach(function (node, index) {
+    const view = uiTurretSlotView(arena, index + 1);
+    const className = view.className + (String(node.className).includes('is-target') ? ' is-target' : '');
+    if (node.className !== className) node.className = className;
+    if (node.getAttribute('aria-label') !== view.label) node.setAttribute('aria-label', view.label);
+  });
+}
 function uiSceneClass(node, className) {
   if (node && node.className !== className) node.className = className;
 }
@@ -393,6 +428,7 @@ function uiTurretPaint(app, now) {
   if (nodes.canvas) arena.lastPaint = uiPaintTurretScene(nodes.canvas, arena, { now, reduced: arena.reduced });
   const race = uiSceneRaceText(arena);
   RACE_CELLS.forEach((name) => uiSceneSet(nodes[name], race[name]));
+  if (arena.state.spec.dark) uiSceneSlots(arena, now);
   uiSceneClass(nodes.board, uiTurretBoardClass(arena, uiTurretNoping(arena, now)));
   uiSceneClass(nodes.field, uiTurretFieldClass(arena));
 }

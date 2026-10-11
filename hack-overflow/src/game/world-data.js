@@ -33,7 +33,7 @@ t:'lc121',u:'lc219',v:'lc3',w:'lc424',x:'lc567',
 const WORLD_GATES = { '1':'two-pointers','2':'stack','3':'binary-search','4':'window' };
 const WORLD_CORES = { '5':'hash','6':'two-pointers','7':'stack','8':'binary-search','9':'window' };
 const WORLD_RIGS = {};
-const WORLD_RIG_SPOTS = [{ rig:'turret',col:41,row:14 }];
+const WORLD_RIG_SPOTS = [{ rig:'turret',col:41,row:14 },{ rig:'shield',col:13,row:13 },{ rig:'pincer',col:30,row:10 }];
 const WORLD_BARRIER_SPOTS = [{ id:'sentry',col:44,row:17,opens:'turret',family:'hash' }];
 const WORLD_CACHE_IDS = { '57,8':'cache-47-8','57,14':'cache-47-14','43,21':'cache-33-21' };
 const WORLD_LABELS = [
@@ -42,7 +42,7 @@ const WORLD_LABELS = [
 { text:'ARRAYS & HASHING',col:46,row:13 },
 { text:'TWO POINTERS',col:25,row:13 },
 { text:'STACK',col:14,row:13 },
-{ text:'BINARY SEARCH',col:15,row:10 },
+{ text:'BINARY SEARCH',col:16,row:10 },
 { text:'SLIDING WINDOW',col:45,row:10 },
 ];
 

@@ -2,13 +2,17 @@ import { GAME_EVENT } from '../game/game-events.js';
 import { withAssist } from '../game/save-ext.js';
 import { BRUTE_MS_PER_COMPARE, BUSY_MS, TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
 import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
-import { applyTurret, bruteCompares, createTurret, keyFor, paceAt, turretStars, turretTarget } from '../game/rooms/turret.js';
-import { buildPool, pickStream } from '../game/rooms/turret-stream.js';
+import { OVERFLOW_PACE_DRONES, REVEAL_MS } from '../game/rooms/data/turret-waves.js';
+import {
+  applyTurret, bruteCompares, hintOffer, keyFor, paceAt, swarmReady, swarmWindowMs, turretStars, turretTarget, verifyHint,
+} from '../game/rooms/turret.js';
 import { uiArenaRecordWin } from './arena-reward.js';
 import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiPrefersReducedMotion } from './dom.js';
 import { uiCommitExt } from './ext-storage.js';
+import { uiTurretFirstMode, uiTurretRunFor } from './turret-modes.js';
+import { uiTurretRecordBest } from './turret-record.js';
 
 
 const TURRET_RIG_ID = 'turret';
@@ -20,15 +24,19 @@ const MAX_STARS = 3;
 const SECOND_DRONE = 2;
 const NO_TIME = -Infinity;
 const GOOD_KINDS = new Set(['pair', 'store', 'tag']);
-const BAD_KINDS = new Set(['wrong', 'walk', 'fuse']);
+const BAD_KINDS = new Set(['wrong', 'walk', 'fuse', 'swarm']);
+const FIRST_SLOT = 1;
+const LAST_SLOT = 9;
+const TEACHING_RESULTS = { w1: 'turret-1', w2: 'turret-2' };
 
 function uiTurretFreshFx() {
   return { ramAt: NO_TIME, ramKind: 'dock', beam: null, pops: [], nopeAt: NO_TIME, shiftAt: NO_TIME, shifted: 0 };
 }
 function uiTurretCreate(app, rig, start) {
-  const picked = pickStream(buildPool(), start.lastIndex, Math.random);
+  const mode = start.mode || uiTurretFirstMode(app);
+  const run = uiTurretRunFor({ mode, assist: app.game.ext.assist === true, lastIndex: start.lastIndex });
   const arena = {
-    rig, levelId: rig.levels[0], poolIndex: picked.index, state: createTurret(picked.stream, { assist: app.game.ext.assist === true }),
+    rig, mode, levelId: rig.levels[0], poolIndex: run.index, state: run.state, reveal: {}, swarmLeft: 0,
     playMs: 0, busyUntil: NO_TIME, picked: 0, travel: {}, fuse: {}, fx: uiTurretFreshFx(),
     view: 'play', result: null, swallow: null, coach: '', arrived: [], lastT: 0, reduced: uiPrefersReducedMotion(),
   };
@@ -46,15 +54,18 @@ function uiTurretArrivals(arena, now) {
   });
   if (fresh.length > 0) Object.assign(arena.fx, { shiftAt: now, shifted: fresh.length });
   arena.arrived = fresh;
+  if (fresh.length > 0 || arena.state.last?.kind === 'swarm') arena.swarmLeft = swarmWindowMs(arena.state);
   if (fresh.length > 0 || arena.picked >= arena.state.bay.length) arena.picked = 0;
   arena.coach = uiTurretCoachText(arena);
   arena.lastT = turretTarget(arena.state);
 }
 const ARRIVAL_LINES = [
   { when: (arena, lead, values) => arena.lastT > 0 && values.t !== arena.lastT, text: (values) => fillText(TURRET_TEXTS.coach.switched, values) },
+  { when: (arena) => arena.arrived.some((drone) => drone.gold), text: (values, arena) => fillText(TURRET_TEXTS.coach.gold, { v: arena.arrived.find((drone) => drone.gold).v }) },
   { when: (arena) => arena.arrived.length > 1, text: (values) => fillText(TURRET_TEXTS.coach.two, values) },
+  { when: (arena, lead) => lead.n === FIRST_DRONE && arena.state.spec.dark, text: () => TURRET_TEXTS.coach.dark },
   { when: (arena, lead) => lead.n === FIRST_DRONE, text: (values) => fillText(TURRET_TEXTS.coach.first, values) },
-  { when: (arena, lead) => lead.n === SECOND_DRONE, text: (values) => fillText(TURRET_TEXTS.coach.second, values) },
+  { when: (arena, lead) => lead.n === SECOND_DRONE && !arena.state.spec.dark, text: (values) => fillText(TURRET_TEXTS.coach.second, values) },
   { when: (arena, lead) => lead.n === TURRET_W1.dupAt && uiTurretHeld(arena, lead) > 0, text: (values) => fillText(TURRET_TEXTS.coach.dup, values) },
   { when: (arena, lead) => lead.n === TURRET_W1.rushFrom, text: () => TURRET_TEXTS.coach.rush },
 ];
@@ -73,16 +84,28 @@ function uiTurretArrivalLine(arena) {
   const lead = arena.arrived[0];
   const values = uiTurretArrivalValues(arena, lead);
   const rule = ARRIVAL_LINES.find((item) => item.when(arena, lead, values));
-  return rule ? rule.text(values) : '';
+  return rule ? rule.text(values, arena) : '';
 }
 function uiTurretOutcomeLine(state) {
   const last = state.last;
   if (!last || !GOOD_KINDS.has(last.kind)) return '';
   return fillText(TURRET_TEXTS.coach[last.kind], { key: last.key, v: last.v, t: last.t });
 }
+function uiTurretConsequence(state) {
+  const last = state.last;
+  if (!last) return '';
+  if (state.billed && state.billed.n === last.n && last.kind === 'store') return fillText(TURRET_TEXTS.coach.billed, state.billed);
+  return state.double && GOOD_KINDS.has(last.kind) ? TURRET_TEXTS.coach.double : '';
+}
+function uiTurretOfferLine(state) {
+  const offer = hintOffer(state);
+  return offer ? fillText(TURRET_TEXTS.coach.hint, offer) : '';
+}
 function uiTurretCoachText(arena) {
   const state = arena.state;
   if (state.status !== 'running' || state.bay.length === 0) return uiTurretOutcomeLine(state);
+  const early = uiTurretOfferLine(state) || uiTurretConsequence(state);
+  if (early) return early;
   const arrival = arena.arrived.length > 0 ? uiTurretArrivalLine(arena) : '';
   if (arrival) return arrival;
   const outcome = uiTurretOutcomeLine(state);
@@ -101,9 +124,12 @@ function uiTurretPlayable(app) {
   if (!arena || arena.view !== 'play') return false;
   return arena.state.status === 'running' && !app.story && !app.menuOpen;
 }
+function uiTurretPaceCount(state) {
+  return state.spec.endless ? OVERFLOW_PACE_DRONES : state.stream.length;
+}
 function uiTurretCtx(arena, drone) {
   const state = arena.state;
-  const pace = paceAt(arena.playMs, state.stream.length, state.assist);
+  const pace = paceAt(arena.playMs, uiTurretPaceCount(state), state.assist);
   const fuseLeft = drone.fuseMs && !state.assist ? Math.max(0, arena.fuse[drone.n]) / drone.fuseMs : 0;
   return { pace, fuseLeft };
 }
@@ -126,6 +152,15 @@ function uiTurretCommit(app, moveId, now) {
   uiTurretAfterMove(app, now);
   return true;
 }
+function uiTurretVerify(app) {
+  if (!uiTurretPlayable(app)) return false;
+  const arena = app.rig.arena;
+  const offer = hintOffer(arena.state);
+  if (!offer) return false;
+  arena.state = verifyHint(arena.state);
+  arena.coach = fillText(TURRET_TEXTS.coach.verify, { v: arena.state.bay[offer.bay].v, t: turretTarget(arena.state) });
+  return true;
+}
 function uiTurretNoping(arena, now) {
   return now - arena.fx.nopeAt < NOPE_MS;
 }
@@ -143,12 +178,32 @@ function uiTurretMotion(arena, now) {
   if (last.kind === 'pair' || GOOD_KINDS.has(last.kind)) arena.fx.pops.push({ at: now, text: '+' + last.points, bayIndex: last.bay });
   if (last.damage > 0) Object.assign(arena.fx, { ramAt: now, ramKind: 'hit' });
 }
+function uiTurretRevealSlots(last) {
+  const touched = last.kind === 'wrong' ? [last.slot] : [last.key, GOOD_KINDS.has(last.kind) ? last.v : 0];
+  const also = last.also ? uiTurretRevealSlots(last.also) : [];
+  return [...touched, ...also].filter((slot) => slot >= FIRST_SLOT && slot <= LAST_SLOT);
+}
+function uiTurretReveal(arena, now) {
+  if (!arena.state.spec.dark) return;
+  uiTurretRevealSlots(arena.state.last).forEach(function (slot) {
+    arena.reveal[slot] = now + REVEAL_MS;
+  });
+}
+function uiTurretBadToast(app, last) {
+  if (last.kind === 'fuse' && last.damage > 0) return uiArenaToast(app, TURRET_TEXTS.toast.fuseOut, 'bad');
+  return uiArenaToast(app, last.why, last.damage > 0 ? 'bad' : 'info');
+}
+function uiTurretSelfToast(app, last) {
+  if (last.self && app.rig.arena.state.spec.dark) uiArenaToast(app, fillText(TURRET_TEXTS.toast.self, { v: last.v, t: last.t }), 'info');
+}
 function uiTurretAfterMove(app, now) {
   const arena = app.rig.arena;
   const last = arena.state.last;
   uiTurretCue(arena.state);
   uiTurretMotion(arena, now);
-  if (BAD_KINDS.has(last.kind)) uiArenaToast(app, last.kind === 'fuse' ? TURRET_TEXTS.toast.fuseOut : last.why, 'bad');
+  uiTurretReveal(arena, now);
+  if (BAD_KINDS.has(last.kind)) uiTurretBadToast(app, last);
+  else uiTurretSelfToast(app, last);
   if (arena.state.status !== 'running') return uiTurretFinish(app);
   uiTurretArrivals(arena, now);
   app.pendingAnnounce = arena.arrived.length > 0 ? uiTurretSpoken(arena) : null;
@@ -158,28 +213,37 @@ function uiTurretAfterMove(app, now) {
 
 function uiTurretWin(app, arena) {
   const stars = turretStars(arena.state);
-  const reward = uiArenaRecordWin(app, { rig: arena.rig, levelId: arena.levelId, stars });
-  uiEmit(GAME_EVENT.RIG_CLEAR, { rigId: TURRET_RIG_ID, levelId: arena.levelId, stars });
-  arena.result = { won: true, stars, firstClear: reward.bestBefore === 0 };
-  app.rig.outroDue = true;
+  const result = { won: true, stars, firstClear: false, starsImproved: false };
+  if (arena.mode === 'w1') {
+    const reward = uiArenaRecordWin(app, { rig: arena.rig, levelId: arena.levelId, stars });
+    Object.assign(result, { firstClear: reward.bestBefore === 0, starsImproved: reward.improved });
+    app.rig.outroDue = true;
+  }
+  uiEmit(GAME_EVENT.RIG_CLEAR, { rigId: TURRET_RIG_ID, levelId: TEACHING_RESULTS[arena.mode], stars });
+  return result;
+}
+function uiTurretLoss(arena) {
+  uiEmit(GAME_EVENT.RIG_FAIL, { rigId: TURRET_RIG_ID, levelId: arena.levelId, reason: 'integrity' });
+  return { won: false, stars: 0, firstClear: false, starsImproved: false, why: arena.state.last ? arena.state.last.why : '' };
 }
 function uiTurretFinish(app) {
   const arena = app.rig.arena;
   arena.view = 'card';
   arena.coach = '';
   uiArenaClearToast(app.rig);
-  if (arena.state.status === 'won') uiTurretWin(app, arena);
-  else {
-    uiEmit(GAME_EVENT.RIG_FAIL, { rigId: TURRET_RIG_ID, levelId: arena.levelId, reason: 'integrity' });
-    arena.result = { won: false, stars: 0, firstClear: false, why: arena.state.last ? arena.state.last.why : '' };
-  }
+  const result = arena.state.status === 'won' ? uiTurretWin(app, arena) : uiTurretLoss(arena);
+  const record = uiTurretRecordBest(app, arena);
+  arena.result = { ...result, mode: arena.mode, ...record };
   app.lastFocusKey = 'turret-replay';
-  app.pendingAnnounce = uiTurretEndSpoken(arena.result);
+  app.pendingAnnounce = uiTurretEndSpoken(arena);
   return null;
 }
-function uiTurretEndSpoken(result) {
+function uiTurretEndSpoken(arena) {
+  const { result, state } = arena;
+  if (arena.mode === 'overflow') return TURRET_TEXTS.card.overflowTitle + '. ' + state.resolved + ' drones.';
   if (!result.won) return TURRET_TEXTS.card.failTitle + '. ' + (result.why || '');
-  return 'Wave clear. The way is open. ' + result.stars + ' of ' + MAX_STARS + ' stars.';
+  const wave = arena.mode === 'w2' ? 'Wave 2 clear. ' : 'Wave clear. The way is open. ';
+  return wave + result.stars + ' of ' + MAX_STARS + ' stars.';
 }
 
 
@@ -206,6 +270,17 @@ function uiTurretBurn(app, dt, now) {
   uiTurretAfterMove(app, now);
   return true;
 }
+function uiTurretSwarm(app, dt, now) {
+  const arena = app.rig.arena;
+  const state = arena.state;
+  const waiting = state.steps > 0 && swarmReady(state) && state.bay.every((drone) => uiTurretLanded(arena, drone));
+  if (!waiting) return false;
+  arena.swarmLeft -= dt;
+  if (arena.swarmLeft > 0) return false;
+  arena.state = applyTurret(state, 'swarm:0');
+  uiTurretAfterMove(app, now);
+  return true;
+}
 function uiTurretTick(app, dt, now) {
   const arena = app.rig && app.rig.arena;
   if (!arena || arena.view !== 'play') return false;
@@ -213,7 +288,7 @@ function uiTurretTick(app, dt, now) {
   if (!uiTurretPlayable(app)) return false;
   arena.playMs += dt;
   if (arena.state.assist) return false;
-  return uiTurretBurn(app, dt, now);
+  return uiTurretBurn(app, dt, now) || uiTurretSwarm(app, dt, now);
 }
 
 
@@ -225,12 +300,12 @@ function uiTurretSetAssist(app, on) {
 }
 function uiTurretBrute(arena) {
   const state = arena.state;
-  const total = bruteCompares(state.stream.length);
+  const total = bruteCompares(state.spec.endless ? state.resolved : state.stream.length);
   const spent = state.assist ? state.steps * ASSIST_BRUTE_PER_STEP : Math.floor(arena.playMs / BRUTE_MS_PER_COMPARE);
   return Math.min(total, spent);
 }
 
 export {
   TURRET_RIG_ID, TRAVEL_MS, uiTurretCreate, uiTurretCoachText, uiTurretSpoken, uiTurretPlayable, uiTurretCommit, uiTurretNoping,
-  uiTurretTick, uiTurretSetAssist, uiTurretBrute,
+  uiTurretTick, uiTurretSetAssist, uiTurretBrute, uiTurretVerify,
 };
