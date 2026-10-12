@@ -17,7 +17,9 @@ return uiObjectiveText(app) !== app.game.objectiveShown;
 }
 function uiGoalRow(app) {
 const goal = uiEl('p',{ className:'grid-goal',text:goalLine(app.game.world,app.game.progress) });
-return uiEl('div',{ className:'grid-goal-row',children:[goal,uiGridHearts(app)].filter(Boolean) });
+const hearts = uiGridHearts(app);
+const ammo = app.game.ammoNode ? app.game.ammoNode(app) :null;
+return uiEl('div',{ className:'grid-goal-row' + (ammo ? ' grid-goal-row-ammo' :''),children:[goal,ammo,hearts].filter(Boolean) });
 }
 function uiGridObjective(app) {
 const game = app.game;

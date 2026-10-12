@@ -10,7 +10,7 @@ return one.col === other.col && one.row === other.row;
 }
 function visit(search,cell,edge) {
 const key = cellKey(edge.next);
-if (search.trail.has(key) || !isPassable(search.world,search.progress,edge.next)) return;
+if (search.trail.has(key) || !isPassable(search.world,search.progress,edge.next) || search.world.blocked?.(edge.next)) return;
 search.trail.set(key,{ back:cellKey(cell),dir:edge.dir });
 search.queue.push(edge.next);
 }

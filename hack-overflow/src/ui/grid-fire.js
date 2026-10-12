@@ -2,7 +2,7 @@ import { CHARGED_DMG, nearestAwakeFoe } from '../game/actors.js';
 import { uiEl } from './dom.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiShowToast } from './grid-toast.js';
-import { uiFoeAlive, uiLiveFoes, uiGridPing } from './grid-actors.js';
+import { uiFoeAlive, uiLiveFoes, uiGridShot } from './grid-actors.js';
 import { isOpen } from '../game/world.js';
 
 const FIRE_CHARGE_MS = 450;
@@ -65,7 +65,7 @@ uiShowToast(app,{ text:NO_FOE_TEXT,kind:'info' });
 uiRenderKeepingFocus(app);
 return;
 }
-uiGridPing(app,foe.id,dmg);
+uiGridShot(app,foe.id,dmg);
 }
 function uiFireDown(app,now) {
 const first = !uiIsFirePressed(app);

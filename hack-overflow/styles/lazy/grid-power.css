@@ -83,6 +83,15 @@
   touch-action:manipulation;
 }
 
+.grid-power-chips.is-tight {
+  gap:var(--sp-1);
+}
+
+.grid-power-chips.is-tight .grid-power-chip {
+  padding:0 var(--sp-2);
+  font-size:var(--fs-md);
+}
+
 .grid-power-chip:active {
   background:var(--border);
 }
@@ -122,6 +131,27 @@
 
 .grid-power-badge {
   color:var(--amber);
+}
+
+.grid-power.has-trials {
+  flex-wrap:wrap;
+  height:auto;
+  row-gap:0;
+}
+
+.grid-power-trials {
+  flex:0 0 100%;
+  position:relative;
+  z-index:1;
+  height:11px;
+  overflow:hidden;
+  color:var(--amber);
+  font-family:var(--font-body);
+  font-size:var(--fs-xs);
+  line-height:11px;
+  letter-spacing:0.04em;
+  white-space:nowrap;
+  text-overflow:ellipsis;
 }
 
 .grid-fire-aim {

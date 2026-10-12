@@ -40,8 +40,12 @@ if (onClose) onClose();
 }
 function uiStoryClosed(app) {
 return new Promise(function (resolve) {
-if (app.story) app.story.onClose = resolve;
-else resolve();
+if (!app.story) return resolve();
+const prior = app.story.onClose;
+app.story.onClose = function () {
+if (prior) prior();
+resolve();
+};
 });
 }
 function uiStoryToast(app,beat) {

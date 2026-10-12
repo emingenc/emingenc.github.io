@@ -63,8 +63,14 @@ function bumpGhost(ext,name) {
 if (!GHOST_COUNTS.includes(name)) return ext;
 return withGhost(ext,{ [name]:repairOf('ghost')(ext.ghost)[name] + 1 });
 }
+function hasHeld(ext,key) {
+return hasListed(ext,'held',key);
+}
+function withHeld(ext,key) {
+return withListed(ext,'held',key);
+}
 function withNpc(ext,patch) {
 return { ...ext,npc:repairOf('npc')({ ...repairOf('npc')(ext.npc),...patch }) };
 }
 
-export { addRank,bumpGhost,hasBeat,hasFind,hasMet,questState,rankOf,withBeat,withFind,withGhost,withMet,withNpc,withPin,withQuest };
+export { addRank,bumpGhost,hasBeat,hasFind,hasHeld,hasMet,questState,rankOf,withBeat,withFind,withGhost,withHeld,withMet,withNpc,withPin,withQuest };

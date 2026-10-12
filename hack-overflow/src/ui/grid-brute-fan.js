@@ -1,3 +1,4 @@
+import { spendShot } from '../game/ammo.js';
 import { FAN_TOASTS,fanSheet } from '../game/cast/brute-fan.js';
 import { withBeat,withNpc } from '../game/ext/ops.js';
 import { BEATS } from '../game/finale/contract.js';
@@ -6,7 +7,7 @@ import { uiShowToast } from './grid-toast.js';
 import { uiStoryChoice } from './story-dialogue.js';
 
 function uiFanSpend(game) {
-if (Number.isFinite(game.ammo)) game.ammo -= 1;
+if (Number.isFinite(game.ammo)) game.ammo = spendShot(game.ammo).ammo;
 }
 function uiFanAnswer(app,pick) {
 const game = app.game;

@@ -1,6 +1,7 @@
 import { uiEl } from './dom.js';
 
 const POWER_LABEL = 'POWER';
+const MAX_ROOMY = 3;
 
 function uiChipClass(chip) {
 const tone = chip.tone ? ' is-' + chip.tone : '';
@@ -33,10 +34,11 @@ return uiEl('span',{ className,text });
 function uiPowerStrip(view) {
 const notes = [view.mode && uiNote('grid-power-mode',view.mode),view.badge && uiNote('grid-power-badge',view.badge)].filter(Boolean);
 const list = uiEl('div',{
-className:'grid-power-chips',attrs:{ role:'group','aria-label':'Power controls' },
+className:'grid-power-chips' + (view.chips.length > MAX_ROOMY ? ' is-tight' :''),attrs:{ role:'group','aria-label':'Power controls' },
 children:[...notes,...view.chips.map((chip) => uiChipNode(chip,view.onChip))],
 });
-return uiEl('div',{ className:'grid-power',children:[uiPowerButton(view),list] });
+const lent = view.trials ? [uiNote('grid-power-trials',view.trials)] :[];
+return uiEl('div',{ className:'grid-power' + (lent.length ? ' has-trials' :''),children:[...lent,uiPowerButton(view),list] });
 }
 
 export { uiPowerStrip };

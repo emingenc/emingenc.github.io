@@ -63,7 +63,7 @@ function actorAt(actors,cell) {
 return actors.find((actor) => isLive(actor) && actor.col === cell.col && actor.row === cell.row) || null;
 }
 function actorIntent(actor) {
-return isLive(actor) ? handlersOf(actor).intent(actor) :null;
+return isLive(actor) && !actor.harmless ? handlersOf(actor).intent(actor) :null;
 }
 function intentLabel(intent) {
 return intent.verb + ' in ' + intent.inTicks;
