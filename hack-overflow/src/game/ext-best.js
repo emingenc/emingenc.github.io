@@ -1,6 +1,6 @@
 
 const BEST_MAX = { score:999999,combo:999,stars:3,drones:9999 };
-const BEST_MODES = { turret:['w1','w2','w3','overflow'],shield:['w1','w2','w3'],pincer:['w1','w2','w3'] };
+const BEST_MODES = { turret:['w1','w2','w3','overflow'],shield:['w1','w2','w3'],pincer:['w1','w2','w3'],beam:['w1','w2'] };
 const FIELDS = Object.keys(BEST_MAX);
 
 function isRecord(value) {

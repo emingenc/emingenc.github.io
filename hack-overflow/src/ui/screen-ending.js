@@ -22,6 +22,7 @@ app.screen = 'ending';
 app.lastFocusKey = 'ending-return';
 uiEmit(GAME_EVENT.ENDING,{});
 uiStoryFinal(app);
+import('./grid-chain-end.js').then(function (end) { end.uiEndingExtras(app); }).catch(function () {});
 }
 function uiStatLine(label,value) {
 return uiEl('li',{ className:'ending-stat',text:label + ' ' + value });
@@ -56,6 +57,7 @@ children:[
 uiEl('p',{ className:'ending-kicker',text:'KERNEL BREACHED' }),
 uiEndingTitle(ending),
 uiGhostQuip(FINAL_LINE),
+...(ending.extras ? ending.extras() :[]),
 uiEl('ul',{ className:'ending-stats',attrs:{ 'aria-label':'Run stats' },children:uiEndingStatLines(ending.stats) }),
 uiEl('ul',{ className:'ending-sectors',attrs:{ 'aria-label':'Sector stars' },children:ending.sectors.map(uiSectorLine) }),
 uiEl('button',{

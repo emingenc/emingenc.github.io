@@ -46,7 +46,7 @@ return button;
 function uiArenaHeader(app,view) {
 const score = uiEl('span',{ className:'arena-score',text:String(view.score),attrs:{ 'aria-label':'Score ' + view.score } });
 const top = uiEl('div',{ className:'arena-row',children:[uiArenaHearts(view.hearts,view.heartsMax ?? ARENA_HEARTS_MAX),score,uiArenaMute(app)] });
-const title = uiEl('span',{ className:'arena-title',text:view.title });
+const title = uiEl('span',{ className:'arena-title',text:view.title,attrs:view.titleLabel ? { role:'heading','aria-level':'2','aria-label':view.titleLabel } :undefined });
 const bottom = uiEl('div',{ className:'arena-row',children:[uiArenaButton(ARENA_BACK,'LEAVE','arena-back'),title,uiArenaAssist(view.assist,view.assistHint ?? ARENA_ASSIST_HINT)] });
 return uiEl('header',{ className:'arena-header',children:[top,bottom] });
 }

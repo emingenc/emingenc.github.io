@@ -14,7 +14,7 @@ return { state,tick:false,hit:false };
 function ticked(state,spec) {
 const { hero } = pressureOf(spec);
 const flood = Math.min(hero,state.flood + 1);
-return { state:{ ...state,flood,ticks:state.ticks + 1 },tick:true,hit:flood >= hero };
+return { state:{ ...state,flood,ticks:state.ticks + 1 },tick:true,hit:flood >= hero || (spec.chip || 0) > 0 };
 }
 
 function createReview(spec,ext) {
@@ -29,10 +29,10 @@ if (spec.drafts) return { ...step,state:{ ...state,stage:'drafts',log:[...state.
 const flag = FLAG_OF_STAMP[pick.stamp] || null;
 return { ...step,state:{ ...state,stage:'done' },result:{ stamp:pick.stamp,pick:null,flag } };
 }
-function tapLine(state,spec,line) {
+function tapLine(state,spec,line,clocked = false) {
 if (state.stage !== 'read' || !spec.listing.some((row) => row.n === line)) return still(state);
 const pick = spec.onPick(line);
-const step = ticked(state,spec);
+const step = clocked ? still(state) :ticked(state,spec);
 if (pick.stamp && state.selected === line) return stampedReview(step,spec,pick);
 return { ...step,state:{ ...step.state,selected:line,hint:pick.stamp ? CONFIRM_TOAST :pick.hint } };
 }
@@ -61,12 +61,22 @@ function mergeNow(state,spec) {
 if (!spec.merge || state.stage !== 'read') return still(state);
 return { ...still({ ...state,stage:'done',stamp:'MERGED' }),result:{ stamp:'MERGED',pick:null,flag:'merged' } };
 }
+function tickClock(state,spec) {
+return state.stage === 'read' ? ticked(state,spec) :still(state);
+}
+function clockDue(spec,mode) {
+const { assist,reduced } = mode || {};
+return spec.clockMs > 0 && assist !== true && !reduced ? spec.clockMs :null;
+}
+function heartsAfterTick(hearts,spec) {
+return Math.min(hearts,Math.max(spec.floor || 0,hearts - (spec.chip || 0)));
+}
 function revived(state,spec) {
 return { ...state,flood:pressureOf(spec).start };
 }
-function watchText(state,spec) {
-if (spec && spec.watch) return spec.watch(state);
+function watchText(state,spec,view) {
+if (spec && spec.watch) return spec.watch(state,view);
 return 'reviewed 24/24 · limit 24 · rewrites ' + state.ticks;
 }
 
-export { FLOOD,HOLD_MS,CONFIRM_TOAST,pressureOf,createReview,tapLine,typeDraft,pickDraft,approve,mergeNow,revived,watchText };
+export { FLOOD,HOLD_MS,CONFIRM_TOAST,pressureOf,createReview,tapLine,typeDraft,pickDraft,approve,mergeNow,tickClock,clockDue,heartsAfterTick,revived,watchText };

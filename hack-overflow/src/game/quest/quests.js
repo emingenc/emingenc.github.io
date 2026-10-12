@@ -28,10 +28,16 @@ id:'most-water',name:'MOST WATER',giver:'TWINS',goal:{ need:1,label:'dam',slip:'
 const NEXT_TALLER = quest({
 id:'next-taller',name:'NEXT TALLER',giver:'BRACE',goal:{ need:4,label:'rounds',slip:'misses' },reward:{ rank:0,find:'apron',label:'apron' },
 });
+const CLEAR_STRETCH = quest({
+id:'clear-stretch',name:'CLEAR STRETCH',giver:'SILL',goal:{ need:1,label:'net',slip:'over par' },reward:{ rank:30,find:null },
+});
+const HALVING_BEAM = quest({
+id:'halving-beam',name:'HALVING BEAM',giver:'ORACLE-7',goal:{ need:1,label:'shots',slip:'wasted' },reward:{ rank:30,find:null },
+});
 const QUESTS = {
 [FIRST_COMMIT.id]:FIRST_COMMIT,[PATROL_PAIR.id]:PATROL_PAIR,[RECEIPT_RUN.id]:RECEIPT_RUN,
 [MEET_IN_THE_MIDDLE.id]:MEET_IN_THE_MIDDLE,[DISH_RUSH.id]:DISH_RUSH,
-[MOST_WATER.id]:MOST_WATER,[NEXT_TALLER.id]:NEXT_TALLER,
+[MOST_WATER.id]:MOST_WATER,[NEXT_TALLER.id]:NEXT_TALLER,[HALVING_BEAM.id]:HALVING_BEAM,[CLEAR_STRETCH.id]:CLEAR_STRETCH,
 };
 
 function stateAt(id,stage) {
@@ -71,6 +77,6 @@ return !lines.some((line) => APOSTROPHES.test(line));
 }
 
 export {
-STAGE,PILL_MAX,QUESTS,FIRST_COMMIT,PATROL_PAIR,RECEIPT_RUN,MEET_IN_THE_MIDDLE,DISH_RUSH,MOST_WATER,NEXT_TALLER,
+STAGE,PILL_MAX,QUESTS,FIRST_COMMIT,PATROL_PAIR,RECEIPT_RUN,MEET_IN_THE_MIDDLE,DISH_RUSH,MOST_WATER,NEXT_TALLER,HALVING_BEAM,CLEAR_STRETCH,
 offerQuest,startQuest,progressQuest,abandonQuest,isDone,rewardOf,pillText,noApostrophes,
 };

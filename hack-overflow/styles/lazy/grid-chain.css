@@ -1,0 +1,134 @@
+.grid-chain {
+  position:fixed;
+  inset:0;
+  z-index:30;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(3,8,5,0.78);
+  padding:var(--sp-4);
+}
+
+.grid-chain-panel {
+  width:min(440px,100%);
+  max-height:100%;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-3);
+  box-sizing:border-box;
+  padding:var(--sp-4);
+  background:var(--panel);
+  border:2px solid var(--amber);
+  border-radius:var(--radius-lg);
+}
+
+.grid-chain-title {
+  margin:0;
+  color:var(--amber);
+  font-family:var(--font-display);
+  font-size:var(--fs-xl);
+  letter-spacing:0.08em;
+  overflow-wrap:anywhere;
+}
+
+.grid-chain-caption,
+.grid-chain-said,
+.grid-chain-counter {
+  margin:0;
+  color:var(--text);
+  font-size:var(--fs-sm);
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+
+.grid-chain-said {
+  color:var(--cyan);
+}
+
+.grid-chain-counter {
+  min-height:2.8em;
+  color:var(--dim);
+}
+
+.grid-chain-cells {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(72px,1fr));
+  gap:var(--sp-3);
+}
+
+.grid-chain-cell {
+  min-width:44px;
+  min-height:48px;
+  padding:var(--sp-2);
+  border:2px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  line-height:1.1;
+  overflow-wrap:anywhere;
+  touch-action:manipulation;
+}
+
+.grid-chain-cell:active {
+  background:var(--border);
+}
+
+.grid-chain-cell:focus-visible,
+.grid-chain-exit:focus-visible {
+  outline:2px solid var(--cyan);
+  outline-offset:2px;
+}
+
+.grid-chain-cell.is-lit {
+  border-color:var(--amber);
+  color:var(--amber);
+}
+
+.grid-chain-cell.is-good,
+.grid-chain-cell.is-pass {
+  border-color:var(--primary);
+  color:var(--primary);
+}
+
+.grid-chain-cell.is-bad,
+.grid-chain-cell.is-fail {
+  border-color:var(--red);
+  border-style:dashed;
+  color:var(--red);
+}
+
+.grid-chain-cell.is-pass-in {
+  border-color:var(--primary);
+  background:var(--border);
+  color:var(--bright);
+}
+
+.grid-chain-cell.is-fail-in {
+  border-color:var(--red);
+  border-style:dashed;
+  background:var(--border);
+  color:var(--red);
+}
+
+.grid-chain-cell.is-dim {
+  border-style:dotted;
+  color:var(--dim);
+}
+
+.grid-chain-exit {
+  min-width:44px;
+  min-height:48px;
+  width:100%;
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  letter-spacing:0.08em;
+  touch-action:manipulation;
+}
+
+.grid-chain-exit.is-done {
+  border-color:var(--primary);
+  color:var(--primary);
+}

@@ -35,7 +35,7 @@ ext:legacy ? uiCommitMapRev(ext) :withMapRev(ext),
 }
 const UI_LAZY_RESET = {
 coach:null,doorway:null,drawActors:null,sentryLoad:null,hudRank:null,hudPill:null,hudLoad:null,hudLoaded:false,questRuns:null,
-cast:null,fork:null,journey:null,drawCast:null,castGuard:null,drawFork:null,brute:null,drawBrute:null,reward:null,kernelUi:null,
+cast:null,fork:null,journey:null,drawCast:null,castGuard:null,drawFork:null,brute:null,drawBrute:null,reward:null,loopPinch:null,kernelUi:null,oracle:null,drawOracle:null,
 };
 function uiResetGameState(app,save) {
 if (app.game.kernelUi) app.game.kernelUi.undo.forEach((undo) => undo());

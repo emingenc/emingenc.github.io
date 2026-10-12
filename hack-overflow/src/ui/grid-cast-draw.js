@@ -47,6 +47,7 @@ uiRegisterActorPainter('crate',uiDrawCrate);
 }
 function uiDrawFollower(ctx,app,frame) {
 const cast = app.game.cast;
+if (cast.dragged) return;
 const hero = app.game.avatar.pos;
 if (cast.trail && trailLost(cast.trail,hero)) cast.trail = null;
 if (!cast.trail) return;
