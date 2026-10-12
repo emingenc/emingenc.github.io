@@ -1,4 +1,5 @@
 import { GAME_EVENT } from '../game/game-events.js';
+import { MOST_WATER_ID } from '../game/quest/third-wave.js';
 import { PINCER_BUSY_MS } from '../game/rooms/data/pincer-w1.js';
 import { PINCER_TEXTS } from '../game/rooms/data/pincer-texts.js';
 import { applyPincer, pincerStars, pincerWhyNot } from '../game/rooms/pincer.js';
@@ -18,6 +19,9 @@ const PLACE_KINDS = new Set(['left', 'right', 'plank', 'sort', 'bank']);
 const GOOD_KINDS = new Set(['pair', 'lookup', 'lookup-heavy']);
 const BAD_KINDS = new Set(['left-wrong', 'right-wrong', 'drop', 'miss', 'floor', 'charges', 'best', 'lookup-heavy']);
 const CLEAR_LEVELS = { w1: 'pincer-1', w2: 'pincer-2', w3: 'pincer-3' };
+const QUEST_TAKEN = 2;
+const QUEST_DONE = 3;
+const POINTER_MOVES = new Set(['l', 'r']);
 
 function uiPincerDefaultNow() {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -30,12 +34,34 @@ function uiPincerNow() {
   return uiPincerClock();
 }
 
+function uiWaterStage(app) {
+  const quests = app.game.ext.quests;
+  return quests && Object.hasOwn(quests, MOST_WATER_ID) ? quests[MOST_WATER_ID] : 0;
+}
+function uiPincerAsks(app, mode) {
+  return mode === 'w3' && uiWaterStage(app) < QUEST_TAKEN;
+}
+function uiPincerQuest(arena, send) {
+  arena.quest = Promise.resolve(arena.quest).then(() => import('./pincer-quest.js')).then(send).catch(() => null);
+}
+function uiPincerQuestMove(app, arena, moveId) {
+  if (arena.mode !== 'w3' || !POINTER_MOVES.has(moveId)) return;
+  const first = arena.ask;
+  arena.ask = false;
+  if (first) arena.counting = true;
+  else if (!arena.counting && uiWaterStage(app) !== QUEST_TAKEN) return;
+  uiPincerQuest(arena, (quest) => quest.uiWaterMove(app, arena, first));
+}
+function uiPincerQuestWin(app, arena) {
+  if (arena.mode === 'w3' && uiWaterStage(app) !== QUEST_DONE) uiPincerQuest(arena, (quest) => quest.uiWaterWin(app, arena));
+}
+
 function uiPincerCreate(app, rig, start) {
   const mode = start.mode || uiPincerFirstMode(app);
   const run = uiPincerRunFor({ mode, lastIndex: start.lastIndex });
   const arena = {
     rig, mode, levelId: rig.levels[0], poolIndex: run.index, state: run.state, view: 'play', result: null, coach: '',
-    busyUntil: NO_TIME, nopeAt: NO_TIME, slide: null,
+    busyUntil: NO_TIME, nopeAt: NO_TIME, slide: null, ask: uiPincerAsks(app, mode),
   };
   arena.coach = uiPincerCoachText(arena);
   app.pendingAnnounce = null;
@@ -65,6 +91,7 @@ function uiPincerCommit(app, moveId, now) {
   if (next === arena.state) return uiPincerRefuse(app, moveId, now);
   arena.state = next;
   arena.busyUntil = now + PINCER_BUSY_MS;
+  uiPincerQuestMove(app, arena, moveId);
   uiPincerAfterMove(app);
   return true;
 }
@@ -98,6 +125,7 @@ function uiPincerAfterMove(app) {
 
 function uiPincerWin(app, arena) {
   const stars = pincerStars(arena.state);
+  uiPincerQuestWin(app, arena);
   return uiRoomWin(app, arena, { rigId: PINCER_RIG_ID, clearLevel: CLEAR_LEVELS[arena.mode], stars }).result;
 }
 function uiPincerLose(arena) {
@@ -120,6 +148,6 @@ function uiPincerFinish(app) {
 }
 
 export {
-  PINCER_RIG_ID, uiPincerCreate, uiPincerPlayable, uiPincerCommit, uiPincerNoping, uiPincerCoachText, uiPincerSpoken, uiPincerNow,
+  PINCER_RIG_ID, QUEST_TAKEN, QUEST_DONE, uiPincerCreate, uiPincerPlayable, uiPincerCommit, uiPincerNoping, uiPincerCoachText, uiPincerSpoken, uiPincerNow,
   uiPincerSetClock,
 };

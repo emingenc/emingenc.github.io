@@ -1,4 +1,5 @@
 import { END_GLYPH } from '../game/rooms/data/shield-wave1.js';
+import { NEXT_TALLER_ID, THIRD_WAVE } from '../game/quest/third-wave.js';
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
 import { answerFor, glyphOf, isOpener } from '../game/rooms/shield.js';
@@ -30,8 +31,9 @@ function isTie(state) {
   return state.stack.length > 0 && uiShieldTop(state) === glyphOf(state);
 }
 const TOWER_LINES = [
+  { id: 'ask', when: (state, arena) => arena.ask === true && state.vi === 0 && state.gi === 0, text: THIRD_WAVE[NEXT_TALLER_ID].ask },
   { id: 'towerEnd', when: (state) => Boolean(state.last && state.last.blocked && state.last.leftovers > 0), text: COACH.towerEnd },
-  { id: 'towers', when: (state) => state.vi === 0 && state.gi === 0, text: COACH.towers },
+  { id: 'towers', when: (state, arena) => state.vi === 0 && state.gi <= (arena.ask === true ? 1 : 0), text: COACH.towers },
   { id: 'taller', when: (state) => answerFor(state) === 'pop', text: COACH.taller },
   { id: 'tie', when: isTie, text: COACH.tie },
 ];
@@ -41,7 +43,7 @@ function teachLines(state) {
 }
 function uiShieldTeach(arena) {
   const state = arena.state;
-  const line = teachLines(state).find((item) => !arena.seen[item.id] && item.when(state));
+  const line = teachLines(state).find((item) => !arena.seen[item.id] && item.when(state, arena));
   if (!line) return '';
   arena.seen[line.id] = true;
   const values = uiShieldValues(state);

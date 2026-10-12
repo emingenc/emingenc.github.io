@@ -1,3 +1,4 @@
+import { MOST_WATER_ID, THIRD_WAVE } from '../game/quest/third-wave.js';
 import { PINCER_TEXTS, fillText } from '../game/rooms/data/pincer-texts.js';
 import { SORT_STEPS } from '../game/rooms/data/pincer-waves.js';
 import { pincerArea, pincerMoves, pincerPar, pincerSum } from '../game/rooms/pincer.js';
@@ -35,7 +36,7 @@ const SUM_LINES = [
 ];
 const DAM_LINES = [
   { when: (state) => state.l === state.r, key: 'fire3' },
-  { when: (state) => state.steps === 0 && state.bank === 0, key: 'start3' },
+  { when: (state, arena) => state.bank === 0 && state.steps <= (arena.counting === true ? 1 : 0), key: 'start3' },
   { when: (state) => pincerMoves(state).includes('bank'), key: 'bank3' },
   { when: (state) => pillarsOf(state)[state.l] === pillarsOf(state)[state.r], key: 'tie3' },
   { when: () => true, key: 'move3' },
@@ -43,7 +44,8 @@ const DAM_LINES = [
 function uiPincerCoachText(arena) {
   const state = arena.state;
   if (state.status !== 'running') return '';
-  const line = (isDam(state) ? DAM_LINES : SUM_LINES).find((item) => item.when(state));
+  if (arena.ask && state.bank === 0) return THIRD_WAVE[MOST_WATER_ID].ask;
+  const line = (isDam(state) ? DAM_LINES : SUM_LINES).find((item) => item.when(state, arena));
   return fillText(PINCER_TEXTS.coach[line.key], uiPincerValues(state));
 }
 function uiPincerSpoken(arena) {
