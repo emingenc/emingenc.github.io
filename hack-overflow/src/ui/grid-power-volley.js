@@ -1,4 +1,4 @@
-import { hasFind,withBeat,withFind } from '../game/ext/ops.js';
+import { hasBeat,hasFind,withBeat,withFind } from '../game/ext/ops.js';
 import { cellToward } from '../game/move.js';
 import { usablePowers } from '../game/power/powers.js';
 import { DOOR,VOLLEY,VOLLEYS,createVolleyRun,playVolley,runView,standVolley,volleyDue,volleyText } from '../game/power/volley.js';
@@ -64,6 +64,7 @@ fight.actors = [...fight.actors.filter((actor) => actor.id !== VOLLEY.drone.id),
 uiBegin(app,{ kind:'volley',run:createVolleyRun(VOLLEYS),revives:fight.revives || 0 });
 uiSay(app,{ text:volleyText().start });
 uiPowerRefresh(app);
+if (hasBeat(app.game.ext,'ordeal')) import('./finale-offer.js').then((module) => module.uiGhostOffer(app,{ kind:'volley',once:'hint-volley' })).catch(console.error);
 }
 function uiBumpDoor(app) {
 const game = app.game;

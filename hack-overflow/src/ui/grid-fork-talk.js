@@ -1,12 +1,13 @@
-import { FIND,GHOST_SHEET,TOASTS,answerThe8,hasOffered } from '../game/cast/fork.js';
+import { BEATS,FIND,GHOST_SHEET,TOASTS,answerThe8,hasOffered,isCleared } from '../game/cast/fork.js';
 import { MEET_ID,RUN_ID,THANKS_RANK,THANKS_SOURCE,TOASTS as TALLY_TOASTS,offerSheet,tallyPlan } from '../game/cast/tally.js';
-import { questState,withFind,withMet,withQuest } from '../game/ext/ops.js';
+import { hasBeat,questState,withBeat,withFind,withMet,withQuest } from '../game/ext/ops.js';
 import { STAGE } from '../game/quest/quests.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiStoryChoice } from './story-dialogue.js';
 
 const PAIR_ID = 'patrol-pair';
+const LATE_OFFER = 'the-8-late';
 
 function uiSay(app,text,kind = 'info') {
 uiShowToast(app,{ text,kind });
@@ -45,8 +46,21 @@ return;
 uiSay(app,TOASTS.bit);
 uiSay(app,TOASTS.verify);
 }
+function uiLateDue(ext) {
+return hasBeat(ext,'ordeal') && !isCleared(ext) && !hasBeat(ext,LATE_OFFER);
+}
+async function uiLateOffer(app) {
+const { uiGhostOffer } = await import('./finale-offer.js');
+const answered = await uiGhostOffer(app,{ kind:'fork',once:LATE_OFFER });
+if (answered && !hasOffered(app.game.ext)) uiCommitExt(app,withBeat(app.game.ext,BEATS.offer));
+}
 async function uiForkEnter(app) {
 await uiStartPair(app);
+if (app.game.cast && app.game.cast.run && uiLateDue(app.game.ext)) return false;
+if (uiLateDue(app.game.ext)) {
+await uiLateOffer(app);
+return true;
+}
 if (hasOffered(app.game.ext)) return true;
 if (app.game.cast && app.game.cast.run) return false;
 const pick = await uiAsk(app,GHOST_SHEET);

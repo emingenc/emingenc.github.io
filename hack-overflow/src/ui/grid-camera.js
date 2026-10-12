@@ -2,6 +2,7 @@ import { framedCamera, targetCell } from '../game/wayfinding.js';
 import { followCamera } from '../game/tween.js';
 import { uiPrefersReducedMotion } from './dom.js';
 import { uiAvatarPose } from './grid-walk.js';
+import { uiBarsInset } from './grid-fit.js';
 
 const UI_AT_REST = { col:0,row:0 };
 function uiSnapCamera(stage,camera) {
@@ -12,7 +13,7 @@ function uiCameraTick(app,now) {
 const stage = app.game.stage;
 const pose = uiAvatarPose(app,now);
 const world = app.game.world;
-const view = { focus:{ col:pose.col,row:pose.row },cols:stage.width / stage.tile,rows:stage.height / stage.tile };
+const view = { focus:{ col:pose.col,row:pose.row },cols:stage.width / stage.tile,rows:stage.height / stage.tile,inset:uiBarsInset(stage.tile) };
 const target = framedCamera(world,view,targetCell(world,app.game.objectiveTarget));
 const follow = stage.follow;
 const glide = follow && !uiPrefersReducedMotion();

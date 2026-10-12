@@ -1,8 +1,14 @@
 const VIEWPORT = { spritePx:16,minTilesAcross:21,minScale:2 };
+const FIT = { minFillWidth:900,minFillHeight:560 };
 const CELL_CENTRE = 0.5;
 function tileSizeFor(stageWidth) {
 const scale = Math.floor((stageWidth || 0) / (VIEWPORT.spritePx * VIEWPORT.minTilesAcross));
 return VIEWPORT.spritePx * Math.max(VIEWPORT.minScale,scale);
+}
+function gridFitFor(viewport) {
+const { width,height } = viewport;
+const fills = width >= FIT.minFillWidth && height >= FIT.minFillHeight;
+return fills ? { mode:'fill',stage:{ width,height } } :{ mode:'stack',stage:null };
 }
 function cameraAxis(focus,span) {
 if (span.map <= span.view) return (span.map - span.view) / 2;
@@ -24,4 +30,4 @@ row0:Math.floor(camera.row),row1:Math.ceil(camera.row + view.rows) - 1,
 };
 }
 
-export { VIEWPORT, tileSizeFor, cameraFor, cellAtPoint, visibleRange };
+export { VIEWPORT, FIT, gridFitFor, tileSizeFor, cameraFor, cellAtPoint, visibleRange };

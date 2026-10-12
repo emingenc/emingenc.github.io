@@ -29,6 +29,7 @@ return !game.toast && (!game.toastQueue || game.toastQueue.length === 0);
 async function uiCastSay(app,toast) {
 await uiCastUntil(app,function () { return uiToastFree(app.game); });
 uiShowToast(app,{ kind:'info',...toast });
+uiRenderKeepingFocus(app);
 }
 function uiCastCarry(app,goal) {
 const game = app.game;

@@ -1,3 +1,4 @@
+import { hasBeat,withBeat } from '../game/ext/ops.js';
 import { hurtHp } from '../game/hp.js';
 import { answerOffer,offerEffect,offerSheet } from '../game/finale/offers.js';
 import { uiCommitExt } from './ext-storage.js';
@@ -19,14 +20,15 @@ return null;
 }
 async function uiGhostOffer(app,spec) {
 const game = app.game;
-if (app.story || game.offering) return null;
+if (app.story || game.offering || (spec.once && hasBeat(game.ext,spec.once))) return null;
 game.offering = true;
 try {
 const effect = (pick) => offerEffect(game.ext,pick);
 const pick = await uiStoryChoice(app,offerSheet(game.ext,spec));
 if (!pick || app.game !== game) return null;
 const result = effect(pick);
-uiCommitExt(app,answerOffer(game.ext,pick));
+const counted = answerOffer(game.ext,pick);
+uiCommitExt(app,spec.once ? withBeat(counted,spec.once) :counted);
 await uiApplyOffer(app,result);
 return { pick,wrong:result.wrong };
 } finally {

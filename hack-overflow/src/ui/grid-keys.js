@@ -12,9 +12,19 @@ function uiInteractFocus() {
 const active = document.activeElement;
 return !active || active === document.body || active.getAttribute('data-focus-key') === 'grid-stage';
 }
+function uiChaseKey(app,event,dir) {
+const road = app.game.roadback;
+const now = performance.now();
+if (event.repeat && !road.repeatDue(road.keyAt,now)) return UI_HANDLED;
+road.keyAt = now;
+uiWalkPress(app,dir);
+uiWalkRelease(app,dir);
+return UI_HANDLED;
+}
 function uiWalkKey(event,app) {
 if (app.game.travelOpen) return UI_HANDLED;
 const dir = UI_WALK_KEYS[event.key];
+if (app.game.roadback && app.game.roadback.chase) return uiChaseKey(app,event,dir);
 if (!event.repeat || !uiWalkHolds(app,dir)) uiWalkPress(app,dir);
 return UI_HANDLED;
 }

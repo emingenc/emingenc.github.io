@@ -1,4 +1,6 @@
 import { BRUTE_CELL,markOf } from '../game/cast/brute.js';
+import { counterVeiled,helpMark } from '../game/finale/siege.js';
+import { uiVeilCell } from './grid-siege-draw.js';
 
 const HALF = 0.5;
 const ART = ['.xxxxxx.','xxexxexx','xxxxxxxx','.xxxxxx.','xxxxxxxx','xx.xx.xx'];
@@ -41,7 +43,8 @@ if (spot.left + frame.tile <= 0 || spot.top + frame.tile <= 0 || spot.left >= fr
 ctx.fillStyle = frame.palette.panel;
 ctx.fillRect(spot.left,spot.top,frame.tile,frame.tile);
 uiBody(ctx,frame,spot);
-uiMark(ctx,frame,{ spot,text:markOf(app.game.ext,Boolean(app.game.brute && app.game.brute.race)) });
+if (counterVeiled(app.game.ext,app.game.save)) uiVeilCell(ctx,frame,spot);
+uiMark(ctx,frame,{ spot,text:helpMark(app.game.ext,app.game.save) || markOf(app.game.ext,Boolean(app.game.brute && app.game.brute.race)) });
 }
 
 export { uiDrawBrute };

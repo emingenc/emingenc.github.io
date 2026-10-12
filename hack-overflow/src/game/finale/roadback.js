@@ -2,6 +2,7 @@ import { PATCH_CELL } from '../cast/patch.js';
 import { tagsOf } from '../ext/power-ops.js';
 import { recallOne } from '../power/recall.js';
 import { hasBeat } from '../ext/ops.js';
+import { cellToward } from '../move.js';
 import { BEATS,flagOf } from './contract.js';
 
 const LAG = 3;
@@ -10,6 +11,8 @@ const TRAIL_KEEP = 12;
 const RING_REACH = 2;
 const PATCH_TAG = 'patch-0';
 const SCAN_STEPS = 3;
+const CHASE_REPEAT_MS = 300;
+const FAR_STEPS = 3;
 const KERNEL_DOOR = Object.freeze({ col:24,row:19 });
 const KERNEL_FRONT = Object.freeze({ col:24,row:18 });
 const PATCH_WHO = 'PATCH';
@@ -43,6 +46,33 @@ return chase.trail[Math.max(0,chase.trail.length - 1 - chase.gap)];
 function floodedOf(chase) {
 return chase.trail.slice(0,Math.max(0,chase.trail.length - chase.gap));
 }
+function nextOf(chase) {
+return chase.trail[Math.max(0,chase.trail.length - chase.gap)];
+}
+function repeatDue(lastAt,now) {
+return now - lastAt >= CHASE_REPEAT_MS;
+}
+function ghostToast(steps) {
+return steps + (steps === 1 ? ' step' :' steps') + ', front gains ' + steps;
+}
+function ghostTap(ghost,tap) {
+const { from,cell,intent } = tap;
+const dirs = intent.dirs || [];
+const steps = intent.kind === 'interact' ? dirs.length - 1 :dirs.length;
+if (intent.kind === 'none' || steps < FAR_STEPS) return { action:'walk',ghost:null };
+const same = (one,two) => one.col === two.col && one.row === two.row;
+if (ghost && same(ghost.from,from) && same(ghost.cell,cell)) return { action:'walk',ghost:null };
+return { action:'show',ghost:{ from:{ ...from },cell:{ ...cell },dirs:[...dirs],steps } };
+}
+function ghostCells(ghost) {
+const cells = [];
+ghost.dirs.reduce(function (at,dir) {
+const next = cellToward(at,dir);
+cells.push(next);
+return next;
+},ghost.from);
+return cells;
+}
 function catcherOf(chase) {
 return chase.trail[Math.max(0,chase.trail.length - 2)];
 }
@@ -69,6 +99,6 @@ return ext.npc && ext.npc.bruteHelped === true ? GATE_TOASTS.helped :GATE_TOASTS
 }
 
 export {
-LAG,TICK_MS,KERNEL_DOOR,KERNEL_FRONT,PATCH_TAG,ROAD_TOASTS,REPLY_TOASTS,GATE_TOASTS,REUNION_LINES,
-createChase,chaseStep,chaseIdle,frontOf,floodedOf,catcherOf,inRing,createLookup,lookupStep,reunionSheet,bruteGate,
+LAG,TICK_MS,CHASE_REPEAT_MS,FAR_STEPS,KERNEL_DOOR,KERNEL_FRONT,PATCH_TAG,ROAD_TOASTS,REPLY_TOASTS,GATE_TOASTS,REUNION_LINES,
+createChase,chaseStep,chaseIdle,frontOf,floodedOf,nextOf,repeatDue,ghostToast,ghostTap,ghostCells,catcherOf,inRing,createLookup,lookupStep,reunionSheet,bruteGate,
 };

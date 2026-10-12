@@ -6,6 +6,7 @@ import { uiGridToast, uiShowToast } from './grid-toast.js';
 import { uiGridTravel, uiToggleTravel, uiIsTravelAction, uiTravelTo } from './grid-travel.js';
 import { uiGridTouchLayer, uiGridPointerDown, uiGridPointerUp, uiGridPointerCancel } from './grid-touch.js';
 import { uiGridDpad, uiDpadDirOf } from './grid-dpad.js';
+import { uiGridFitMode, uiFitGrid } from './grid-fit.js';
 import { uiGridFire } from './grid-fire.js';
 import { uiGridKeyAction, uiGridKeyUp } from './grid-keys.js';
 import { uiWalkPress, uiWalkRelease, uiWalkReleaseAll, uiWalkInteract } from './grid-walk.js';
@@ -77,7 +78,7 @@ function uiRenderGrid(app) {
 const children = [
 uiGridHud(app),uiGridObjective(app),uiGridStage(app),uiGridToast(app),uiGridTouchLayer(app),app.game.drawPower ? app.game.drawPower(app) :null,uiGridDpad(app),uiGridFire(app),uiGridTravel(app),
 ];
-return uiEl('section',{ className:'screen grid-screen',attrs:{ 'data-screen':'grid' },children:children.filter(Boolean) });
+return uiEl('section',{ className:'screen grid-screen',attrs:{ 'data-screen':'grid','data-fit':uiGridFitMode() },children:children.filter(Boolean) });
 }
 function uiDpadStep(app,dir) {
 uiWalkPress(app,dir);
@@ -102,6 +103,7 @@ return true;
 function uiSyncGrid(app,active) {
 if (!active) uiWalkReleaseAll(app);
 uiSyncGridLoop(app,active);
+if (active) uiFitGrid();
 if (active) uiLevelUpAfterRender(app);
 }
 function uiGridScreen() {

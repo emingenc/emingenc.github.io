@@ -26,6 +26,7 @@ const ENCOUNTERS = [
 () => import('./grid-shield.js'),
 () => import('./grid-power-pads.js'),
 () => import('./grid-flood.js'),
+() => import('./grid-siege.js'),
 ];
 
 function uiNewPower(game) {

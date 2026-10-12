@@ -150,10 +150,23 @@ function uiGridTouchLayer(app) {
 uiWireDpadGuards(app);
 return uiTouchState(app).node;
 }
+function uiChaseRepeatMs(app) {
+const road = app.game.roadback;
+return road && road.chase ? road.repeatMs :0;
+}
+function uiBehindSheet(app) {
+return Boolean(app.story || app.menuOpen || app.game.travelOpen);
+}
 function uiStartHoldTimer(app,state,press) {
 const timer = window.setTimeout(function () {
 state.holdTimers.delete(press.pointerId);
-if (app.screen === 'grid' && state.gesture.pressed.get(press.pointerId) === press.dir) uiWalkPress(app,press.dir);
+if (app.screen !== 'grid' || state.gesture.pressed.get(press.pointerId) !== press.dir) return;
+const repeatMs = uiChaseRepeatMs(app);
+if (!repeatMs) { uiWalkPress(app,press.dir); return; }
+if (uiBehindSheet(app)) return;
+uiWalkPress(app,press.dir);
+uiWalkRelease(app,press.dir);
+uiStartHoldTimer(app,state,{ ...press,delayMs:repeatMs });
 },press.delayMs);
 state.holdTimers.set(press.pointerId,timer);
 }
@@ -175,7 +188,7 @@ if (dir && !app.game.travelOpen) uiPressDpad(app,event,dir);
 return Boolean(dir);
 }
 function uiFocusStage(app) {
-if (app.story || app.menuOpen || app.game.travelOpen) return;
+if (uiBehindSheet(app)) return;
 const stage = app.game.stage;
 if (stage) stage.node.focus({ preventScroll:true });
 app.lastFocusKey = 'grid-stage';
