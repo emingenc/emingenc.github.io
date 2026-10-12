@@ -57,7 +57,8 @@ function uiPincerWinBody(state, result) {
   const words = WAVE_WORDS[result.mode];
   const used = fillText(PINCER_TEXTS.card[words.used], uiPincerValues(state));
   const head = [uiPincerStars(result.stars), uiPincerScore(state), ...uiPincerBestLine(result), uiPincerLine('pincer-used', used)];
-  return [...head, uiArenaPaidLine(result.rank, 'pincer-paid'), uiPincerHow(state, words)].filter(Boolean);
+  const find = result.find ? uiPincerLine('pincer-find', result.find) : null;
+  return [...head, uiArenaPaidLine(result.rank, 'pincer-paid'), find, uiPincerHow(state, words)].filter(Boolean);
 }
 function uiPincerFailRule(state, result) {
   if (result.fail === 'drop' && specOf(state).dam) return PINCER_TEXTS.card.failDamDrop;

@@ -1,4 +1,5 @@
 import { GAME_EVENT } from '../game/game-events.js';
+import { NEXT_TALLER_ID } from '../game/quest/third-wave.js';
 import { BUSY_MS, END_GLYPH } from '../game/rooms/data/shield-wave1.js';
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { applyShield, bruteReads, glyphOf, shieldMoves, shieldPace, shieldStars } from '../game/rooms/shield.js';
@@ -18,6 +19,12 @@ const NO_TIME = -Infinity;
 const MAX_STARS = 3;
 const VERB_MOVES = { push: 'push', pop: 'pop', breach: 'breach' };
 const PLATE_VERBS = new Set(['push', 'pop']);
+const QUEST_TAKEN = 2;
+
+function uiTallerStage(app) {
+  const quests = app.game.ext.quests;
+  return quests && Object.hasOwn(quests, NEXT_TALLER_ID) ? quests[NEXT_TALLER_ID] : 0;
+}
 
 function uiShieldDefaultTime() {
   return typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -35,7 +42,7 @@ function uiShieldCreate(app, rig, start) {
   const arena = {
     rig, mode, levelId: rig.levels[0], poolIndex: run.index, state: run.state,
     startedAt: null, busyUntil: NO_TIME, seen: {}, coach: '', view: 'play', result: null, hold: null,
-    fx: { nopeAt: NO_TIME }, reduced: uiPrefersReducedMotion(),
+    fx: { nopeAt: NO_TIME }, reduced: uiPrefersReducedMotion(), ask: mode === 'w3' && uiTallerStage(app) < QUEST_TAKEN,
   };
   arena.coach = uiShieldCoachText(arena);
   app.pendingAnnounce = null;
@@ -81,9 +88,17 @@ function uiShieldCue(state) {
   if (last.kind === 'push' && !last.blocked) return uiEmit(GAME_EVENT.RIG_PLACE, { rigId: SHIELD_RIG_ID, verb: 'store' });
   return uiEmit(GAME_EVENT.RIG_GOOD, { rigId: SHIELD_RIG_ID, chain: state.combo });
 }
+function uiShieldQuest(app, arena) {
+  const { last, status } = arena.state;
+  arena.questWork = (arena.questWork || Promise.resolve())
+    .then(() => import('./shield-quest.js'))
+    .then((quest) => quest.uiTowersQuest(app, arena, { last, won: status === 'won' }))
+    .catch(() => null); 
+}
 function uiShieldAfterMove(app) {
   const arena = app.rig.arena;
   const state = arena.state;
+  if (state.spec.towers) uiShieldQuest(app, arena);
   uiShieldCue(state);
   if (state.last.kind === 'wrong') uiArenaToast(app, state.last.why, 'bad');
   if (state.status !== 'running') return uiShieldFinish(app);
@@ -108,7 +123,7 @@ function uiShieldEndSpoken(result) {
 function uiShieldFinish(app) {
   const arena = uiRoomCardView(app);
   const result = arena.state.status === 'won' ? uiShieldWin(app, arena) : uiShieldLoss(arena);
-  arena.result = { ...result, mode: arena.mode, ...uiShieldRecordBest(app, arena) };
+  arena.result = { ...result, mode: arena.mode, ...uiShieldRecordBest(app, arena), ...(arena.find ? { find: arena.find } : {}) };
   app.lastFocusKey = 'shield-replay';
   app.pendingAnnounce = uiShieldEndSpoken(arena.result);
   return null;

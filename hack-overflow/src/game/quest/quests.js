@@ -22,9 +22,16 @@ id:'meet-in-the-middle',name:'MEET IN THE MIDDLE',giver:'TWINS',goal:{ need:1,la
 const DISH_RUSH = quest({
 id:'dish-rush',name:'DISH RUSH',giver:'BRACE',goal:{ need:1,label:'orders',slip:'cracks' },reward:{ rank:30,find:null },
 });
+const MOST_WATER = quest({
+id:'most-water',name:'MOST WATER',giver:'TWINS',goal:{ need:1,label:'dam',slip:'moves' },reward:{ rank:0,find:'dam-gauge',label:'dam gauge' },
+});
+const NEXT_TALLER = quest({
+id:'next-taller',name:'NEXT TALLER',giver:'BRACE',goal:{ need:4,label:'rounds',slip:'misses' },reward:{ rank:0,find:'apron',label:'apron' },
+});
 const QUESTS = {
 [FIRST_COMMIT.id]:FIRST_COMMIT,[PATROL_PAIR.id]:PATROL_PAIR,[RECEIPT_RUN.id]:RECEIPT_RUN,
 [MEET_IN_THE_MIDDLE.id]:MEET_IN_THE_MIDDLE,[DISH_RUSH.id]:DISH_RUSH,
+[MOST_WATER.id]:MOST_WATER,[NEXT_TALLER.id]:NEXT_TALLER,
 };
 
 function stateAt(id,stage) {
@@ -64,6 +71,6 @@ return !lines.some((line) => APOSTROPHES.test(line));
 }
 
 export {
-STAGE,PILL_MAX,QUESTS,FIRST_COMMIT,PATROL_PAIR,RECEIPT_RUN,MEET_IN_THE_MIDDLE,DISH_RUSH,
+STAGE,PILL_MAX,QUESTS,FIRST_COMMIT,PATROL_PAIR,RECEIPT_RUN,MEET_IN_THE_MIDDLE,DISH_RUSH,MOST_WATER,NEXT_TALLER,
 offerQuest,startQuest,progressQuest,abandonQuest,isDone,rewardOf,pillText,noApostrophes,
 };

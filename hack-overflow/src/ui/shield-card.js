@@ -41,10 +41,13 @@ function uiShieldAnswerLine(state) {
   if (!state.spec.towers || rows.length === 0) return [];
   return [uiRoomLine('shield-answers', fillText(SHIELD_TEXTS.card.answers, { ans: rows[rows.length - 1].join(' ') }))];
 }
+function uiShieldFindLine(result) {
+  return result.find ? [uiRoomLine('shield-find', result.find)] : [];
+}
 function uiShieldWinBody(state, result) {
   const [used, rule, why] = uiShieldLessons(state);
   const head = [uiRoomStars(result.stars, 'shield-stars'), uiShieldScore(state), ...uiShieldBestLine(result), uiRoomLine('turret-used', used), uiShieldVersus(state)];
-  return [...head, ...uiShieldAnswerLine(state), uiArenaPaidLine(result.rank, 'shield-paid'), uiShieldHow(rule, why)].filter(Boolean);
+  return [...head, ...uiShieldAnswerLine(state), uiArenaPaidLine(result.rank, 'shield-paid'), ...uiShieldFindLine(result), uiShieldHow(rule, why)].filter(Boolean);
 }
 function uiShieldCardLines(result) {
   if (result.mode === 'w1') return result.firstClear ? [FIRST_CLEAR, SHIELD_TEXTS.card.open2, SHIELD_TEXTS.card.next] : [SHIELD_TEXTS.card.next];
@@ -52,7 +55,7 @@ function uiShieldCardLines(result) {
 }
 function uiShieldLossLines(result, state) {
   const rule = state.spec.towers ? SHIELD_TEXTS.card.failRule3 : 'Every glyph needs one action: PUSH, POP, or hold BREACH.';
-  return [result.why || '', rule].filter(Boolean);
+  return [result.why || '', rule, result.find || ''].filter(Boolean);
 }
 function uiShieldCard(app, result) {
   const state = app.rig.arena.state;
