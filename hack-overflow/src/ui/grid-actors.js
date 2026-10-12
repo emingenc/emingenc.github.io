@@ -158,8 +158,15 @@ uiShowToast(app,result.toasts[result.outcome]);
 return landed;
 }
 function uiGridPing(app,actorId,dmg) {
-if (uiHitFoe(app,actorId,dmg)) uiActorsTick(app);
+uiAfterShot(app,uiHitFoe(app,actorId,dmg));
+}
+function uiAfterShot(app,landed) {
+if (landed) uiActorsTick(app);
 uiRenderKeepingFocus(app);
+}
+function uiGridShot(app,actorId,dmg) {
+const hit = (damage) => uiHitFoe(app,actorId,damage);
+uiAfterShot(app,app.game.fireGate ? app.game.fireGate(app,dmg,hit) :hit(dmg));
 }
 function uiSentryWait(app) {
 const game = app.game;
@@ -181,4 +188,4 @@ attrs:{ role:'img','aria-label':'Hearts ' + hearts + ' of ' + max },
 });
 }
 
-export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiSentryWait,uiGridHearts,uiHurt };
+export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiGridShot,uiSentryWait,uiGridHearts,uiHurt };

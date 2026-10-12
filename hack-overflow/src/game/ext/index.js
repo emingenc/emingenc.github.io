@@ -1,5 +1,5 @@
 const ID_PATTERN = /^[a-z0-9-]{1,32}$/;
-const LIMITS = { rank:9999,paid:48,finds:32,beats:128,met:16,quests:16,state:3,count:99,tags:6,trials:3,allies:4 };
+const LIMITS = { rank:9999,paid:48,finds:32,beats:128,met:16,quests:16,state:3,count:99,tags:6,trials:3,allies:4,held:24 };
 
 function isId(value) {
 return typeof value === 'string' && ID_PATTERN.test(value);
@@ -48,6 +48,7 @@ field('met',ids(LIMITS.met)),
 table('tags',LIMITS.tags,{ keep:isId,clean:(value) => (typeof value === 'string' && /^\d{1,2},\d{1,2}$/.test(value) ? value :null) }),
 table('trials',LIMITS.trials,{ keep:(id) => POWERS.includes(id),clean:upTo(LIMITS.trials) }),
 table('lends',LIMITS.allies,{ keep:isId,clean:upTo(LIMITS.count) }),
+field('held',ids(LIMITS.held)),
 ];
 
 function makeExtFields() {

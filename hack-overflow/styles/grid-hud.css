@@ -301,3 +301,23 @@
     font-size:var(--fs-md);
   }
 }
+
+.grid-ammo {
+  flex-shrink:0;
+  margin-left:auto;
+  font-family:var(--font-display);
+  font-size:var(--fs-md);
+  line-height:1;
+  color:var(--cyan);
+  white-space:nowrap;
+}
+
+.grid-ammo + .grid-hearts {
+  margin-left:0;
+}
+
+.grid-goal-row-ammo .grid-goal {
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}

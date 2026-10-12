@@ -12,3 +12,11 @@
   min-width:72px;
   min-height:44px;
 }
+
+.grid-power-chips.is-tight .grid-power-chip.is-dock {
+  min-width:56px;
+}
+
+.grid-power-chips.is-tight .grid-power-chip.is-dock-fire {
+  min-width:64px;
+}

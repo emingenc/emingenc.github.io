@@ -14,12 +14,18 @@ lookup:() => import('./grid-power-lookup.js'),
 pincer:() => import('./grid-power-pincer.js'),
 plate:() => import('./grid-power-plate.js'),
 };
+const LENT_IDS = ['pincer','plate'];
 const MODE_EXPORTS = { lookup:'uiModeLookup',pincer:'uiModePincer',plate:'uiModePlate' };
 const ENCOUNTERS = [
 () => import('./grid-power-ambush.js'),
 () => import('./grid-power-rift.js'),
 () => import('./grid-power-bridge.js'),
 () => import('./grid-power-volley.js'),
+() => import('./grid-ammo.js'),
+() => import('./grid-locker.js'),
+() => import('./grid-shield.js'),
+() => import('./grid-power-pads.js'),
+() => import('./grid-flood.js'),
 ];
 
 function uiNewPower(game) {
@@ -38,6 +44,10 @@ return game.ext || createExt();
 function uiBadge(game,powerId) {
 const left = trialsOf(uiExtOf(game),powerId);
 return !ownedPowers(game.progress.won).includes(powerId) && left > 0 ? left + ' left' :'';
+}
+function uiTrialsNote(game,activeId) {
+const ids = LENT_IDS.filter((id) => id !== activeId && uiBadge(game,id));
+return ids.map((id) => id.toUpperCase() + ' ' + uiBadge(game,id)).join(' . ');
 }
 function uiUsableIds(game) {
 return usablePowers(game.progress.won,uiExtOf(game));
@@ -129,7 +139,7 @@ uiPrune(game);
 const mode = uiActiveMode(game);
 if (!mode) uiModeOff(game);
 return uiPowerStrip({
-mode:mode ? mode.name :'',badge:mode ? uiPowerOf(game).badge(mode.id) :'',chips:uiStripChips(app),
+mode:mode ? mode.name :'',badge:mode ? uiPowerOf(game).badge(mode.id) :'',trials:uiTrialsNote(game,mode ? mode.id :''),chips:uiStripChips(app),
 onPower:() => uiPowerAct(app,uiPowerPress),onChip:(chip) => uiPowerAct(app,chip.run),
 });
 }
@@ -185,6 +195,11 @@ const power = uiPowerOf(game);
 uiModeOff(game);
 Object.keys(power.tags).filter((id) => power.tags[id].kind === 'foe').forEach((id) => { delete power.tags[id]; });
 }
+async function uiEnterEncounters(app) {
+const modules = await Promise.all(ENCOUNTERS.map((load) => load().catch(() => ({}))));
+const calls = modules.flatMap((module) => Object.keys(module).filter((name) => /^ui\w*Enter\w*$/.test(name)).map((name) => module[name](app)));
+await Promise.all(calls.map((call) => Promise.resolve(call).catch(console.error)));
+}
 async function uiInstallPower(app) {
 const game = app.game;
 const power = uiPowerOf(game);
@@ -197,6 +212,7 @@ uiSyncTags(game);
 await import('./grid-cast.js');
 if (first) await uiInstallEncounters(app);
 await uiSyncModes(app);
+await uiEnterEncounters(app);
 }
 
 function uiPowerSay(app,toast) {

@@ -2,10 +2,11 @@ import { actorIntent,intentLabel,nearestAwakeFoe } from '../game/actors.js';
 import { GAME_EVENT } from '../game/game-events.js';
 import { withTag } from '../game/ext/power-ops.js';
 import { addTag,aimLabels,aimTarget,tagName,tagNames,targetOf } from '../game/power/aim.js';
+import { GLIDE_REFUSED,glideLine,glideOk,padById,taggedLine } from '../game/power/pads.js';
 import { recallAll,recallOne } from '../game/power/recall.js';
 import { uiEmit,uiGridEmit } from './bus.js';
 import { uiCommitExt } from './ext-storage.js';
-import { uiActorsTick,uiGridPing,uiLiveFoes } from './grid-actors.js';
+import { uiActorsTick,uiGridShot,uiLiveFoes } from './grid-actors.js';
 import { uiCastCarry } from './grid-cast-act.js';
 import { CHIP_RANK_LAST,CHIP_RANK_RECALL,CHIP_RANK_TAG,uiModeOff,uiPowerOf,uiPowerRefresh,uiPrune,uiTagIds,uiTagSpots } from './grid-power.js';
 import { uiShowToast } from './grid-toast.js';
@@ -57,7 +58,7 @@ else {
 power.tags[target.id] = { kind:target.kind,col:target.col,row:target.row };
 Object.assign(power,{ selected:target.id,pick:null });
 if (target.kind === 'tile') uiCommitExt(app,withTag(game.ext,target.id,target));
-uiSay(app,'TAGGED ' + name + '.');
+uiSay(app,padById(target.id) ? taggedLine(target.id) :'TAGGED ' + name + '.');
 }
 uiPowerRefresh(app);
 }
@@ -67,7 +68,7 @@ if (!plan) {
 uiSay(app,NOTHING_TOAST);
 uiPowerRefresh(app);
 } else if (plan.verb === 'TAG') uiTag(app,plan.target);
-else uiGridPing(app,plan.target.id,dmg);
+else uiGridShot(app,plan.target.id,dmg);
 return true;
 }
 function uiTapTarget(app,cell) {
@@ -87,15 +88,20 @@ power.pick = id;
 uiPowerRefresh(app);
 return true;
 }
-function uiRecallTile(app,id,tag) {
-const game = app.game;
-const name = uiNameOf(game,id);
-const here = game.avatar.pos;
-uiSay(app,'RECALL ' + name + ': O(1) get. You are there.');
-if (here.col !== tag.col || here.row !== tag.row) {
-uiCastCarry(app,{ cell:{ col:tag.col,row:tag.row },facing:game.avatar.facing });
+function uiGlideLine(id,name) {
+return padById(id) ? glideLine(id) :'RECALL ' + name + ': O(1) get. You are there.';
+}
+function uiGlide(app,tag) {
+const here = app.game.avatar.pos;
+if (here.col === tag.col && here.row === tag.row) return;
+uiCastCarry(app,{ cell:{ col:tag.col,row:tag.row },facing:app.game.avatar.facing });
 uiGridEmit(app,'enter-cell',{ pos:{ col:tag.col,row:tag.row },from:here });
 }
+function uiRecallTile(app,id,tag) {
+const game = app.game;
+const ok = glideOk(game.world,tag);
+uiSay(app,ok ? uiGlideLine(id,uiNameOf(game,id)) :GLIDE_REFUSED);
+if (ok) uiGlide(app,tag);
 uiPowerRefresh(app);
 }
 function uiRecallOne(app,id) {
