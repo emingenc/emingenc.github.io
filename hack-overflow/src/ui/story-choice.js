@@ -34,7 +34,8 @@ const fire = app.game.fireDownAt;
 return Boolean(touch && touch.gesture.pressed.size > 0) || (fire !== null && fire !== undefined);
 }
 function uiChoiceCalm(app) {
-return !app.story && !uiChoiceMoving(app,performance.now()) && !uiChoiceDockDown(app);
+const holding = Boolean(app.game.chain && app.game.chain.holding);
+return !app.story && !holding && !uiChoiceMoving(app,performance.now()) && !uiChoiceDockDown(app);
 }
 function uiChoiceLook(app,wait) {
 if (app.game.gen !== wait.gen) return;

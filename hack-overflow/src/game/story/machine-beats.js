@@ -66,6 +66,18 @@ intro:[
 [GHOST,'Match each closer to the top plate. If it cannot match, hold BREACH.'],
 ],
 },
+net:{
+intro:[
+[GHOST,'A sliding net. I hold a run of items and slide its edges along the line, the way I slide my own window.'],
+[GHOST,'Grow the net with EXTEND, trim it with SHRINK. Start with EXTEND.'],
+],
+},
+beam:{
+intro:[
+[GHOST,'This beam hides my weak point in a row of cells. It only answers HIGHER or LOWER, and it cheats toward the bigger side.'],
+[GHOST,'So aim at the middle: every shot should kill half the cells. Select a cell, then FIRE.'],
+],
+},
 };
 const GENERIC_LAB = {
 intro:[[GHOST,'A new lab. One more piece of me is stored in here. Tread lightly.']],

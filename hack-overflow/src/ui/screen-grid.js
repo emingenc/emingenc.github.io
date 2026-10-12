@@ -60,6 +60,7 @@ app.game.sentryLoad = import('./grid-sentry.js')
 function uiLoadHeroes(app) {
 import('./grid-cast.js').then(function (cast) { cast.uiInstallCast(app); }).catch(function () {});
 import('./grid-fork.js').then(function (fork) { fork.uiInstallFork(app); }).catch(function () {});
+import('./grid-oracle.js').then(function (oracle) { oracle.uiInstallOracle(app); }).catch(function () {});
 import('./grid-brute.js').then(function (brute) { brute.uiInstallBrute(app); }).catch(function () {});
 import('./grid-power.js').then(function (power) { power.uiInstallPower(app); }).catch(function () {});
 }

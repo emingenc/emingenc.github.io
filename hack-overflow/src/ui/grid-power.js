@@ -13,13 +13,15 @@ const MODES = {
 lookup:() => import('./grid-power-lookup.js'),
 pincer:() => import('./grid-power-pincer.js'),
 plate:() => import('./grid-power-plate.js'),
+net:() => import('./grid-power-net.js'),
 };
-const LENT_IDS = ['pincer','plate'];
-const MODE_EXPORTS = { lookup:'uiModeLookup',pincer:'uiModePincer',plate:'uiModePlate' };
+const LENT_IDS = ['pincer','plate','net'];
+const MODE_EXPORTS = { lookup:'uiModeLookup',pincer:'uiModePincer',plate:'uiModePlate',net:'uiModeNet' };
 const ENCOUNTERS = [
 () => import('./grid-power-ambush.js'),
 () => import('./grid-power-rift.js'),
 () => import('./grid-power-bridge.js'),
+() => import('./grid-power-lane.js'),
 () => import('./grid-power-volley.js'),
 () => import('./grid-ammo.js'),
 () => import('./grid-locker.js'),
@@ -27,7 +29,9 @@ const ENCOUNTERS = [
 () => import('./grid-power-pads.js'),
 () => import('./grid-flood.js'),
 () => import('./grid-siege.js'),
+() => import('./grid-chain.js'),
 () => import('./grid-reward.js'),
+() => import('./grid-loop-pinch.js'),
 ];
 
 function uiNewPower(game) {

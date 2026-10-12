@@ -13,7 +13,7 @@ import { uiDrawWayfinding } from './grid-draw-wayfinding.js';
 import { uiCreateHint, uiCreateNearPlate, uiSyncHint, uiSyncNearPlate } from './grid-hint.js';
 
 const UI_STAGE_LABEL = 'The Grid. Arrow keys walk, Enter interacts, T opens travel.';
-const UI_PALETTE_NAMES = ['bg','panel','border','primary','bright','cyan','magenta','amber','red','text','dim'];
+const UI_PALETTE_NAMES = ['bg','panel','border','primary','bright','cyan','magenta','amber','red','violet','text','dim'];
 function uiReadPalette(node) {
 const style = window.getComputedStyle(node);
 return Object.fromEntries(UI_PALETTE_NAMES.map(function (name) { return [name,style.getPropertyValue('--' + name).trim()]; }));
@@ -116,6 +116,7 @@ function uiDrawFrame(app,now) {
 if (!app.game.stage.tile) return;
 const frame = uiFrameFor(app,now);
 uiDrawTiles(frame);
+if (app.game.drawOracle) app.game.drawOracle(frame.ctx,app,frame);
 if (app.game.drawCast) app.game.drawCast(frame.ctx,app,frame);
 uiDrawAvatar(frame);
 if (app.game.drawActors) app.game.drawActors(frame.ctx,app,frame);

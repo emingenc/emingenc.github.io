@@ -1,11 +1,12 @@
 import { trialsOf } from '../ext/power-ops.js';
 import { LOOKUP } from './lookup.js';
+import { NET_POWER } from './net-power.js';
 import { PINCER_POWER } from './pincer-power.js';
 import { PLATE_POWER } from './plate-power.js';
 
-const POWER_RIGS = [['lookup','turret'],['pincer','pincer'],['plate','shield']];
-const LENDABLE = ['pincer','plate'];
-const POWERS = [LOOKUP,PINCER_POWER,PLATE_POWER];
+const POWER_RIGS = [['lookup','turret'],['pincer','pincer'],['plate','shield'],['net','net']];
+const LENDABLE = ['pincer','plate','net'];
+const POWERS = [LOOKUP,PINCER_POWER,PLATE_POWER,NET_POWER];
 
 function ownedPowers(won) {
 return POWER_RIGS.filter(([,rig]) => won.has(rig)).map(([id]) => id);

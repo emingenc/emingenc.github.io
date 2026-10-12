@@ -1,0 +1,482 @@
+.net-screen {
+  --net-gap:12px;
+  --net-coach-h:48px;
+  --net-strip-h:46px;
+  --net-tile-h:104px;
+  --net-meter-font:var(--fs-2xl);
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  height:100dvh;
+  margin:0 auto;
+  padding:env(safe-area-inset-top,0px) max(var(--sp-5),env(safe-area-inset-right,0px)) calc(var(--net-gap) + env(safe-area-inset-bottom,0px)) max(var(--sp-5),env(safe-area-inset-left,0px));
+  gap:var(--net-gap);
+  overflow:hidden;
+}
+
+.net-screen .arena-assist {
+  display:none;
+}
+
+.net-screen > .arena-toast {
+  right:max(var(--sp-5),env(safe-area-inset-right,0px));
+  left:max(var(--sp-5),env(safe-area-inset-left,0px));
+}
+
+.net-screen.is-card {
+  height:auto;
+  min-height:100dvh;
+  overflow:visible;
+}
+
+.net-screen.is-card .arena-scroll {
+  max-height:calc(100dvh - var(--arena-header-h) - var(--sp-6) - env(safe-area-inset-bottom,0px));
+}
+
+.net-screen > .arena-header,
+.net-screen > .arena-coach,
+.net-screen > .net-strip,
+.net-screen > .net-magnifier,
+.net-screen > .net-dock {
+  flex:none;
+}
+
+.net-screen > .arena-rule {
+  display:none;
+}
+
+.net-screen > .arena-coach {
+  box-sizing:border-box;
+  height:var(--net-coach-h);
+  min-height:0;
+  overflow:hidden;
+  font-size:var(--fs-md);
+  line-height:1.25;
+}
+
+
+.net-scene {
+  position:relative;
+  box-sizing:border-box;
+  display:flex;
+  flex:1 1 0;
+  flex-direction:column;
+  justify-content:center;
+  gap:var(--sp-3);
+  min-height:120px;
+  max-height:400px;
+  padding:var(--sp-3) 0;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  background:var(--bg);
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+}
+
+.net-meter {
+  margin:0;
+  color:var(--dim);
+  font-family:var(--font-display);
+  font-size:var(--net-meter-font);
+  line-height:1;
+  text-align:center;
+  white-space:pre;
+}
+
+.net-meter.is-ok {
+  color:var(--bright);
+}
+
+.net-meter.is-strained {
+  color:var(--amber);
+}
+
+.net-lane {
+  display:grid;
+  grid-template-columns:repeat(8,minmax(0,1fr));
+  gap:0;
+  margin:0;
+  touch-action:none;
+}
+
+.net-tile {
+  position:relative;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  height:var(--net-tile-h);
+  border:2px solid var(--border);
+  background:var(--panel);
+  color:var(--text);
+  transition:border-color 120ms steps(2,end),background-color 120ms steps(2,end);
+}
+
+.net-glyph {
+  font-family:var(--font-display);
+  font-size:var(--fs-4xl);
+  line-height:1;
+}
+
+.net-tile.is-net {
+  border-top-color:var(--cyan);
+  border-bottom-color:var(--cyan);
+  background:#06222a;
+}
+
+.net-tile.is-first {
+  border-left-color:var(--cyan);
+}
+
+.net-tile.is-last {
+  border-right-color:var(--cyan);
+}
+
+.net-tile.is-peek {
+  border-style:dashed;
+  border-color:var(--amber);
+}
+
+.net-lane.is-empty-net .net-tile.is-peek {
+  border-left-style:solid;
+  border-left-color:var(--cyan);
+}
+
+.net-tile.is-snag {
+  border-color:var(--red);
+  background:#3a1018;
+}
+
+.net-snag {
+  position:absolute;
+  top:var(--sp-2);
+  right:var(--sp-2);
+  color:var(--red);
+  font-family:var(--font-display);
+  font-size:var(--fs-2xl);
+  line-height:1;
+  animation:net-snag-pulse 600ms steps(2,end) infinite;
+}
+
+@keyframes net-snag-pulse {
+  0%,100% { opacity:1; }
+  50% { opacity:0.35; }
+}
+
+.net-tile.is-gold {
+  border-color:var(--amber);
+  background:#2a2008;
+}
+
+.net-tile.is-gold.is-net {
+  border-top-color:var(--cyan);
+  border-bottom-color:var(--cyan);
+}
+
+.net-tile.is-flicked .net-glyph {
+  text-decoration:line-through;
+  opacity:0.4;
+}
+
+.net-tile[data-action] {
+  padding:0;
+  font:inherit;
+  appearance:none;
+  cursor:pointer;
+  outline:2px dashed var(--amber);
+  outline-offset:-5px;
+  z-index:1;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.net-tile[data-action]::after {
+  content:"";
+  position:absolute;
+  top:0;
+  right:-2px;
+  bottom:0;
+  left:-2px;
+}
+
+.net-tone-0 {
+  color:var(--cyan);
+}
+
+.net-tone-1 {
+  color:var(--magenta);
+}
+
+.net-tone-2 {
+  color:var(--amber);
+}
+
+.net-tone-3 {
+  color:var(--primary);
+}
+
+.net-tone-4 {
+  color:var(--red);
+}
+
+.net-tone-5 {
+  color:#8ab4ff;
+}
+
+.net-stats {
+  margin:0;
+  color:var(--dim);
+  font-size:var(--fs-sm);
+  line-height:1.1;
+  text-align:center;
+}
+
+.net-scene.is-nope {
+  animation:net-nope 240ms steps(4,end);
+}
+
+@keyframes net-nope {
+  0%,100% { transform:none; }
+  25% { transform:translateX(-4px); }
+  75% { transform:translateX(4px); }
+}
+
+.net-scene.is-armed .net-lane {
+  outline:2px solid var(--amber);
+  outline-offset:-2px;
+}
+
+.net-ghost {
+  position:absolute;
+  top:var(--sp-2);
+  right:var(--sp-3);
+  padding:0 var(--sp-3);
+  border:1px solid var(--amber);
+  border-radius:var(--radius-sm);
+  background:var(--bg);
+  color:var(--amber);
+  font-family:var(--font-display);
+  font-size:var(--fs-md);
+  pointer-events:none;
+}
+
+
+.net-strip {
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns:repeat(16,minmax(20px,1fr));
+  gap:0;
+  height:var(--net-strip-h);
+  margin:0;
+}
+
+.net-cell {
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  border:1px solid var(--border);
+  background:var(--panel);
+  color:var(--text);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  line-height:1;
+  transition:border-color 120ms steps(2,end),background-color 120ms steps(2,end);
+}
+
+.net-cell.is-done {
+  opacity:0.45;
+}
+
+.net-cell.is-net {
+  border-color:var(--cyan);
+  background:#06222a;
+  color:var(--bright);
+}
+
+.net-cell.is-peek {
+  border-style:dashed;
+  border-color:var(--amber);
+  color:var(--amber);
+}
+
+.net-cell.is-hidden {
+  color:var(--dim);
+}
+
+
+.net-magnifier {
+  box-sizing:border-box;
+  display:flex;
+  align-items:stretch;
+  gap:var(--sp-3);
+  height:44px;
+  min-width:0;
+}
+
+.net-grip {
+  display:flex;
+  flex:none;
+  align-items:center;
+  justify-content:center;
+  min-width:72px;
+  min-height:44px;
+  border-radius:var(--radius-sm);
+  background:var(--cyan);
+  color:var(--bg);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  cursor:grab;
+  touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.net-span {
+  display:flex;
+  flex:1 1 auto;
+  align-items:center;
+  justify-content:center;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid var(--cyan);
+  color:var(--bright);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.net-head {
+  display:flex;
+  flex:none;
+  align-items:center;
+  justify-content:center;
+  min-width:64px;
+  border:1px dashed var(--amber);
+  color:var(--amber);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  white-space:nowrap;
+}
+
+
+.net-dock {
+  display:flex;
+  align-items:stretch;
+  gap:6px;
+}
+
+.net-dock .arena-verb {
+  padding:0;
+}
+
+.net-btn {
+  display:flex;
+  flex:1 1 0;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  min-width:100px;
+  height:56px;
+  min-height:56px;
+  overflow:hidden;
+  font-family:var(--font-display);
+  line-height:1;
+}
+
+.net-verb {
+  font-size:var(--fs-2xl);
+}
+
+.net-sub {
+  font-family:var(--font-body);
+  font-size:var(--fs-xs);
+}
+
+.net-btn[aria-disabled="true"] {
+  opacity:0.45;
+}
+
+
+.net-stars {
+  margin:0;
+  font-size:var(--fs-4xl);
+  letter-spacing:6px;
+}
+
+.net-star {
+  color:var(--dim);
+}
+
+.net-star.is-on {
+  color:var(--amber);
+}
+
+.net-final-score {
+  margin:0;
+  color:var(--primary);
+  font-size:var(--fs-2xl);
+}
+
+.net-how-summary {
+  display:flex;
+  align-items:center;
+  min-height:44px;
+  color:var(--cyan);
+  cursor:pointer;
+}
+
+@media (max-height:663px) {
+  .net-screen {
+    --net-tile-h:88px;
+    --net-meter-font:var(--fs-xl);
+  }
+
+  .net-scene {
+    gap:var(--sp-2);
+    padding:var(--sp-2) 0;
+  }
+}
+
+@media (max-height:575px) {
+  .net-screen {
+    --net-gap:6px;
+    --net-coach-h:40px;
+    --net-strip-h:36px;
+    --net-tile-h:72px;
+  }
+
+  .net-screen > .arena-coach {
+    font-size:var(--fs-sm);
+  }
+
+  .net-glyph {
+    font-size:var(--fs-3xl);
+  }
+
+  .net-stats {
+    font-size:var(--fs-xs);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .net-tile,
+  .net-cell {
+    transition:none;
+  }
+
+  .net-snag {
+    animation:none;
+  }
+
+  .net-scene.is-nope {
+    animation:none;
+    outline:2px solid var(--red);
+  }
+}

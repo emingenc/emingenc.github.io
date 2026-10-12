@@ -1,5 +1,5 @@
 const ID_PATTERN = /^[a-z0-9-]{1,32}$/;
-const LIMITS = { rank:9999,paid:48,finds:32,beats:128,met:16,quests:16,state:3,count:99,tags:6,trials:3,allies:4,held:24 };
+const LIMITS = { rank:9999,paid:48,finds:32,beats:128,met:16,quests:16,state:3,count:99,tags:6,trials:3,allies:4,held:24,chain:31,cosmetics:16,badges:8 };
 
 function isId(value) {
 return typeof value === 'string' && ID_PATTERN.test(value);
@@ -31,7 +31,7 @@ const quests = field('quests',(value) => {
 const entries = Object.entries(isRecord(value) ? value :{}).filter(([id,state]) => isId(id) && Number.isFinite(state));
 return Object.fromEntries(entries.slice(0,LIMITS.quests).map(([id,state]) => [id,clampInt(state,0,LIMITS.state)]));
 });
-const POWERS = ['lookup','pincer','plate'];
+const POWERS = ['lookup','pincer','plate','net'];
 function table(KEY,cap,{ keep,clean }) {
 return field(KEY,(value) => Object.fromEntries(Object.entries(isRecord(value) ? value :{}).filter(([id,item]) => keep(id) && clean(item) !== null).slice(0,cap).map(([id,item]) => [id,clean(item)])));
 }
@@ -46,9 +46,12 @@ record('npc',{ bruteHelped:isTrue,nullHome:isTrue }),
 field('beats',ids(LIMITS.beats)),
 field('met',ids(LIMITS.met)),
 table('tags',LIMITS.tags,{ keep:isId,clean:(value) => (typeof value === 'string' && /^\d{1,2},\d{1,2}$/.test(value) ? value :null) }),
-table('trials',LIMITS.trials,{ keep:(id) => POWERS.includes(id),clean:upTo(LIMITS.trials) }),
+table('trials',POWERS.length,{ keep:(id) => POWERS.includes(id),clean:upTo(LIMITS.trials) }),
 table('lends',LIMITS.allies,{ keep:isId,clean:upTo(LIMITS.count) }),
 field('held',ids(LIMITS.held)),
+field('chain',whole(LIMITS.chain)),
+field('cosmetics',ids(LIMITS.cosmetics)),
+field('badges',ids(LIMITS.badges)),
 ];
 
 function makeExtFields() {

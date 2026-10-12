@@ -1,5 +1,5 @@
 import { hasBeat } from '../game/ext/ops.js';
-import { approve,createReview,mergeNow,pickDraft,pressureOf,revived,tapLine,typeDraft,watchText } from '../game/finale/review.js';
+import { approve,clockDue,createReview,heartsAfterTick,mergeNow,pickDraft,pressureOf,revived,tapLine,tickClock,typeDraft,watchText } from '../game/finale/review.js';
 import { KERNEL_FRONT } from '../game/finale/roadback.js';
 import { rootSpec } from '../game/finale/root-review.js';
 import { uiAnnounce,uiEl,uiPrefersReducedMotion } from './dom.js';
@@ -40,7 +40,7 @@ resume:uiResumeHalt,
 function uiReviewFor(app,spec) {
 const old = app.game.review;
 if (old && old.spec.kind === spec.kind) return Object.assign(old,{ spec });
-return { spec,state:createReview(spec,app.game.ext),guard:sheetGuardShow(0),hold:createHold(),mode:'read',sheet:true,notice:null,halt:null,typing:false };
+return { spec,state:createReview(spec,app.game.ext),guard:sheetGuardShow(0),hold:createHold(),mode:'read',sheet:true,notice:null,halt:null,typing:false,clock:null,clockMs:null,pressed:false };
 }
 function uiReviewStale(app,review) {
 return app.game.review !== review || app.screen !== REVIEW_ID;
@@ -77,8 +77,11 @@ app.lastFocusKey = FIRST_KEY;
 if (review.mode === 'read' && review.spec.resume && review.spec.resume(app)) return;
 uiTypeDrafts(app,review);
 uiRenderApp(app);
+review.clockMs = clockDue(review.spec,{ assist:game.ext.assist === true,reduced:uiPrefersReducedMotion() });
+uiClockStart(app,review);
 }
 function uiReviewLeave(app) {
+uiClockStop(app.game.review);
 app.game.review = null;
 app.game.reviveAt = null;
 uiEnterGrid(app);
@@ -90,6 +93,7 @@ review.sheet = false;
 return true;
 }
 if (review.spec.canLeave === false) return true;
+uiClockStop(review);
 uiHoldEnd(review.hold);
 app.game.reviveAt = null;
 uiEnterGrid(app);
@@ -99,9 +103,17 @@ function uiReviveNotice(game) {
 const at = game.reviveAt;
 return at && at.col === KERNEL_FRONT.col && at.row === KERNEL_FRONT.row ? KERNEL_REVIVE_NOTICE :BENCH_REVIVE_NOTICE;
 }
+function uiReviewBlow(app,spec) {
+const hearts = ensureFight(app.game).hp.hearts;
+return spec.floor > 0 ? hearts - heartsAfterTick(hearts,spec) :1;
+}
 function uiReviewHurt(app,review) {
-ensureFight(app.game);
-if (uiHurt(app,1,'flood')) {
+const blow = uiReviewBlow(app,review.spec);
+if (blow === 0) {
+review.notice = null;
+return;
+}
+if (uiHurt(app,blow,'flood')) {
 review.notice = null;
 return;
 }
@@ -112,6 +124,25 @@ function uiStopRoot(game) {
 ['kernel','finale'].forEach(function (key) {
 if (game[key] && game[key].root) game[key].root.stopped = true;
 });
+}
+function uiClockStop(review) {
+if (review && review.clock !== null) window.clearTimeout(review.clock);
+if (review) review.clock = null;
+}
+function uiClockBeat(app,review) {
+review.clock = null;
+if (uiReviewStale(app,review) || review.mode !== 'read' || review.clockMs === null) return;
+const step = tickClock(review.state,review.spec);
+if (!step.tick) return;
+review.state = step.state;
+review.notice = null;
+if (step.hit) uiReviewHurt(app,review);
+if (!review.pressed) uiRenderKeepingFocus(app);
+uiClockStart(app,review);
+}
+function uiClockStart(app,review) {
+if (review.mode !== 'read' || review.clockMs === null || review.clock !== null) return;
+review.clock = window.setTimeout(function () { uiClockBeat(app,review); },review.clockMs);
 }
 async function uiReviewConfirm(app,review,result) {
 if (uiReviewStale(app,review)) return;
@@ -124,6 +155,7 @@ if (!uiReviewStale(app,review) && review.mode === 'read') uiReviewLeave(app);
 uiRenderKeepingFocus(app);
 }
 function uiReviewSettle(app,review,result) {
+uiClockStop(review);
 if (result.stamp === 'LGTM') uiStopRoot(app.game);
 const wait = review.spec.settleMs || 0;
 if (!wait) { uiReviewConfirm(app,review,result); return; }
@@ -148,7 +180,7 @@ const line = LINE_ACTION.exec(actionId);
 const draft = DRAFT_ACTION.exec(actionId);
 if (!line && !draft) return false;
 if (!uiReviewArmed(app,review)) return true;
-const step = line ? tapLine(review.state,review.spec,Number(line[1])) :pickDraft(review.state,review.spec,draft[1]);
+const step = line ? tapLine(review.state,review.spec,Number(line[1]),review.clockMs !== null) :pickDraft(review.state,review.spec,draft[1]);
 uiReviewStep(app,review,step);
 return true;
 }
@@ -183,15 +215,20 @@ function uiReviewPointerDown(event,app) {
 const review = app.game.review;
 if (!review) return false;
 review.guard = sheetGuardDown(review.guard,performance.now());
+review.pressed = true;
 uiBeginHeld(app,review,uiActionOf(event));
 return false;
 }
+function uiReviewLetGo(review) {
+uiHoldEnd(review.hold);
+review.pressed = false;
+}
 function uiReviewPointerUp(event,app) {
-if (app.game.review) uiHoldEnd(app.game.review.hold);
+if (app.game.review) uiReviewLetGo(app.game.review);
 return false;
 }
 function uiReviewRelease(app) {
-if (app.game.review) uiHoldEnd(app.game.review.hold);
+if (app.game.review) uiReviewLetGo(app.game.review);
 }
 function uiFocusedHeld() {
 const node = document.activeElement;
@@ -243,7 +280,7 @@ children:Array.from({ length:tiles },(blank,index) => uiFloodTile(index,review))
 return uiEl('div',{
 className:'review-watch',
 children:[
-uiEl('p',{ className:'review-watch-text',text:watchText(review.state,review.spec) }),
+uiEl('p',{ className:'review-watch-text',text:watchText(review.state,review.spec,{ hearts:app.game.fight.hp.hearts }) }),
 flood,
 uiEl('p',{ className:'review-hearts',text:uiHeartsText(app.game),attrs:{ 'aria-label':'Hearts ' + app.game.fight.hp.hearts + ' of ' + app.game.fight.hp.max } }),
 ],

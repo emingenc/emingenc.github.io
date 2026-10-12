@@ -18,6 +18,8 @@ ledger:{ load:() => import('./screen-ledger.js'),sheets:[RIG_SHELL_SHEET,'styles
 turret:{ load:() => import('./screen-turret.js'),sheets:[RIG_SHELL_SHEET,ARENA_SHEET,'styles/rooms/turret.css'] },
 shield:{ load:() => import('./screen-shield.js'),sheets:[RIG_SHELL_SHEET,ARENA_SHEET,'styles/rooms/shield.css'] },
 pincer:{ load:() => import('./screen-pincer.js'),sheets:[RIG_SHELL_SHEET,ARENA_SHEET,'styles/rooms/pincer.css'] },
+beam:{ load:() => import('./screen-beam.js'),sheets:[RIG_SHELL_SHEET,ARENA_SHEET,'styles/rooms/beam.css'] },
+net:{ load:() => import('./screen-net.js'),sheets:[RIG_SHELL_SHEET,ARENA_SHEET,'styles/rooms/net.css'] },
 };
 const UI_RIG_HOSTS = {
 rig:(app,rig) => uiOpenRig(app,rig.id),

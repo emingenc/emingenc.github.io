@@ -55,6 +55,22 @@ rank:{ clear:'meet-in-the-middle',star:10,stars:{ 2:'pincer-s2',3:'pincer-s3' } 
 pitch:'slide two cannons to the target sum',
 guided:false,
 },
+net:{
+id:'net',title:'SLIDING NET',family:'window',host:'rig',
+labId:'net',
+levels:['net-1'],
+rank:{ clear:'clear-stretch',star:10,stars:{ 2:'net-s2',3:'net-s3' } },
+pitch:'slide the net along the run of items',
+guided:false,
+},
+beam:{
+id:'beam',title:'HALVING BEAM',family:'binary-search',host:'rig',
+labId:'beam',
+levels:['beam-1'],
+pitch:'halve the live cells, fire at the middle',
+guided:false,
+rank:{ clear:'halving-beam',star:10,stars:{ 2:'beam-s2',3:'beam-s3' } },
+},
 };
 const STARS_PER_LEVEL = 3;
 function rigOf(rigId) {

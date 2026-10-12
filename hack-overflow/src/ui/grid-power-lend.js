@@ -4,7 +4,7 @@ import { uiCommitExt } from './ext-storage.js';
 import { uiCastSay } from './grid-cast-act.js';
 import { uiModeOff,uiPowerOf,uiPowerRefresh } from './grid-power.js';
 
-const LENDABLE = ['pincer','plate'];
+const LENDABLE = ['pincer','plate','net'];
 
 function uiOwns(game,power) {
 return ownedPowers(game.progress.won).includes(power);
