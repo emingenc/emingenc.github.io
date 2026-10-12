@@ -1,3 +1,5 @@
+import { fillText } from '../fill-text.js';
+
 const TURRET_TEXTS = {
 coach:{
 first:'{v} needs {t} - {v} = {key}. Drag {v} onto slot {key}: empty, so it gets stored.',
@@ -19,9 +21,16 @@ double:'DOUBLE LOOKUP: your next tap answers two drones.',
 billed:'DOUBLE BILLED! A second {v}: slot {v} holds x2.',
 dark:'The slots are dark now. Compute T - v, then look it up.',
 announce:'{n}. Target {t}.',
+ttl:'The board holds 3 tags. A number is its TTL, in drones.',
+fog:'You see only the next 2 drones. The third is fog: ?',
+full:'Board full: 3 tags. EVICT one whose partner cannot arrive in time, then {v} can be stored.',
+evict:'EVICT {slot}: del seen[{slot}]. Room made. Now {v}.',
+armed:'EVICT armed: tap the tag to remove.',
+expired:'Slot {slots} expired: its TTL ran out.',
 },
 rule:'Clear all {n} drones to open the way. Drop each drone on the slot TARGET minus its number: lit slot = PAIR, empty slot = STORE.',
 rule2:'Clear all {n} drones. The slots are dark: work out TARGET minus the number, then look it up.',
+rule3:'Clear all {n} drones. The board holds only 3 tags and each one expires: EVICT the tag whose partner cannot arrive in time.',
 ruleOverflow:'OVERFLOW has no end. The swarm speeds up. Hold it as long as you can.',
 toast:{
 wrong:'Wrong slot. {v} needs a {key} ({t} - {v}). Slot {slot} was {state}.',
@@ -34,6 +43,12 @@ swarm:'The swarm rammed the bay: a {v} drone got through (-1 ♥). It needed a {
 fuse:'The {v} drone fused out. {v} needs a {key} ({t} - {v}); slot {key} was {state}. -1 ♥.',
 lit:'lit',
 empty:'empty',
+full:'Board full, {tip}. Evict a slot whose partner can\'t arrive in time.',
+throw:'EVICT {slot} threw away a pair: the {want} comes in {due}. Better: {tip}.',
+throwBay:'EVICT {slot} threw away a pair: the {want} is in the bay. Look it up instead.',
+free:'slot {slot} expires in {ttl}, no {want} in the next {window} -> EVICT {slot}',
+fog:'slot {slot} expires in {ttl}, no {want} in the next {window}, the rest is fog -> EVICT {slot}',
+gone:'slot {slot} expires in {ttl}, gone before the next drone -> EVICT {slot}',
 },
 card:{
 used:'You used {steps} lookups. Brute force would need {compares}.',
@@ -42,6 +57,10 @@ title:'WAVE CLEAR - THE WAY IS OPEN',
 next:'Next: breach a LOCK. Solving locks is how you pass each sector.',
 failTitle:'OVERRUN',
 title2:'WAVE 2 CLEAR',
+title3:'WAVE 3 CLEAR',
+used3:'You used {steps} steps: {n} drones and {evicts} evictions. Par is {par}.',
+stars3:'STARS: 1 = cleared, 2 = no wrong move, 3 = also no more steps than par (drones + the evictions the board forces). A fuse miss costs a heart, not a star.',
+why3:'WHY IT MATTERS: real memory is bounded. A cache keeps a few entries and evicts the one it will need last.',
 overflowTitle:'OVERFLOW OVER',
 overflowUsed:'You held the swarm for {drones} drones in {steps} lookups. BRUTE would need {compares} checks.',
 billed:'DOUBLE BILLED: drone {n} was a second {v}. Slot {v} held x2: a count above 1 means "seen before".',
@@ -49,16 +68,11 @@ best:'BEST {score}',
 newBest:'NEW BEST {score}',
 wave1:'WAVE 1',
 wave2:'WAVE 2',
+wave3:'WAVE 3',
 overflow:'OVERFLOW',
 how:'How scoring works',
 why:'WHY IT MATTERS: BRUTE compares each new drone with every earlier one: {n}x{last}/2 = {compares}. A hash map is O(n), not O(n^2).',
 },
 };
-
-function fillText(template,values) {
-return template.replace(/\{(\w+)\}/g,function (_,name) {
-return name in values ? String(values[name]) :'';
-});
-}
 
 export { TURRET_TEXTS,fillText };

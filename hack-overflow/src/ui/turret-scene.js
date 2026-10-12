@@ -1,7 +1,7 @@
 import { TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
 import { swarmReady, swarmWindowMs } from '../game/rooms/turret.js';
 import { uiEl } from './dom.js';
-import { uiTurretBayBand, uiTurretBoardClass, uiTurretSlotView } from './turret-board.js';
+import { uiTurretBayBand, uiTurretBoardClass, uiTurretLaneMark, uiTurretSlotView } from './turret-board.js';
 import { TRAVEL_MS, uiTurretNoping } from './turret-flow.js';
 import { uiRaceStrip } from './turret-race.js';
 
@@ -90,7 +90,7 @@ function uiSceneGeo(size, state) {
   const top = size.height >= LOG_MIN_HEIGHT ? LOG_BAND : 0;
   const zone = Math.max(MIN_ZONE, size.height - CHIP_BAND - top);
   const dock = Math.min(DOCK_MAX, Math.max(DOCK_MIN, zone * DOCK_SHARE));
-  return { ...size, top, zone, cy: top + zone / 2, dock, dual: state.next >= TURRET_W1.dualFrom };
+  return { ...size, top, zone, cy: top + zone / 2, dock, dual: state.next >= state.spec.dualFrom };
 }
 function uiSceneBay(geo, index) {
   if (!geo.dual) return { x: geo.width * BAY_X.single, y: geo.cy };
@@ -180,7 +180,7 @@ function uiSceneQueue(ctx, geo, view) {
   ahead.forEach(function (value, j) {
     const at = uiSceneLane(geo, j + (1 - uiSceneEase(shift)) * arena.fx.shifted);
     const gold = uiSceneGoldNext(state, j);
-    uiSceneDrone(ctx, at, { px: PX_LANE, color: gold ? PALETTE.gold : PALETTE.magenta, v: value, font: FONT_SMALL });
+    uiSceneDrone(ctx, at, { px: PX_LANE, color: gold ? PALETTE.gold : PALETTE.magenta, v: uiTurretLaneMark(state, j, value), font: FONT_SMALL });
   });
   return ahead.length;
 }
@@ -429,7 +429,7 @@ function uiTurretPaint(app, now) {
   if (nodes.canvas) arena.lastPaint = uiPaintTurretScene(nodes.canvas, arena, { now, reduced: arena.reduced });
   const race = uiSceneRaceText(arena);
   RACE_CELLS.forEach((name) => uiSceneSet(nodes[name], race[name]));
-  if (arena.state.spec.dark) uiSceneSlots(arena, now);
+  if (arena.state.spec.dark || arena.state.spec.cap > 0) uiSceneSlots(arena, now);
   uiSceneClass(nodes.board, uiTurretBoardClass(arena, uiTurretNoping(arena, now)));
   uiSceneClass(nodes.field, uiTurretFieldClass(arena));
 }

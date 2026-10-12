@@ -1,12 +1,17 @@
-import { ASSIST_PACE,BRUTE_MS_PER_READ,END_GLYPH,PACE_MAX,SCORE,SHIELD_W1 } from './data/shield-wave1.js';
+import { ASSIST_PACE,BRUTE_MS_PER_READ,END_GLYPH,SCORE,SHIELD_W1 } from './data/shield-wave1.js';
+import { W1_SPEC } from './data/shield-waves.js';
 import { SHIELD_TEXTS } from './data/shield-texts.js';
-import { fillText } from './data/turret-texts.js';
+import { fillText } from './fill-text.js';
+import { paceFor } from './pace.js';
+import { cloneState,endVolley,outcome } from './shield-round.js';
+import { towersAnswer,towersApply,towersBlank,towersPar,towersStars } from './shield-towers.js';
 
 
 const MAX_STARS = 3;
 const MOVES = ['push','pop','breach','clear'];
-const OPENERS = new Set(['(','[']);
-const MATCH = { ')':'(',']':'[' };
+const TOWER_MOVES = ['push','pop'];
+const OPENERS = new Set(['(','[','{']);
+const MATCH = { ')':'(',']':'[','}':'{' };
 const DEFAULT_CTX = { pace:ASSIST_PACE };
 
 function isOpener(glyph) {
@@ -25,9 +30,11 @@ const valid = stack.length === 0;
 return { valid,at:volley.length,reason:valid ? '' :'leftover',stack:stack.join('') };
 }
 function createShield(wave,options = {}) {
+const spec = options.spec || W1_SPEC;
 return {
-wave,assist:Boolean(options.assist),vi:0,gi:0,stack:[],integrity:SHIELD_W1.integrity,combo:0,maxCombo:0,score:0,
+wave,spec,assist:Boolean(options.assist),vi:0,gi:0,stack:[],integrity:spec.integrity,combo:0,maxCombo:0,score:0,
 steps:0,wrong:0,missedBreach:0,falseBreach:0,slips:0,results:[],status:'running',last:null,
+ans:spec.towers ? towersBlank(wave[0]) :[],answers:[],
 };
 }
 function glyphOf(state) {
@@ -38,11 +45,13 @@ return state.gi < volley.length ? volley[state.gi] :END_GLYPH;
 function answerFor(state) {
 const glyph = glyphOf(state);
 if (!glyph) return '';
+if (state.spec.towers) return towersAnswer(state);
 if (glyph === END_GLYPH) return state.stack.length === 0 ? 'clear' :'breach';
 if (isOpener(glyph)) return 'push';
 return MATCH[glyph] === state.stack[state.stack.length - 1] ? 'pop' :'breach';
 }
-function shieldPar(wave) {
+function shieldPar(wave,spec = W1_SPEC) {
+if (spec.towers) return towersPar(wave);
 return wave.reduce((sum,volley) => sum + judgeVolley(volley).at + 1,0);
 }
 function bruteReads(wave) {
@@ -50,33 +59,25 @@ return wave.reduce((sum,volley) => sum + (volley.length * (volley.length + 1)) /
 }
 function shieldStars(state) {
 if (state.status !== 'won') return 0;
+if (state.spec.towers) return towersStars(state);
 if (state.missedBreach + state.falseBreach > 0) return 1;
 return state.slips > 0 ? MAX_STARS - 1 :MAX_STARS;
 }
 function paceAt(elapsedMs,count,assist) {
-if (assist) return ASSIST_PACE;
-const ghostMs = bruteReads(Array(count).fill('x'.repeat(SHIELD_W1.length))) * BRUTE_MS_PER_READ;
-const left = ghostMs > 0 ? Math.min(1,Math.max(0,1 - elapsedMs / ghostMs)) :0;
-return ASSIST_PACE + (PACE_MAX - ASSIST_PACE) * left;
+return paceFrom(elapsedMs,bruteReads(Array(count).fill('x'.repeat(SHIELD_W1.length))),assist);
+}
+function shieldPace(elapsedMs,state) {
+return paceFrom(elapsedMs,bruteReads(state.wave),state.assist);
+}
+function paceFrom(elapsedMs,reads,assist) {
+return paceFor(elapsedMs,reads * BRUTE_MS_PER_READ,assist);
 }
 function waveClockOn(state) {
 return state.steps > 0;
 }
 function shieldMoves(state) {
-return state.status === 'running' ? MOVES.slice() :[];
-}
-function cloneState(state) {
-return Object.assign({},state,{ stack:state.stack.slice(),results:state.results.slice() });
-}
-function endVolley(state,result) {
-state.results.push(result);
-state.vi += 1;
-state.gi = 0;
-state.stack = [];
-if (state.vi >= state.wave.length) state.status = 'won';
-}
-function outcome(state,extra) {
-state.last = Object.assign({ kind:'',glyph:'',points:0,depth:state.stack.length,why:'' },extra);
+if (state.status !== 'running') return [];
+return state.spec.towers ? TOWER_MOVES.slice() :MOVES.slice();
 }
 function playRight(turn) {
 const { state,move,glyph,play } = turn;
@@ -89,7 +90,7 @@ return outcome(state,{ kind:move,glyph,points:SCORE.glyph });
 }
 state.combo += 1;
 state.maxCombo = Math.max(state.maxCombo,state.combo);
-const points = Math.round(SCORE.block * Math.min(state.combo,SHIELD_W1.comboCap) * play.pace);
+const points = Math.round(SCORE.block * Math.min(state.combo,state.spec.comboCap) * play.pace);
 state.score += points;
 outcome(state,{ kind:move,glyph,points,combo:state.combo,blocked:true });
 return endVolley(state,'blocked');
@@ -127,15 +128,16 @@ if (state.integrity <= 0) state.status = 'failed';
 else endVolley(state,'cracked');
 }
 function applyShield(state,move,ctx = DEFAULT_CTX) {
-if (state.status !== 'running' || !MOVES.includes(move)) return state;
+if (!shieldMoves(state).includes(move)) return state;
 const draft = cloneState(state);
+const play = state.assist ? DEFAULT_CTX :Object.assign({},DEFAULT_CTX,ctx);
+if (draft.spec.towers) return towersApply(draft,move,play);
 const glyph = glyphOf(draft);
 const answer = answerFor(draft);
-const play = state.assist ? DEFAULT_CTX :Object.assign({},DEFAULT_CTX,ctx);
 draft.steps += 1;
 if (move === answer) playRight({ state:draft,move,glyph,play });
 else playWrong({ state:draft,move,glyph },answer);
 return draft;
 }
 
-export { createShield,applyShield,shieldMoves,glyphOf,answerFor,judgeVolley,shieldPar,bruteReads,shieldStars,paceAt,waveClockOn,isOpener };
+export { createShield,applyShield,shieldMoves,glyphOf,answerFor,judgeVolley,shieldPar,bruteReads,shieldStars,paceAt,shieldPace,waveClockOn,isOpener };

@@ -37,6 +37,10 @@
   flex:none;
 }
 
+.turret-screen > .arena-header .arena-title {
+  font-size:var(--fs-md);
+}
+
 
 .turret-field {
   position:relative;
@@ -309,6 +313,61 @@
 .turret-tag-hint {
   color:var(--dim);
   font-size:var(--fs-sm);
+}
+
+
+.turret-ttl {
+  position:absolute;
+  right:0;
+  bottom:2px;
+  left:0;
+  color:var(--cyan);
+  font-size:var(--fs-sm);
+  line-height:1;
+  text-align:center;
+}
+
+.turret-slot.is-last .turret-ttl {
+  color:var(--red);
+}
+
+.turret-slot.is-last {
+  border-color:var(--amber);
+}
+
+.turret-evict {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  height:56px;
+  min-height:56px;
+  border-color:var(--red);
+  line-height:1.1;
+}
+
+.turret-evict-word {
+  color:var(--red);
+}
+
+.turret-evict.is-armed {
+  background:#2a0a10;
+  box-shadow:inset 0 0 0 2px var(--red);
+}
+
+.turret-board.is-evicting .turret-slot.is-evictable {
+  border-color:var(--red);
+  background:#2a0a10;
+  color:var(--bright);
+}
+
+.turret-board.is-evicting .turret-slot:not(.is-evictable) {
+  opacity:0.5;
+}
+
+.turret-screen .arena-actions:has(> :nth-child(5)) .arena-verb {
+  flex-basis:88px;
 }
 
 

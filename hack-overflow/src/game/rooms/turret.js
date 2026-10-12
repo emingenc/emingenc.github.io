@@ -1,8 +1,10 @@
-import { ASSIST_PACE,BRUTE_MS_PER_COMPARE,FUSE_MS,PACE_MAX,SCORE } from './data/turret-wave1.js';
+import { ASSIST_PACE,BRUTE_MS_PER_COMPARE,FUSE_MS,SCORE } from './data/turret-wave1.js';
 import { GOLD_MULT,OVERFLOW_AHEAD,OVERFLOW_CHUNK,WAVES } from './data/turret-waves.js';
 import { TURRET_TEXTS,fillText } from './data/turret-texts.js';
+import { paceFor } from './pace.js';
 import { targetAt } from './turret-stream.js';
 import { overflowDrones } from './turret-w2-stream.js';
+import { BAY_PLACE,adviceClause,ageTags,clearSlot,evictAdvice,forcedEvictions,judgeEvict,lightSlot,litSlots,needsRoom,planOf } from './turret-w3.js';
 
 
 const MIN_SLOT = 1;
@@ -12,7 +14,8 @@ const DEFAULT_CTX = { pace:ASSIST_PACE,fuseLeft:0 };
 const PROBE_PARTS = 3;
 const TAG_PARTS = 2;
 const RADIX = 10;
-const VERB_PARTS = { probe:PROBE_PARTS,tag:TAG_PARTS,fuse:TAG_PARTS,trust:TAG_PARTS,swarm:TAG_PARTS };
+const VERB_PARTS = { probe:PROBE_PARTS,tag:TAG_PARTS,fuse:TAG_PARTS,trust:TAG_PARTS,swarm:TAG_PARTS,evict:PROBE_PARTS };
+const SLOT_VERBS = new Set(['probe','evict']);
 const ANSWER_KINDS = new Set(['pair','store','tag']);
 
 function bayCap(state) {
@@ -47,7 +50,7 @@ while (state.next < state.stream.length && state.bay.length < bayCap(state)) arr
 }
 function cloneState(state) {
 return Object.assign({},state,{
-bay:state.bay.map((drone) => Object.assign({},drone)),board:state.board.slice(),hint:state.hint ? { ...state.hint } :null,
+bay:state.bay.map((drone) => Object.assign({},drone)),board:state.board.slice(),ttl:state.ttl.slice(),lapsed:[],hint:state.hint ? { ...state.hint } :null,
 born:state.born.map((list) => list.slice()),log:state.log.map((entry) => Object.assign({},entry)),
 });
 }
@@ -61,7 +64,7 @@ const state = {
 spec,stream,assist:Boolean(options.assist),next:0,bay:[],board:Array(spec.slots + 1).fill(0),
 born:Array.from({ length:spec.slots + 1 },() => []),integrity:spec.integrity,combo:0,maxCombo:0,
 score:0,steps:0,wrong:0,pairs:0,fuses:0,resolved:0,log:[],status:'running',last:null,
-double:false,insured:0,billed:null,hint:null,golds:0,
+double:false,insured:0,billed:null,hint:null,golds:0,ttl:Array(spec.slots + 1).fill(0),lapsed:[],evictions:0,
 };
 refill(state);
 return state;
@@ -80,7 +83,7 @@ function bruteCompares(count) {
 return (count * (count - 1)) / 2;
 }
 function parOf(state) {
-return state.stream.length;
+return state.spec.cap > 0 ? state.stream.length + forcedEvictions(state.stream) :state.stream.length;
 }
 function turretStars(state) {
 if (state.status !== 'won') return 0;
@@ -88,10 +91,7 @@ if (state.wrong > 0) return 1;
 return state.steps <= parOf(state) ? MAX_STARS :MAX_STARS - 1;
 }
 function paceAt(elapsedMs,count,assist) {
-if (assist) return ASSIST_PACE;
-const ghostMs = bruteCompares(count) * BRUTE_MS_PER_COMPARE;
-const left = ghostMs > 0 ? Math.min(1,Math.max(0,1 - elapsedMs / ghostMs)) :0;
-return ASSIST_PACE + (PACE_MAX - ASSIST_PACE) * left;
+return paceFor(elapsedMs,bruteCompares(count) * BRUTE_MS_PER_COMPARE,assist);
 }
 function waveClockOn(state) {
 return state.steps > 0 || state.fuses > 0 || state.bay.some((drone) => drone.fuseMs !== null);
@@ -124,14 +124,15 @@ const probes = Array.from({ length:state.spec.slots },(__,slot) => 'probe:' + in
 return [...probes,'tag:' + index];
 });
 const offer = hintOffer(state);
-return offer ? [...moves,'trust:' + offer.bay] :moves;
+const evicts = state.spec.cap > 0 ? litSlots(state).map((slot) => 'evict:0:' + slot) :[];
+return offer ? [...moves,...evicts,'trust:' + offer.bay] :[...moves,...evicts];
 }
 function parseMove(moveId) {
 const parts = String(moveId).split(':');
 const verb = parts[0];
 if (parts.length !== VERB_PARTS[verb]) return null;
 const bay = Number.parseInt(parts[1],RADIX);
-const slot = verb === 'probe' ? Number.parseInt(parts[2],RADIX) :0;
+const slot = SLOT_VERBS.has(verb) ? Number.parseInt(parts[2],RADIX) :0;
 return Number.isInteger(bay) && Number.isInteger(slot) ? { verb,bay,slot } :null;
 }
 function isLit(state,key) {
@@ -145,6 +146,7 @@ function leave(state,drone) {
 state.bay = state.bay.filter((item) => item !== drone);
 state.resolved += 1;
 if (state.hint && state.hint.n === drone.n && !state.hint.choice) state.hint.choice = 'verify';
+if (state.spec.cap > 0) state.lapsed = ageTags(state);
 }
 function hurt(state) {
 state.integrity -= 1;
@@ -152,13 +154,13 @@ if (state.integrity <= 0) state.status = 'failed';
 }
 function takePartner(state,key) {
 state.board[key] -= 1;
+if (state.board[key] === 0) state.ttl[key] = 0;
 return state.born[key].shift();
 }
 function storeDrone(state,drone) {
 if (state.spec.billed && !state.billed && state.board[drone.v] > 0) state.billed = { n:drone.n,v:drone.v };
-state.board[drone.v] += 1;
-state.born[drone.v].push(drone.n);
 leave(state,drone);
+if (!needsRoom(state,state.spec,drone.v)) lightSlot(state,drone,state.spec.ttl);
 }
 function outcome(turn,extra) {
 const { state,drone,key,bay } = turn;
@@ -194,22 +196,46 @@ armGold(turn);
 }
 function playStore(turn,kind) {
 const { state,drone } = turn;
+if (needsRoom(state,state.spec,drone.v)) return playFull(turn);
 const points = answerPoints(turn,STORE_POINTS);
 state.score += points;
 outcome(turn,{ kind,points,self:2 * drone.v === turretTarget(state) });
 storeDrone(state,drone);
 armGold(turn);
 }
-function playWrong(turn) {
-const { state,drone,key,slot } = turn;
-const ram = drone.n >= state.spec.rushFrom;
+function penalize(turn,kind,said) {
+const { state,drone } = turn;
 state.wrong += 1;
 state.combo = 0;
+const ram = drone.n >= state.spec.rushFrom;
+outcome(turn,{ kind,slot:said.slot,ram,damage:ram ? 1 :0,why:said.text + (ram ? TURRET_TEXTS.toast.ram :'') });
+if (ram) hurt(state);
+}
+function playWrong(turn) {
+const { state,drone,key,slot } = turn;
 const spot = isLit(state,slot) ? TURRET_TEXTS.toast.lit :TURRET_TEXTS.toast.empty;
 const values = { slot,v:drone.v,t:turretTarget(state),key,state:spot };
-const why = fillText(TURRET_TEXTS.toast.wrong,values) + (ram ? TURRET_TEXTS.toast.ram :'');
-outcome(turn,{ kind:'wrong',slot,ram,damage:ram ? 1 :0,why });
-if (ram) hurt(state);
+penalize(turn,'wrong',{ slot,text:fillText(TURRET_TEXTS.toast.wrong,values) });
+}
+function playFull(turn) {
+const { state } = turn;
+const advice = evictAdvice(state,planOf(state));
+penalize(turn,'full',{ slot:advice.slot,text:fillText(TURRET_TEXTS.toast.full,{ tip:adviceClause(advice) }) });
+}
+function playThrow(turn,verdict) {
+const { slot } = turn;
+const values = { slot,want:verdict.mine.want,due:verdict.mine.due,tip:adviceClause(verdict.best) };
+const toast = verdict.mine.due === BAY_PLACE ? TURRET_TEXTS.toast.throwBay :TURRET_TEXTS.toast.throw;
+penalize(turn,'throw',{ slot,text:fillText(toast,values) });
+}
+function playEvict(turn) {
+const { state,slot } = turn;
+const verdict = judgeEvict(state,planOf(state),slot);
+state.steps += 1;
+state.evictions += 1;
+clearSlot(state,slot);
+if (verdict.thrown) playThrow(turn,verdict);
+else outcome(turn,{ kind:'evict',slot });
 }
 function playProbe(turn) {
 turn.state.steps += 1;
@@ -264,7 +290,7 @@ const why = fillText(TURRET_TEXTS.toast.swarm,{ v:value,t:target,key:target - va
 state.last = { bay:0,n:state.next,v:value,key:target - value,t:target,damage:1,ram:true,points:0,gold:false,kind:'swarm',why };
 hurt(state);
 }
-const PLAYS = { probe:playProbe,tag:playTag,fuse:playFuse,trust:playTrust,swarm:playSwarm };
+const PLAYS = { probe:playProbe,tag:playTag,fuse:playFuse,trust:playTrust,swarm:playSwarm,evict:playEvict };
 
 function settle(state) {
 if (state.status !== 'running') return;
@@ -273,6 +299,7 @@ if (!state.spec.endless && state.next >= state.stream.length && state.bay.length
 }
 function validMove(state,move) {
 if (move.verb === 'swarm') return swarmReady(state);
+if (move.verb === 'evict') return state.spec.cap > 0 && isLit(state,move.slot) && Boolean(state.bay[move.bay]);
 if (move.verb === 'trust') return hintOffer(state)?.bay === move.bay;
 const slotOk = move.verb !== 'probe' || (move.slot >= MIN_SLOT && move.slot <= state.spec.slots);
 return slotOk && Boolean(state.bay[move.bay]);
