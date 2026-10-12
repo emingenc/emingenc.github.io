@@ -1,10 +1,8 @@
-import { rigOf } from '../game/rig-catalog.js';
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
 import { uiRenderApp } from './app.js';
-import { ARENA_FOCUS_KEY, uiArenaCoach, uiArenaHeader, uiArenaLeave, uiArenaLeaveTooSoon, uiArenaOpen, uiArenaRule, uiArenaToastNode } from './arena-shell.js';
-import { uiEl } from './dom.js';
-import { uiLinkStyles } from './lazy-style.js';
+import { ARENA_FOCUS_KEY } from './arena-shell.js';
+import { uiRoomEmpty, uiRoomHead, uiRoomLeave, uiRoomOpen, uiRoomReady, uiRoomShell } from './room-screen.js';
 import { uiShieldCard } from './shield-card.js';
 import { BREACH_ACTION, POP_ACTION, PUSH_ACTION, uiShieldDock, uiShieldField } from './shield-board.js';
 import { SHIELD_RIG_ID, uiShieldCommit, uiShieldCreate, uiShieldSetAssist, uiShieldSpoken, uiShieldTime } from './shield-flow.js';
@@ -16,6 +14,9 @@ const REPLAY_ACTION = 'shield-replay';
 const STYLESHEETS = ['styles/rooms/rig-shell.css', 'styles/rooms/arena.css', 'styles/rooms/shield.css'];
 const BREACH_NOW = 'shield-breach-now';
 const KEY_VERBS = { arrowleft: PUSH_ACTION, p: PUSH_ACTION, arrowright: POP_ACTION, o: POP_ACTION, b: BREACH_NOW };
+const MODE_ACTIONS = { 'shield-wave1': 'w1', 'shield-wave2': 'w2', 'shield-wave3': 'w3' };
+const RULES = { w1: SHIELD_TEXTS.rule, w2: SHIELD_TEXTS.rule2, w3: SHIELD_TEXTS.rule3 };
+const MODE_TITLES = { w1: null, w2: 'SHIELD · W2', w3: 'SHIELD · W3' };
 
 function uiShieldArena(app) {
   return app.rig && app.rig.rigId === SHIELD_RIG_ID && app.rig.arena ? app.rig.arena : null;
@@ -24,19 +25,15 @@ function uiShieldArena(app) {
 
 function uiShieldPlayView(app) {
   const arena = app.rig.arena;
-  const rule = fillText(SHIELD_TEXTS.rule, { n: arena.state.wave.length });
-  return [uiArenaRule(rule), uiArenaCoach(arena.coach), uiShieldField(app, uiShieldTime()), uiShieldDock(app)];
+  const rule = fillText(RULES[arena.mode], { n: arena.state.wave.length });
+  return [...uiRoomHead(rule, arena.coach), uiShieldField(app, uiShieldTime()), uiShieldDock(app)];
 }
 function uiShieldRender(app) {
   const arena = uiShieldArena(app);
-  if (!arena) return uiEl('section', { className: 'screen rig-screen', attrs: { 'data-screen': 'rig' } });
-  const view = { hearts: arena.state.integrity, score: arena.state.score, title: arena.rig.title, assist: app.game.ext.assist };
+  if (!arena) return uiRoomEmpty();
+  const title = MODE_TITLES[arena.mode] ?? arena.rig.title;
   const body = arena.view === 'card' ? [uiShieldCard(app, arena.result)] : uiShieldPlayView(app);
-  return uiEl('section', {
-    className: 'screen rig-screen arena-screen shield-screen' + (arena.view === 'card' ? ' is-card' : ''),
-    attrs: { 'data-screen': 'rig', 'data-rig': SHIELD_RIG_ID, tabindex: '-1', 'data-focus-key': ARENA_FOCUS_KEY },
-    children: [uiArenaHeader(app, view), uiArenaToastNode(app), ...body],
-  });
+  return uiRoomShell(app, arena, { rigId: SHIELD_RIG_ID, title, body });
 }
 function uiShieldAnnounce(app) {
   const arena = uiShieldArena(app);
@@ -63,16 +60,18 @@ function uiShieldBreachClick(app) {
   uiShieldPlay(app, 'breach', BREACH_ACTION);
 }
 function uiShieldLeave(app) {
-  if (uiArenaLeaveTooSoon(app)) return;
-  uiShieldPressCancel();
-  uiArenaLeave(app, null);
+  uiRoomLeave(app, uiShieldPressCancel);
 }
-function uiShieldReplay(app) {
+function uiShieldBegin(app, mode) {
   const arena = app.rig.arena;
   if (arena.view !== 'card') return;
-  app.rig.arena = uiShieldCreate(app, arena.rig, { now: uiShieldTime(), lastIndex: arena.poolIndex });
-  app.lastFocusKey = BREACH_ACTION;
+  const lastIndex = mode === arena.mode ? arena.poolIndex : null;
+  app.rig.arena = uiShieldCreate(app, arena.rig, { now: uiShieldTime(), lastIndex, mode });
+  app.lastFocusKey = app.rig.arena.state.spec.towers ? PUSH_ACTION : BREACH_ACTION;
   app.pendingAnnounce = uiShieldSpoken(app.rig.arena) + ' ' + app.rig.arena.coach;
+}
+function uiShieldReplay(app) {
+  uiShieldBegin(app, app.rig.arena.mode);
 }
 const UI_SHIELD_ACTIONS = {
   [BACK_ACTION]: uiShieldLeave,
@@ -87,6 +86,10 @@ function uiShieldApplyAction(app, actionId) {
   if (!uiShieldArena(app)) return false;
   if (Object.hasOwn(UI_SHIELD_ACTIONS, actionId)) {
     UI_SHIELD_ACTIONS[actionId](app);
+    return true;
+  }
+  if (Object.hasOwn(MODE_ACTIONS, actionId)) {
+    uiShieldBegin(app, MODE_ACTIONS[actionId]);
     return true;
   }
   return actionId.startsWith('shield-');
@@ -110,9 +113,12 @@ function uiShieldPointerCancel() {
 
 
 function uiShieldKeyId(event, app) {
+  const key = String(event.key).toLowerCase();
   if (event.key === 'Escape') return BACK_ACTION;
-  if (app.rig.arena.view !== 'play') return null;
-  return KEY_VERBS[String(event.key).toLowerCase()] ?? null;
+  const arena = app.rig.arena;
+  if (arena.view !== 'play') return null;
+  if (arena.state.spec.towers && key === 'b') return null;
+  return KEY_VERBS[key] ?? null;
 }
 function uiShieldKeyAction(event, app) {
   if (!uiShieldArena(app)) return null;
@@ -136,12 +142,10 @@ function uiRigScreen() {
   };
 }
 function uiRigOpen(app, rigId) {
-  const rig = rigOf(rigId);
-  if (!rig) throw new Error('unknown rig: ' + rigId);
-  uiArenaOpen(app, { rigId, create: (opened) => uiShieldCreate(opened, rig, { now: uiShieldTime(), lastIndex: null }) });
+  uiRoomOpen(app, rigId, (opened, rig) => uiShieldCreate(opened, rig, { now: uiShieldTime(), lastIndex: null }));
 }
 function uiRigReady() {
-  return uiLinkStyles(STYLESHEETS);
+  return uiRoomReady(STYLESHEETS);
 }
 
 export { uiRigScreen, uiRigOpen, uiRigReady };

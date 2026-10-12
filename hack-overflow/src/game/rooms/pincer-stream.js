@@ -1,11 +1,10 @@
 import { PINCER_POOL,PINCER_W1 } from './data/pincer-w1.js';
-import { prng } from './turret-stream.js';
+import { collectPool } from './pool-util.js';
 
 
 const MIN_PAR = 5;
 const MAX_PAR = 8;
 const MIN_NEAR_PAIRS = 2;
-const GENERATE_LIMIT = 300000;
 const NEAR = 1;
 const FIRST = 0;
 const LAST = PINCER_W1.n - 1;
@@ -54,10 +53,13 @@ return pairsWhy(layout) || lineWhy(layout);
 function pick(next,count) {
 return Math.floor(next() * count);
 }
-function candidatePillars(next) {
+function distinctPillars(next) {
 const values = new Set();
 while (values.size < PINCER_W1.n) values.add(PINCER_W1.minValue + pick(next,PINCER_W1.maxValue));
-return [...values].sort((first,second) => first - second);
+return [...values];
+}
+function candidatePillars(next) {
+return distinctPillars(next).sort((first,second) => first - second);
 }
 function candidate(next) {
 const pillars = candidatePillars(next);
@@ -65,23 +67,9 @@ const left = pick(next,PINCER_W1.n - 1);
 const right = left + 1 + pick(next,PINCER_W1.n - 1 - left);
 return { pillars,target:pillars[left] + pillars[right],plank:left + 1 };
 }
-const poolCache = new Map();
 function buildPool(seed = PINCER_POOL.seed,size = PINCER_POOL.size) {
-const key = seed + ':' + size;
-if (poolCache.has(key)) return poolCache.get(key);
-const next = prng(seed);
-const seen = new Set();
-const out = [];
-for (let tries = 0; out.length < size && tries < GENERATE_LIMIT; tries += 1) {
-const layout = candidate(next);
-const id = layout.pillars.join(',') + '/' + layout.target;
-if (!seen.has(id) && !streamWhy(layout)) {
-seen.add(id);
-out.push(layout);
-}
-}
-poolCache.set(key,out);
-return out;
+const id = (layout) => layout.pillars.join(',') + '/' + layout.target;
+return collectPool({ tag:'pincer-w1',seed,size },{ candidate,why:streamWhy,id });
 }
 function pickStream(pool,lastIndex,next) {
 const choices = pool.map((_,index) => index).filter((index) => index !== lastIndex);
@@ -89,4 +77,4 @@ const index = choices[pick(next,choices.length)];
 return { stream:pool[index],index };
 }
 
-export { buildPool,pickStream,streamWhy };
+export { buildPool,pickStream,streamWhy,pairsWhy,meeting,pick,distinctPillars,MIN_PAR,MAX_PAR };

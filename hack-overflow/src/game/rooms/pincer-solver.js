@@ -1,5 +1,5 @@
 import { applyPincer,createPincer,pincerMoves,pincerSum } from './pincer.js';
-import { prng } from './turret-stream.js';
+import { randomMoveBot } from './pool-util.js';
 
 
 const DEFAULT_LIMIT = 100;
@@ -18,14 +18,17 @@ let state = createPincer(stream);
 for (let count = 0; count < limit && state.status === 'running'; count += 1) state = applyPincer(state,bot(state));
 return state;
 }
-function solvePincer(stream) {
-let state = createPincer(stream);
+function lineFrom(start) {
+let state = start;
 const moves = [];
 while (pincerMoves(state).includes(wanted(state))) {
 moves.push(wanted(state));
 state = applyPincer(state,wanted(state));
 }
 return moves;
+}
+function solvePincer(stream) {
+return lineFrom(createPincer(stream));
 }
 function fireSpamBot(state) {
 return 'fire';
@@ -38,11 +41,7 @@ const opposite = { l:'r',r:'l' };
 return orFire(state,opposite[wanted(state)]);
 }
 function randomBot(seed) {
-const next = prng(seed);
-return function choose(state) {
-const moves = pincerMoves(state);
-return moves[Math.floor(next() * moves.length)];
-};
+return randomMoveBot(seed,pincerMoves);
 }
 
-export { solvePincer,fireSpamBot,alwaysRightBot,wrongPointerBot,randomBot,playBot };
+export { solvePincer,lineFrom,wanted,orFire,fireSpamBot,alwaysRightBot,wrongPointerBot,randomBot,playBot };

@@ -1,5 +1,13 @@
+import { fillText } from '../fill-text.js';
+
 const PINCER_TEXTS = {
 rule:'Two cannons, one crumbling bridge. Low sum: move L>. High sum: move <R. Equal to the target: FIRE. ROOT eats a tile every move.',
+rule2:'Ten pillars in no order. SORT puts them in line (33 steps, 2 slots), LOOKUP skips the order (10 steps, 10 slots). Then FIRE on the target.',
+rule3:'The DAM: area = shorter wall x width. BANK every better area, sweep the shorter wall until the cannons meet, then FIRE to lock the best in. One shot.',
+banner:{
+memory:'MEMORY: 2 slots. SORT then pinch: par {par}.',
+time:'TIME: par {par}. LOOKUP reads each pillar once.',
+},
 coach:{
 start:'Sum {sum}, target {t}. Move the cannon that changes the sum the right way.',
 low:'Sum {sum} is below {t}. Raise it: L> moves the left cannon up.',
@@ -9,6 +17,13 @@ dropHint:'The wrong cannon can throw the answer away. Low sum: L>. High sum: <R.
 plank:'Plank pillar {v}: a spare FIRE there is +150 and ROOT skips a tile. It costs a charge and a step.',
 floorLow:'{floor} tiles of bridge left. Every wasted move is floor you lose.',
 pairDone:'Pair found: {a} + {b} = {t}.',
+start2:'No order, so no pinching. SORT: 33 steps, 2 slots. LOOKUP: 10 steps, 10 slots.',
+slow2:'SORT cost 33 steps; this banner wants par {par}. Pinching still wins.',
+start3:'Area {area} = shorter wall x width. BANK a better area, then move the shorter wall.',
+bank3:'Area {area} beats the bank ({bank}). BANK it before you move.',
+move3:'Wall {short} is the shorter. Move it: only that wall can still rise.',
+tie3:'Both walls are {short}. Either one may move.',
+fire3:'The cannons met. Bank {bank}: FIRE to lock it in.',
 },
 toast:{
 rightSafeLeft:'L> at sum {sum} {rel} {t} -> L moved when the sum was {state}. Safe this time, but it can drop the answer.',
@@ -19,6 +34,20 @@ miss:'FIRE at {sum} ≠ {t} -> wasted charge. Fire only on equal.',
 floor:'ROOT ate the last tile. The bridge is gone.',
 charges:'No charges left. FIRE only when the sum equals the target.',
 plank:'Plank shot at pillar {v}: +150. ROOT will skip a tile.',
+sorted:'SORTED: 33 steps, 2 slots. SORT forgets where each pillar stood: fine for values, not indices.',
+unsortedSafe:'{name} at sum {sum} {rel} {t} on UNSORTED pillars -> position says nothing about size, so the sum cannot pick a cannon. Safe this time. SORT first.',
+unsortedDrop:'{name} at sum {sum} {rel} {t} ({a}+{b}) on UNSORTED pillars -> you dropped {v}, and {v}+{partner}={t} was still possible. Position says nothing about size: SORT first.',
+lookupHeavy:'LOOKUP at 10 slots -> the pair is found, but the banner allows 2 slots. Safe this time. Under MEMORY: SORT, then pinch.',
+damTaller:'Moved the taller wall (h={tall}) -> the shorter wall (h={short}) caps the water; width shrank, the cap can not rise. Move the shorter wall.',
+damSafe:' Safe this time, but it can lose the best dam.',
+damDrop:' The {best} dam is gone.',
+damUnbanked:'Moved off the {area} dam (pillars {a} and {b}) without a BANK -> it is gone for good. BANK a better area before you move.',
+damMiss:'FIRE with {bank} banked -> a bigger dam, {best}, stood at pillars {a} and {b}. Move the shorter wall and BANK every better area first.',
+},
+refuse:{
+fire:'Sweep first: FIRE stays shut until the cannons meet ({left} more pointer moves), because a taller dam can still stand between them.',
+bank:'BANK needs a bigger area than the {bank} already banked, and the cannons hold {area}: move the shorter wall first.',
+sorted:'{verb} is closed because the pillars are already in line: pinch with L> and <R.',
 },
 card:{
 title:'THE CANNONS MEET',
@@ -31,13 +60,22 @@ failFloor:'ROOT ate the whole bridge. Every move should close the gap between th
 failDrop:'The answer was dropped. A cannon that moves off a pillar throws it away for good.',
 failCharges:'Out of charges. FIRE only when the sum equals the target.',
 how:'How scoring works',
+title2:'THE PILLARS FALL IN LINE',
+title3:'THE DAM HOLDS',
+used2:'You used {steps} steps. SORT is charged 33 (n log n), LOOKUP 10 (n). Brute force would check {checks} pairs.',
+used3:'You made {steps} pointer moves. Brute force would check {checks} wall pairs.',
+stars3:'STARS: 1 = best dam locked in, 2 = also no wrong move, 3 = also no more than {par} pointer moves.',
+why2:'WHY IT MATTERS: pinching needs order. SORT buys it with about n log n time and no extra memory; LOOKUP skips the order with O(n) time and O(n) memory. Pick by what you are short of.',
+why3:'WHY IT MATTERS: BRUTE tries every wall pair: 10x9/2 = 45 checks. Moving the shorter wall never loses the best dam, so one sweep of {par} moves finds it.',
+unlock3:'Wave 3, the DAM, is open.',
+failDamDrop:'The best dam was dropped. Only the shorter wall can be moved safely, and the best area must be banked.',
+failBest:'You locked in the wrong dam. Bank every better area before you FIRE.',
+best:'BEST {score}',
+newBest:'NEW BEST {score}',
+wave1:'WAVE 1',
+wave2:'WAVE 2',
+wave3:'WAVE 3',
 },
 };
-
-function fillText(template,values) {
-return template.replace(/\{(\w+)\}/g,function (_,name) {
-return name in values ? String(values[name]) :'';
-});
-}
 
 export { PINCER_TEXTS,fillText };

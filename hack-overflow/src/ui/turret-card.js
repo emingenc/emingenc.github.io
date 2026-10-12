@@ -1,19 +1,18 @@
 import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
-import { bruteCompares } from '../game/rooms/turret.js';
+import { bruteCompares, parOf } from '../game/rooms/turret.js';
 import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
+import { uiRoomBars, uiRoomLine, uiRoomStars } from './room-card.js';
 import { uiTurretOtherModes } from './turret-modes.js';
 import { AGAIN, uiRaceCardLines, uiRaceStamp } from './turret-race.js';
 
 
-const MAX_STARS = 3;
-const STAR_ON = '★';
-const STAR_OFF = '☆';
-const PERCENT = 100;
-const MIN_BAR_PERCENT = 6;
 const FIELD_DOWN = 'The SENTRY FIELD is down. The hash sector is open.';
-const SWITCH_ACTIONS = { w1: 'turret-wave1', w2: 'turret-wave2', overflow: 'turret-overflow' };
-const MODE_LABELS = { w1: TURRET_TEXTS.card.wave1, w2: TURRET_TEXTS.card.wave2, overflow: TURRET_TEXTS.card.overflow };
+const SWITCH_ACTIONS = { w1: 'turret-wave1', w2: 'turret-wave2', w3: 'turret-wave3', overflow: 'turret-overflow' };
+const MODE_LABELS = {
+  w1: TURRET_TEXTS.card.wave1, w2: TURRET_TEXTS.card.wave2, w3: TURRET_TEXTS.card.wave3, overflow: TURRET_TEXTS.card.overflow,
+};
+const WIN_TITLES = { w1: TURRET_TEXTS.card.title, w2: TURRET_TEXTS.card.title2, w3: TURRET_TEXTS.card.title3 };
 
 function uiTurretActions(app, mode) {
   const race = app.rig.arena.race;
@@ -21,37 +20,21 @@ function uiTurretActions(app, mode) {
   return [{ action: 'turret-replay', label: race ? AGAIN : 'REPLAY' }, ...others, { action: 'rig-back', label: 'LEAVE' }];
 }
 
-function uiTurretStar(index, stars) {
-  const on = index < stars;
-  return uiEl('span', { className: 'turret-star' + (on ? ' is-on' : ''), text: on ? STAR_ON : STAR_OFF });
-}
-function uiTurretStars(stars) {
-  const cells = Array.from({ length: MAX_STARS }, (unused, index) => uiTurretStar(index, stars));
-  return uiEl('p', { className: 'turret-stars', children: cells, attrs: { role: 'img', 'aria-label': stars + ' of ' + MAX_STARS + ' stars' } });
-}
-function uiTurretBarRow(kind, label, share) {
-  const fill = uiEl('div', { className: 'turret-vs-fill turret-vs-' + kind });
-  if (fill.style && typeof fill.style.setProperty === 'function') fill.style.setProperty('--vs', share + '%');
-  const track = uiEl('div', { className: 'turret-vs-track', children: [fill] });
-  return uiEl('div', { className: 'turret-vs-row', children: [uiEl('span', { className: 'turret-vs-label', text: label }), track] });
-}
 function uiTurretDrones(state) {
   return state.spec.endless ? state.resolved : state.stream.length;
 }
 function uiTurretVersus(state) {
-  const brute = bruteCompares(uiTurretDrones(state));
-  const ratio = brute > 0 ? state.steps / brute : 1;
-  const you = Math.min(PERCENT, Math.max(MIN_BAR_PERCENT, Math.round(ratio * PERCENT)));
-  const rows = [uiTurretBarRow('you', 'YOU ' + state.steps, you), uiTurretBarRow('brute', 'BRUTE ' + brute, PERCENT)];
-  return uiEl('div', { className: 'turret-vs', children: rows, attrs: { 'aria-hidden': 'true' } });
+  return uiRoomBars({ steps: state.steps, brute: bruteCompares(uiTurretDrones(state)) });
 }
 function uiTurretScore(state) {
   return uiEl('p', { className: 'turret-final-score', text: 'SCORE ' + state.score });
 }
-function uiTurretLine(className, text) {
-  return uiEl('p', { className: 'arena-card-line ' + className, text });
+function uiTurretBoundedLessons(state) {
+  const values = { steps: state.steps, n: state.stream.length, evicts: state.evictions, par: parOf(state) };
+  return [fillText(TURRET_TEXTS.card.used3, values), TURRET_TEXTS.card.stars3, TURRET_TEXTS.card.why3];
 }
 function uiTurretLessons(state) {
+  if (state.spec.cap > 0) return uiTurretBoundedLessons(state);
   const count = uiTurretDrones(state);
   const compares = bruteCompares(count);
   const values = { steps: state.steps, n: count, last: count - 1, compares, drones: count };
@@ -60,23 +43,23 @@ function uiTurretLessons(state) {
 }
 function uiTurretBestLine(result) {
   const text = result.scoreImproved ? TURRET_TEXTS.card.newBest : TURRET_TEXTS.card.best;
-  return result.best && result.best.score > 0 ? [uiTurretLine('turret-best', fillText(text, { score: result.best.score }))] : [];
+  return result.best && result.best.score > 0 ? [uiRoomLine('turret-best', fillText(text, { score: result.best.score }))] : [];
 }
 function uiTurretBilledLine(state) {
-  return state.billed ? [uiTurretLine('turret-billed', fillText(TURRET_TEXTS.card.billed, state.billed))] : [];
+  return state.billed ? [uiRoomLine('turret-billed', fillText(TURRET_TEXTS.card.billed, state.billed))] : [];
 }
 function uiTurretHow(rule, why) {
   const summary = uiEl('summary', { className: 'turret-how-summary', text: TURRET_TEXTS.card.how });
-  return uiEl('details', { className: 'turret-how', children: [summary, uiTurretLine('turret-rule', rule), uiTurretLine('turret-why', why)] });
+  return uiEl('details', { className: 'turret-how', children: [summary, uiRoomLine('turret-rule', rule), uiRoomLine('turret-why', why)] });
 }
 function uiTurretWinBody(state, result) {
   const [used, rule, why] = uiTurretLessons(state);
-  const head = [uiTurretStars(result.stars), ...uiRaceCardLines(result), uiTurretScore(state), ...uiTurretBestLine(result), uiTurretLine('turret-used', used), uiTurretVersus(state)];
+  const head = [uiRoomStars(result.stars, 'turret-stars'), ...uiRaceCardLines(result), uiTurretScore(state), ...uiTurretBestLine(result), uiRoomLine('turret-used', used), uiTurretVersus(state)];
   return [...head, ...uiTurretBilledLine(state), uiArenaPaidLine(result.rank, 'turret-paid'), uiTurretHow(rule, why)].filter(Boolean);
 }
 function uiTurretOverflowBody(state, result) {
   const [used, rule, why] = uiTurretLessons(state);
-  const head = [uiTurretScore(state), ...uiTurretBestLine(result), uiTurretLine('turret-used', used), uiTurretVersus(state)];
+  const head = [uiTurretScore(state), ...uiTurretBestLine(result), uiRoomLine('turret-used', used), uiTurretVersus(state)];
   return [...head, ...uiTurretBilledLine(state), uiTurretHow(rule, why)];
 }
 function uiTurretLossCard(app, result) {
@@ -93,8 +76,8 @@ function uiTurretCard(app, result) {
   }
   if (!result.won) return uiTurretLossCard(app, result);
   const lines = result.firstClear ? [FIELD_DOWN, TURRET_TEXTS.card.next] : [TURRET_TEXTS.card.next];
-  const title = result.mode === 'w2' ? TURRET_TEXTS.card.title2 : TURRET_TEXTS.card.title;
-  return uiArenaCard(app, { title, lead: uiRaceStamp(result), lines: result.mode === 'w2' ? [] : lines, body: uiTurretWinBody(state, result), actions });
+  const title = WIN_TITLES[result.mode];
+  return uiArenaCard(app, { title, lead: uiRaceStamp(result), lines: result.mode === 'w1' ? lines : [], body: uiTurretWinBody(state, result), actions });
 }
 
 export { uiTurretCard };
