@@ -4,6 +4,7 @@ import { uiEl, uiPrefersReducedMotion } from './dom.js';
 import { uiGameDebug } from './game-state.js';
 import { uiWalkTick, uiAvatarPose } from './grid-walk.js';
 import { uiCameraTick } from './grid-camera.js';
+import { uiBarsInset } from './grid-fit.js';
 import { uiDoorOpenness } from './grid-doors.js';
 import { uiDrawTiles } from './grid-draw-tiles.js';
 import { uiDrawAvatar } from './grid-draw-avatar.js';
@@ -101,7 +102,7 @@ uiDrawFrame(app,now);
 function uiFrameFor(app,now) {
 const game = app.game;
 const stage = game.stage;
-const view = { cols:stage.width / stage.tile,rows:stage.height / stage.tile };
+const view = { cols:stage.width / stage.tile,rows:stage.height / stage.tile,inset:uiBarsInset(stage.tile) };
 const camera = uiCameraTick(app,now);
 const avatar = uiAvatarPose(app,now);
 game.view = { camera,tile:stage.tile,cols:view.cols,rows:view.rows,width:stage.width,height:stage.height,avatar };

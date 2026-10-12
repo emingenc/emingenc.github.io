@@ -1,7 +1,9 @@
 import { trailAt } from '../game/cast/patch.js';
+import { tapCellFor,tapIntent } from '../game/tap.js';
 import { BEATS,withBeats } from '../game/finale/contract.js';
 import {
-  KERNEL_FRONT,REPLY_TOASTS,ROAD_TOASTS,TICK_MS,bruteGate,catcherOf,chaseIdle,chaseStep,createChase,createLookup,inRing,lookupStep,reunionSheet,
+  CHASE_REPEAT_MS,KERNEL_FRONT,REPLY_TOASTS,ROAD_TOASTS,TICK_MS,bruteGate,catcherOf,chaseIdle,chaseStep,createChase,createLookup,ghostTap,ghostToast,inRing,
+  lookupStep,repeatDue,reunionSheet,
 } from '../game/finale/roadback.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiGridHook } from './bus.js';
@@ -40,6 +42,7 @@ function uiOnStep(app,info) {
 const road = app.game.roadback;
 if (!road || !road.chase || info.app !== app) return;
 road.moved = true;
+road.ghost = null;
 uiTrail(app,info.pos);
 if (inRing(info.pos)) uiEndChase(app);
 }
@@ -67,12 +70,46 @@ await uiCastSleep(app,TICK_MS);
 if (road.over) uiClock(app);
 }
 }
+function uiChaseTaking(app,event) {
+const road = app.game.roadback;
+const state = app.game.touch;
+if (!road || !road.chase || uiParked(app) || app.menuOpen || event.button > 0) return false;
+return Boolean(state && app.game.view && state.node.contains(event.target));
+}
+function uiTappedCell(app,event) {
+const canvas = app.game.stage ? app.game.stage.canvas :null;
+const rect = (canvas || app.game.touch.node).getBoundingClientRect();
+return tapCellFor(app.game.world,app.game.view,{ left:event.clientX - rect.left,top:event.clientY - rect.top });
+}
+function uiGhostTap(app,event) {
+if (!uiChaseTaking(app,event)) return false;
+const road = app.game.roadback;
+const cell = uiTappedCell(app,event);
+const from = app.game.avatar.pos;
+const turn = ghostTap(road.ghost,{ from,cell,intent:tapIntent(app.game.world,app.game.progress,{ from,cell }) });
+road.ghost = turn.ghost;
+if (turn.action === 'walk') return false;
+event.stopPropagation();
+app.game.toast = null;
+uiSay(app,ghostToast(turn.ghost.steps),'info');
+uiRenderKeepingFocus(app);
+return true;
+}
 function uiChase(app) {
 const game = app.game;
 if (inRing(game.avatar.pos)) return Promise.resolve();
 return new Promise(function (resolve) {
 const off = uiGridHook('enter-cell',(info) => uiOnStep(app,info));
-game.roadback = { chase:createChase(game.avatar.pos),moved:false,over:() => { off(); resolve(); } };
+const gen = game.gen;
+const onTap = (event) => {
+if (app.game !== game || game.gen !== gen) { document.removeEventListener('pointerup',onTap,true); return; }
+uiGhostTap(app,event);
+};
+document.addEventListener('pointerup',onTap,true);
+game.roadback = {
+chase:createChase(game.avatar.pos),moved:false,ghost:null,repeatMs:CHASE_REPEAT_MS,repeatDue,keyAt:-Infinity,
+over:() => { off(); document.removeEventListener('pointerup',onTap,true); resolve(); },
+};
 uiRunClock(app).catch(console.error);
 });
 }
@@ -118,6 +155,7 @@ async function uiRoadBack(app) {
 const game = app.game;
 uiSetRevive(app,KERNEL_FRONT);
 uiNotice(app,ROAD_TOASTS.system);
+uiSeams(app);
 await uiChase(app);
 if (app.game !== game) return;
 if (!inRing(game.avatar.pos)) uiCarryToFront(app);
@@ -127,4 +165,4 @@ await uiReunion(app);
 uiSetRevive(app,null);
 }
 
-export { uiRoadBack };
+export { uiRoadBack,uiGhostTap };

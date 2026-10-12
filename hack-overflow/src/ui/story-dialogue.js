@@ -1,6 +1,7 @@
 import { markBeatsSeen } from '../game/save.js';
 import { advanceFlow,beatsDue,earnedToastIds,finalBeat,labBeat,lineAt,pendingIds,startFlow,toastText,unseenBeats } from '../game/story/story.js';
 import { uiAnnounce } from './dom.js';
+import { uiRenderKeepingFocus } from './app.js';
 import { uiCommitSave } from './game-state.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiWalkReleaseAll } from './grid-walk.js';
@@ -8,6 +9,7 @@ import { sheetGuardShow,uiSheetGuardWire } from './sheet-guard.js';
 import { uiStoryLineDone,uiStoryStopTimer } from './story-render.js';
 
 const STORY_NEXT_KEY = 'story-next';
+const LADDER_BEAT = 'gate-lv5';
 
 function uiStoryAnnounceLine(story) {
 const line = lineAt(story.flow);
@@ -50,8 +52,24 @@ resolve();
 }
 function uiStoryToast(app,beat) {
 uiStoryMarkSeen(app,[beat.id]);
-if (app.screen === 'grid') uiShowToast(app,{ text:toastText(beat),kind:'info' });
+if (app.screen !== 'grid') return true;
+uiShowToast(app,{ text:toastText(beat),kind:'info' });
+if (beat.id === LADDER_BEAT) uiStoryChain(app,beat).catch(console.error);
 return true;
+}
+async function uiStoryChain(app,beat) {
+const game = app.game;
+const gen = game.gen;
+const told = (app.game.ext && app.game.ext.beats) || [];
+const later = window.setTimeout.bind(window);
+const ladder = await import('../game/story/ladder.js');
+ladder.ladderRest(beat.id,told).forEach(function (text,at) {
+later(function () {
+if (app.screen !== 'grid' || app.game !== game || game.gen !== gen) return;
+uiShowToast(app,{ text,kind:'info' });
+uiRenderKeepingFocus(app);
+},ladder.LADDER_GAP_MS * (at + 1));
+});
 }
 function uiStoryShow(app,beats) {
 if (app.story) return false;

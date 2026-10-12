@@ -1,5 +1,5 @@
 import { BOLT_RANGE,DRONE_ARM,createDrone } from '../game/actors.js';
-import { hasFind,withFind } from '../game/ext/ops.js';
+import { hasBeat,hasFind,withFind } from '../game/ext/ops.js';
 import { trialsOf } from '../game/ext/power-ops.js';
 import { cellToward } from '../game/move.js';
 import { BRIDGE,applyBridge,bridgeStandDown,createBridge } from '../game/power/bridge.js';
@@ -64,6 +64,7 @@ const fight = ensureFight(app.game);
 fight.actors = [...fight.actors.filter((actor) => actor.id !== BRIDGE.droneId),createDrone({ id:BRIDGE.droneId,...BRIDGE.drone })];
 Object.assign(bridge,{ live:true,state:createBridge(),revives:fight.revives || 0 });
 uiOweTrial(app,bridge);
+if (hasBeat(app.game.ext,'ordeal')) import('./finale-offer.js').then((module) => module.uiGhostOffer(app,{ kind:'bridge',once:'hint-bridge' })).catch(console.error);
 }
 function uiEnd(app,bridge) {
 Object.assign(bridge,{ live:false,state:createBridge() });

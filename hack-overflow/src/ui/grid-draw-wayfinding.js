@@ -45,7 +45,7 @@ ctx.strokeRect(marker.col * frame.tile - reach,marker.row * frame.tile - reach,r
 ctx.restore();
 }
 function uiDrawWayfinding(frame) {
-const marker = markerFor(targetCell(frame.world,frame.targetId),{ camera:frame.camera,cols:frame.view.cols,rows:frame.view.rows });
+const marker = markerFor(targetCell(frame.world,frame.targetId),{ camera:frame.camera,cols:frame.view.cols,rows:frame.view.rows,inset:frame.view.inset });
 if (marker.kind === 'none') return;
 const pulse = pulseAt(frame.now,frame.reducedMotion);
 if (marker.kind === 'edge') uiDrawArrow(frame,marker,pulse);

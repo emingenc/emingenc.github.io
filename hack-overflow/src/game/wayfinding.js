@@ -7,6 +7,7 @@ const PULSE_STILL = 0.5;
 const HALF = 0.5;
 const FULL_TURN = Math.PI * 2;
 const CAMERA_MARGIN = 1;
+const NO_INSET = { top:0,bottom:0 };
 
 function targetCell(world,targetId) {
 const thing = targetId ? world.things[targetId] :null;
@@ -22,11 +23,14 @@ const alongCol = delta.col === 0 ? Infinity :reachCol / Math.abs(delta.col);
 const alongRow = delta.row === 0 ? Infinity :reachRow / Math.abs(delta.row);
 return Math.min(alongCol,alongRow);
 }
+function clearBand(view) {
+const inset = view.inset || NO_INSET;
+return { top:inset.top,rows:view.rows - inset.top - inset.bottom };
+}
 function centreInView(at,view) {
 return at.col >= 0 && at.col <= view.cols && at.row >= 0 && at.row <= view.rows;
 }
-function markerFor(cell,view) {
-if (!cell) return { kind:'none' };
+function markerInView(cell,view) {
 const at = { col:cell.col + HALF - view.camera.col,row:cell.row + HALF - view.camera.row };
 const centre = viewCentre(view);
 const delta = { col:at.col - centre.col,row:at.row - centre.row };
@@ -34,13 +38,19 @@ if (centreInView(at,view)) return { kind:'here',col:at.col,row:at.row };
 const scale = edgeScale(delta,view);
 return { kind:'edge',col:centre.col + delta.col * scale,row:centre.row + delta.row * scale,angle:Math.atan2(delta.row,delta.col) };
 }
+function markerFor(cell,view) {
+if (!cell) return { kind:'none' };
+const band = clearBand(view);
+const marker = markerInView(cell,{ camera:{ col:view.camera.col,row:view.camera.row + band.top },cols:view.cols,rows:band.rows });
+return { ...marker,row:marker.row + band.top };
+}
 function keepAxis(camera,axis) {
 const end = camera + axis.span;
 if (axis.target + 1 <= camera || axis.target >= end) return camera;
 const shift = Math.min(axis.target - camera,0) + Math.max(axis.target + 1 - end,0);
 return Math.min(Math.max(camera + shift,axis.focus + 1 - axis.span),axis.focus);
 }
-function framedCamera(world,view,target) {
+function framedInView(world,view,target) {
 const padded = { cols:world.cols + CAMERA_MARGIN * 2,rows:world.rows + CAMERA_MARGIN * 2 };
 const focus = { col:view.focus.col + CAMERA_MARGIN,row:view.focus.row + CAMERA_MARGIN };
 const centred = cameraFor(padded,{ focus,cols:view.cols,rows:view.rows });
@@ -50,6 +60,11 @@ return {
 col:keepAxis(camera.col,{ span:view.cols,target:target.col,focus:view.focus.col }),
 row:keepAxis(camera.row,{ span:view.rows,target:target.row,focus:view.focus.row }),
 };
+}
+function framedCamera(world,view,target) {
+const band = clearBand(view);
+const camera = framedInView(world,{ focus:view.focus,cols:view.cols,rows:band.rows },target);
+return { col:camera.col,row:camera.row - band.top };
 }
 function pulseAt(now,reducedMotion) {
 if (reducedMotion) return PULSE_STILL;

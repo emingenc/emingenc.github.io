@@ -1,0 +1,197 @@
+.grid-screen[data-screen='grid'][data-fit='fill'] {
+  --fill-bar:rgba(3,8,5,0.84);
+  --fill-key:rgba(8,18,12,0.88);
+  --fill-btn:44px;
+  --fit-top:96px;
+  --fit-bottom:0px;
+  position:relative;
+  overflow:hidden;
+  padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+  row-gap:0;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  grid-template-rows:auto auto minmax(0,1fr) auto;
+  grid-template-areas:none;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-stage,
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-touch-layer,
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-toast {
+  grid-area:1 / 1 / -1 / -1;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-stage {
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-stage:focus-visible {
+  outline-offset:-4px;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-touch-layer {
+  border:0;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-toast {
+  z-index:3;
+  margin-top:calc(var(--fit-top) + var(--sp-3));
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-toast.grid-toast-sector {
+  margin-top:var(--fit-top);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hint,
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-near {
+  bottom:calc(var(--fit-bottom) + var(--sp-3));
+  max-width:calc(100% - 2 * 300px);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-near[data-place='top'] {
+  top:calc(var(--fit-top) + var(--sp-3));
+  bottom:auto;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-hud {
+  grid-area:1 / 1 / 2 / -1;
+  z-index:3;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:0 var(--sp-5);
+  margin:0;
+  padding:max(var(--sp-2),env(safe-area-inset-top,0px)) var(--sp-4) var(--sp-1);
+  border-bottom:0;
+  background:var(--fill-bar);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud-stats {
+  flex:0 1 auto;
+  flex-wrap:nowrap;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud-top {
+  flex-basis:auto;
+  flex-wrap:nowrap;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud-bar {
+  flex:0 0 120px;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud-hint,
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud-pill {
+  flex:0 1 auto;
+  max-width:320px;
+  text-wrap:nowrap;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud-hint {
+  order:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud-pill {
+  order:2;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud > .btn,
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud > .btn-icon {
+  order:3;
+  min-height:var(--fill-btn);
+  min-width:var(--fill-btn);
+  padding-top:0;
+  padding-bottom:0;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud-map {
+  margin-left:auto;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-hud > .btn-icon {
+  margin-left:var(--sp-3);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-objective-block {
+  grid-area:2 / 1 / 3 / -1;
+  z-index:3;
+  flex-direction:row;
+  align-items:baseline;
+  gap:0 var(--sp-5);
+  padding:0 var(--sp-4) var(--sp-2);
+  border-bottom:1px solid var(--border);
+  background:var(--fill-bar);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-goal-row {
+  flex:0 0 auto;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-objective {
+  flex:1 1 0;
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-travel {
+  grid-area:4 / 1;
+  z-index:3;
+  align-self:end;
+  width:220px;
+  margin:0 0 var(--sp-4) var(--sp-4);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-travel-toggle {
+  min-height:var(--fill-btn);
+  background:var(--fill-key);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-power {
+  grid-area:4 / 2;
+  z-index:3;
+  align-self:end;
+  margin:0 var(--sp-4) var(--sp-4);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-dpad,
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-fire {
+  grid-area:4 / 3;
+  z-index:3;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-dpad {
+  --dpad-btn:48px;
+  margin-top:0;
+  margin-bottom:var(--sp-4);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-fire {
+  margin-bottom:var(--sp-4);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-dpad-btn {
+  background:var(--fill-key);
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-power,
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-power-chips,
+.grid-screen[data-screen='grid'][data-fit='fill'] > .grid-dpad {
+  pointer-events:none;
+}
+
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-power-btn,
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-power-chip,
+.grid-screen[data-screen='grid'][data-fit='fill'] .grid-dpad-btn,
+.grid-screen[data-screen='grid'][data-fit='fill'] .kernel-head {
+  pointer-events:auto;
+}
+
+@media (pointer:fine) and (any-pointer:fine) and (not (any-pointer:coarse)) {
+  .grid-screen[data-screen='grid'][data-fit='fill'] {
+    --fill-btn:36px;
+    --fit-top:80px;
+  }
+}

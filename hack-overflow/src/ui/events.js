@@ -9,6 +9,7 @@ import { uiInitAudio } from './audio.js';
 import { warmJudgeWorker } from './judge-client.js';
 import { uiWireHistory } from './history.js';
 import { uiHasGame } from './game-storage.js';
+import { uiFitGrid } from './grid-fit.js';
 
 async function uiHandleAction(app,actionId) {
 await uiApplyAction(app,actionId);
@@ -78,6 +79,7 @@ Object.keys(UI_POINTER_HOOKS).forEach(function (type) {
 document.addEventListener(type,function (event) { uiHandlePointer(app,event); });
 });
 window.addEventListener('blur',function () { uiReleaseInput(app); });
+window.addEventListener('resize',uiFitGrid);
 document.addEventListener('visibilitychange',function () { uiHandleVisibility(app); });
 uiWireHistory(app,(id) => uiHandleAction(app,id));
 }
