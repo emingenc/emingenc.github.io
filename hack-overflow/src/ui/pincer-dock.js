@@ -1,4 +1,4 @@
-import { SORT_STEPS, LOOKUP_STEPS } from '../game/rooms/data/pincer-waves.js';
+import { SORT_STEPS } from '../game/rooms/data/pincer-waves.js';
 import { pincerMoves } from '../game/rooms/pincer.js';
 import { specOf } from '../game/rooms/pincer-base.js';
 import { uiEl } from './dom.js';
@@ -15,10 +15,6 @@ const DOCK = [
 const SORT_BUTTON = {
   move: 'sort', action: 'pincer-sort', side: 'pincer-btn-sort', text: 'SORT', cost: SORT_STEPS + ' steps',
   aria: 'S: sort the pillars. Costs ' + SORT_STEPS + ' steps and 2 memory slots. It forgets where each pillar stood.',
-};
-const LOOKUP_BUTTON = {
-  move: 'lookup', action: 'pincer-lookup', side: 'pincer-btn-lookup', text: 'LOOKUP', cost: LOOKUP_STEPS + ' steps',
-  aria: 'K: lookup table. Finds the pair in ' + LOOKUP_STEPS + ' steps and ' + LOOKUP_STEPS + ' memory slots.',
 };
 const BANK_BUTTON = {
   move: 'bank', action: 'pincer-bank', side: 'pincer-btn-bank', text: 'BANK', cost: 'free',
@@ -52,8 +48,11 @@ function uiPincerDockButton(state, spec) {
   const pips = uiEl('span', { className: 'pincer-pips', text: uiPincerPips(state) });
   return uiEl('button', { className, attrs, children: [uiEl('span', { className: 'pincer-fire-word', text: spec.text }), pips] });
 }
+function uiPincerIsPulsing(state, spec) {
+  return spec.move === 'sort' && state.sorted === false && state.status === 'running';
+}
 function uiPincerExtraButton(state, spec) {
-  const className = 'btn arena-btn arena-verb pincer-btn pincer-btn-extra ' + spec.side;
+  const className = 'btn arena-btn arena-verb pincer-btn pincer-btn-extra ' + spec.side + (uiPincerIsPulsing(state, spec) ? ' is-pulse' : '');
   const word = uiEl('span', { className: 'pincer-extra-word', text: spec.text });
   const cost = uiEl('span', { className: 'pincer-extra-cost', text: spec.cost });
   return uiEl('button', { className, attrs: uiPincerDockAttrs(state, spec), children: [word, cost] });
@@ -62,7 +61,6 @@ function uiPincerExtras(state) {
   const spec = specOf(state);
   const list = [];
   if (spec.sort) list.push(SORT_BUTTON);
-  if (spec.lookup) list.push(LOOKUP_BUTTON);
   if (spec.dam) list.push(BANK_BUTTON);
   return list;
 }

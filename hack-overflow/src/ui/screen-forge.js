@@ -11,6 +11,7 @@ import { uiEnterGrid } from './screen-grid.js';
 import { uiLinkStyles } from './lazy-style.js';
 import { uiLabPayRank } from './lab-rank.js';
 import { uiStoryLabFinish, uiStoryLabOpen } from './machine-dialogue.js';
+import { uiRoomHintInto } from './room-hint.js';
 
 const STYLESHEETS = ['styles/rooms/forge.css'];
 const FORGE_SEED_STRIDE = 1000;
@@ -322,7 +323,7 @@ return event.repeat ? { type:'handled' } :{ type:'action',id };
 }
 function uiForgeRender(app) {
 if (!app.forge) return uiForgeRenderEmpty();
-return app.forge.view === 'play' ? uiForgeRenderPlay(app) :uiForgeRenderSelect(app);
+return uiRoomHintInto(app,'forge',app.forge.view === 'play' ? uiForgeRenderPlay(app) :uiForgeRenderSelect(app));
 }
 function uiForgeAnnounce() {
 return FORGE_SPOKEN;

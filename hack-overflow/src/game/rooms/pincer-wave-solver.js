@@ -36,7 +36,7 @@ function solveWave(stream) {
   const spec = specOf(stream);
   if (spec.dam) return playWith(stream, shorterSweepBot);
   if (!spec.sort) return solvePincer(stream);
-  return stream.goal === 'time' ? ['lookup'] : sortedLine(stream);
+  return sortedLine(stream);
 }
 function shorterSweepBot(state) {
   return sweepMove(state, shorterMove);

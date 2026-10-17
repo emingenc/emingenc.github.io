@@ -8,7 +8,7 @@ import {
   applyTurret, bruteCompares, hintOffer, keyFor, paceAt, swarmReady, swarmWindowMs, turretStars, turretTarget, verifyHint,
 } from '../game/rooms/turret.js';
 import { needsRoom } from '../game/rooms/turret-w3.js';
-import { uiArenaToast } from './arena-shell.js';
+import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiPrefersReducedMotion } from './dom.js';
 import { uiTurretFirstMode, uiTurretRunFor } from './turret-modes.js';
@@ -71,7 +71,7 @@ const ARRIVAL_LINES = [
   { when: (arena) => arena.arrived.length > 1, text: (values) => fillText(TURRET_TEXTS.coach.two, values) },
   { when: (arena, lead) => lead.n === FIRST_DRONE && arena.state.spec.dark, text: () => TURRET_TEXTS.coach.dark },
   { when: (arena, lead) => lead.n === FIRST_DRONE, text: (values) => fillText(TURRET_TEXTS.coach.first, values) },
-  { when: (arena, lead) => lead.n === SECOND_DRONE && !arena.state.spec.dark, text: (values) => fillText(TURRET_TEXTS.coach.second, values) },
+  { when: (arena, lead) => lead.n >= SECOND_DRONE && lead.n <= arena.state.spec.spelled && !arena.state.spec.dark, text: (values) => fillText(TURRET_TEXTS.coach.second, values) },
   { when: (arena, lead) => lead.n === TURRET_W1.dupAt && uiTurretHeld(arena, lead) > 0, text: (values) => fillText(TURRET_TEXTS.coach.dup, values) },
   { when: (arena, lead) => lead.n === TURRET_W1.rushFrom, text: () => TURRET_TEXTS.coach.rush },
 ];
@@ -81,6 +81,19 @@ function uiTurretBounded(arena) {
 function uiTurretBlocked(state) {
   const lead = state.bay[0];
   return Boolean(lead) && needsRoom(state, state.spec, lead.v) && state.board[keyFor(state, lead)] === 0;
+}
+function uiTurretFrozen(arena) {
+  return arena.state.status === 'running' && uiTurretBounded(arena) && uiTurretBlocked(arena.state);
+}
+function uiTurretSlotVerb(arena, slot) {
+  const tap = arena.evict || (uiTurretFrozen(arena) && arena.state.board[slot] > 0);
+  return tap ? 'evict' : 'probe';
+}
+function uiTurretAskLine(state) {
+  const lead = state.bay[0];
+  if (state.spec.id !== 'w1' || lead.n <= state.spec.spelled) return '';
+  const line = state.last && state.last.kind === 'pair' ? TURRET_TEXTS.coach.askPaired : TURRET_TEXTS.coach.ask;
+  return fillText(line, { v: lead.v, t: turretTarget(state) });
 }
 function uiTurretHeld(arena, lead) {
   return arena.state.board[lead.v];
@@ -125,6 +138,8 @@ function uiTurretCoachText(arena) {
   if (early) return early;
   const arrival = arena.arrived.length > 0 ? uiTurretArrivalLine(arena) : '';
   if (arrival) return arrival;
+  const ask = uiTurretAskLine(state);
+  if (ask) return ask;
   const lapsed = uiTurretLapsedLine(state);
   if (lapsed) return lapsed;
   const outcome = uiTurretOutcomeLine(state);
@@ -194,6 +209,13 @@ function uiTurretArmEvict(app, on) {
   arena.coach = arena.evict ? TURRET_TEXTS.coach.armed : uiTurretCoachText(arena);
   return arena.evict;
 }
+function uiTurretPicked(arena, index) {
+  const drone = arena.state.bay[index];
+  if (!drone || arena.view !== 'play') return false;
+  arena.picked = index;
+  if (arena.state.bay.length > 1) arena.coach = fillText(TURRET_TEXTS.coach.asking, { v: drone.v, t: turretTarget(arena.state) });
+  return true;
+}
 function uiTurretNoping(arena, now) {
   return now - arena.fx.nopeAt < NOPE_MS;
 }
@@ -245,7 +267,10 @@ function uiTurretAfterMove(app, now) {
   uiTurretMotion(arena, now);
   uiTurretReveal(arena, now);
   if (BAD_KINDS.has(last.kind)) uiTurretBadToast(app, last);
-  else uiTurretSelfToast(app, last);
+  else {
+    uiArenaClearToast(app.rig);
+    uiTurretSelfToast(app, last);
+  }
   if (arena.state.status !== 'running') return uiTurretFinish(app);
   if (uiTurretStaleArm(arena)) arena.evict = false;
   uiTurretArrivals(arena, now);
@@ -296,6 +321,7 @@ function uiTurretLanded(arena, drone) {
 }
 function uiTurretBurn(app, dt, now) {
   const arena = app.rig.arena;
+  if (uiTurretFrozen(arena)) return false;
   const index = arena.state.bay.findIndex(function (drone) {
     if (drone.fuseMs === null || !uiTurretLanded(arena, drone)) return false;
     arena.fuse[drone.n] -= dt;
@@ -341,5 +367,5 @@ function uiTurretBrute(arena) {
 
 export {
   TURRET_RIG_ID, TRAVEL_MS, uiTurretCreate, uiTurretCoachText, uiTurretSpoken, uiTurretPlayable, uiTurretCommit, uiTurretNoping,
-  uiTurretTick, uiTurretSetAssist, uiTurretBrute, uiTurretVerify, uiTurretArmEvict,
+  uiTurretTick, uiTurretSetAssist, uiTurretBrute, uiTurretVerify, uiTurretArmEvict, uiTurretFrozen, uiTurretSlotVerb, uiTurretPicked,
 };

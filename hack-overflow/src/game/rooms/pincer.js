@@ -1,9 +1,9 @@
 import { PINCER_TEXTS,fillText } from './data/pincer-texts.js';
-import { CANNON_SLOTS,HINT_MOVES,LOOKUP_STEPS,SORT_STEPS } from './data/pincer-waves.js';
+import { CANNON_SLOTS,HINT_MOVES,SORT_STEPS } from './data/pincer-waves.js';
 import { eat,pairsOf,pillarsOf,specOf,sumOf,win } from './pincer-base.js';
 import { canBank,canStep,currentArea,playBank,playDamFire,playDamPointer } from './pincer-dam.js';
 import { pincerWhyNot } from './pincer-refuse.js';
-import { canLookup,canSort,playLookup,playSort } from './pincer-route.js';
+import { canSort,playSort } from './pincer-route.js';
 
 
 const MAX_STARS = 3;
@@ -11,7 +11,7 @@ const PLANK_MIN_CHARGES = 2;
 const NO_EATER = -1;
 const NO_PARTNER = -1;
 const NO_PAR = 0;
-const MOVE_ORDER = ['l','r','fire','plank','sort','lookup','bank'];
+const MOVE_ORDER = ['l','r','fire','plank','sort','bank'];
 const SIDES = {
 l:{ field:'l',step:1,kind:'left',safeKind:'left-wrong',safeToast:'rightSafeLeft',dropToast:'dropLeft',isRight:(sum,target) => sum < target },
 r:{ field:'r',step:-1,kind:'right',safeKind:'right-wrong',safeToast:'rightSafeRight',dropToast:'dropRight',isRight:(sum,target) => sum > target },
@@ -81,7 +81,7 @@ function pincerPar(stream) {
 const spec = specOf(stream);
 if (spec.dam) return spec.n - 1;
 if (!spec.sort) return linePar(stream);
-return stream.goal === 'time' ? LOOKUP_STEPS :SORT_STEPS + sortedPar(stream);
+return SORT_STEPS + sortedPar(stream);
 }
 function pincerStars(state) {
 if (state.status !== 'won') return 0;
@@ -109,7 +109,7 @@ return specOf(state).plank && !state.plankShot && state.l < plank && plank < sta
 function canBankNow(state) {
 return specOf(state).dam && canBank(state);
 }
-const LEGAL = { l:canLeft,r:canRight,fire:canFire,plank:canPlank,sort:canSort,lookup:canLookup,bank:canBankNow };
+const LEGAL = { l:canLeft,r:canRight,fire:canFire,plank:canPlank,sort:canSort,bank:canBankNow };
 function pincerMoves(state) {
 if (state.status !== 'running') return [];
 return MOVE_ORDER.filter((move) => LEGAL[move](state));
@@ -223,7 +223,7 @@ state.skip += 1;
 function playFire(state) {
 return specOf(state).dam ? playDamFire(state) :playSumFire(state);
 }
-const PLAYS = { l:playPointer,r:playPointer,fire:playFire,plank:playPlank,sort:playSort,lookup:playLookup,bank:playBank };
+const PLAYS = { l:playPointer,r:playPointer,fire:playFire,plank:playPlank,sort:playSort,bank:playBank };
 
 function applyPincer(state,moveId) {
 if (!Object.hasOwn(PLAYS,moveId) || !pincerMoves(state).includes(moveId)) return state;

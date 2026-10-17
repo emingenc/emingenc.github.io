@@ -1,4 +1,4 @@
-import { BOLT_BEAT,QUEST_ID,boltOwed,patchRole,propAt,solidProps } from '../game/cast/patch.js';
+import { BOLT_BEAT,QUEST_ID,boltOwed,crateCellsOf,patchRole,propAt,solidProps } from '../game/cast/patch.js';
 import { REFUSAL_BEAT } from '../game/cast/refusal.js';
 import { STAGE } from '../game/quest/quests.js';
 import { hasBeat,questState,withBeat } from '../game/ext/ops.js';
@@ -19,7 +19,7 @@ const game = app.game;
 return { breached:game.progress.breached.size,barrierOpen:isOpen(game.world,game.progress,game.world.barriers.sentry.id) };
 }
 function uiSolids(game) {
-const props = solidProps(game.cast.role,uiStandingCrates(game));
+const props = solidProps(game.cast.role,uiStandingCrates(game),crateCellsOf(game.ext));
 const sentinel = uiSentinelOf(game);
 return sentinel && sentinel.hp > 0 ? [...props,{ id:sentinel.id,col:sentinel.col,row:sentinel.row }] :props;
 }

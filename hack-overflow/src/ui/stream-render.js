@@ -1,5 +1,6 @@
 import { CONTEXT_STREAM } from '../game/labs/data/context-stream.js';
-import { LANES } from '../game/labs/stream-sim.js';
+import { promptReadout } from '../game/labs/stream-readout.js';
+import { LANES,STACK_Y } from '../game/labs/stream-sim.js';
 import { rigLevelRank,rigOf } from '../game/rig-reward.js';
 import { uiEl,uiPointerIsCoarse,uiPrefersReducedMotion } from './dom.js';
 import { uiLabRankText } from './lab-rank.js';
@@ -120,7 +121,7 @@ const meter = uiEl('span',{ className:'stream-meter-text' });
 const segs = uiEl('span',{ className:'stream-segs',attrs:{ 'aria-hidden':'true' } });
 const head = uiEl('span',{
 className:'stream-window-head',
-children:[meter,uiEl('span',{ className:'stream-window-hint',text:'TAP: PRUNE OUTDATED' })],
+children:[meter,uiEl('span',{ className:'stream-window-hint',text:uiStreamStageOf(app).kinds.includes('stale') ? 'TAP: PRUNE OUTDATED' :'' })],
 });
 const bar = uiEl('button',{ className:'stream-window',attrs:{ type:'button','data-hit':'window' },children:[head,segs] });
 bar.addEventListener('click',uiStreamClickAct(app,{ type:'prune' }));
@@ -155,6 +156,7 @@ className:'screen stream-screen stream-play' + calm,
 attrs:{ 'data-screen':'stream' },
 children:[hud.hud,field,bar.bar,uiStreamHint()].filter(Boolean),
 });
+root.style.setProperty('--stack',String(STACK_Y));
 return {
 root,hud:hud.hud,lanes,hits:[...lanes,bar.bar],window:bar.bar,meter:bar.meter,segs:bar.segs,
 time:hud.time,timeText:hud.timeText,pips:hud.pips,pipBox:hud.pipBox,combo:hud.combo,score:hud.score,
@@ -223,14 +225,37 @@ uiStreamStat('SCORE',String(result.score)),
 uiStreamStat('KEYS HELD',result.keysHeld + ' of ' + result.keysTotal),
 uiStreamStat('BEST COMBO',String(result.bestCombo)),
 uiStreamStat('RANK',uiStreamRankStat(app.stream.rank)),
+uiStreamReadoutOf(app),
 uiEl('p',{ className:'stream-note',text:uiStreamNextStar(stage,result) }),
+].filter(Boolean),
+});
+}
+function uiStreamReadoutCard(sim) {
+const readout = promptReadout(sim);
+const lines = readout.lines.map(function (line) { return uiEl('li',{ className:'stream-readout-line is-' + line.tone,text:(line.tone === 'fact' ? '✓ ' :'✗ ') + line.text }); });
+return uiEl('section',{
+className:'stream-readout',
+attrs:{ 'aria-label':'What your prompt said' },
+children:[
+uiEl('h3',{ className:'stream-readout-title',text:'WHAT YOUR PROMPT SAID' }),
+uiEl('p',{ className:'stream-readout-meta',text:readout.held + ' of ' + readout.total + ' facts · ' + readout.used + '/' + readout.budget + ' TOK' }),
+uiEl('ul',{ className:'stream-readout-list',children:lines }),
 ],
 });
+}
+function uiStreamReadoutOf(app) {
+const sim = app.stream.sim;
+return sim && uiStreamStageOf(app).readout ? uiStreamReadoutCard(sim) :null;
 }
 function uiStreamFailTitle(failure) {
 return failure && failure.kind === 'short' ? 'RUN SHORT' :'STREAM FAILED';
 }
-function uiStreamFailCard(result) {
+function uiStreamLostStat(app) {
+const sim = app.stream.sim;
+const lost = sim && !uiStreamStageOf(app).readout ? sim.cuts.filter(function (cut) { return cut.kind === 'key'; }).map(function (cut) { return cut.label; }) :[];
+return lost.length ? uiStreamStat('PUSHED OUT',lost.join(', ')) :null;
+}
+function uiStreamFailCard(app,result) {
 const failure = result.failure;
 const bridge = failure && Object.hasOwn(CONTEXT_STREAM.bridges,failure.kind) ? CONTEXT_STREAM.bridges[failure.kind] :'';
 return uiEl('section',{
@@ -241,12 +266,14 @@ uiEl('p',{ className:'stream-fail-text',text:failure ? failure.text :'' }),
 uiEl('p',{ className:'stream-bridge',text:bridge ? 'IN PRACTICE: ' + bridge :'' }),
 uiStreamStat('KEYS HELD',result.keysHeld + ' of ' + result.keysTotal),
 uiStreamStat('SCORE',String(result.score)),
-],
+uiStreamLostStat(app),
+uiStreamReadoutOf(app),
+].filter(Boolean),
 });
 }
 function uiStreamRenderResult(app) {
 const result = app.stream.result;
-const card = result.stars > 0 ? uiStreamWinCard(app,result) :uiStreamFailCard(result);
+const card = result.stars > 0 ? uiStreamWinCard(app,result) :uiStreamFailCard(app,result);
 return uiStreamShell([uiEl('h1',{ className:'stream-title',text:STREAM_TITLE }),card,uiStreamResultActions(app,result)]);
 }
 function uiStreamRenderEmpty() {

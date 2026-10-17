@@ -1,5 +1,5 @@
 import {
-  FICTION_LABEL,kernelBadge,phasePowers,playVerb,pressFusion,pressHalve,recallAllClones,tagClone,telegraph,viewParts,
+  SHIELD_DO,kernelBadge,phasePowers,playVerb,pressFusion,pressHalve,recallAllClones,tagClone,telegraph,viewParts,
 } from '../game/finale/kernel.js';
 import { uiHalveView } from './grid-kernel-halve.js';
 
@@ -43,7 +43,7 @@ if (phase.n === HALVE_PHASE) return uiHalveView(app,(entry) => op((now) => press
 const parts = viewParts(phase);
 const field = phase.n === LOOKUP || phase.n === SHIELD;
 return {
-ask:parts.ask,tele:field ? uiFieldTele(phase) :parts.tele,note:uiTrialsText(app),fiction:phase.n === SHIELD ? FICTION_LABEL :'',
+ask:parts.ask,tele:field ? uiFieldTele(phase) :parts.tele,note:uiTrialsText(app),fiction:phase.n === SHIELD ? SHIELD_DO :'',
 chips:field ? uiFieldChips(phase,op) :uiFusionChips(parts,op),
 };
 }

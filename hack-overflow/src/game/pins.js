@@ -4,9 +4,11 @@ const PIN_TIMING = {
 stepMaxMs:60,sweepMaxMs:900,jamHoldMs:420,shackleMs:180,revealHoldMs:900,
 tracedHoldMs:700,probeStepMs:140,reducedHoldMs:300,
 };
+const FIRST_SWEEP_STRETCH = 2;
 
-function stepMsFor(pinsAnimated) {
-return Math.min(PIN_TIMING.stepMaxMs,Math.floor(PIN_TIMING.sweepMaxMs / pinsAnimated));
+function stepMsFor(pinsAnimated,stretch) {
+const scale = stretch ? FIRST_SWEEP_STRETCH :1;
+return Math.min(PIN_TIMING.stepMaxMs * scale,Math.floor(PIN_TIMING.sweepMaxMs * scale / pinsAnimated));
 }
 function jamIndexFor(lastSubmit,pinCount) {
 if (lastSubmit.of === null) return 0;
@@ -46,7 +48,7 @@ function pinPlan(lastSubmit,options) {
 const accepted = lastSubmit.verdict === VERDICT_WORDS.P;
 const jamIndex = accepted ? null :jamIndexFor(lastSubmit,options.pinCount);
 const pinsAnimated = accepted ? options.pinCount :jamIndex + 1;
-const stepMs = stepMsFor(pinsAnimated);
+const stepMs = stepMsFor(pinsAnimated,options.stretch);
 const plan = accepted ? acceptedPlan(options.pinCount,stepMs) :jamPlan(options.pinCount,jamIndex,stepMs);
 return options.reducedMotion ? withReducedMotion(plan) :plan;
 }

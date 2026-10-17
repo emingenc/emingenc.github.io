@@ -44,4 +44,4 @@ if (!text) return null;
 return uiEl('p',{ className:'onboarding-hint',attrs:{ role:'status' },text:text });
 }
 
-export { UI_ONBOARD_STAGE_CHIP, UI_ONBOARD_STAGE_VERDICT, UI_ONBOARD_STAGE_RULE, uiOnboardStage3Message, uiOnboardingBanner };
+export { uiProbePassedOnLine, UI_ONBOARD_STAGE_CHIP, UI_ONBOARD_STAGE_VERDICT, UI_ONBOARD_STAGE_RULE, uiOnboardStage3Message, uiOnboardingBanner };

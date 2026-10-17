@@ -1,13 +1,13 @@
-// reply.js — every way the agent answers without running a tool: the LLM
-// consent gate, a streamed generation with its own grounded self-check, and
-// the canned fallback when consent is declined. Reply never decides whether
-// a tool should run; the orchestrator's reply effect hands it a turn that is
-// already past that decision, and each mode below ends that turn exactly
-// once.
+// reply.js — every way the agent answers without running a tool: the chat
+// model's load button, a streamed generation with its own grounded
+// self-check, and the canned fallback when the visitor declined it. Reply
+// never decides whether a tool should run; the orchestrator's reply effect
+// hands it a turn that is already past that decision, and each mode below
+// ends that turn exactly once.
 'use strict';
 var Reply;
 {
-  const GENERATION_TIMEOUT_MS = 90000; // matches chat-worker's own dead-request budget
+  const GENERATION_TIMEOUT_MS = 90000; // how long a turn waits on the model before it gives up; chat-worker sets no budget of its own
   const CONTEXT_HINT_PCT = 90;
   const GROUNDED_ACCEPT_CONFIDENCE = 60;
   const CANNED_DELAY_BASE_MS = 400;
@@ -49,13 +49,14 @@ var Reply;
     return close;
   }
 
-  // ─── Consent pending ─────────────────────────────────────────────────
-  function sendConsentPending(turn) {
-    turn.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'llm-consent', content: Tools.llmConsentMessage(), ts: '' } });
+  // ─── The chat model waits for its button ─────────────────────────────
+  function sendLoadButton(turn) {
+    const megabytes = Classifier.chatMegabytes();
+    turn.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'llm-consent', content: Tools.llmConsentMessage(megabytes), ts: '' } });
     turn.end();
   }
 
-  // ─── No consent: a canned answer that still holds the turn's lock ─────
+  // ─── Declined: a canned answer that still holds the turn's lock ───────
   function writeCannedWord(turn, stream) {
     if (!turn.isCurrent()) return;
     if (stream.index >= stream.words.length) { stream.close(); turn.end(); return; }
@@ -77,7 +78,7 @@ var Reply;
     turn.after(CANNED_DELAY_BASE_MS + Math.random() * CANNED_DELAY_JITTER_MS, () => beginCannedStream(turn));
   }
 
-  // ─── Consent given, model still loading or dead ────────────────────────
+  // ─── Loading allowed, model still loading or dead ──────────────────────
   function sendModelNotReady(turn, text) {
     const state = store.getState();
     if (!state.models.llmLoading) Classifier.enableLLM();
@@ -88,7 +89,7 @@ var Reply;
     return replyFaqOr(turn, text, Tools.reducedModeMessage());
   }
 
-  // ─── Consent given, model ready: stream a generation ───────────────────
+  // ─── Loading allowed, model ready: stream a generation ─────────────────
   function makeTokenSink(turn, id) {
     let text = '';
     function onToken(chunk) {
@@ -173,8 +174,9 @@ var Reply;
 
   // ─── Public API ─────────────────────────────────────────────────────────
   function send(turn, text) {
-    if (Classifier.isLLMConsentPending()) return sendConsentPending(turn);
-    if (!Classifier.hasLLMConsent()) return sendCanned(turn);
+    const policy = Classifier.llmPolicy();
+    if (policy === 'off') return sendCanned(turn);
+    if (policy !== 'auto') return sendLoadButton(turn);
     return Classifier.isLLMReady() ? sendGenerated(turn, text) : sendModelNotReady(turn, text);
   }
 

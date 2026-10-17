@@ -15,6 +15,7 @@ const ARENA_HEART_EMPTY = '♡';
 const ARENA_TOAST_MS = 2500;
 const ARENA_TOAST_KINDS = { bad:'alert' };
 const ARENA_TOAST_ROLE = 'status';
+const ARENA_MOMENT_TEXT = 'LOCK OPEN';
 
 function uiArenaDefaultNow() {
 return typeof performance !== 'undefined' ? performance.now() :Date.now();
@@ -94,10 +95,17 @@ uiArenaPaintToast(rig);
 function uiArenaCardButtons(actions) {
 return uiEl('div',{ className:'arena-actions',children:actions.map(function (item) { return uiArenaButton(item.action,item.label,'arena-verb'); }) });
 }
+function uiArenaWon(app) {
+const result = app.rig && app.rig.arena && app.rig.arena.result;
+return Boolean(result) && result.won === true;
+}
+function uiArenaMoment(app) {
+return uiArenaWon(app) ? uiEl('p',{ className:'arena-moment',text:ARENA_MOMENT_TEXT,attrs:{ 'aria-hidden':'true' } }) :null;
+}
 function uiArenaCard(app,result) {
 const lines = (result.lines || []).map(function (line) { return uiEl('p',{ className:'arena-card-line',text:line }); });
 return uiEl('section',{
-className:'arena-card arena-scroll' + (result.tone ? ' arena-card-' + result.tone :''),
+className:'arena-card arena-scroll' + (result.tone ? ' arena-card-' + result.tone :'') + (uiArenaWon(app) ? ' arena-card-win' :''),
 attrs:{ 'data-rig':app.rig ? app.rig.rigId :'' },
 children:[uiEl('h2',{ className:'arena-card-title',text:result.title }),...(result.lead || []),...lines,...(result.body || []),uiArenaCardButtons(result.actions)],
 });
@@ -126,6 +134,6 @@ uiRigHostLeave(app,note,rig ? rig.title :'');
 }
 
 export {
-ARENA_FOCUS_KEY,uiArenaSetClock,uiArenaOpen,uiArenaHeader,uiArenaRule,uiArenaCoach,uiArenaToast,uiArenaClearToast,uiArenaToastNode,uiArenaCard,uiArenaPaidLine,
+ARENA_FOCUS_KEY,uiArenaSetClock,uiArenaOpen,uiArenaHeader,uiArenaRule,uiArenaCoach,uiArenaToast,uiArenaClearToast,uiArenaToastNode,uiArenaCard,uiArenaMoment,uiArenaPaidLine,
 uiArenaLeaveTooSoon,uiArenaLeave,
 };

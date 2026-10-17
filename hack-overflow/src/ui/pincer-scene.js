@@ -4,7 +4,7 @@ import { eaterNext, pincerArea, pincerMoves, pincerPar, pincerSum } from '../gam
 import { pillarsOf, specOf } from '../game/rooms/pincer-base.js';
 import { uiEl } from './dom.js';
 import { uiPincerDock } from './pincer-dock.js';
-import { uiPincerNoping, uiPincerNow } from './pincer-flow.js';
+import { uiPincerNoping, uiPincerNow, uiPincerSettling } from './pincer-flow.js';
 
 
 const PLANK_ACTION = 'pincer-plank';
@@ -61,9 +61,8 @@ function uiPincerMeter(state) {
   return specOf(state).dam ? uiPincerDamMeter(state) : uiPincerSumMeter(state);
 }
 function uiPincerBanner(state) {
-  if (!state.stream.goal) return null;
-  const text = fillText(PINCER_TEXTS.banner[state.stream.goal], { par: pincerPar(state.stream) });
-  return uiEl('p', { className: 'pincer-banner is-' + state.stream.goal, text });
+  if (!specOf(state).sort) return null;
+  return uiEl('p', { className: 'pincer-banner', text: fillText(PINCER_TEXTS.banner, { par: pincerPar(state.stream) }) });
 }
 
 
@@ -131,9 +130,9 @@ function uiPincerRailWords(state) {
   if (specOf(state).dam) return RAIL_WORDS.dam;
   return state.sorted === false ? RAIL_WORDS.unsorted : RAIL_WORDS.sorted;
 }
-function uiPincerRail(state) {
+function uiPincerRail(state, settling) {
   const cells = pillarsOf(state).map((value, index) => uiPincerPillar(state, index));
-  const classes = 'pincer-rail' + (specOf(state).dam ? ' is-dam' : '');
+  const classes = 'pincer-rail' + (specOf(state).dam ? ' is-dam' : '') + (settling ? ' is-settle' : '');
   return uiEl('div', { className: classes, attrs: { role: 'group', 'aria-label': uiPincerRailWords(state) }, children: cells });
 }
 
@@ -157,7 +156,7 @@ function uiPincerEaterText(state) {
 }
 function uiPincerStats(state) {
   const parts = ['STEPS ' + state.steps, 'PAR ' + pincerPar(state.stream)];
-  if (state.stream.goal) parts.push('MEMORY ' + state.memory + (state.memory === 1 ? ' slot' : ' slots'));
+  if (specOf(state).sort) parts.push('MEMORY ' + state.memory + (state.memory === 1 ? ' slot' : ' slots'));
   return uiEl('p', { className: 'pincer-stats', text: parts.join(SEPARATOR) });
 }
 
@@ -168,9 +167,10 @@ function uiPincerScene(app) {
   const ghost = armed ? uiEl('span', { className: 'pincer-ghost', text: '+1 step', attrs: { 'aria-hidden': 'true' } }) : null;
   const eater = uiEl('p', { className: 'pincer-eater', text: uiPincerEaterText(state) });
   const noping = uiPincerNoping(arena, uiPincerNow());
+  const settling = uiPincerSettling(arena, uiPincerNow());
   return uiEl('div', {
     className: 'pincer-scene' + (armed ? ' is-armed' : '') + (noping ? ' is-nope' : ''),
-    children: [uiPincerBanner(state), uiPincerMeter(state), uiPincerRail(state), uiPincerFloor(state), eater, uiPincerStats(state), ghost],
+    children: [uiPincerBanner(state), uiPincerMeter(state), uiPincerRail(state, settling), uiPincerFloor(state), eater, uiPincerStats(state), ghost],
   });
 }
 

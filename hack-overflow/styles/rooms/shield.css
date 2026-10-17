@@ -16,16 +16,6 @@
   left:max(var(--sp-5),env(safe-area-inset-left,0px));
 }
 
-.shield-screen.is-card {
-  height:auto;
-  min-height:100dvh;
-  overflow:visible;
-}
-
-.shield-screen.is-card .arena-scroll {
-  max-height:calc(100dvh - var(--arena-header-h) - var(--sp-6) - env(safe-area-inset-bottom,0px));
-}
-
 .shield-screen > .arena-header,
 .shield-screen > .arena-coach,
 .shield-screen > .shield-dock {
@@ -208,6 +198,34 @@
 
 .shield-nope {
   animation:shield-nope 240ms steps(4,end);
+}
+
+
+.shield-screen > .shield-auto {
+  flex:none;
+}
+
+.shield-auto .auto-run {
+  flex-wrap:nowrap;
+  gap:var(--sp-2);
+}
+
+.shield-auto .auto-run-badge {
+  flex:1 1 auto;
+  min-width:0;
+  font-size:var(--fs-md);
+  white-space:nowrap;
+}
+
+.shield-auto .auto-run-step.is-hidden {
+  display:inline-flex;
+  visibility:hidden;
+}
+
+.shield-auto .auto-run-btn {
+  flex:none;
+  padding:0 var(--sp-3);
+  font-size:var(--fs-sm);
 }
 
 

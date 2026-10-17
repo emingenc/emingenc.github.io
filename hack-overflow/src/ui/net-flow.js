@@ -2,7 +2,7 @@ import { GAME_EVENT } from '../game/game-events.js';
 import { NET_BUSY_MS, NET_SCORE } from '../game/rooms/data/net-waves.js';
 import { NET_TEXTS, fillText } from '../game/rooms/data/net-texts.js';
 import { CLEAR_STRETCH_W3_ID, THIRD_WAVE } from '../game/quest/third-wave.js';
-import { applyNet, bruteReads, netBest, netMoves, netPar, netPeek, netStars, netSum, netWouldTear } from '../game/rooms/net.js';
+import { applyNet, bruteReads, netBest, netForced, netMoves, netPar, netPeek, netStars, netSum, netWouldTear } from '../game/rooms/net.js';
 import { uiArenaPayRank, uiArenaRecordWin } from './arena-reward.js';
 import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
@@ -84,14 +84,19 @@ function uiNetJumpSaves(state, values) {
 function uiNetStale(state, values) {
   return state.rules.jump === MAX_JUMP && values.at !== NOT_SEEN && values.at < state.l;
 }
+function uiNetPeekOverflows(state) {
+  const peek = netPeek(state);
+  return state.rules.judge === SUM_JUDGE && peek !== undefined && netSum(state) <= state.stream.k && netSum(state) + peek > state.stream.k;
+}
 function uiNetGoldTaken(state) {
   return netMoves(state).includes('flick') && state.r - 1 === state.stream.gold && state.last.move === 'extend';
 }
 const COACH_LINES = [
+  { when: (state) => uiNetGoldTaken(state), key: 'gold' },
   { when: (state, values) => state.rules.snags && netWouldTear(state) && uiNetJumpSaves(state, values), key: 'jump' },
   { when: (state) => state.rules.snags && netWouldTear(state) && state.rules.judge !== SUM_JUDGE, key: 'dup' },
   { when: (state) => netSum(state) > state.stream.k, key: 'sumHigh' },
-  { when: (state) => uiNetGoldTaken(state), key: 'gold' },
+  { when: (state) => uiNetPeekOverflows(state), key: 'sumFull' },
   { when: uiNetStale, key: 'outside' },
   { when: (state) => state.steps === 0 && state.rules.judge !== SUM_JUDGE, key: 'start' },
   { when: (state) => state.rules.judge === SUM_JUDGE, key: 'sumLow' },
@@ -127,7 +132,7 @@ function uiNetCommit(app, moveId, now) {
   if (next === arena.state) return false;
   Object.assign(arena, { state: next, busyUntil: now + NET_BUSY_MS, nope: false });
   uiNetQuestMove(app, arena, moveId);
-  uiNetAfterMove(app);
+  uiNetAfterMove(app, false);
   return true;
 }
 function uiNetNoping(arena, now) {
@@ -143,15 +148,34 @@ function uiNetCue(last) {
   if (last.kind === 'flick') return uiEmit(GAME_EVENT.RIG_GOOD, { rigId: NET_RIG_ID, chain: 1 });
   return uiEmit(GAME_EVENT.RIG_PLACE, { rigId: NET_RIG_ID, verb: last.move });
 }
-function uiNetAfterMove(app) {
+function uiNetAfterMove(app, quiet) {
   const arena = app.rig.arena;
   const last = arena.state.last;
   uiNetCue(last);
   if (last.why) uiArenaToast(app, last.why, TOAST_TONES[last.kind] || 'info');
   if (arena.state.status !== 'running') return uiNetFinish(app);
   arena.coach = uiNetCoachText(arena);
-  app.pendingAnnounce = last.why ? null : uiNetSpoken(arena);
+  arena.goldStop = uiNetGoldTaken(arena.state);
+  arena.staleSeen = arena.staleSeen === true || arena.atStale === true;
+  arena.atStale = uiNetStale(arena.state, uiNetValues(arena.state));
+  if (!quiet) app.pendingAnnounce = last.why ? null : uiNetSpoken(arena);
   return null;
+}
+function uiNetStaleTaught(arena) {
+  const state = arena.state;
+  return arena.staleSeen === true && state.status === 'running' && uiNetStale(state, uiNetValues(state));
+}
+function uiNetAutoForced(app) {
+  if (!uiNetPlayable(app)) return false;
+  const arena = app.rig.arena;
+  return arena.ask !== true && arena.goldStop !== true && (netForced(arena.state) || uiNetStaleTaught(arena));
+}
+function uiNetAutoStep(app) {
+  if (!uiNetAutoForced(app)) return false;
+  const arena = app.rig.arena;
+  arena.state = applyNet(arena.state, 'extend');
+  uiNetAfterMove(app, true);
+  return true;
 }
 
 
@@ -190,5 +214,5 @@ function uiNetFinish(app) {
 }
 
 export {
-  NET_RIG_ID, QUEST_TAKEN, QUEST_DONE, uiNetCreate, uiNetPlayable, uiNetCommit, uiNetNoping, uiNetClearNope, uiNetCoachText, uiNetSpoken, uiNetNow, uiNetSetClock,
+  NET_RIG_ID, QUEST_TAKEN, QUEST_DONE, uiNetCreate, uiNetPlayable, uiNetCommit, uiNetAutoForced, uiNetAutoStep, uiNetNoping, uiNetClearNope, uiNetCoachText, uiNetSpoken, uiNetNow, uiNetSetClock,
 };

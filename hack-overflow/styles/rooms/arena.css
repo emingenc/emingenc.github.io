@@ -8,6 +8,10 @@
   min-width:0;
 }
 
+.arena-screen:focus {
+  outline:none;
+}
+
 .arena-header {
   display:flex;
   flex-direction:column;
@@ -135,6 +139,47 @@
   overscroll-behavior:contain;
 }
 
+.arena-under {
+  opacity:0.38;
+  pointer-events:none;
+  transition:opacity 0.25s ease-out;
+}
+
+.arena-screen.is-card > .arena-card {
+  position:fixed;
+  right:0;
+  bottom:0;
+  left:0;
+  z-index:5;
+  box-sizing:border-box;
+  max-width:720px;
+  max-height:56dvh;
+  margin:0 auto;
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow:0 -12px 32px rgba(0, 0, 0, 0.6);
+  animation:arena-sheet-in 0.3s ease-out both;
+}
+
+.arena-screen.is-card > .arena-card-win {
+  animation:arena-sheet-in 0.3s ease-out 0.6s both;
+}
+
+.arena-moment {
+  position:fixed;
+  top:16dvh;
+  right:0;
+  left:0;
+  z-index:4;
+  margin:0;
+  color:var(--bright);
+  font-size:var(--fs-2xl);
+  letter-spacing:4px;
+  text-align:center;
+  text-shadow:0 0 18px var(--primary);
+  pointer-events:none;
+  animation:arena-moment 0.6s ease-out both;
+}
+
 .arena-card-title {
   margin:0;
   color:var(--primary);
@@ -163,7 +208,7 @@
   flex-wrap:wrap;
   gap:var(--sp-3);
   margin:0 calc(-1 * var(--sp-5)) calc(-1 * var(--sp-5));
-  padding:var(--sp-3) var(--sp-5) var(--sp-5);
+  padding:var(--sp-3) var(--sp-5) calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
   border-top:1px solid var(--border);
   background:var(--panel);
 }
@@ -287,12 +332,31 @@
   from { opacity:0; transform:scale(0.94); }
 }
 
+@keyframes arena-sheet-in {
+  from { opacity:0; transform:translateY(32px); }
+}
+
+@keyframes arena-slide-in {
+  from { opacity:0; transform:translateX(48px); }
+}
+
+@keyframes arena-moment {
+  0% { opacity:0; transform:scale(0.7); }
+  25%, 75% { opacity:1; transform:scale(1.06); }
+  100% { opacity:0; transform:scale(1.2); }
+}
+
 @keyframes arena-fail-flash {
   0%, 40% { border-color:var(--red); box-shadow:0 0 0 2px var(--red); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .arena-moment {
+    display:none;
+  }
+
   .arena-card-fail,
+  .arena-screen.is-card > .arena-card,
   .arena-screen *,
   .arena-screen *::before,
   .arena-screen *::after {
@@ -315,6 +379,87 @@
   .arena-actions {
     bottom:calc(-1 * var(--sp-3));
     margin:0 calc(-1 * var(--sp-3)) calc(-1 * var(--sp-3));
-    padding:var(--sp-2) var(--sp-3) var(--sp-3);
+    padding:var(--sp-2) var(--sp-3) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (min-width: 1100px) and (min-height: 560px) {
+  .arena-screen.arena-screen {
+    display:grid;
+    grid-template-columns:minmax(0, 1.55fr) minmax(360px, 1fr);
+    grid-template-rows:auto repeat(8, auto) minmax(0, 1fr);
+    align-content:stretch;
+    column-gap:var(--sp-6);
+    row-gap:0;
+    width:100%;
+    max-width:1280px;
+    padding-top:max(var(--sp-3), env(safe-area-inset-top, 0px));
+    padding-bottom:var(--sp-4);
+  }
+
+  .arena-screen.arena-screen > * {
+    grid-column:2;
+    min-width:0;
+    margin-top:var(--sp-3);
+  }
+
+  .arena-screen.arena-screen > .arena-header {
+    grid-column:1 / -1;
+    margin-top:0;
+  }
+
+  .arena-screen.arena-screen > :is(.turret-field, .shield-field, .pincer-scene, .beam-scene, .net-scene) {
+    grid-column:1;
+    grid-row:2 / -1;
+    align-self:stretch;
+  }
+
+  .arena-screen.arena-screen > .arena-toast {
+    grid-column:2;
+    top:var(--arena-header-h);
+    margin-top:0;
+  }
+
+  .arena-screen.is-card.is-card > .arena-card {
+    position:absolute;
+    grid-column:2 / 3;
+    grid-row:2 / -1;
+    inset:0 0 auto;
+    max-width:none;
+    max-height:calc(100dvh - var(--arena-header-h) - var(--sp-6));
+    margin:var(--sp-3) 0 0;
+    border-radius:var(--radius-lg);
+    box-shadow:none;
+    animation:arena-slide-in 0.3s ease-out both;
+  }
+
+  .arena-screen.is-card.is-card > .arena-card-win {
+    animation:arena-slide-in 0.3s ease-out 0.6s both;
+  }
+
+  .arena-screen.is-card > .arena-under {
+    opacity:0.6;
+  }
+
+  .arena-screen.arena-screen > .arena-moment {
+    position:absolute;
+    top:auto;
+    right:0;
+    bottom:auto;
+    left:0;
+    grid-column:1 / 2;
+    grid-row:2 / -1;
+    align-self:center;
+    margin:0;
+  }
+
+  .arena-screen.arena-screen > .arena-rule {
+    display:block;
+  }
+}
+
+@media (min-width: 1100px) and (min-height: 560px) and (prefers-reduced-motion: reduce) {
+  .arena-screen.is-card.is-card > .arena-card {
+    animation:none;
   }
 }

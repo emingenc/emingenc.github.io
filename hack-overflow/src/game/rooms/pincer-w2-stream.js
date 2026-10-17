@@ -1,5 +1,5 @@
 import { PINCER_W1 } from './data/pincer-w1.js';
-import { GOALS, W2_POOL } from './data/pincer-waves.js';
+import { W2_POOL } from './data/pincer-waves.js';
 import { collectPool } from './pool-util.js';
 import { MAX_PAR, MIN_PAR, meeting, pairsWhy, pick, distinctPillars } from './pincer-stream.js';
 import { playBot } from './pincer-solver.js';
@@ -34,7 +34,6 @@ function blindWhy(layout) {
 }
 function w2StreamWhy(layout) {
   if (!isShape(layout)) return 'shape';
-  if (!GOALS.includes(layout.goal)) return 'goal';
   return pairsWhy(layout) || lineWhy(layout) || blindWhy(layout);
 }
 
@@ -49,11 +48,11 @@ function shuffled(next, values) {
 function candidatePillars(next) {
   return shuffled(next, distinctPillars(next));
 }
-function candidate(next, kept) {
+function candidate(next) {
   const pillars = candidatePillars(next);
   const first = pick(next, PINCER_W1.n);
   const second = (first + 1 + pick(next, PINCER_W1.n - 1)) % PINCER_W1.n;
-  return { wave: WAVE, pillars, target: pillars[first] + pillars[second], goal: GOALS[kept % GOALS.length] };
+  return { wave: WAVE, pillars, target: pillars[first] + pillars[second] };
 }
 const idOf = (layout) => layout.pillars.join(',') + '/' + layout.target;
 function buildW2Pool(seed = W2_POOL.seed, size = W2_POOL.size) {

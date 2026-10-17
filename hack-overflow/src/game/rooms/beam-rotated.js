@@ -46,6 +46,7 @@ const { state,play } = turn;
 const slip = worstSide(state,cell) > bestSplit(state);
 const line = slip ? slipLine(state,cell) :'';
 state.probes += 1;
+state.roundShots += 1;
 state.selected = null;
 return { slip,line,points:payShot(state,{ slip },play) };
 }

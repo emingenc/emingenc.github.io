@@ -68,8 +68,7 @@ function uiPincerFailLines(state, result) {
   const why = FAILS_WITH_WHY.has(result.fail) ? result.why : '';
   return [why, uiPincerFailRule(state, result)].filter(Boolean);
 }
-function uiPincerWinLines(state, result) {
-  if (state.last.kind === 'lookup-heavy') return [state.last.why];
+function uiPincerWinLines(result) {
   if (result.mode === 'w2') return result.firstWin ? [PINCER_TEXTS.card.unlock3] : [];
   return result.mode === 'w1' ? [PINCER_TEXTS.card.next] : [];
 }
@@ -79,7 +78,7 @@ function uiPincerCard(app, result) {
   if (!result.won) {
     return uiArenaCard(app, { title: PINCER_TEXTS.card.failTitle, tone: 'fail', lines: uiPincerFailLines(state, result), body: [uiPincerScore(state)], actions });
   }
-  return uiArenaCard(app, { title: uiPincerCardTitle(result.mode), lines: uiPincerWinLines(state, result), body: uiPincerWinBody(state, result), actions });
+  return uiArenaCard(app, { title: uiPincerCardTitle(result.mode), lines: uiPincerWinLines(result), body: uiPincerWinBody(state, result), actions });
 }
 
 export { uiPincerCard };

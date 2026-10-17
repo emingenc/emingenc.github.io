@@ -29,6 +29,7 @@ var Router;
   const userSays = (content) => addMessage({ role: 'user', type: 'text', content, ts: '' });
   const errorSays = (content) => addMessage({ role: 'error', type: 'text', content, ts: '' });
   const agentSays = (content) => addMessage({ role: 'agent', type: 'faq', content, ts: '' });
+  const systemSays = (content) => addMessage({ role: 'system', type: 'system', content, ts: '', noTs: true });
   const toolCard = (toolName, content) => addMessage({ role: 'tool', type: 'tool-call', toolName, content, ts: '', noTs: false });
 
   // ─── Input ───────────────────────────────────────────────────────────────
@@ -227,10 +228,25 @@ var Router;
     window._answerAsk = answerByButton;
   }
 
+  function enableLLM() {
+    const outcome = Classifier.enableLLM();
+    if (outcome === 'running') return;
+    store.dispatch(systemSays(outcome === 'failed'
+      ? 'The chat model could not load in this tab. Answers come from files only.'
+      : outcome === 'resumed' ? 'Chat model is on again.'
+      : `Loading the chat model${Classifier.chatMegabytes() ? `: ${Classifier.chatMegabytes()} MB,` : ''} once. Answers from files keep working meanwhile.`));
+  }
+
+  function declineLLM() {
+    if (Classifier.declineLLM()) store.dispatch(systemSays('Chat model stays off. Answers come from files only.'));
+  }
+
   Router = {
     init,
     handleInput,
-    enableLLM: () => Classifier.enableLLM(),
+    warmUp: () => Classifier.startRouter(),
+    enableLLM,
+    declineLLM,
     cancel: () => Turn.cancel(),
   };
 }

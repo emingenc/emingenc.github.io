@@ -10,6 +10,7 @@ import { recordBreach, withPending, bumpEntry, bumpStat } from '../game/save.js'
 import { coreState, unlocksBetween } from '../game/progress.js';
 import { lockName } from '../game/messages.js';
 import { uiPrefersReducedMotion } from './dom.js';
+import { uiLinkStyles } from './lazy-style.js';
 import { uiEmit } from './bus.js';
 import { uiCommitSave } from './game-state.js';
 import { uiRenderApp } from './app.js';
@@ -17,25 +18,31 @@ import { uiWalkReleaseAll } from './grid-walk.js';
 import { UI_ONBOARD_STAGE_RULE } from './onboarding.js';
 import { UI_LOCK_HEADING_KEY } from './render-lock-left.js';
 import { uiEnterGrid } from './screen-grid.js';
-import { uiOpenDebrief } from './screen-debrief.js';
+import { uiOpenDebriefLoaded,uiPrefetchDebrief } from './debrief-loader.js';
 import { uiOpenTraced } from './screen-traced.js';
 
+const UI_DEBRIEF_SHEETS = ['styles/lazy/debrief.css','styles/lazy/levelup.css'];
+const UI_STATEMENT_OPEN_LOCKS = 2;
 function uiPinCount(game,key) {
 return testCounts(game.catalog.problemByKey.get(key).cases).total + 1;
 }
 function uiJackIn(app,key) {
 const game = app.game;
+uiLinkStyles(UI_DEBRIEF_SHEETS);
+uiPrefetchDebrief().catch(function () {});
 const pending = Object.hasOwn(game.save.pending,key) ? game.save.pending[key] :null;
 const attempt = game.save.entries[key] || 0;
 app.run = newLockRun(game.catalog,{ key,attempt,history:pending });
 const trace = createTrace(game.progress.capacity,pending ? pending.trace :0);
 const used = pending && pending.used ? { ...pending.used } :{};
 const known = game.progress.breached.has(key);
-game.breach = { key,attempt,level:game.progress.level,trace,used,known,pinCount:uiPinCount(game,key),anim:null,timers:[] };
+game.breach = {
+key,attempt,level:game.progress.level,trace,used,known,pinCount:uiPinCount(game,key),anim:null,timers:[],verdicts:new Map(),note:null,
+};
 Object.assign(game,{ revealing:false,traced:null,outcome:null,travelOpen:false });
 game.walk.plan = null;
 uiWalkReleaseAll(app);
-Object.assign(app,{ trayFocusIndex:0,lastPanelKind:null,probedLine:null,statementOpen:false,screen:'breach',lastFocusKey:UI_LOCK_HEADING_KEY });
+Object.assign(app,{ trayFocusIndex:0,lastPanelKind:null,probedLine:null,statementOpen:game.progress.breached.size < UI_STATEMENT_OPEN_LOCKS,screen:'breach',lastFocusKey:UI_LOCK_HEADING_KEY });
 if (app.onboardStage === UI_ONBOARD_STAGE_RULE) app.onboardStage = null;
 uiEmit(GAME_EVENT.JACK_IN,{ key,lockName:lockName(key) });
 }
@@ -68,8 +75,9 @@ else uiEmit(event.type,event.payload);
 function uiFinishBreach(app,open,info) {
 uiLeaveBreach(app);
 app.menuOpen = false;
-open(app,info);
+const opening = open(app,info);
 uiRenderApp(app);
+if (opening) opening.then(function () { uiRenderApp(app); },function () {});
 }
 function uiPendingSave(app,run) {
 return withPending(app.game.save,app.game.breach.key,uiPendingRecord(app,run));
@@ -90,6 +98,7 @@ function uiOnProbe(app,info) {
 uiCommitSave(app,bumpStat(uiPendingSave(app,info.run),'probes'));
 }
 function uiOnFail(app,info) {
+if (info.free) return;
 uiCommitSave(app,bumpStat(uiPendingSave(app,info.run),'fails'));
 }
 function uiTracedInfo(key,history) {
@@ -127,19 +136,30 @@ const record = recordBreach(game.save,{ key,difficulty:game.world.problems[key].
 uiCommitSave(app,bumpEntry(withPending(record.save,key,null),key));
 game.revealing = true;
 game.outcome = uiOutcome(app,{ key,record,stars,rawStars:info.run.lock.stars,acceptedText:info.run.lock.acceptedText });
-uiLater(app,info.step.plan.durationMs,function () { uiFinishBreach(app,uiOpenDebrief,null); });
+uiLater(app,info.step.plan.durationMs,function () { uiFinishBreach(app,uiOpenDebriefLoaded,null); });
 }
 const UI_OUTCOME_HANDLERS = { none:uiOnQuiet,probe:uiOnProbe,fail:uiOnFail,traced:uiOnTraced,accepted:uiOnAccepted };
+function uiNoBreachYet(stats) {
+return stats.fails === 0 && stats.breaches === 0;
+}
+function uiVerdictNote(ctx) {
+if (ctx.free) return 'replay';
+return ctx.mercy ? 'mercy' :null;
+}
 function uiAfterBreachAction(app,ctx,nextRun) {
 const breach = app.game.breach;
 if (!breach) return;
 if (ctx.actionId === 'run') app.probedLine = nextRun.lock.line.join();
 const change = { before:ctx.previousRun,after:nextRun,actionId:ctx.actionId };
-const step = breachStep(change,{ trace:breach.trace,used:breach.used,pinCount:breach.pinCount,reducedMotion:uiPrefersReducedMotion() });
+const first = ctx.actionId === 'submit' && uiNoBreachYet(app.game.save.stats);
+const step = breachStep(change,{
+trace:breach.trace,used:breach.used,pinCount:breach.pinCount,reducedMotion:uiPrefersReducedMotion(),stretch:first,free:ctx.free,
+});
 breach.trace = step.trace;
+if (ctx.actionId === 'run' || ctx.actionId === 'submit') breach.note = uiVerdictNote(ctx);
 if (step.plan) breach.anim = { kind:step.outcome,plan:step.plan,startedAt:performance.now() };
 uiScheduleEvents(app,step.events);
-UI_OUTCOME_HANDLERS[step.outcome](app,{ step,run:nextRun,actionId:ctx.actionId });
+UI_OUTCOME_HANDLERS[step.outcome](app,{ step,run:nextRun,actionId:ctx.actionId,free:ctx.free });
 }
 
-export { uiJackIn, uiAfterBreachAction, uiClearBreachTimers, uiLeaveBreach, uiDisconnect, uiStoreExploitUse };
+export { uiNoBreachYet, uiJackIn, uiAfterBreachAction, uiClearBreachTimers, uiLeaveBreach, uiDisconnect, uiStoreExploitUse };

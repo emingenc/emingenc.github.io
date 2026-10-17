@@ -11,6 +11,10 @@ return { col:Math.round(camera.col * scale) / scale,row:Math.round(camera.row * 
 }
 function uiCameraTick(app,now) {
 const stage = app.game.stage;
+if (app.story && stage.follow) {
+stage.follow.at = now;
+return uiSnapCamera(stage,stage.follow.camera);
+}
 const pose = uiAvatarPose(app,now);
 const world = app.game.world;
 const view = { focus:{ col:pose.col,row:pose.row },cols:stage.width / stage.tile,rows:stage.height / stage.tile,inset:uiBarsInset(stage.tile) };

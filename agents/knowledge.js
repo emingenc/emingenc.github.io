@@ -29,8 +29,9 @@ var KnowledgeBase = (function() {
       }
       loaded = true;
     }).catch(function(e) {
-      console.warn('Knowledge base load failed:', e.message);
+      // Rethrown so boot() can tell the visitor (agent-ui.js failBoot).
       loaded = true;
+      throw e;
     });
   }
 

@@ -69,6 +69,10 @@ const col = place.col + place.wide * MIDDLE - frame.width / frame.tile * MIDDLE;
 const row = Math.max(place.row,frame.camera.row + TOP_MARGIN);
 return { ...frame,camera:{ ...frame.camera,col,row:frame.camera.row + place.row - row } };
 }
+function uiPlacedCell(view,n,cell) {
+const placed = uiRowFrame(view,n).camera;
+return { col:cell.col + view.camera.col - placed.col,row:cell.row + view.camera.row - placed.row };
+}
 function uiPaintPhase(ctx,frame,kernel) {
 const phase = kernel.phase;
 const placed = uiRowFrame(frame,phase.n);
@@ -84,4 +88,4 @@ if (game.kernel && game.kernel.active && game.kernel.phase) uiPaintPhase(ctx,fra
 };
 }
 
-export { uiKernelPaint };
+export { uiKernelPaint,uiPlacedCell };

@@ -24,16 +24,6 @@
   left:max(var(--sp-5),env(safe-area-inset-left,0px));
 }
 
-.net-screen.is-card {
-  height:auto;
-  min-height:100dvh;
-  overflow:visible;
-}
-
-.net-screen.is-card .arena-scroll {
-  max-height:calc(100dvh - var(--arena-header-h) - var(--sp-6) - env(safe-area-inset-bottom,0px));
-}
-
 .net-screen > .arena-header,
 .net-screen > .arena-coach,
 .net-screen > .net-strip,
@@ -53,6 +43,27 @@
   overflow:hidden;
   font-size:var(--fs-md);
   line-height:1.25;
+}
+
+
+.net-screen .auto-run {
+  justify-content:center;
+  gap:var(--sp-2);
+}
+
+.net-screen .auto-run-badge {
+  min-width:9ch;
+  font-size:var(--fs-md);
+  text-align:center;
+}
+
+.net-screen .auto-run-btn {
+  padding:var(--sp-2) var(--sp-3);
+  font-size:var(--fs-md);
+}
+
+.net-screen .auto-run-step {
+  display:none;
 }
 
 

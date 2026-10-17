@@ -13,6 +13,7 @@ import { uiLend,uiSpendTrial } from './grid-power-lend.js';
 import { uiPaintHall } from './grid-power-pincer-draw.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiPayRank } from './rank-pay.js';
+import { uiShotCells } from './shot-fx.js';
 
 const POWER_ID = 'pincer';
 const SIGN_NEAR = 3;
@@ -89,6 +90,7 @@ if (!bridge) return;
 if (!bridge.live) uiBegin(app,bridge);
 const result = applyBridge(bridge.state,move);
 bridge.state = result.state;
+if (move === 'fire' && result.kind !== 'none') uiShotCells(app.game.avatar.pos,BRIDGE.drone,{ hit:result.kind === 'win',kill:result.kind === 'win',heavy:false });
 uiSay(app,{ text:result.note,kind:result.kind === 'win' ? 'reward' :'info' });
 if (result.kind === 'win') uiWin(app,bridge);
 uiSafeTick(app);

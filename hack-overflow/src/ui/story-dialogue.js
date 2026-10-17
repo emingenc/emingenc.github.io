@@ -1,12 +1,11 @@
 import { markBeatsSeen } from '../game/save.js';
 import { advanceFlow,beatsDue,earnedToastIds,finalBeat,labBeat,lineAt,pendingIds,startFlow,toastText,unseenBeats } from '../game/story/story.js';
 import { uiAnnounce } from './dom.js';
-import { uiRenderKeepingFocus } from './app.js';
 import { uiCommitSave } from './game-state.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiWalkReleaseAll } from './grid-walk.js';
 import { sheetGuardShow,uiSheetGuardWire } from './sheet-guard.js';
-import { uiStoryLineDone,uiStoryStopTimer } from './story-render.js';
+import { uiStoryAsks,uiStoryIsLastLine,uiStoryLineDone,uiStoryStopTimer } from './story-render.js';
 
 const STORY_NEXT_KEY = 'story-next';
 const LADDER_BEAT = 'gate-lv5';
@@ -54,22 +53,8 @@ function uiStoryToast(app,beat) {
 uiStoryMarkSeen(app,[beat.id]);
 if (app.screen !== 'grid') return true;
 uiShowToast(app,{ text:toastText(beat),kind:'info' });
-if (beat.id === LADDER_BEAT) uiStoryChain(app,beat).catch(console.error);
+if (beat.id === LADDER_BEAT) import('./story-ladder.js').then((ladder) => ladder.uiStoryChain(app,beat)).catch(console.error);
 return true;
-}
-async function uiStoryChain(app,beat) {
-const game = app.game;
-const gen = game.gen;
-const told = (app.game.ext && app.game.ext.beats) || [];
-const later = window.setTimeout.bind(window);
-const ladder = await import('../game/story/ladder.js');
-ladder.ladderRest(beat.id,told).forEach(function (text,at) {
-later(function () {
-if (app.screen !== 'grid' || app.game !== game || game.gen !== gen) return;
-uiShowToast(app,{ text,kind:'info' });
-uiRenderKeepingFocus(app);
-},ladder.LADDER_GAP_MS * (at + 1));
-});
 }
 function uiStoryShow(app,beats) {
 if (app.story) return false;
@@ -96,23 +81,22 @@ return uiStoryShow(app,[labBeat(labId,'outro')]);
 function uiStoryFinal(app,beat = finalBeat()) {
 return uiStoryShow(app,[beat]);
 }
-function uiStoryGoOn(app,next) {
+function uiStoryGoOn(app,next,revealed = false) {
 const story = app.story;
 const now = performance.now();
-app.story = { ...story,flow:next,lineStartedAt:now,revealed:false,guard:sheetGuardShow(now) };
+app.story = { ...story,flow:next,lineStartedAt:now,revealed,guard:sheetGuardShow(now) };
 if (!story.choice) uiStoryMarkSeen(app,[lineAt(next).beatId]);
 uiStoryAnnounceLine(app.story);
 }
 function uiStoryNext(app) {
 const story = app.story;
 if (!story) return;
-if (!uiStoryLineDone(story)) {
-story.revealed = true;
-return;
-}
 const next = advanceFlow(story.flow);
 if (next) uiStoryGoOn(app,next);
-else if (!story.choice) uiStoryClose(app);
+else if (!uiStoryLineDone(story)) story.revealed = true;
+else if (uiStoryAsks(story)) return;
+else if (story.choice) uiStorySettle(app,story.choice.choices[0].id);
+else uiStoryClose(app);
 }
 function uiStorySettle(app,choiceId) {
 const { resolve } = app.story.choice;
@@ -124,13 +108,15 @@ const marked = app.story.choice.choices.find((choice) => choice.default === true
 if (marked) uiStorySettle(app,marked.id);
 }
 function uiStorySkip(app) {
-if (!app.story) return;
-if (app.story.choice) {
-uiStoryEscapeChoice(app);
-return;
-}
-uiStoryMarkSeen(app,pendingIds(app.story.flow));
+const story = app.story;
+if (!story) return;
+const { flow } = story;
+if (!story.choice) {
+uiStoryMarkSeen(app,pendingIds(flow));
 uiStoryClose(app);
+} else if (!uiStoryAsks(story)) uiStorySettle(app,story.choice.choices[0].id);
+else if (uiStoryIsLastLine(story)) uiStoryEscapeChoice(app);
+else uiStoryGoOn(app,{ ...flow,line:flow.queue[flow.beat].lines.length - 1 },true);
 }
 async function uiStoryChoice(app,sheet) {
 const kit = await import('./story-choice.js');

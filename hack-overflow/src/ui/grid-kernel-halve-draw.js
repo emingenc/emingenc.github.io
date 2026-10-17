@@ -27,6 +27,9 @@ const MIDDLE = 0.5;
 function uiEntryCell(entry) {
 return { col:FIRST_COL + Math.floor((entry % PER_ROW) * COLS / PER_ROW),row:FIRST_ROW + Math.floor(entry / PER_ROW) };
 }
+function uiEntryAim(entry) {
+return { col:FIRST_COL + ((entry % PER_ROW) + MIDDLE) * COLS / PER_ROW - MIDDLE,row:uiEntryCell(entry).row };
+}
 function uiEntryOrigin(frame,entry) {
 const sliceWidth = COLS * frame.tile / PER_ROW;
 return { left:(FIRST_COL - frame.camera.col) * frame.tile + (entry % PER_ROW) * sliceWidth,top:(FIRST_ROW + Math.floor(entry / PER_ROW) - frame.camera.row) * frame.tile,sliceWidth };
@@ -100,4 +103,4 @@ uiPaintEntry(ctx,frame,{ entry,look:{ live,grey:isGrey(entry),cursor:entry === c
 uiPaintEdges(ctx,frame,halve);
 }
 
-export { UI_HALVE_FILLS,uiPaintHalve };
+export { UI_HALVE_FILLS,uiEntryAim,uiEntryCell,uiPaintHalve };

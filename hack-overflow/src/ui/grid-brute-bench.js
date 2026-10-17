@@ -4,7 +4,7 @@ import { uiPropGuard,uiQuestLive,uiQuestMarks } from './grid-quest-kit.js';
 import { uiHooksOnce } from './grid-power.js';
 
 const BENCH_RUNS = { countersign:function () { return import('./grid-brute-countersign.js').then(function (module) { return module.uiBruteCountersign; }); } };
-const asking = new WeakSet();
+let asking = null;
 
 function uiBenchTalks(app) {
 const plan = benchPlan(app.game.ext);
@@ -13,15 +13,26 @@ if (plan.kind === 'talk' && BENCH_RUNS[plan.id]) return BENCH_RUNS[plan.id]().th
 if (plan.kind === 'idle') uiShowToast(app,{ text:plan.text,kind:'info' });
 return Promise.resolve();
 }
+function uiBenchDropped(app) {
+if (!uiQuestLive(app)) return 'quest not live';
+if (app.story) return 'a sheet is up';
+if (asking === app.game.gen) return 'a question is in flight';
+return '';
+}
 async function uiBenchBump(info) {
 const app = info.app;
+if (!info.event || info.event.prop !== BENCH_ID) return;
+const dropped = uiBenchDropped(app);
+if (dropped) {
+console.debug('BRUTE bench: bump ignored, ' + dropped);
+return;
+}
 const gen = app.game.gen;
-if (!uiQuestLive(app) || !info.event || info.event.prop !== BENCH_ID || app.story || asking.has(gen)) return;
-asking.add(gen);
+asking = gen;
 try {
 await uiBenchTalks(app);
 } finally {
-asking.delete(gen);
+if (asking === gen) asking = null;
 }
 }
 const uiHookBench = uiHooksOnce({ bump:function (info) { uiBenchBump(info).catch(console.error); } });

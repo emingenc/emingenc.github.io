@@ -1,15 +1,18 @@
 import { ui, uiSyncJudgeDataBadge, uiRenderApp } from './app.js';
 import { uiHasOption } from './render-actions.js';
-import { uiChipPosition } from './line-actions.js';
+import { uiChipPosition, uiRemovePosition } from './line-actions.js';
 import { UI_ONBOARD_STAGE_CHIP, UI_ONBOARD_STAGE_VERDICT, UI_ONBOARD_STAGE_RULE, uiOnboardStage3Message } from './onboarding.js';
 import { uiMarkOnboarded } from './storage.js';
 import { uiPanelAnnounceText, uiBreachInert } from './render-submit-panel.js';
-import { uiAfterBreachAction } from './breach-flow.js';
+import { uiAfterBreachAction, uiNoBreachYet } from './breach-flow.js';
 import { judgeAct } from './judge-client.js';
+import { VERDICT_WORDS } from '../logic/index.js';
 
 const UI_WORKER_ACTION_IDS = { run:1,submit:1 };
 
 function uiActionIsLegal(run,actionId) {
+const position = uiRemovePosition(actionId);
+if (position !== null) return Boolean(run.lock) && position < run.lock.line.length;
 return uiHasOption(ui.audit.view(run),actionId);
 }
 function uiOnboardChipAdded(app,info) {
@@ -33,7 +36,7 @@ uiMarkOnboarded();
 function uiFocusKeyAfterAction(app,actionId) {
 const chipPos = uiChipPosition(actionId);
 if (chipPos !== null) return 'chip-' + chipPos;
-if (actionId === 'clear') return 'chip-' + app.trayFocusIndex;
+if (actionId === 'clear' || uiRemovePosition(actionId) !== null) return 'chip-' + app.trayFocusIndex;
 return actionId;
 }
 function uiAnnounceVerdict(app,actionId,run) {
@@ -59,7 +62,26 @@ const changedLock = keys.next !== null && keys.next !== keys.previous;
 const index = changedLock ? 0 :app.trayFocusIndex;
 return uiClampTrayIndex(index,keys.trayLength);
 }
-function uiFinishAuditAction(app,ctx,nextRun) {
+function uiLineKey(run) {
+return run.lock.line.join();
+}
+function uiReplayedRun(app) {
+const breach = app.game.breach;
+const cached = breach && breach.verdicts ? breach.verdicts.get(uiLineKey(app.run)) :null;
+return cached ? { ...app.run,lock:{ ...app.run.lock,lastSubmit:cached } } :null;
+}
+function uiMercyApplies(app,lock) {
+return uiNoBreachYet(app.game.save.stats) && lock.submitted.length === 1 && lock.lastSubmit.verdict === VERDICT_WORDS.T;
+}
+function uiKeepFailure(app,ctx,nextRun) {
+const lastSubmit = nextRun.lock.lastSubmit;
+if (ctx.actionId !== 'submit' || ctx.free || !lastSubmit || lastSubmit.verdict === VERDICT_WORDS.P) return nextRun;
+if (app.game.breach.verdicts) app.game.breach.verdicts.set(uiLineKey(nextRun),lastSubmit);
+ctx.mercy = uiMercyApplies(app,nextRun.lock);
+return ctx.mercy ? { ...nextRun,lock:{ ...nextRun.lock,submitted:[] } } :nextRun;
+}
+function uiFinishAuditAction(app,ctx,judgedRun) {
+const nextRun = uiKeepFailure(app,ctx,judgedRun);
 app.run = nextRun;
 app.trayFocusIndex = uiTrayFocusIndexFor(app,ctx.chipPos,{ previous:ctx.previousLockKey,next:uiLockKeyOf(nextRun),trayLength:uiTrayLength(nextRun) });
 uiAnnounceVerdict(app,ctx.actionId,nextRun);
@@ -73,24 +95,23 @@ return ui.audit.act(app.run,actionId);
 function uiAuditRefused(app) {
 return !app.run || uiBreachInert(app);
 }
-async function uiApplyAuditAction(app,actionId) {
-if (uiAuditRefused(app)) return;
-if (!uiActionIsLegal(app.run,actionId)) return;
-const before = app.run.lock ? app.run.lock.line.length :0;
-const previousLockKey = uiLockKeyOf(app.run);
+function uiAuditContext(app,actionId) {
 const previousRun = app.run;
-const chipPos = uiChipPosition(actionId);
+const previousLockKey = uiLockKeyOf(previousRun);
 if (actionId === 'submit' && previousLockKey) uiSyncJudgeDataBadge(previousLockKey);
-const ctx = { actionId,before,previousLockKey,previousRun,chipPos };
-if (!UI_WORKER_ACTION_IDS[actionId]) {
-uiFinishAuditAction(app,ctx,ui.audit.act(app.run,actionId));
-return;
+return { actionId,before:previousRun.lock ? previousRun.lock.line.length :0,previousLockKey,previousRun,chipPos:uiChipPosition(actionId) };
 }
+async function uiApplyAuditAction(app,actionId) {
+if (uiAuditRefused(app) || !uiActionIsLegal(app.run,actionId)) return;
+const ctx = uiAuditContext(app,actionId);
+const replayed = actionId === 'submit' ? uiReplayedRun(app) :null;
+if (replayed) return uiFinishAuditAction(app,{ ...ctx,free:true },replayed);
+if (!UI_WORKER_ACTION_IDS[actionId]) return uiFinishAuditAction(app,ctx,ui.audit.act(app.run,actionId));
 app.judging = true;
 uiRenderApp(app);
-const nextRun = await judgeAct(previousRun,actionId).catch(() => null);
+const nextRun = await judgeAct(ctx.previousRun,actionId).catch(() => null);
 app.judging = false;
-if (app.run !== previousRun) return;
+if (app.run !== ctx.previousRun) return;
 uiFinishAuditAction(app,ctx,nextRun || uiJudgeOnMainThread(app,actionId));
 }
 

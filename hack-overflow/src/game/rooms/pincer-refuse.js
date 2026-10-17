@@ -15,7 +15,7 @@ function fireWhy(state) {
   if (!specOf(state).dam || !canStep(state)) return '';
   return fillText(PINCER_TEXTS.refuse.fire, { left: state.r - state.l });
 }
-const REASONS = { bank: bankWhy, sort: sortedWhy, lookup: sortedWhy, fire: fireWhy };
+const REASONS = { bank: bankWhy, sort: sortedWhy, fire: fireWhy };
 
 function pincerWhyNot(state, move) {
   if (state.status !== 'running' || !Object.hasOwn(REASONS, move)) return '';

@@ -5,11 +5,12 @@ import { uiRenderApp, uiRenderKeepingFocus } from './app.js';
 import { ARENA_FOCUS_KEY, uiArenaCoach, uiArenaHeader, uiArenaLeave, uiArenaLeaveTooSoon, uiArenaOpen, uiArenaRule, uiArenaToastNode } from './arena-shell.js';
 import { uiEl } from './dom.js';
 import { uiLinkStyles } from './lazy-style.js';
+import { uiNetAutoAttach, uiNetAutoKey, uiNetAutoMoved, uiNetAutoNudge, uiNetAutoStop } from './net-auto.js';
 import { uiNetCard } from './net-card.js';
 import { uiNetDrag } from './net-drag.js';
 import { NET_RIG_ID, uiNetClearNope, uiNetCommit, uiNetCreate, uiNetNoping, uiNetNow, uiNetPlayable, uiNetSpoken } from './net-flow.js';
 import { uiNetDock, uiNetMagnifier, uiNetScene, uiNetStrip } from './net-scene.js';
-import { uiRoomFocusKey } from './room-screen.js';
+import { uiRoomBody, uiRoomFocusKey } from './room-screen.js';
 
 
 const BACK_ACTION = 'rig-back';
@@ -21,7 +22,7 @@ const MOVE_OF_ACTION = { 'net-extend': 'extend', 'net-shrink': 'shrink', 'net-ju
 const ACTION_OF_KEY = {
   e: 'net-extend', arrowright: 'net-extend', s: 'net-shrink', arrowleft: 'net-shrink', j: 'net-jump', g: FLICK_ACTION,
 };
-const STYLESHEETS = ['styles/rooms/rig-shell.css', 'styles/rooms/arena.css', 'styles/rooms/net.css'];
+const STYLESHEETS = ['styles/rooms/rig-shell.css', 'styles/rooms/arena.css', 'styles/lazy/auto-run.css', 'styles/rooms/net.css'];
 const SUM_JUDGE = 'sum';
 const MAX_JUMP = 'max';
 const MODE_OF_ACTION = { 'net-wave2': 'w2', 'net-wave3': 'w3' };
@@ -47,7 +48,7 @@ function uiNetRender(app) {
   const arena = uiNetArena(app);
   if (!arena) return uiEl('section', { className: 'screen rig-screen', attrs: { 'data-screen': 'rig' } });
   const view = { hearts: arena.state.integrity, heartsMax: NET_INTEGRITY, score: arena.state.score, title: HEADINGS[arena.mode] ?? arena.rig.title, assist: false };
-  const body = arena.view === 'card' ? [uiNetCard(app, arena.result)] : uiNetPlayView(app);
+  const body = uiRoomBody(app, arena, { play: () => uiNetPlayView(app), card: () => uiNetCard(app, arena.result) });
   return uiEl('section', {
     className: 'screen rig-screen arena-screen net-screen' + (arena.view === 'card' ? ' is-card' : ''),
     attrs: { 'data-screen': 'rig', 'data-rig': NET_RIG_ID, tabindex: '-1', 'data-focus-key': ARENA_FOCUS_KEY },
@@ -82,17 +83,20 @@ function uiNetWatchNope(app, played) {
 function uiNetPlay(app, actionId) {
   const played = uiNetCommit(app, MOVE_OF_ACTION[actionId], uiNetNow());
   uiNetWatchNope(app, played);
-  if (app.rig.arena.view !== 'play') return;
-  app.lastFocusKey = actionId === FLICK_ACTION && played ? ARENA_FOCUS_KEY : actionId;
+  if (app.rig.arena.view === 'play') app.lastFocusKey = actionId === FLICK_ACTION && played ? ARENA_FOCUS_KEY : actionId;
+  if (played) uiNetAutoMoved(app);
 }
 function uiNetLeave(app) {
   if (uiArenaLeaveTooSoon(app)) return;
   uiGesture.cancel();
+  uiNetAutoStop(app.rig.arena);
   uiArenaLeave(app, null);
 }
 function uiNetRestart(app, start) {
   const arena = app.rig.arena;
+  uiNetAutoStop(arena);
   app.rig.arena = uiNetCreate(app, arena.rig, { now: uiNetNow(), ...start });
+  uiNetAutoAttach(app);
   app.lastFocusKey = ARENA_FOCUS_KEY;
   app.pendingAnnounce = uiNetSpoken(app.rig.arena) + ' ' + app.rig.arena.coach;
 }
@@ -138,6 +142,7 @@ function uiNetPointerUp(event, app) {
   uiGesture.up(app, event);
   const moved = arena.state !== before;
   uiNetWatchNope(app, moved);
+  if (moved) uiNetAutoMoved(app);
   if (moved || armed) uiNetRepaint(app);
   return moved;
 }
@@ -157,6 +162,7 @@ function uiNetKeyId(event, app) {
 }
 function uiNetKeyAction(event, app) {
   if (!uiNetArena(app)) return null;
+  if (uiNetAutoKey(app, event)) return { type: 'handled' };
   const id = uiNetKeyId(event, app);
   if (!id) return null;
   event.preventDefault();
@@ -165,7 +171,11 @@ function uiNetKeyAction(event, app) {
 
 
 function uiNetSync(app, active) {
-  if (!active || !uiNetArena(app)) uiGesture.cancel();
+  const arena = uiNetArena(app);
+  if (!active || !arena) uiGesture.cancel();
+  if (!arena) return;
+  if (active) uiNetAutoNudge(app);
+  else uiNetAutoStop(arena);
 }
 function uiNetRelease() {
   uiGesture.cancel();
@@ -182,6 +192,7 @@ function uiRigOpen(app, rigId) {
   const rig = rigOf(rigId);
   if (!rig) throw new Error('unknown rig: ' + rigId);
   uiArenaOpen(app, { rigId, create: (opened) => uiNetCreate(opened, rig, { now: uiNetNow(), lastIndex: null }) });
+  uiNetAutoAttach(app);
 }
 function uiRigReady() {
   return uiLinkStyles(STYLESHEETS);

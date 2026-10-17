@@ -1,7 +1,7 @@
 import { SHARD } from '../game/rooms/data/beam-wave.js';
 import { BEAM_TEXTS } from '../game/rooms/data/beam-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
-import { beamBudget } from '../game/rooms/beam.js';
+import { roundBudget } from '../game/rooms/beam.js';
 import { uiBeamMarkClasses,uiBeamVar } from './beam-marks.js';
 import { uiBeamNoping,uiBeamShooting,uiBeamTime } from './beam-flow.js';
 import { uiEl } from './dom.js';
@@ -65,11 +65,19 @@ function uiBeamThreats(state) {
 const shard = state.shard ? uiEl('span',{ className:'beam-shard',text:SHARD_WORDS + SHARD.score }) :null;
 return [shard,...state.mites.map(uiBeamMite)].filter(Boolean);
 }
+function uiBeamRoundChip(state) {
+if (state.rounds.length < 2) return null;
+const text = fillText(BEAM_TEXTS.coach.round,{ round:state.round + 1,rounds:state.rounds.length });
+return uiEl('span',{ className:'beam-chip beam-round',text });
+}
+function uiBeamAnswerChip(state) {
+const said = state.last && state.last.kind === 'shot' && state.last.end !== 'round' ? state.last.answer :'';
+return uiEl('span',{ className:'beam-chip beam-answer' + (said ? ' is-said' :''),text:said ? '→ ' + said :'',attrs:{ 'aria-label':said ? 'ORACLE-7 said ' + said :'' } });
+}
 function uiBeamChips(state) {
-const shots = fillText(BEAM_TEXTS.coach.chip,{ k:state.probes,budget:beamBudget(state.wave),lo:state.lo,hi:state.hi });
-const said = state.last && state.last.kind === 'shot' ? state.last.answer :'';
-const answer = uiEl('span',{ className:'beam-chip beam-answer' + (said ? ' is-said' :''),text:said ? '→ ' + said :'',attrs:{ 'aria-label':said ? 'ORACLE-7 said ' + said :'' } });
-return uiEl('p',{ className:'beam-top',children:[uiEl('span',{ className:'beam-chip beam-shots',text:shots }),answer] });
+const shots = fillText(BEAM_TEXTS.coach.chip,{ k:state.roundShots,budget:roundBudget(state.n),lo:state.lo,hi:state.hi });
+const chips = [uiBeamRoundChip(state),uiEl('span',{ className:'beam-chip beam-shots',text:shots }),uiBeamAnswerChip(state)].filter(Boolean);
+return uiEl('p',{ className:'beam-top',children:chips });
 }
 
 function uiBeamScene(app) {

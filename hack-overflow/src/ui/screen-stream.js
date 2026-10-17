@@ -4,6 +4,7 @@ import { uiRenderApp } from './app.js';
 import { uiEnterGrid } from './screen-grid.js';
 import { uiLinkStyles } from './lazy-style.js';
 import { uiStoryLabOpen } from './machine-dialogue.js';
+import { uiRoomHintInto } from './room-hint.js';
 import { uiStreamAct,uiStreamIsPlaying,uiStreamLoopStart,uiStreamLoopStop } from './stream-loop.js';
 import { uiStreamFocusFor,uiStreamRenderView } from './stream-render.js';
 
@@ -26,6 +27,10 @@ stageCount:CONTEXT_STREAM.stages.length,
 app.screen = 'stream';
 app.lastFocusKey = 'stream-back';
 uiStoryLabOpen(app,CONTEXT_STREAM.id);
+}
+function uiStreamRender(app) {
+const section = uiStreamRenderView(app);
+return app.stream && (app.stream.view === 'select' || app.stream.view === 'ready') ? uiRoomHintInto(app,'stream',section) :section;
 }
 function uiStreamLeave(app) {
 uiStreamLoopStop();
@@ -219,7 +224,7 @@ return STREAM_SPOKEN;
 function uiStreamScreen() {
 return {
 id:'stream',
-render:uiStreamRenderView,
+render:uiStreamRender,
 focusKey:uiStreamFocusFor,
 announce:uiStreamAnnounce,
 keyAction:uiStreamKeyAction,

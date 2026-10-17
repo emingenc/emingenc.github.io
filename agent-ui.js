@@ -1,8 +1,8 @@
 // agent-ui.js — boots the in-browser agent that is the whole home page: one
 // coding-agent session. It wires the store, renderer and router (classic
 // scripts on window) to the run view (one turn per question in the
-// scrollback), the composer (Enter queues while a turn runs; ■ Stop or Esc
-// interrupts), the command menu, the live status line and the page's
+// scrollback), the composer (Enter queues up to three messages while a turn
+// runs; ■ Stop or Esc interrupts), the command menu, the live status line and the page's
 // following of new output. Posts and the game the agent opens stay in the
 // page as cards (Orchestrator.setOpener).
 // URL triggers keep their { source: 'url' } marker: router.js uses it to
@@ -12,7 +12,8 @@ import { ModelView } from './agents/model-view.js';
 import { createPaletteView } from './agents/palette-view.js';
 import { createPageView } from './agents/page-view.js';
 
-const URL_TRIGGER_DELAY_MS = 1200;
+const MAX_QUEUED = 3;
+const QUEUED_ITEM_CHARS = 28;
 const ID_RADIX = 36;
 const ID_START = 2;
 const ID_END = 6;
@@ -23,7 +24,9 @@ const HINTS = {
   runFine: 'Enter queues · Esc stops',
   runCoarse: '■ Stop interrupts',
 };
-const QUEUED_NOTES = { booting: 'queued — runs when the agent is ready: ', running: 'queued — runs after this turn: ' };
+const QUEUED_WHEN = { booting: 'runs when the agent is ready', running: 'runs in order after this turn' };
+const QUEUE_FULL_NOTE = 'queue full — your message stays in the box · ';
+const BOOT_FAILED_NOTE = 'The agent could not finish loading its answer data, so some answers may be missing. Reload the page to try again.';
 
 const byId = (id) => document.getElementById(id);
 const finePointer = window.matchMedia('(pointer: fine)').matches;
@@ -39,7 +42,7 @@ const els = {
   queued: byId('queuedNote'),
   turnList: byId('turnList'),
 };
-let pending = null;
+let queued = [];
 let booted = false;
 
 const store = window.createStore({
@@ -49,7 +52,7 @@ const store = window.createStore({
   },
   models: {
     needleReady: false, needleLoading: false, needleStatusText: '',
-    llmReady: false, llmLoading: false, llmError: null, llmConsent: null,
+    llmReady: false, llmLoading: false, llmError: null, llmPolicy: 'ask', llmDownloadMB: 0,
     llmDownloadProgress: 0, llmStatusText: '', capabilities: {},
   },
   messages: [],
@@ -64,7 +67,7 @@ const runView = new RunView({
 const palette = createPaletteView({
   input: els.input, menu: byId('cmdMenu'), list: byId('cmdList'), empty: byId('cmdEmpty'),
   hint: byId('cmdHint'), closeBtn: byId('cmdClose'), scrim: byId('scrim'),
-  getFiles: () => page.files(), onRun: (text) => submit(text), onOpenFile: openFile,
+  getFiles: () => page.files(), onRun: submitComposer, onOpenFile: openFile,
 });
 
 // renderer.js paints the context use into sCtxPct.
@@ -76,10 +79,21 @@ function rendererElements() {
 function submit(text, opts) {
   const trimmed = String(text || '').trim();
   if (!trimmed) return;
+  // The visitor's own question starts a waiting matcher; a link's does not.
+  if (opts?.source !== 'url') window.Router?.warmUp?.();
+  const mustWait = mustQueue();
+  if (mustWait && queued.length >= MAX_QUEUED) return showQueue(QUEUE_FULL_NOTE);
+  if (mustWait) queue({ text: trimmed, opts });
+  else window.Router.handleInput(trimmed, opts);
+  return true;
+}
+
+// Only text sent from the box clears it: a queued, chip or link message
+// leaves a draft the visitor is typing alone.
+function submitComposer(text) {
+  if (!submit(text)) return;
   els.input.value = '';
   palette.close();
-  if (mustQueue()) queue({ text: trimmed, opts });
-  else window.Router.handleInput(trimmed, opts);
 }
 
 // An ask_user pause keeps the turn open but takes typed answers directly.
@@ -88,18 +102,29 @@ function mustQueue() {
   return !booted || (!ui.needsHumanInput && (runView.isRunning() || ui.isProcessing));
 }
 
+// Up to MAX_QUEUED messages wait, and run one at a time in the order sent.
 function queue(item) {
-  pending = item;
-  els.queued.textContent = (booted ? QUEUED_NOTES.running : QUEUED_NOTES.booting) + item.text;
+  queued.push(item);
+  showQueue('');
+}
+
+function showQueue(prefix) {
+  const waiting = queued.map((item) => clip(item.text)).join(' · ');
+  const when = booted ? QUEUED_WHEN.running : QUEUED_WHEN.booting;
+  els.queued.textContent = `${prefix}queued ${queued.length}/${MAX_QUEUED} — ${when}: ${waiting}`;
   els.queued.hidden = false;
   els.hint.hidden = true;
 }
 
+const clip = (text) => (text.length > QUEUED_ITEM_CHARS ? text.slice(0, QUEUED_ITEM_CHARS - 1) + '…' : text);
+
 function drainQueue() {
-  const next = pending;
-  pending = null;
-  els.queued.hidden = true;
-  els.hint.hidden = false;
+  const next = queued.shift();
+  if (queued.length) showQueue('');
+  else {
+    els.queued.hidden = true;
+    els.hint.hidden = false;
+  }
   if (next) setTimeout(() => submit(next.text, next.opts), 0);
 }
 
@@ -187,13 +212,15 @@ function wireChips(container) {
 function wireComposer() {
   els.form.addEventListener('submit', (evt) => {
     evt.preventDefault();
-    submit(els.input.value);
+    submitComposer(els.input.value);
   });
   els.sendBtn.addEventListener('click', (evt) => {
     if (els.sendBtn.dataset.mode !== 'stop') return;
     evt.preventDefault();
     runView.stop();
   });
+  // A tap or key in the prompt starts a waiting matcher (focus() fires neither).
+  for (const type of ['pointerdown', 'keydown']) els.form.addEventListener(type, () => window.Router.warmUp(), { once: true });
   els.input.addEventListener('input', () => palette.syncToInput());
   els.input.addEventListener('keydown', onInputKey);
   document.addEventListener('keydown', onGlobalKey);
@@ -250,6 +277,7 @@ function checkHashTrigger() {
 function exposeApi() {
   window.quickCmd = (cmd) => submit(cmd);
   window._enableLLM = () => window.Router.enableLLM();
+  window._declineLLM = () => window.Router.declineLLM();
 }
 
 function finishBoot() {
@@ -260,6 +288,15 @@ function finishBoot() {
   drainQueue();
 }
 
+// A failed load still opens the composer: the visitor sees what went wrong
+// and the tools that need no loaded data keep working.
+function failBoot(error) {
+  console.error('[agent-ui] boot failed', error);
+  store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'error', type: 'text', content: BOOT_FAILED_NOTE, ts: '' } });
+  finishBoot();
+}
+
+// A link's question queues until the transcript has painted (finishBoot).
 function boot() {
   store.subscribe((state, action) => {
     if (action.type === 'WELCOME_DONE') finishBoot();
@@ -267,8 +304,8 @@ function boot() {
   Promise.all([window.Tools.loadFAQ(), window.KnowledgeBase.load()]).then(() => {
     if (store.restore()) window.Renderer.showRestored(store.getState());
     else window.Renderer.showWelcome();
-    setTimeout(checkURLTriggers, URL_TRIGGER_DELAY_MS);
-  });
+    checkURLTriggers();
+  }, failBoot);
 }
 
 function showPlaceholder() {

@@ -1,15 +1,15 @@
-// loop-policy.js — every decision of the agent loop, as one pure function.
-// A turn is a run record (plain data) and a stream of events. next(run, event)
-// answers each event with a new run and the effects the orchestrator
-// performs, in order. It never touches the store, a timer or the page, and
-// never mutates its input.
+// loop-policy.js — every decision of the agent loop, as one function of the
+// run record. A turn is a run record (plain data) and a stream of events.
+// next(run, event) answers each event with a new run and the effects the
+// orchestrator performs, in order. It never touches the store, a timer or the
+// page, and never mutates its input. Its only reads outside the run are the
+// Tools and Evaluator registries, which hold no turn state.
 'use strict';
 
 var LoopPolicy;
 
 {
   const MAX_STEPS = 5;
-  const STEP_DELAY_MS = 250;
   const FOLLOW_UP_SIMILARITY = 0.4;
   const PERCENT = 100;
   const OBSERVE_CHARS = 100;
@@ -74,7 +74,8 @@ var LoopPolicy;
     return precede([dispatch({ type: 'PLAN_START', plan: capped }), trace(`plan → ${tools}`)], advance(run, 0));
   }
 
-  // Runs plan[index] once the step delay has passed.
+  // Yields to the event loop, then runs plan[index]. The yield is what lets
+  // the busy state paint and a Stop land between steps; it adds no delay.
   function advance(run, index) {
     const tool = run.plan[index]?.tool;
     if (!tool || run.steps >= MAX_STEPS) return finish(run);
@@ -82,11 +83,11 @@ var LoopPolicy;
     return decide({ ...run, steps, covered: { ...run.covered, [tool]: true } }, [
       dispatch({ type: 'WM_STEP', tool }),
       { type: 'busy', state: 'executing', label: `step ${steps}/${MAX_STEPS}: ${tool}` },
-      { type: 'wait', ms: STEP_DELAY_MS, event: { type: 'due', index } },
+      { type: 'yield', event: { type: 'due', index } },
     ]);
   }
 
-  // ─── due: think, then act ────────────────────────────────────────────────
+  // ─── due: announce the step, then act ────────────────────────────────────
 
   function onDue(run, event) {
     const { index } = event;

@@ -3,21 +3,25 @@ import { MOST_WATER_ID } from '../game/quest/third-wave.js';
 import { PINCER_BUSY_MS } from '../game/rooms/data/pincer-w1.js';
 import { PINCER_TEXTS } from '../game/rooms/data/pincer-texts.js';
 import { applyPincer, pincerStars, pincerWhyNot } from '../game/rooms/pincer.js';
-import { uiArenaToast } from './arena-shell.js';
+import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiPincerCoachText, uiPincerSpoken } from './pincer-coach.js';
 import { uiPincerCardTitle, uiPincerFirstMode, uiPincerRunFor } from './pincer-modes.js';
 import { uiPincerRecordBest } from './pincer-record.js';
 import { uiRoomCardView, uiRoomPlayable, uiRoomWin } from './room-flow.js';
+import { uiShotSelectors } from './shot-fx.js';
 
 
 const PINCER_RIG_ID = 'pincer';
 const NOPE_MS = 240;
+const SETTLE_MS = 400;
+const SETTLE_CLASS = 'is-settle';
+const SORT_TOAST_MS = 1200;
 const MAX_STARS = 3;
 const NO_TIME = -Infinity;
 const PLACE_KINDS = new Set(['left', 'right', 'plank', 'sort', 'bank']);
-const GOOD_KINDS = new Set(['pair', 'lookup', 'lookup-heavy']);
-const BAD_KINDS = new Set(['left-wrong', 'right-wrong', 'drop', 'miss', 'floor', 'charges', 'best', 'lookup-heavy']);
+const GOOD_KINDS = new Set(['pair']);
+const BAD_KINDS = new Set(['left-wrong', 'right-wrong', 'drop', 'miss', 'floor', 'charges', 'best']);
 const CLEAR_LEVELS = { w1: 'pincer-1', w2: 'pincer-2', w3: 'pincer-3' };
 const QUEST_TAKEN = 2;
 const QUEST_DONE = 3;
@@ -61,7 +65,7 @@ function uiPincerCreate(app, rig, start) {
   const run = uiPincerRunFor({ mode, lastIndex: start.lastIndex });
   const arena = {
     rig, mode, levelId: rig.levels[0], poolIndex: run.index, state: run.state, view: 'play', result: null, coach: '',
-    busyUntil: NO_TIME, nopeAt: NO_TIME, slide: null, ask: uiPincerAsks(app, mode),
+    busyUntil: NO_TIME, nopeAt: NO_TIME, settleAt: NO_TIME, slide: null, ask: uiPincerAsks(app, mode),
   };
   arena.coach = uiPincerCoachText(arena);
   app.pendingAnnounce = null;
@@ -80,6 +84,9 @@ function uiPincerRefuse(app, moveId, now) {
   uiArenaToast(app, why, 'bad');
   return false;
 }
+function uiPincerShotFx(state) {
+  uiShotSelectors('.pincer-btn-fire', ['.pincer-cannon-l', '.pincer-cannon-r'], { hit: GOOD_KINDS.has(state.last.kind), kill: state.status === 'won', heavy: false });
+}
 function uiPincerCommit(app, moveId, now) {
   if (!uiPincerPlayable(app)) return false;
   const arena = app.rig.arena;
@@ -92,11 +99,25 @@ function uiPincerCommit(app, moveId, now) {
   arena.state = next;
   arena.busyUntil = now + PINCER_BUSY_MS;
   uiPincerQuestMove(app, arena, moveId);
+  if (moveId === 'fire') uiPincerShotFx(arena.state);
+  if (moveId === 'sort') uiPincerSettle(arena, now);
   uiPincerAfterMove(app);
   return true;
 }
 function uiPincerNoping(arena, now) {
   return now - arena.nopeAt < NOPE_MS;
+}
+
+function uiPincerSettling(arena, now) {
+  return now - arena.settleAt < SETTLE_MS;
+}
+function uiPincerUnsettle() {
+  const rails = typeof document !== 'undefined' && document.querySelectorAll ? document.querySelectorAll('.pincer-rail.' + SETTLE_CLASS) : [];
+  rails.forEach((rail) => rail.classList.remove(SETTLE_CLASS));
+}
+function uiPincerSettle(arena, now) {
+  arena.settleAt = now;
+  setTimeout(uiPincerUnsettle, SETTLE_MS);
 }
 
 
@@ -106,10 +127,19 @@ function uiPincerCue(state) {
   if (PLACE_KINDS.has(last.kind)) return uiEmit(GAME_EVENT.RIG_PLACE, { rigId: PINCER_RIG_ID, verb: last.kind });
   return uiEmit(GAME_EVENT.RIG_BAD, { rigId: PINCER_RIG_ID, reason: last.kind });
 }
+function uiPincerBriefToast(app, text) {
+  uiArenaToast(app, text, 'info');
+  const { rig } = app;
+  window.clearTimeout(rig.toastTimer);
+  rig.toastTimer = window.setTimeout(() => {
+    uiArenaClearToast(rig);
+    if (rig.toastNode) Object.assign(rig.toastNode, { className: 'arena-toast arena-toast-off', textContent: '' });
+  }, SORT_TOAST_MS);
+}
 function uiPincerToast(app, last) {
   if (BAD_KINDS.has(last.kind)) uiArenaToast(app, last.why, 'bad');
   else if (last.kind === 'plank') uiArenaToast(app, last.why, 'good');
-  else if (last.kind === 'sort') uiArenaToast(app, last.why, 'info');
+  else if (last.kind === 'sort') uiPincerBriefToast(app, last.why);
 }
 function uiPincerAfterMove(app) {
   const arena = app.rig.arena;
@@ -148,6 +178,6 @@ function uiPincerFinish(app) {
 }
 
 export {
-  PINCER_RIG_ID, QUEST_TAKEN, QUEST_DONE, uiPincerCreate, uiPincerPlayable, uiPincerCommit, uiPincerNoping, uiPincerCoachText, uiPincerSpoken, uiPincerNow,
+  PINCER_RIG_ID, QUEST_TAKEN, QUEST_DONE, uiPincerCreate, uiPincerPlayable, uiPincerCommit, uiPincerNoping, uiPincerSettling, uiPincerCoachText, uiPincerSpoken, uiPincerNow,
   uiPincerSetClock,
 };

@@ -7,7 +7,7 @@ const MAX_TOAST_CHARS = 64;
 const INTRO = {
 id:'intro',
 lines:[
-[SYSTEM,'Every door is a lock. BREACH the nearest one.'],
+[SYSTEM,'Each lock is a missing line of Python. Follow the arrow.'],
 ],
 };
 const GATE_BEATS = [

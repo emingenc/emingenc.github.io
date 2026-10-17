@@ -1,11 +1,12 @@
 import { hasBolt } from '../game/cast/patch.js';
-import { DOWN_BEAT,BUMP_TOAST,HOLD_TOAST } from '../game/cast/refusal.js';
+import { DOWN_BEAT,BUMP_TOAST,holdToast } from '../game/cast/refusal.js';
 import { hasBeat,withBeat } from '../game/ext/ops.js';
 import { uiGridHook } from './bus.js';
+import { uiPointerIsCoarse } from './dom.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiSentinelOf } from './grid-cast-actors.js';
 import { uiStartJourney } from './grid-journey.js';
-import { uiPatchBump,uiPatchCrates,uiPatchEast,uiPatchFollow } from './grid-cast-patch.js';
+import { uiPatchArrive,uiPatchBump,uiPatchCrates,uiPatchEast,uiPatchFollow } from './grid-cast-patch.js';
 import { uiRunRefusal } from './grid-cast-refusal.js';
 import { uiCastSync,uiStartCast } from './grid-cast-sync.js';
 import { uiShowToast } from './grid-toast.js';
@@ -36,7 +37,7 @@ function uiOnBump(info) {
 const app = info.app;
 const prop = info.event && info.event.prop;
 if (!uiLive(app) || !prop) return;
-if (prop === uiSentinelId(app)) uiShowToast(app,{ text:hasBolt(app.game.ext) ? HOLD_TOAST :BUMP_TOAST,kind:'info' });
+if (prop === uiSentinelId(app)) uiShowToast(app,{ text:hasBolt(app.game.ext) ? holdToast(uiPointerIsCoarse()) :BUMP_TOAST,kind:'info' });
 else uiPatchBump(app,prop);
 }
 function uiSentinelId(app) {
@@ -58,6 +59,7 @@ if (app.game.cast.inert) return app;
 uiHook();
 uiCastSync(app);
 uiPatchEast(app).catch(console.error);
+uiPatchArrive(app).catch(console.error);
 return app;
 }
 

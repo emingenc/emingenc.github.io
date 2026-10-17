@@ -6,10 +6,11 @@ import { VERDICT_WORDS } from '../logic/index.js';
 const STAR_CAP_WITH_EXPLOIT = 2;
 const BREACH_OUTCOME = { NONE:'none',PROBE:'probe',FAIL:'fail',TRACED:'traced',ACCEPTED:'accepted' };
 const CHIP_ACTION = /^chip-(\d+)$/;
+const REMOVE_ACTION = /^remove-\d+$/;
 
 function actionKind(actionId) {
 if (CHIP_ACTION.test(actionId)) return 'chip';
-if (actionId === 'backspace') return 'remove';
+if (actionId === 'backspace' || REMOVE_ACTION.test(actionId)) return 'remove';
 if (actionId === 'clear' || actionId === 'run' || actionId === 'submit') return actionId;
 return 'other';
 }
@@ -37,8 +38,11 @@ const passed = examples.filter((example) => example.pass).length;
 const payload = { passed,total:examples.length,plan };
 return { trace,outcome:BREACH_OUTCOME.PROBE,stars:null,plan,events:[atEvent(GAME_EVENT.PROBE,payload)] };
 }
+function planOptions(ctx) {
+return { pinCount:ctx.pinCount,reducedMotion:ctx.reducedMotion,stretch:ctx.stretch };
+}
 function acceptedResult(after,ctx) {
-const plan = pinPlan(after.lock.lastSubmit,{ pinCount:ctx.pinCount,reducedMotion:ctx.reducedMotion });
+const plan = pinPlan(after.lock.lastSubmit,planOptions(ctx));
 const rawStars = after.lock.stars;
 const exploitUsed = Object.values(ctx.used || {}).some(Boolean);
 const stars = exploitUsed ? Math.min(rawStars,STAR_CAP_WITH_EXPLOIT) :rawStars;
@@ -49,13 +53,11 @@ atEvent(GAME_EVENT.BREACH,{ verdict:after.lock.lastSubmit.verdict,plan }),
 return { trace:ctx.trace,outcome:BREACH_OUTCOME.ACCEPTED,stars,plan,events };
 }
 function failResult(after,ctx) {
-const plan = pinPlan(after.lock.lastSubmit,{ pinCount:ctx.pinCount,reducedMotion:ctx.reducedMotion });
-const { trace,traced } = traceAfterSubmit(ctx.trace,after.lock.lastSubmit.verdict);
+const plan = pinPlan(after.lock.lastSubmit,planOptions(ctx));
+const { trace,traced } = ctx.free ? { trace:ctx.trace,traced:false } :traceAfterSubmit(ctx.trace,after.lock.lastSubmit.verdict);
 const jamAtMs = plan.pins[plan.jamIndex].atMs;
-const events = [
-atEvent(GAME_EVENT.BREACH,{ verdict:after.lock.lastSubmit.verdict,plan }),
-{ type:GAME_EVENT.TRACE,payload:{ filled:trace.filled,capacity:trace.capacity },atMs:jamAtMs },
-];
+const events = [atEvent(GAME_EVENT.BREACH,{ verdict:after.lock.lastSubmit.verdict,plan })];
+if (!ctx.free) events.push({ type:GAME_EVENT.TRACE,payload:{ filled:trace.filled,capacity:trace.capacity },atMs:jamAtMs });
 if (traced) events.push({ type:GAME_EVENT.TRACED,payload:{ key:after.lock.key },atMs:plan.durationMs });
 return { trace,outcome:traced ? BREACH_OUTCOME.TRACED :BREACH_OUTCOME.FAIL,stars:null,plan,events };
 }

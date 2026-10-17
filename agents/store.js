@@ -3,7 +3,10 @@
 var SESSIONS_KEY = 'agent-sessions';
 var MAX_SESSIONS = 10;
 var MS_PER_DAY = 86400000; // 24 * 60 * 60 * 1000
+var MS_PER_MINUTE = 60000;
 var SESSION_MAX_AGE_DAYS = 7;
+var RESTORE_WINDOW_MINUTES = 30; // a session that started within this long ago is restored
+var RESTORE_WINDOW_MS = RESTORE_WINDOW_MINUTES * MS_PER_MINUTE;
 var MAX_SESSION_AGE_MS = SESSION_MAX_AGE_DAYS * MS_PER_DAY;
 
 // eslint-disable-next-line max-lines-per-function -- legacy store factory; out of scope for this UI change
@@ -23,11 +26,12 @@ function createStore(initial) {
   // ─── Multi-session persist ──────────────────────────────
   function persist() {
     try {
-      // Guard: never persist an empty session. During init, LLM_CONSENT is
-      // dispatched before any message exists, which would otherwise write a
-      // ghost "0 message" session and clutter /sessions. Drop any prior entry
-      // for this session id so /clear and /new persist correctly (Run 3 fix).
-      if (state.messages.length === 0) {
+      // Guard: never persist a session the visitor has not spoken in. A failed
+      // boot adds only its error note, which would otherwise write a ghost
+      // session that clutters /sessions and restores in place of the welcome.
+      // Drop any prior entry for this session id so /clear and /new persist
+      // correctly (Run 3 fix).
+      if (!firstUserText()) {
         var pruned = loadSessions().filter(function(s) { return s.id !== state.session.id; });
         localStorage.setItem(SESSIONS_KEY, JSON.stringify(pruned));
         return;
@@ -40,8 +44,7 @@ function createStore(initial) {
         sessionCount: state.session.sessionCount,
         firstMessage: state.messages.length > 0 ? firstUserText() : '',
         messages: state.messages.slice(-30),  // keep last 30 messages
-        summary: state.summary,
-        models: { llmConsent: state.models.llmConsent }
+        summary: state.summary
       };
 
       // Load existing sessions, merge current, cap at 10
@@ -115,8 +118,7 @@ function createStore(initial) {
         if (action.statusText !== undefined) state.models.llmStatusText = action.statusText;
         // On a hard LLM load failure, reset the transient progress/status
         // readouts so the store no longer claims the model is "loading model
-        // (wasm)... at 100%" when it actually failed. The renderer (#sModel),
-        // /status and Reply's "downloading..." message gate on
+        // (wasm)... at 100%" when it actually failed. /status and Reply's "downloading..." message gate on
         // llmLoading/llmError; model-view.js's SmolLM2 bar and size label read
         // these readouts directly, so the reset shows there.
         if (action.model === 'llm' && action.status === 'error') {
@@ -137,9 +139,9 @@ function createStore(initial) {
         state.models[action.model + 'StatusText'] = String(action.text || '');
         break;
 
-      case 'LLM_CONSENT':
-        state.models.llmConsent = action.value;
-        try { localStorage.setItem('llm-consent', action.value ? 'true' : 'false'); } catch(e) {}
+      case 'LLM_POLICY':
+        state.models.llmPolicy = action.value;
+        if (action.megabytes !== undefined) state.models.llmDownloadMB = action.megabytes;
         break;
 
       case 'THINKING':
@@ -263,9 +265,6 @@ function createStore(initial) {
           state.session.messageCount = d.messageCount || 0;
           state.session.sessionCount = d.sessionCount || 1;
         }
-        if (d.models) {
-          state.models.llmConsent = d.models.llmConsent;
-        }
         if (d.messages) {
           state.messages = d.messages;
         }
@@ -308,7 +307,7 @@ function createStore(initial) {
     reduce(action);
     for (var i = 0; i < listeners.length; i++) listeners[i](state, action);
     // Auto-persist on significant actions
-    if (['MESSAGE_ADD','MESSAGE_STREAM_DONE','CLEAR','NEW_SESSION','LLM_CONSENT','RESTORE','SUMMARY_UPDATE'].indexOf(action.type) !== -1) {
+    if (['MESSAGE_ADD','MESSAGE_STREAM_DONE','CLEAR','NEW_SESSION','RESTORE','SUMMARY_UPDATE'].indexOf(action.type) !== -1) {
       persist();
     }
   }
@@ -328,18 +327,16 @@ function createStore(initial) {
     var sessions = loadSessions();
     if (!sessions.length) return false;
 
-    // Find most recent session that's <30min old
+    // Find the most recent session that started less than 30 minutes ago
     var recent = null;
     for (var i = sessions.length - 1; i >= 0; i--) {
-      if (Date.now() - sessions[i].start < 30 * 60 * 1000) {
+      if (Date.now() - sessions[i].start < RESTORE_WINDOW_MS) {
         recent = sessions[i];
         break;
       }
     }
-    // Only restore sessions that actually have content. An empty session is
-    // persisted during init (LLM_CONSENT fires before the boot sequence checks
-    // for a prior session), which would otherwise make a first-time visitor see
-    // "restored session" instead of "new local session".
+    // Only restore sessions that actually have content, so a first-time visitor
+    // sees "new local session", never "restored session".
     if (recent && recent.messages && recent.messages.length > 0) {
       dispatch({ type: 'RESTORE', data: recent });
       return true;

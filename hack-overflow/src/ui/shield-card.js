@@ -1,6 +1,6 @@
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
-import { bruteReads, shieldPar } from '../game/rooms/shield.js';
+import { bruteReads, shieldPar, shieldStars } from '../game/rooms/shield.js';
 import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
 import { uiRoomBars, uiRoomLine, uiRoomStars } from './room-card.js';
@@ -27,7 +27,15 @@ function uiShieldHow(rule, why) {
   const summary = uiEl('summary', { className: 'turret-how-summary', text: SHIELD_TEXTS.card.how });
   return uiEl('details', { className: 'turret-how', children: [summary, uiRoomLine('turret-rule', rule), uiRoomLine('turret-why', why)] });
 }
-function uiShieldLessons(state) {
+function uiShieldAutoLessons(state, result) {
+  const values = { calls: result.presses, par: result.par, machine: result.machine, reads: bruteReads(state.wave) };
+  const clean = shieldStars(state) === 3;
+  const card = SHIELD_TEXTS.card;
+  if (state.spec.towers) return [fillText(clean ? card.usedTowersAuto : card.usedTowersCrackAuto, values), card.starsTowersAuto, fillText(card.whyTowers, { ...values, n: state.spec.length })];
+  return [fillText(clean ? card.usedAuto : card.usedCrackAuto, values), card.starsAuto, fillText(card.why, { ...values, n: state.spec.length })];
+}
+function uiShieldLessons(state, result) {
+  if (result.machine > 0) return uiShieldAutoLessons(state, result);
   const values = { steps: state.steps, par: shieldPar(state.wave, state.spec), reads: bruteReads(state.wave), n: state.spec.length };
   if (state.spec.towers) return [fillText(SHIELD_TEXTS.card.usedTowers, values), SHIELD_TEXTS.card.starsTowers, fillText(SHIELD_TEXTS.card.whyTowers, values)];
   return [fillText(SHIELD_TEXTS.card.used, values), SHIELD_TEXTS.card.stars, fillText(SHIELD_TEXTS.card.why, values)];
@@ -45,7 +53,7 @@ function uiShieldFindLine(result) {
   return result.find ? [uiRoomLine('shield-find', result.find)] : [];
 }
 function uiShieldWinBody(state, result) {
-  const [used, rule, why] = uiShieldLessons(state);
+  const [used, rule, why] = uiShieldLessons(state, result);
   const head = [uiRoomStars(result.stars, 'shield-stars'), uiShieldScore(state), ...uiShieldBestLine(result), uiRoomLine('turret-used', used), uiShieldVersus(state)];
   return [...head, ...uiShieldAnswerLine(state), uiArenaPaidLine(result.rank, 'shield-paid'), ...uiShieldFindLine(result), uiShieldHow(rule, why)].filter(Boolean);
 }
@@ -53,8 +61,12 @@ function uiShieldCardLines(result) {
   if (result.mode === 'w1') return result.firstClear ? [FIRST_CLEAR, SHIELD_TEXTS.card.open2, SHIELD_TEXTS.card.next] : [SHIELD_TEXTS.card.next];
   return result.mode === 'w2' && result.firstInMode ? [SHIELD_TEXTS.card.open3] : [];
 }
+function uiShieldLossRule(result, state) {
+  if (result.machine > 0) return state.spec.towers ? SHIELD_TEXTS.card.failRule3Auto : SHIELD_TEXTS.card.failRuleAuto;
+  return state.spec.towers ? SHIELD_TEXTS.card.failRule3 : 'Every glyph needs one action: PUSH, POP, or hold BREACH.';
+}
 function uiShieldLossLines(result, state) {
-  const rule = state.spec.towers ? SHIELD_TEXTS.card.failRule3 : 'Every glyph needs one action: PUSH, POP, or hold BREACH.';
+  const rule = uiShieldLossRule(result, state);
   return [result.why || '', rule, result.find || ''].filter(Boolean);
 }
 function uiShieldCard(app, result) {

@@ -492,6 +492,25 @@
 }
 
 @media (min-width:768px) {
+  .breach-status {
+    gap:var(--sp-3) var(--sp-7);
+    padding:var(--sp-3) var(--sp-5);
+    font-size:var(--fs-lg);
+  }
+  .breach-status .breach-lock {
+    --pin-h:22px;
+    --shackle-h:16px;
+    --shackle-lift:4px;
+    --shackle-w:4px;
+    gap:var(--sp-2);
+  }
+  .breach-status .breach-lock-case {
+    gap:8px;
+    padding:6px 10px;
+  }
+}
+
+@media (min-width:768px) {
   html:has(.breach-screen) {
     scroll-padding-top:274px;
   }

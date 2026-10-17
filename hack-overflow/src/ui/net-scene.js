@@ -80,7 +80,7 @@ function uiNetTileWords(state, index, snag) {
   if (uiNetIsHeld(state, index)) parts.push('in the net');
   if (snag) parts.push('SNAG, EXTEND would tear');
   if (index === state.stream.gold) {
-    const tail = state.flicked ? 'flicked out' : (uiNetFlickable(state) ? 'tap to flick it out for +' + NET_SCORE.gold + '. One move' : '');
+    const tail = state.flicked ? 'flicked out' : (uiNetFlickable(state) ? 'tap to flick it out for +' + NET_SCORE.gold + '. Free' : '');
     parts.push(('gold item ' + tail).trim());
   }
   return parts.join(', ');
@@ -138,7 +138,7 @@ function uiNetScene(app) {
   const ghost = arena.drag ? uiEl('span', { className: 'net-ghost', text: '+1 step', attrs: { 'aria-hidden': 'true' } }) : null;
   return uiEl('div', {
     className: 'net-scene' + (arena.drag ? ' is-armed' : '') + (arena.nope ? ' is-nope' : ''),
-    children: [uiNetMeter(state), uiNetLane(state), uiNetStats(state), ghost],
+    children: [uiNetMeter(state), uiNetLane(state), uiNetStats(state), arena.autoNode, ghost],
   });
 }
 

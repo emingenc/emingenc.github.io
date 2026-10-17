@@ -23,7 +23,7 @@ to refresh it.
 
 ## Adding a game
 
-Append to the `GAMES` array in `agents/tools.js`. `path` is what `/game <id>`
+Append to the `GAMES` array in `src/agent-tools/tool-showcase.js`. `path` is what `/game <id>`
 navigates to — same-origin (e.g. `/<slug>/`) for a game published under
 `public/<slug>/` in this repo, or a full URL for one hosted elsewhere. `url`
 is the game's public address, kept for reference: nothing displays it, and

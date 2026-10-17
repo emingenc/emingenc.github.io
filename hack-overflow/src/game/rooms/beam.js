@@ -2,7 +2,7 @@ import { ammoMax,spendShot } from '../ammo.js';
 import { BEAM_TEXTS } from './data/beam-texts.js';
 import { ASSIST_PACE,BEAM_WAVES,DEFAULT_CTX,HEARTS,HINT_SHOTS,MITE,SCORE,SHARD } from './data/beam-wave.js';
 import { fillText } from './data/turret-texts.js';
-import { beamBudget,beamPar,bestSplit,endOf,isLive,liveCells,loseHearts,middleOf,payShot,reject,sidesOf,waveOf,worstSide } from './beam-base.js';
+import { beamBudget,beamPar,bestSplit,endOf,isLive,liveCells,loseHearts,middleOf,payShot,reject,roundBudget,scopeCells,sidesOf,waveOf,worstSide } from './beam-base.js';
 import { ROTATED_HANDLERS,rotatedExtras,rotatedMoves } from './beam-rotated.js';
 
 
@@ -16,7 +16,7 @@ const TOASTS = BEAM_TEXTS.toast;
 const WHY = BEAM_TEXTS.why;
 
 function bruteShots(wave) {
-return typeof wave === 'number' ? wave : waveOf(wave).n;
+return typeof wave === 'number' ? wave :waveOf(wave).rounds.reduce((sum,cells) => sum + cells,0);
 }
 function answerWord(wave,side) {
 return BEAM_TEXTS.words[wave][side];
@@ -25,8 +25,8 @@ function createBeam(wave,options = {}) {
 const spec = waveOf(wave);
 const bolt = Boolean(options.bolt);
 const state = {
-wave,n:spec.n,assist:Boolean(options.assist),bolt,ammo:bolt ? (options.ammo ?? ammoMax(1)) :null,lo:0,hi:spec.n - 1,
-probes:0,hearts:HEARTS,selected:null,mites:[],shard:null,shardShed:false,nextId:1,score:0,combo:0,maxCombo:0,slips:0,
+wave,n:spec.n,round:0,rounds:spec.rounds.slice(),assist:Boolean(options.assist),bolt,ammo:bolt ? (options.ammo ?? ammoMax(1)) :null,lo:0,hi:spec.n - 1,
+probes:0,roundShots:0,hearts:HEARTS,selected:null,mites:[],shard:null,shardShed:false,nextId:1,score:0,combo:0,maxCombo:0,slips:0,
 hits:0,bites:0,decoys:0,log:[],status:'running',last:null,
 };
 return spec.rotated ? Object.assign(state,rotatedExtras(options)) :state;
@@ -35,7 +35,7 @@ function upperMiddleOf(state) {
 return Math.floor((state.lo + state.hi + 1) / 2);
 }
 function middleHint(state) {
-const show = BEAM_WAVES[state.wave].hint && state.status === 'running' && state.probes < HINT_SHOTS;
+const show = BEAM_WAVES[state.wave].hint && state.round === 0 && state.status === 'running' && state.probes < HINT_SHOTS;
 return show ? middleOf(state) :null;
 }
 function beamMoves(state) {
@@ -98,6 +98,7 @@ return fillText(live === 2 ? WHY.decoy :WHY.decoyTop,{ cell:shot.cell,lo:state.l
 }
 function moveShot(state,shot) {
 state.probes += 1;
+state.roundShots += 1;
 state.selected = null;
 state.lo = shot.to.lo;
 state.hi = shot.to.hi;
@@ -130,7 +131,8 @@ const bites = tickMites(state);
 return { bites,mite:dropMite(state),shard:shedShard(state,shot) };
 }
 function endLine(state,end) {
-const values = { cell:state.lo,shots:state.probes,par:beamPar(state.wave),m:state.hi - state.lo + 1,lo:state.lo,hi:state.hi };
+const shots = end === 'lock' ? state.probes :state.roundShots;
+const values = { cell:state.lo,shots,par:beamPar(state.wave),m:state.hi - state.lo + 1,lo:state.lo,hi:state.hi };
 if (end === 'lock') return fillText(state.probes > values.par ? WHY.winOver :WHY.win,values);
 return fillText(end === 'hearts' ? WHY.lostHearts :WHY.lostShots,values);
 }
@@ -159,14 +161,22 @@ loseHearts(state,1);
 if (state.lo !== state.hi) Object.assign(events,settleProbe(state,shot));
 return events;
 }
+function roundLine(state,shots) {
+return fillText(TOASTS.roundLock,{ done:state.round,shots,next:state.round + 1,n:state.n });
+}
+function shotResult(state,result) {
+if (result.end === 'round') return roundLine(state,result.shots);
+return result.end ? endLine(state,result.end) :shotToast(result.shot,result.events,state.bolt);
+}
 function fireShot(turn) {
 const { state,move } = turn;
 if (!isLive(state,state.selected)) return reject(turn,TOASTS.rejectNone);
 const shot = judgeShot(state,state.selected);
 const events = landShot(turn,shot);
+const shots = state.roundShots;
 const end = endOf(state);
-const toast = end ? endLine(state,end) :shotToast(shot,events,state.bolt);
-state.last = Object.assign({ move,ok:true,kind:'shot',end,events,toast,points:events.points },pickShot(shot));
+const toast = shotResult(state,{ end,shot,events,shots });
+state.last = Object.assign({ move,ok:true,kind:'shot',end,events,toast,points:events.points,why:shot.why },pickShot(shot));
 return state;
 }
 function pickShot(shot) {
@@ -212,4 +222,4 @@ const play = state.assist ? DEFAULT_CTX :Object.assign({ pace:ASSIST_PACE },ctx)
 return handler({ state:cloneState(state),move,play });
 }
 
-export { createBeam,applyBeam,beamMoves,beamStars,beamPar,beamBudget,liveCells,middleOf,sidesOf,worstSide,middleHint,bruteShots,answerWord };
+export { createBeam,applyBeam,beamMoves,beamStars,beamPar,beamBudget,roundBudget,liveCells,scopeCells,middleOf,sidesOf,worstSide,middleHint,bruteShots,answerWord };

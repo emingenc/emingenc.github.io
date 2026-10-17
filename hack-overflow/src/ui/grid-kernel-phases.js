@@ -12,7 +12,7 @@ import { uiCommitExt } from './ext-storage.js';
 import { uiCastSay } from './grid-cast-act.js';
 import { uiDropKernel } from './grid-kernel-chips.js';
 import { uiCarryToFront,uiSay,uiSeams } from './grid-kernel-common.js';
-import { uiHalveReset } from './grid-kernel-halve.js';
+import { uiHalveReset,uiHalveShot } from './grid-kernel-halve.js';
 import { uiKernelHurt,uiSetRevive } from './grid-kernel-hurt.js';
 import { uiFieldTele,uiKernelView } from './grid-kernel-view.js';
 
@@ -73,8 +73,10 @@ if (out.note) uiSay(app,out.note,'info');
 return;
 }
 if (!uiSpend(app,opPowers(before))) return;
+const halveShot = out.phase.n === HALVE_PHASE && out.kind !== 'outside';
+if (halveShot) uiHalveShot(app,out);
 uiCount(app,out);
-if (out.phase.n === HALVE_PHASE && out.kind !== 'outside') uiHalveReset(app);
+if (halveShot) uiHalveReset(app);
 const shown = uiAssist(app,out);
 uiSayNote(app,shown);
 uiAfterOp(app,shown);
