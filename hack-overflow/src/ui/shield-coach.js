@@ -2,10 +2,11 @@ import { END_GLYPH } from '../game/rooms/data/shield-wave1.js';
 import { NEXT_TALLER_ID, THIRD_WAVE } from '../game/quest/third-wave.js';
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
-import { answerFor, glyphOf, isOpener } from '../game/rooms/shield.js';
+import { answerFor, glyphOf, isOpener, shieldHint } from '../game/rooms/shield.js';
 
 
 const RIGHT_KINDS = new Set(['push', 'pop', 'breach', 'clear']);
+const HINT_YIELDS = new Set(['breach', 'clear']);
 
 function uiShieldTop(state) {
   const top = state.stack[state.stack.length - 1];
@@ -70,6 +71,7 @@ function uiShieldCoachText(arena) {
   if (state.status !== 'running') return '';
   const teach = uiShieldTeach(arena);
   if (teach) return teach;
+  if (shieldHint(state) && !HINT_YIELDS.has(state.last?.kind)) return COACH.hint;
   return uiShieldOutcomeLine(state) || fillText(plainLine(state), uiShieldValues(state));
 }
 function uiShieldSpoken(arena) {

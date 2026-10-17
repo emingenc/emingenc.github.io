@@ -7,6 +7,7 @@ import {
 import { BRUTE_ASSIST,countersignDone,spokenLine } from '../game/finale/root-lines.js';
 import { uiGhostOffer } from './finale-offer.js';
 import { uiRenderKeepingFocus } from './app.js';
+import { uiCue } from './audio-wire.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiCastSay } from './grid-cast-act.js';
 import { uiDropKernel } from './grid-kernel-chips.js';
@@ -109,6 +110,7 @@ const phase = game.kernel.phase;
 game.kernel = rootStop(game.kernel);
 uiClearStrip(app);
 uiCommitExt(app,withBeat(game.ext,PHASES[phase.n - 1].beat));
+uiCue(app,'ROOT_PHASE');
 for (const line of phaseDoneLines(phase)) {
 if (app.game !== game) return;
 await uiCastSay(app,{ text:spokenLine(line),kind:uiDoneKind(line) });

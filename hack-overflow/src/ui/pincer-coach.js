@@ -1,7 +1,7 @@
 import { MOST_WATER_ID, THIRD_WAVE } from '../game/quest/third-wave.js';
 import { PINCER_TEXTS, fillText } from '../game/rooms/data/pincer-texts.js';
 import { SORT_STEPS } from '../game/rooms/data/pincer-waves.js';
-import { pincerArea, pincerMoves, pincerPar, pincerSum } from '../game/rooms/pincer.js';
+import { pincerArea, pincerHint, pincerMoves, pincerPar, pincerSum } from '../game/rooms/pincer.js';
 import { pillarsOf, specOf } from '../game/rooms/pincer-base.js';
 
 
@@ -28,6 +28,8 @@ const SUM_LINES = [
   { when: isEqual, key: 'equal' },
   { when: isUnsorted, key: 'start2' },
   { when: (state) => state.sorted === true && state.stream.goal === 'time' && state.steps === SORT_STEPS, key: 'slow2' },
+  { when: (state) => pincerHint(state) === 'l', key: 'hintLow' },
+  { when: (state) => pincerHint(state) === 'r', key: 'hintHigh' },
   { when: (state) => state.steps === 0, key: 'start' },
   { when: (state) => state.floor <= LOW_FLOOR_TILES, key: 'floorLow' },
   { when: (state) => state.steps === PLANK_HINT_STEPS && pincerMoves(state).includes('plank'), key: 'plank' },

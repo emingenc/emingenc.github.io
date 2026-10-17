@@ -1,4 +1,4 @@
-import { ASSIST_PACE,BRUTE_MS_PER_READ,END_GLYPH,SCORE,SHIELD_W1 } from './data/shield-wave1.js';
+import { ASSIST_PACE,BRUTE_MS_PER_READ,END_GLYPH,HINT_MOVES,SCORE,SHIELD_W1 } from './data/shield-wave1.js';
 import { W1_SPEC } from './data/shield-waves.js';
 import { SHIELD_TEXTS } from './data/shield-texts.js';
 import { fillText } from './fill-text.js';
@@ -16,6 +16,9 @@ const DEFAULT_CTX = { pace:ASSIST_PACE };
 
 function isOpener(glyph) {
 return OPENERS.has(glyph);
+}
+function shieldHint(state) {
+return state.spec.id === 'w1' && state.status === 'running' && state.steps < HINT_MOVES && state.stack.length > 0;
 }
 function judgeVolley(volley) {
 const stack = [];
@@ -140,4 +143,4 @@ else playWrong({ state:draft,move,glyph },answer);
 return draft;
 }
 
-export { createShield,applyShield,shieldMoves,glyphOf,answerFor,judgeVolley,shieldPar,bruteReads,shieldStars,paceAt,shieldPace,waveClockOn,isOpener };
+export { createShield,applyShield,shieldMoves,glyphOf,answerFor,judgeVolley,shieldPar,bruteReads,shieldStars,paceAt,shieldPace,waveClockOn,isOpener,shieldHint };

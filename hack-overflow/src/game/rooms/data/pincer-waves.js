@@ -9,8 +9,9 @@ const SORT_STEPS = 33;
 const LOOKUP_STEPS = 10;
 const CANNON_SLOTS = 2;
 const TABLE_SLOTS = 10;
+const HINT_MOVES = 2;
 const GOALS = ['memory', 'time'];
 const W2_POOL = { seed: 6107, size: 16, min: 12 };
 const W3_POOL = { seed: 3319, size: 16, min: 12 };
 
-export { WAVES, MODES, SORT_STEPS, LOOKUP_STEPS, CANNON_SLOTS, TABLE_SLOTS, GOALS, W2_POOL, W3_POOL };
+export { WAVES, MODES, HINT_MOVES, SORT_STEPS, LOOKUP_STEPS, CANNON_SLOTS, TABLE_SLOTS, GOALS, W2_POOL, W3_POOL };

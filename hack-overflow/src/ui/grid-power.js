@@ -2,6 +2,7 @@ import { trialsOf,tagsOf } from '../game/ext/power-ops.js';
 import { ownedPowers,usablePowers } from '../game/power/powers.js';
 import { createExt } from '../game/save-ext.js';
 import { uiRenderKeepingFocus } from './app.js';
+import { uiBootHeroAudio,uiCue } from './audio-wire.js';
 import { uiGridHook } from './bus.js';
 import { uiPowerStrip } from './grid-power-strip.js';
 import { uiShowToast } from './grid-toast.js';
@@ -209,9 +210,16 @@ const modules = await Promise.all(ENCOUNTERS.map((load) => load().catch(() => ({
 const calls = modules.flatMap((module) => Object.keys(module).filter((name) => /^ui\w*Enter\w*$/.test(name)).map((name) => module[name](app)));
 await Promise.all(calls.map((call) => Promise.resolve(call).catch(console.error)));
 }
+function uiCueNewPower(app,power) {
+const owned = ownedPowers(app.game.progress.won);
+if (power.owned && owned.length > power.owned.length) uiCue(app,'POWER');
+power.owned = owned;
+}
 async function uiInstallPower(app) {
 const game = app.game;
 const power = uiPowerOf(game);
+uiCueNewPower(app,power);
+uiBootHeroAudio(app);
 if (uiUsableIds(game).length > 0) uiLinkStyle(STYLE_HREF);
 uiHangSeams(app);
 const first = !power.installed;

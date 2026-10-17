@@ -14,6 +14,7 @@ import { uiStoryNext, uiStorySkip } from './story-dialogue.js';
 import { uiHistoryPush } from './history.js';
 
 const UI_MAP_FAIL_TEXT = 'MAP could not load. Try again.';
+const UI_RANK_FAIL_TEXT = 'RANK could not load. Try again.';
 
 function uiStartGame(app) {
 uiHistoryPush(app);
@@ -27,6 +28,7 @@ return app.menuOpen && Boolean(app.confirmReset);
 }
 function uiHandleToggleSound(app) {
 app.soundOn = uiToggleSound();
+import('./jack-in-card.js').then(function (card) { card.uiMirrorSound(app); }).catch(function () {});
 if (uiResetAsked(app) || app.story) return;
 if (app.menuOpen || !app.game.travelOpen) app.lastFocusKey = 'toggle-sound';
 }
@@ -46,6 +48,7 @@ function uiConfirmReset(app) {
 if (!uiResetAsked(app)) return;
 if (app.game.breach) uiLeaveBreach(app);
 uiResetGameState(app,uiResetGame(app.game.world));
+import('./audio-wire.js').then(function (wire) { wire.uiSyncHeroAudio(app); }).catch(function () {});
 Object.assign(app,{ lab:null,story:null,forge:null,rig:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
 }
 function uiOpenMenu(app) {
@@ -79,6 +82,13 @@ uiShowToast(app,{ text:UI_MAP_FAIL_TEXT,kind:'info' });
 function uiHandleMapClose(app) {
 uiCloseMap(app);
 }
+async function uiRankSheet(app,verb) {
+try {
+await (await import('./rank-stats.js'))[verb](app);
+} catch (error) {
+uiShowToast(app,{ text:UI_RANK_FAIL_TEXT,kind:'info' });
+}
+}
 async function uiOpenFromMenu(app,spec) {
 if (app.screen !== 'grid') return;
 uiWalkReleaseAll(app);
@@ -106,6 +116,8 @@ const UI_NAV_HANDLERS = {
 'menu-disconnect':uiMenuDisconnect,
 'map-open':uiHandleMapOpen,
 'map-close':uiHandleMapClose,
+'rank-open':(app) => uiRankSheet(app,'uiOpenRankStats'),
+'rank-close':(app) => uiRankSheet(app,'uiCloseRankStats'),
 'story-next':uiStoryNext,
 'story-skip':uiStorySkip,
 };

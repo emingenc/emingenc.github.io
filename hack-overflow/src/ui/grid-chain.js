@@ -8,6 +8,7 @@ import { VOLLEY } from '../game/power/volley.js';
 import { STEPS,activeSteps,caseOpen,chainOutcome,leadsOut,nextHint,payoff } from '../game/quest/first-bad-commit.js';
 import { cellAt,isPassable } from '../game/world.js';
 import { uiRenderApp } from './app.js';
+import { uiCosmeticEnter } from './cosmetic-pay.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiOrdealSheet } from './grid-ordeal-sheet.js';
 import { uiHooksOnce } from './grid-power.js';
@@ -177,6 +178,7 @@ uiHook();
 function uiChainEnter(app) {
 const state = uiChainOf(app);
 if (!state) return;
+uiCosmeticEnter(app);
 uiHangPanel(app.game);
 if (state.panel) state.panel.close(false);
 }

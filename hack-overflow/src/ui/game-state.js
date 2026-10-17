@@ -34,7 +34,7 @@ ext:legacy ? uiCommitMapRev(ext) :withMapRev(ext),
 };
 }
 const UI_LAZY_RESET = {
-coach:null,doorway:null,drawActors:null,sentryLoad:null,hudRank:null,hudPill:null,hudLoad:null,hudLoaded:false,questRuns:null,
+coach:null,doorway:null,drawActors:null,sentryLoad:null,hudRank:null,hudPill:null,drawRank:null,audioAsk:false,hudLoad:null,hudLoaded:false,questRuns:null,
 cast:null,fork:null,journey:null,drawCast:null,castGuard:null,tapAvoid:null,drawFork:null,brute:null,drawBrute:null,reward:null,loopPinch:null,windowMap:null,monoDeque:null,kernelUi:null,oracle:null,drawOracle:null,
 };
 function uiResetGameState(app,save) {

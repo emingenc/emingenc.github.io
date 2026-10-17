@@ -4,6 +4,7 @@ import { rewardDue } from '../game/finale/reward.js';
 import { applyMonoDeque,createMonoDeque,monoDequeMistake } from '../game/fusion/mono-deque.js';
 import { LIT_BEAT,LIT_LINES,OFFER_ID,OFFER_LINES,monoDequeDue,trialClear,trialOutcome,trialReady,trialView } from '../game/fusion/mono-deque-trial.js';
 import { uiRenderKeepingFocus } from './app.js';
+import { uiCue } from './audio-wire.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiCastSay } from './grid-cast-act.js';
 import { uiPaintMonoDeque } from './grid-mono-deque-draw.js';
@@ -62,6 +63,7 @@ const { uiPayRank } = await import('./rank-pay.js');
 await uiPayRank(app,outcome.source,outcome.rank);
 if (app.game.gen !== gen) return;
 uiCommitExt(app,trialClear(app.game.ext));
+uiCue(app,'FUSION');
 for (const text of outcome.lines) await uiCastSay(app,{ text,kind:'reward' });
 }
 function uiTrialScene(app) {
