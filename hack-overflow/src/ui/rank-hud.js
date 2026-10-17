@@ -1,6 +1,7 @@
 import { EAST_BEAT } from '../game/cast/patch.js';
 import { hasBeat } from '../game/ext/ops.js';
 import { xpForBreach } from '../game/progress.js';
+import { pillWanted } from '../game/quest/case-pill.js';
 import { GATE_FAMILY,gatePillText,joinPills } from '../game/quest/gate-pill.js';
 import { rankLevel } from '../game/rank.js';
 import { isOpen } from '../game/world.js';
@@ -21,8 +22,14 @@ if (!gate || !game.ext) return null;
 const open = isOpen(game.world,game.progress,gate.id);
 return gatePillText({ told:hasBeat(game.ext,EAST_BEAT),level:game.progress.level,xp:game.progress.xp,open,unsolved:uiUnsolvedXp(game) });
 }
+async function uiLeadOf(app,quest) {
+if (!quest || app.game.ext.pin) return null;
+const lead = (await import('./grid-chain.js')).uiChainOwed(app.game)[0];
+return lead ? lead.name :null;
+}
 async function uiPillOf(app) {
-const quest = app.game.ext && app.game.ext.pin ? (await import('./quest-run.js')).uiQuestPillText(app) :null;
+const quest = pillWanted(app.game.ext) ? (await import('./quest-run.js')).uiQuestPillText(app) :null;
+app.game.hudLead = await uiLeadOf(app,quest);
 return joinPills(quest,uiGatePillText(app.game));
 }
 async function uiRefreshHud(app) {

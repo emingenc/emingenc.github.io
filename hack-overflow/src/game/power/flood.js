@@ -12,8 +12,13 @@ const MILESTONE_FIRST = 12;
 const MILESTONE_EVERY = 4;
 const MILESTONE_LAST = 24;
 const FLOOD_SPEC = Object.freeze({ durationMs:10000,bitEveryMs:1200,bits:8,stepMs:600,hold:2,reward:10,source:'flood-held',beat:'flood-1' });
+const MS_PER_SECOND = 1000;
+const FLOOD_TUTORIAL = Object.freeze({ ...FLOOD_SPEC,bits:2,freezeMs:2000,stepMs:1500 });
+const FLOOD_OFFER = Object.freeze({ waitMs:20000 });
 const FLOOD_TEXTS = Object.freeze({
 START:(lock) => 'ROOT is rewriting ' + lock + '. Hold the line.',
+RULE:(lock) => "Shoot ROOT's bits before they reach " + lock + '.',
+OFFER:(lock) => 'ROOT is rewriting ' + lock + '. HOLD it (' + FLOOD_SPEC.durationMs / MS_PER_SECOND + ' s) or LET IT go.',
 HELD:'Held. ROOT lost the write. +10 R.',
 LOST:(lock) => 'ROOT scribbled over ' + lock + '. Solve and XP stand.',
 STAND_DOWN:'Stood down. ROOT backs off.',
@@ -24,6 +29,9 @@ tick:(actor) => ({ actor,hits:0 }),
 intent:() => null,
 });
 
+function floodSpecFor(told) {
+return told ? FLOOD_SPEC :FLOOD_TUTORIAL;
+}
 function createBit(spot) {
 return { id:spot.id,kind:'flood',col:spot.col,row:spot.row,hp:1,awake:true };
 }
@@ -114,4 +122,4 @@ if (isMilestone(state.lockCount)) return { ok:false,why:'milestone' };
 return { ok:true,why:'' };
 }
 
-export { FLOOD_SPEC as floodSpec, FLOOD_TEXTS, createBit, planFlood, stepBit, outcome, tallyFlood, floodAllowed };
+export { FLOOD_SPEC as floodSpec,FLOOD_TUTORIAL as floodTutorial,FLOOD_OFFER as floodOffer,floodSpecFor,FLOOD_TEXTS,createBit,planFlood,stepBit,outcome,tallyFlood,floodAllowed };

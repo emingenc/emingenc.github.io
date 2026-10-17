@@ -18,7 +18,7 @@ a unique perspective — I understand complex systems from first principles.
 
 ## What I Do
 - Build and deploy AI systems that actually ship
-- Open source contributor (249+ total stars across projects)
+- Open source contributor (250+ total stars across projects)
 - Smart glasses ecosystem — built full stack from BLE driver to AI voice assistant
 - Write about AI engineering on my blog
 

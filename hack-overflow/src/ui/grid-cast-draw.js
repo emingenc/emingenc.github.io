@@ -1,6 +1,7 @@
 import { BENCH_CELLS,PATCH_CELL,trailLost,trailPose } from '../game/cast/patch.js';
 import { uiPaintCastArt } from './grid-cast-sprites.js';
 import { uiDrawActorTag,uiRegisterActorPainter } from './grid-draw-actors.js';
+import { uiRegisterSpeaker } from './grid-speech.js';
 
 const PIP_TILES = 0.14;
 const PIP_GAP_TILES = 0.06;
@@ -41,9 +42,17 @@ uiDrawActorTag(ctx,frame,{ actor,calm:false,left:(actor.col - frame.camera.col) 
 function uiDrawCrate(ctx,frame,spot) {
 uiDrawArtAt(ctx,frame,{ cell:spot.actor,name:'crate' });
 }
+function uiPatchCell(app) {
+const cast = app.game.cast;
+if (cast.role === 'busy' || cast.role === 'talk') return PATCH_CELL;
+if (cast.role !== 'follow' && cast.role !== 'walk') return null;
+if (!cast.trail || cast.dragged) return app.game.avatar.pos;
+return trailPose(cast.trail,{ now:performance.now(),still:false });
+}
 function uiRegisterCastPainters() {
 uiRegisterActorPainter('sentinel',uiDrawSentinel);
 uiRegisterActorPainter('crate',uiDrawCrate);
+uiRegisterSpeaker('PATCH',uiPatchCell);
 }
 function uiDrawFollower(ctx,app,frame) {
 const cast = app.game.cast;

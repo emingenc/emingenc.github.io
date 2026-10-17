@@ -112,7 +112,7 @@ const PHASE_THINKING = 'Thinking…';
 const PHASE_CHECKING_RESULT = 'Checking result…';
 const PHASE_FINISHING = 'Finishing…';
 const PHASE_ANSWERING = 'Answering…';
-const PHASE_WRITING = 'Writing…';
+const PHASE_WRITING = 'Drafting from his notes…';
 const PHASE_CHECKING_ANSWER = 'Checking the answer…';
 const PHASE_CHECKING_GROUNDING = 'Checking grounding…';
 const PHASE_WORKING = 'Working…';
@@ -282,21 +282,23 @@ export function stepCount(run) {
 
 // ─── Duration + label formatting ───────────────────────────────────────
 
-export function displayDurations(rows) {
+// Each finished row's rounded share of the run, in ms; a running row is null.
+// Rounding is cumulative, so the shares add up to the rounded total.
+export function roundedDurations(rows) {
   let cum = 0;
   let prevRounded = 0;
-  const out = [];
-  for (let i = 0; i < rows.length; i += 1) {
-    if (rows[i].state === 'running') {
-      out.push('');
-      continue;
-    }
-    cum += rows[i].ms;
+  return rows.map((row) => {
+    if (row.state === 'running') return null;
+    cum += row.ms;
     const rounded = Math.round(cum);
-    out.push(fmtMs(rounded - prevRounded));
+    const share = rounded - prevRounded;
     prevRounded = rounded;
-  }
-  return out;
+    return share;
+  });
+}
+
+export function displayDurations(rows) {
+  return roundedDurations(rows).map((share) => (share === null ? '' : fmtMs(share)));
 }
 
 const MS_PER_SECOND = 1000;
@@ -344,7 +346,17 @@ function matchesCompany(text, matcher) {
 function workLinesForCompany(data) {
   const text = `${data.company || ''} ${data.aka || ''}`.toLowerCase();
   const matched = COMPANY_MATCHERS.find((matcher) => matchesCompany(text, matcher));
-  return matched ? matched.lines : WORK_ALL_LINES;
+  // The answer's bullets may quote rows past the company's own (Cresta's
+  // third bullet is Vivoo): the tool read them, so its result line cites them.
+  const quoted = (data.bullets || []).map((bullet) => bullet.row).filter(Number.isInteger);
+  if (!matched) return WORK_ALL_LINES;
+  return quoted.length ? uniqueSorted(matched.lines.concat(quoted)) : matched.lines;
+}
+
+// The work.md rows an outcomes answer's bullets cite.
+function outcomeLines(data) {
+  const rows = (data.bullets || []).map((bullet) => bullet.row).filter(Number.isInteger);
+  return rows.length ? rows : range(GOODFINTECH_LINE, EKALITE_LINE);
 }
 
 function aboutSources(data) {
@@ -355,6 +367,7 @@ function aboutSources(data) {
     ];
   }
   if (data.type === 'company') return [{ file: 'work', lines: workLinesForCompany(data) }];
+  if (data.type === 'outcomes') return [{ file: 'work', lines: outcomeLines(data) }];
   if (data.type === 'education') return [{ file: 'about', lines: [ABOUT_EDUCATION_LINE] }];
   if (data.type === 'technologies') return [];
   if (data.type === 'blog') return [{ file: 'writing', lines: [] }];
@@ -382,7 +395,7 @@ export function sourcesFor(tool, data) {
 
 // ─── Source labels ───────────────────────────────────────────────────────
 
-function toSpans(lines) {
+export function toSpans(lines) {
   const spans = [];
   let start = lines[0];
   let prev = lines[0];
@@ -454,6 +467,20 @@ export function mergeSources(sourcesA, sourcesB) {
   sourcesB.forEach((src) => mergeInto(result, src));
   return result;
 }
+
+// ─── Answer anatomy: what the first paint needs ────────────────────────
+// The rest (tool summary, sources row, local footer) is anatomy.js.
+
+const TOOL_VERBS = new Set(['act', 'open']);
+
+// A row that is a tool call or a page the agent opened (an interrupt's
+// synthetic row is neither).
+export function isToolRow(row) {
+  return TOOL_VERBS.has(row.verb) && !row.synthetic;
+}
+
+export const AUTO_LABEL = 'auto-run on load';
+export const AUTO_NOTE = 'ran at page load on the self-contained fast path: no question matcher, no chat model';
 
 // ─── Answer text ─────────────────────────────────────────────────────────
 

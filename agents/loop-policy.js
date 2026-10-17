@@ -67,11 +67,16 @@ var LoopPolicy;
 
   // memory is the last turn's {lastQuery, lastTool}, which the follow-up
   // guard reads; the orchestrator carries it from one turn to the next.
-  function start(query, plan, memory = NO_MEMORY) {
+  // opts.auto marks the page's own first turn: its plan is one tool the page
+  // chose, so the trace leaves out the "plan →" line, and nothing else changes.
+  // eslint-disable-next-line max-params -- signature predates this change
+  function start(query, plan, memory = NO_MEMORY, opts = {}) {
     const capped = plan.slice(0, MAX_STEPS);
     const run = { query, plan: capped, index: 0, steps: 0, results: [], tried: {}, asks: 0, covered: {}, memory };
     const tools = capped.map((item) => item.tool).join(' → ');
-    return precede([dispatch({ type: 'PLAN_START', plan: capped }), trace(`plan → ${tools}`)], advance(run, 0));
+    const planned = [dispatch({ type: 'PLAN_START', plan: capped })];
+    if (!opts.auto) planned.push(trace(`plan → ${tools}`));
+    return precede(planned, advance(run, 0));
   }
 
   // Yields to the event loop, then runs plan[index]. The yield is what lets
@@ -148,7 +153,7 @@ var LoopPolicy;
     return precede([
       trace(`sink → out_of_scope (${reason})`),
       observe({ tool: 'out_of_scope', satisfied: true, confidence: 1, reason }),
-      agentSays(Tools.outOfScopeMessage()),
+      agentSays(Tools.outOfScopeMessage(run.query)),
     ], finish(run));
   }
 

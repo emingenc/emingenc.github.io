@@ -20,7 +20,7 @@ function billedByMove(state) {
 return state.spec.id === WAVE_ID && Boolean(state.billed) && movedBy(state.last,state.billed.n);
 }
 function billedDue(state,ext) {
-return billedByMove(state) && questState(ext,DOUBLE_BILLED_ID) === STAGE.active;
+return billedByMove(state) && questState(ext,DOUBLE_BILLED_ID) !== STAGE.done;
 }
 
 export { DOUBLE_BILLED_ID,DOUBLE_BILLED_TEXTS,TALLY_JOB,billedByMove,billedDue };

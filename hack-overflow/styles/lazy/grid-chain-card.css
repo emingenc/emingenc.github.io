@@ -1,0 +1,79 @@
+.grid-chain-card {
+  border-color:var(--primary);
+}
+
+.grid-chain-card-sub {
+  margin:0;
+  color:var(--dim);
+  font-family:var(--font-display);
+  font-size:var(--fs-sm);
+  letter-spacing:0.12em;
+}
+
+.grid-chain-filed,
+.grid-chain-payoff {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-2);
+}
+
+.grid-chain-filed-line,
+.grid-chain-payoff-line {
+  margin:0;
+  font-size:var(--fs-sm);
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+
+.grid-chain-filed-line {
+  padding-left:var(--sp-2);
+  border-left:2px solid var(--primary);
+  color:var(--cyan);
+}
+
+.grid-chain-payoff-line {
+  color:var(--text);
+}
+
+.grid-chain-badge {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:var(--sp-2);
+  box-sizing:border-box;
+  padding:var(--sp-7) var(--sp-4) var(--sp-5);
+  border:3px solid var(--amber);
+  border-radius:var(--radius-lg);
+  background:var(--bg);
+  text-align:center;
+}
+
+.grid-chain-badge-pin {
+  position:absolute;
+  top:calc(-1 * var(--sp-4));
+  left:50%;
+  width:var(--sp-6);
+  height:var(--sp-6);
+  margin-left:calc(-0.5 * var(--sp-6));
+  box-sizing:border-box;
+  border:3px solid var(--bg);
+  border-radius:50%;
+  background:var(--magenta);
+}
+
+.grid-chain-badge-name {
+  margin:0;
+  color:var(--amber);
+  font-family:var(--font-display);
+  font-size:var(--fs-xl);
+  letter-spacing:0.08em;
+  overflow-wrap:anywhere;
+}
+
+.grid-chain-badge-worn {
+  margin:0;
+  color:var(--bright);
+  font-size:var(--fs-sm);
+  overflow-wrap:anywhere;
+}

@@ -2,9 +2,12 @@
 // worker: Needle (needle-router.js) classifies a question's intent, and
 // SmolLM2-360M (chat-worker.js) generates, evaluates and aligns. Every
 // request carries an id and settles once, on whichever comes first: the
-// reply that echoes its id, its caller's abort, or (for classify) its own
-// timeout. A reply that finds no request waiting, late after Stop or a
-// timeout, is dropped, so it never reaches a later turn or the store.
+// reply that echoes its id, its caller's abort (which also cancels it in the
+// worker), the chat worker's end, or (for classify) its own timeout. A reply
+// that finds no request waiting, late after Stop or a timeout, is dropped,
+// so it never reaches a later turn or the store.
+// Each model's download reaches the store as bytes, and a failed one can be
+// started again with retry().
 'use strict';
 
 var Classifier;
@@ -13,6 +16,11 @@ var Classifier;
   const CLASSIFY_TIMEOUT_MS = 2000;
   const NEEDLE_URL = '/agents/needle-router.js';
   const CHAT_URL = '/agents/chat-worker.js';
+  const BYTES_PER_MB = 1e6;
+  const PERCENT = 100;
+  // The weights are the bulk of the label's figure; the rest (runtime,
+  // tokenizer) arrives untallied, so a bar never claims 100% before 'ready'.
+  const MAX_BEFORE_READY = 0.99;
 
   let store = null;
   let needleWorker = null;
@@ -22,10 +30,13 @@ var Classifier;
   // again would re-download it in a loop, so the page stays on its FAQ and
   // canned answers instead.
   let llmFailedThisSession = false;
+  // The backend whose weights are downloading; the chat line's total is its
+  // size, and a switch to WASM starts the line again from 0.
   let chatDevice = 'webgpu';
   let planKnown = false;
-  // id -> {resolve, signal, onAbort, onToken?, error?} for each request a
-  // reply may still settle.
+  let persistAsked = false;
+  // id -> {resolve, signal, onAbort, timer?, onToken?, error?, whenDropped} for
+  // each request a reply may still settle.
   const pending = new Map();
   const seamCounters = { cls: 0, eval: 0, align: 0 };
 
@@ -35,15 +46,19 @@ var Classifier;
 
   // ─── Needle: intent classification ─────────────────────────────────────
   const NEEDLE_LIFECYCLE = {
-    ready: () => modelStatus('needle', 'ready'),
+    ready: () => {
+      modelStatus('needle', 'ready');
+      keepDownloads();
+    },
     status: (msg) => store.dispatch({ type: 'MODEL_PROGRESS', model: 'needle', text: msg.data }),
-    error: (msg) => needleFailed(msg.data),
+    progress: (msg) => modelStatus('needle', 'loading', { phase: msg.phase, bytes: { loaded: msg.loaded, total: msg.total } }),
+    error: (msg) => needleFailed(msg.data, msg),
   };
 
   function startRouter() {
     if (routerStarted || !store) return;
     routerStarted = true;
-    modelStatus('needle', 'loading');
+    modelStatus('needle', 'loading', { bytes: null });
     try {
       needleWorker = new Worker(NEEDLE_URL, { type: 'module' });
       needleWorker.onmessage = (event) => NEEDLE_LIFECYCLE[event.data.type]?.(event.data);
@@ -54,9 +69,11 @@ var Classifier;
     }
   }
 
-  function needleFailed(error) {
+  // detail carries the step and bytes it stopped at, for the status line.
+  function needleFailed(error, detail = {}) {
     console.warn('[needle]', error);
-    modelStatus('needle', 'error', { error });
+    const bytes = detail.total ? { loaded: detail.loaded, total: detail.total } : undefined;
+    modelStatus('needle', 'error', { error, phase: detail.phase, bytes });
   }
 
   // Resolves Needle's {type, label, score, a?}, or null when Needle is not
@@ -89,14 +106,42 @@ var Classifier;
   // loaded for the next one; a crash or load failure is marked fatal:true
   // and drops it.
   const CHAT_LIFECYCLE = {
-    status: (msg) => (msg.data === 'ready' ? modelStatus('llm', 'ready') : modelStatus('llm', 'loading', { statusText: msg.data })),
-    progress: (msg) => modelStatus('llm', 'loading', { progress: msg.pct }),
+    status: (msg) => (msg.data === 'ready' ? chatReady() : modelStatus('llm', 'loading', { statusText: msg.data })),
+    progress: (msg) => chatProgress(msg.loaded),
+    fallback: () => switchToWasm(),
+    restart: (msg) => restartChatWorker(msg),
     error: (msg) => (msg.fatal ? dropLLMWorker(msg.data) : console.warn('[chat-worker]', msg.data)),
   };
 
+  // The downloading backend's size is the total; bytes fetched count up to it
+  // and no further until the worker says 'ready'.
+  function chatProgress(loaded) {
+    const total = ModelPolicy.CHAT_MB[chatDevice] * BYTES_PER_MB;
+    const sofar = Math.min(loaded, Math.floor(total * MAX_BEFORE_READY));
+    const progress = total ? Math.floor((sofar / total) * PERCENT) : 0;
+    modelStatus('llm', 'loading', { progress, bytes: { loaded: sofar, total } });
+  }
+
+  // WebGPU failed: the WASM weights are a download of their own, so the line
+  // says so and counts them from 0 against their own size.
+  function switchToWasm() {
+    chatDevice = 'wasm';
+    modelStatus('llm', 'loading', { phase: 'switched to WASM', bytes: null });
+  }
+
+  // The worker's model did not start: end it, since its pipeline may hang
+  // for good, and load again on WASM in a fresh worker.
+  function restartChatWorker(msg) {
+    console.warn('[chat-worker]', msg.data);
+    llmWorker.terminate();
+    llmWorker = null;
+    switchToWasm();
+    initChatWorker();
+  }
+
   function initChatWorker() {
     if (llmWorker) return; // already loading or loaded
-    modelStatus('llm', 'loading');
+    modelStatus('llm', 'loading', { bytes: null });
     try {
       llmWorker = new Worker(CHAT_URL, { type: 'module' });
       llmWorker.onmessage = (event) => onChatReply(event.data);
@@ -109,6 +154,11 @@ var Classifier;
     }
   }
 
+  function chatReady() {
+    modelStatus('llm', 'ready');
+    keepDownloads();
+  }
+
   // A reply for a request still waiting settles it; otherwise only the
   // worker's lifecycle messages mean anything. A token, done or verdict for
   // a request already settled or dropped falls through both and is ignored.
@@ -118,13 +168,41 @@ var Classifier;
   }
 
   // Drops the resident worker rather than leave one no future turn can
-  // reach; its pending requests end on their callers' own timeouts.
+  // reach; the requests waiting on it end now, not on their callers' timeouts.
   function dropLLMWorker(reason) {
     console.warn('[chat-worker]', reason);
     modelStatus('llm', 'error', { error: reason });
     if (llmWorker) llmWorker.terminate();
     llmWorker = null;
     llmFailedThisSession = true;
+    for (const [id, entry] of [...pending]) settleRequest(id, entry.whenDropped(reason));
+  }
+
+  // ─── Keeping and retrying downloads ─────────────────────────────────────
+  // Once a model is in, ask the browser not to evict its cached files. Chrome
+  // decides without a prompt; Firefox prompts, so only after the visitor has
+  // used the page: on a model's 'ready', or on the first tap or key after it.
+  function keepDownloads() {
+    const { storage, userActivation } = globalThis.navigator || {};
+    const { needleReady, llmReady } = store.getState().models;
+    if (persistAsked || !(needleReady || llmReady) || !storage?.persist || !userActivation?.hasBeenActive) return;
+    persistAsked = true;
+    storage.persist().catch(() => {});
+  }
+
+  // The button on a failed model's status line: one more attempt, from the
+  // files the browser kept.
+  function retry(model) {
+    if (!store) return;
+    if (model === 'needle') {
+      if (needleWorker) needleWorker.terminate();
+      needleWorker = null;
+      routerStarted = false;
+      startRouter();
+      return;
+    }
+    llmFailedThisSession = false;
+    enableLLM();
   }
 
   // ─── The model-request seam ────────────────────────────────────────────
@@ -135,24 +213,34 @@ var Classifier;
     return `${prefix}_${seamCounters[prefix]}`;
   }
 
-  // Tracks a request until a reply or the caller's abort settles it,
-  // whichever comes first; the other then finds nothing left to settle.
-  // False means the signal had already fired, so the caller must not post.
+  // Tracks a request until a reply, the caller's abort or the worker's end
+  // settles it, whichever comes first; the others then find nothing left to
+  // settle. An abort cancels it in the worker too. False means the signal
+  // had already fired, so the caller must not post.
   function trackRequest(id, signal, entry) {
     if (signal.aborted) {
       entry.resolve(null);
       return false;
     }
-    const onAbort = () => settleRequest(id, null);
-    pending.set(id, { ...entry, signal, onAbort });
+    const onAbort = () => {
+      cancelInWorker(id);
+      settleRequest(id, null);
+    };
+    const timer = entry.budgetMs && setTimeout(() => cancelInWorker(id), entry.budgetMs);
+    pending.set(id, { ...entry, signal, onAbort, timer });
     signal.addEventListener('abort', onAbort);
     return true;
+  }
+
+  function cancelInWorker(id) {
+    llmWorker?.postMessage({ type: 'cancel', id });
   }
 
   function settleRequest(id, value) {
     const entry = pending.get(id);
     if (!entry) return;
     pending.delete(id);
+    clearTimeout(entry.timer);
     entry.signal.removeEventListener('abort', entry.onAbort);
     entry.resolve(value);
   }
@@ -188,12 +276,17 @@ var Classifier;
   function generate(text, context, { id, signal, onToken }) {
     if (!llmWorker) return null;
     return new Promise((resolve) => {
-      if (trackRequest(id, signal, { resolve, onToken })) llmWorker.postMessage({ type: 'generate', text, context, requestId: id });
+      if (trackRequest(id, signal, { resolve, onToken, whenDropped: (reason) => ({ error: reason }) })) llmWorker.postMessage({ type: 'generate', text, context, requestId: id });
     });
   }
 
+  // What a verdict settles with when the worker ends under it: the answers
+  // chat-worker.js gives when it has no model.
+  const EVALUATION_UNAVAILABLE = () => ({ stop: true, summary: null, confidence: 50, next: '', checked: false });
+  const ALIGNMENT_UNAVAILABLE = () => ({ inScope: false, suggestedTool: 'out_of_scope', confidence: 0, reason: 'model unavailable' });
+
   function evaluate(request, { signal }) {
-    return requestVerdict('eval', signal, (evalId) => ({
+    return requestVerdict('eval', signal, Evaluator.EVAL_TIMEOUT_MS, EVALUATION_UNAVAILABLE, (evalId) => ({
       type: 'evaluate',
       question: request.question,
       results: (request.results || []).map(toEvaluatedResult),
@@ -208,7 +301,7 @@ var Classifier;
   }
 
   function align(request, { signal }) {
-    return requestVerdict('align', signal, (alignId) => ({
+    return requestVerdict('align', signal, AlignmentGate.ALIGN_TIMEOUT_MS, ALIGNMENT_UNAVAILABLE, (alignId) => ({
       type: 'align',
       alignId,
       text: request.text,
@@ -217,11 +310,11 @@ var Classifier;
     }));
   }
 
-  function requestVerdict(prefix, signal, messageFor) {
+  function requestVerdict(prefix, signal, budgetMs, whenDropped, messageFor) {
     if (!llmWorker) return null;
     const id = seamId(prefix);
     return new Promise((resolve) => {
-      if (trackRequest(id, signal, { resolve })) llmWorker.postMessage(messageFor(id));
+      if (trackRequest(id, signal, { resolve, whenDropped, budgetMs })) llmWorker.postMessage(messageFor(id));
     });
   }
 
@@ -268,9 +361,10 @@ var Classifier;
   function init(nextStore, { environment = ModelPolicy.readEnvironment(), adapter = ModelPolicy.hasAdapter() } = {}) {
     store = nextStore;
     store.dispatch({ type: 'LLM_POLICY', value: 'ask' });
+    ['pointerup', 'keydown'].forEach((type) => globalThis.addEventListener?.(type, keepDownloads));
     if (ModelPolicy.routerStart(environment) === 'auto') startRouter();
     return Promise.resolve(adapter).then((found) => applyChatPlan(ModelPolicy.chatPlan(environment, found)));
   }
 
-  Classifier = { init, startRouter, classify, generate, evaluate, align, enableLLM, declineLLM, chatMegabytes, isLLMReady, llmPolicy };
+  Classifier = { init, startRouter, classify, generate, evaluate, align, enableLLM, declineLLM, retry, chatMegabytes, isLLMReady, llmPolicy };
 }

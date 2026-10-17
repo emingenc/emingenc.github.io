@@ -22,7 +22,9 @@ kill:{ text:'SENTINEL DOWN',kind:'reward' },
 dent:{ text:'Hit. It heals 1 per tick.',kind:'info' },
 far:{ text:'Too far.',kind:'info',replace:true },
 cool:{ text:'Recharging.',kind:'info',replace:true },
+still:{ text:'Hit.',kind:'info' },
 });
+const LINE_SENTINEL = Object.freeze({ hp:2,regen:0 });
 
 function isVeteran(facts) {
 return facts.breached > 0 || facts.barrierOpen;
@@ -46,6 +48,6 @@ return ext.ghost && ext.ghost.first ? ext :withGhost(ext,{ first:pick });
 }
 
 export {
-SENTINEL_ID,SENTINEL_CELL,REACH,SHOW_RANGE,REFUSAL_BEAT,DOWN_BEAT,PICKS,SHEET,BUMP_TOAST,holdToast,SHOT_TOASTS,
+SENTINEL_ID,SENTINEL_CELL,REACH,SHOW_RANGE,REFUSAL_BEAT,DOWN_BEAT,PICKS,SHEET,BUMP_TOAST,holdToast,SHOT_TOASTS,LINE_SENTINEL,
 isVeteran,refusalDue,sentinelDue,nearSentinel,withFirstPick,
 };

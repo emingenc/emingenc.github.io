@@ -1,11 +1,11 @@
 // needle-router.js v4 — Needle function-calling classifier
 //
 // Architecture:
-//   Phase 1 (eager, ~52MB): Tokenizer + encoder → keyword routing
+//   Phase 1 (eager, ~36MB on the wire): Tokenizer + encoder → keyword routing
 //   Phase 2 (lazy,  +80MB): Decoder → full function-calling pipeline
 //
 // Messages:
-//   init         → load tokenizer + encoder
+//   init         → load tokenizer + encoder, posting {progress, phase, loaded, total}
 //   initDecoder  → load decoder (lazy, called when LLM consent given)
 //   classify     → {text} → {type:'tool'|'faq'|'chat', label, score, a?} or null
 //   generate     → {text, requestId} → streaming tokens
@@ -100,20 +100,76 @@ function keywordClassify(text) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Needle encoder (52MB)
+// Needle encoder (55MB decoded, 33MB gzipped on the wire)
 // ═══════════════════════════════════════════════════════════════
 var ort = null;
 var encoderSession = null, encoderReady = false;
 
-async function initEncoder() {
+// Bytes on the wire of each file a cold load fetches. tests/label-bytes.test.mjs
+// holds the measured figures; re-measure after a change to the encoder or runtime.
+// The encoder streams in decoded, so its count is scaled to its wire size.
+var WIRE_BYTES = { tokenizer: 41555, loader: 113822, runtime: 2494756, encoder: 33283373 };
+var WIRE_TOTAL = WIRE_BYTES.tokenizer + WIRE_BYTES.loader + WIRE_BYTES.runtime + WIRE_BYTES.encoder;
+var ENCODER_BYTES = 55201529;
+var ENCODER_URL = '/models/needle-onnx/encoder.onnx';
+// Bump the name when the encoder changes; an entry of any other size is refetched.
+var ENCODER_CACHE = 'needle-onnx-v1';
+var PROGRESS_STEP_MS = 250;
+
+// The one figure the page shows: wire bytes fetched so far, never falling.
+var loadedWire = 0, loadPhase = 'tokenizer', lastProgressAt = 0;
+
+// A chunk-by-chunk caller passes throttled: true, so a fast link posts a few times a second.
+function reportProgress(phase, wireBytes, throttled) {
+  var now = Date.now();
+  loadPhase = phase;
+  loadedWire = Math.max(loadedWire, Math.min(wireBytes, WIRE_TOTAL));
+  if (throttled && now - lastProgressAt < PROGRESS_STEP_MS) return;
+  lastProgressAt = now;
+  self.postMessage({ type: 'progress', phase: phase, loaded: loadedWire, total: WIRE_TOTAL });
+}
+
+async function initRuntime() {
   var mod = await import('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.bundle.min.mjs');
   ort = mod;
   ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
   ort.env.wasm.numThreads = 1;
-  encoderSession = await ort.InferenceSession.create('/models/needle-onnx/encoder.onnx', {
-    executionProviders: ['wasm']
-  });
-  encoderReady = true;
+}
+
+async function openEncoderCache() {
+  try { return typeof caches === 'undefined' ? null : await caches.open(ENCODER_CACHE); } catch (error) { return null; }
+}
+
+async function readBody(response, onBytes) {
+  var reader = response.body.getReader(), chunks = [], loaded = 0;
+  for (;;) {
+    var step = await reader.read();
+    if (step.done) break;
+    chunks.push(step.value);
+    loaded += step.value.length;
+    onBytes(Math.min(loaded, ENCODER_BYTES));
+  }
+  var bytes = new Uint8Array(loaded), at = 0;
+  chunks.forEach(function(chunk) { bytes.set(chunk, at); at += chunk.length; });
+  return bytes;
+}
+
+// The encoder from Cache Storage when it is there, else from the network and
+// then into Cache Storage, so a second visit makes no request for it. onBytes
+// gets the decoded bytes read so far.
+async function fetchEncoder(onBytes) {
+  var cache = await openEncoderCache();
+  var cached = cache ? await cache.match(ENCODER_URL) : null;
+  if (cached) {
+    var kept = new Uint8Array(await cached.arrayBuffer());
+    if (kept.length === ENCODER_BYTES) { onBytes(ENCODER_BYTES); return kept; }
+    await cache.delete(ENCODER_URL);
+  }
+  var response = await fetch(ENCODER_URL);
+  if (!response.ok) throw new Error('encoder download failed: HTTP ' + response.status);
+  var bytes = await readBody(response, onBytes);
+  if (cache && bytes.length === ENCODER_BYTES) await cache.put(ENCODER_URL, new Response(bytes)).catch(function() {});
+  return bytes;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -157,7 +213,7 @@ function buildFCTools() {
   FC_TOOLS = [
     { name: 'about',   description: 'Emin Gench biography, career background, based in Vancouver, current role at Cresta AI. Previously at Goodfintech, Vivoo, Novit AI. Aerospace Engineering degree.', parameters: {} },
     { name: 'repos',   description: 'GitHub open source repositories by emingenc: even_glasses (78 stars G1 BLE SDK), telegramGPT (52 stars AI bot guide), G1 Voice AI (25 stars), g1_flutter (18 stars), visionlink, llm_adaptive_router.', parameters: {} },
-    { name: 'contact', description: 'Contact Emin Gench: GitHub at github.com/emingenc, LinkedIn, Twitter/X. Open to open source collaboration.', parameters: {} },
+    { name: 'contact', description: 'Contact Emin Gench: GitHub at github.com/emingenc, LinkedIn, Twitter/X. Open to open-source and smart-glasses projects. Not taking new roles.', parameters: {} },
     { name: 'skills',  description: 'Technical skills: Python, TypeScript, Dart, FastAPI, Next.js, PostgreSQL, Docker, AWS, Linux, LLMs, AI agents, RAG systems, smart glasses BLE development.', parameters: {} },
     { name: 'blog',    description: 'Blog posts about building AI agents that ship, lessons from the field, and technical writing about software engineering and AI.', parameters: {} },
     { name: 'g1',      description: 'G1 smart glasses by Even Realities: BLE SDK for sensor data, Flutter bridge for mobile, voice AI assistant. 6 repos across 5 languages.', parameters: {} },
@@ -245,16 +301,26 @@ async function init() {
   try {
     self.postMessage({ type: 'status', data: 'Loading tokenizer...' });
     await loadTokenizer();
-    if (!tokenizerReady) { self.postMessage({ type: 'error', data: 'Tokenizer failed' }); return; }
+    if (!tokenizerReady) { self.postMessage({ type: 'error', data: 'Tokenizer failed', phase: loadPhase, loaded: loadedWire, total: WIRE_TOTAL }); return; }
+    reportProgress('runtime', WIRE_BYTES.tokenizer);
 
-    self.postMessage({ type: 'status', data: 'Loading encoder (52MB)...' });
-    await initEncoder();
-    if (!encoderReady) { self.postMessage({ type: 'error', data: 'Encoder failed' }); return; }
+    await initRuntime();
+    var fetched = WIRE_BYTES.tokenizer + WIRE_BYTES.loader;
+    reportProgress('encoder', fetched);
 
+    self.postMessage({ type: 'status', data: 'Loading encoder (33MB)...' });
+    var encoderBytes = await fetchEncoder(function(decoded) {
+      reportProgress('encoder', fetched + decoded / ENCODER_BYTES * WIRE_BYTES.encoder, true);
+    });
+    reportProgress('starting', fetched + WIRE_BYTES.encoder);
+    encoderSession = await ort.InferenceSession.create(encoderBytes, { executionProviders: ['wasm'] });
+    encoderReady = true;
+
+    reportProgress('starting', WIRE_TOTAL);
     self.postMessage({ type: 'ready', data: 'needle ready (encoder + tokenizer)' });
 
-  } catch(e) {
-    self.postMessage({ type: 'error', data: 'init: ' + (e.message || String(e)) });
+  } catch(error) {
+    self.postMessage({ type: 'error', data: 'init: ' + (error.message || String(error)), phase: loadPhase, loaded: loadedWire, total: WIRE_TOTAL });
   }
 }
 

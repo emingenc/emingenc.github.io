@@ -6,11 +6,31 @@
 //               device 'wasm' skips WebGPU (the page found no adapter)
 //   generate → {text, requestId, systemPrompt?} → streaming tokens → token/done/error
 //   evaluate → {question, results, evalId, context, compactErrors} → evalResult
+//   align    → {text, alignId, intent, toolScopes} → alignResult
+//   cancel   → {id} the page gave up on that request: it is skipped if it has not
+//               started, or its generation is interrupted and its reply never posted
 //
 // Uses Transformers.js v4 from jsDelivr CDN (cached by browser after first load).
 // Model: onnx-community/SmolLM2-360M-Instruct-ONNX (q4f16 on WebGPU, q8 on WASM; sizes in model-policy.js; cached in browser).
 
-import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/dist/transformers.min.js';
+import { pipeline, InterruptableStoppingCriteria } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/dist/transformers.min.js';
+import { createTally, createLoadTimer } from './download-tally.js';
+
+// The download may pause this long between files and chunks; the model then
+// has the second figure, per backend, to start once every file is in.
+const STALL_MS = 60000;
+const INIT_MS = { webgpu: 45000, wasm: 90000 };
+const MS_PER_S = 1000;
+const MODEL_ID = 'onnx-community/SmolLM2-360M-Instruct-ONNX';
+// Prompt context kept per generation: ~1.7k tokens, SmolLM2's real window is 2048.
+const CONTEXT_CHARS = 7500;
+const ALIGN_TOKENS = 100;
+const ALIGN_TEMPERATURE = 0.1;
+const GENERATE_TOKENS = 80;
+const GENERATE_TEMPERATURE = 0.35;
+const EVAL_TOKENS = 150;
+const EVAL_TEMPERATURE = 0.3;
+const NEUTRAL_CONFIDENCE = 50;
 
 let pipe = null;
 let systemPrompt = '';
@@ -93,39 +113,143 @@ function stripEnd(text) {
   return idx !== -1 ? text.slice(0, idx).trim() : text.trim();
 }
 
-// ─── Load pipeline with timeout ────────────────────────────
+// The verdict for an evaluation that gave none: stop, with no summary and a
+// confidence under the page's accept line, so the page answers from the files.
+// checked:false tells the page no check took place.
+function noVerdict() {
+  return { stop: true, summary: null, confidence: NEUTRAL_CONFIDENCE, next: '', checked: false };
+}
 
-function loadPipeline(device, timeoutMs) {
-  timeoutMs = timeoutMs || 45000;
-  // Reset the download-progress readout for this device attempt. Without this,
-  // a failed WebGPU download's progress (e.g. "100%") lingers while we fall back
-  // to WASM, so the header briefly shows a misleading "100%" before dropping to
-  // the WASM download's real progress. Each device attempt owns its own counter.
-  self.postMessage({ type: 'progress', pct: 0 });
+// ─── One run at a time, and a way to stop it ───────────────
+// The model runs one request at a time: a new request waits for the one
+// Stop interrupted, instead of starting beside it. `live` holds each request
+// from the moment it arrives until it ends.
+
+var live = new Map(); // id -> {stopper, cancelled}
+var lane = Promise.resolve();
+
+function runOnModel(id, work) {
+  var request = { stopper: new InterruptableStoppingCriteria(), cancelled: false };
+  live.set(id, request);
+  var run = lane.then(function() { return request.cancelled ? null : work(request); })
+    .finally(function() { live.delete(id); });
+  lane = run.catch(function() {});
+  return run;
+}
+
+function cancelRequest(id) {
+  var request = live.get(id);
+  if (!request) return;
+  request.cancelled = true;
+  request.stopper.interrupt();
+}
+
+// ─── Load pipeline ─────────────────────────────────────────
+
+function timeoutError(kind, device) {
+  var message = kind === 'stall'
+    ? 'no data for ' + (STALL_MS / MS_PER_S) + ' s while downloading on ' + device
+    : 'model did not start within ' + (INIT_MS[device] / MS_PER_S) + ' s on ' + device;
+  return Object.assign(new Error(message), { kind: kind });
+}
+
+// Posts the bytes fetched so far and keeps the load timer in step: the stall
+// clock while files arrive, the start clock once every file is in.
+function trackProgress(tally, timer) {
+  return function(event) {
+    if (!event || !event.file) return;
+    if (event.status === 'progress') tally.set(event.file, event.loaded, event.total);
+    else if (event.status === 'done') tally.done(event.file);
+    else return;
+    self.postMessage({ type: 'progress', loaded: tally.bytes() });
+    if (tally.complete()) timer.starting(); else timer.downloading();
+  };
+}
+
+// q4f16 quantization is WebGPU-only. The WASM fallback must use a
+// WASM-compatible dtype (q8 → model_quantized.onnx), otherwise the
+// "fallback" re-attempts WebGPU and fails with "no available backend",
+// leaving the model permanently unavailable on any browser without WebGPU.
+function pipelineOptions(device, onProgress) {
+  return { dtype: device === 'wasm' ? 'q8' : 'q4f16', device: device, progress_callback: onProgress };
+}
+
+// One attempt on one backend. It rejects with .kind 'stall' (no data for
+// STALL_MS) or 'init' (every file is in and the model did not start in time);
+// the start clock runs only after the download. Its progress counts this
+// backend's bytes alone, from 0.
+function loadPipeline(device) {
+  var tally = createTally();
+  self.postMessage({ type: 'progress', loaded: 0 });
   return new Promise(function(resolve, reject) {
-    var done = false;
-    var timer = setTimeout(function() {
-      if (!done) { done = true; reject(new Error('Pipeline init timed out after ' + (timeoutMs/1000) + 's on ' + device)); }
-    }, timeoutMs);
-
-    pipeline('text-generation', 'onnx-community/SmolLM2-360M-Instruct-ONNX', {
-      // q4f16 quantization is WebGPU-only. The WASM fallback must use a
-      // WASM-compatible dtype (q8 → model_quantized.onnx), otherwise the
-      // "fallback" re-attempts WebGPU and fails with "no available backend",
-      // leaving the model permanently unavailable on any browser without WebGPU.
-      dtype: device === 'wasm' ? 'q8' : 'q4f16',
-      device: device,
-      progress_callback: function(p) {
-        if (p && p.progress !== undefined) {
-          self.postMessage({ type: 'progress', pct: Math.round(p.progress) });
-        }
-      }
-    }).then(function(p) {
-      if (!done) { done = true; clearTimeout(timer); resolve(p); }
-    }).catch(function(err) {
-      if (!done) { done = true; clearTimeout(timer); reject(err); }
+    var timer = createLoadTimer(function(kind) { reject(timeoutError(kind, device)); }, { stallMs: STALL_MS, initMs: INIT_MS[device] });
+    timer.downloading();
+    pipeline('text-generation', MODEL_ID, pipelineOptions(device, trackProgress(tally, timer))).then(function(model) {
+      timer.stop();
+      resolve(model);
+    }, function(error) {
+      timer.stop();
+      reject(error);
     });
   });
+}
+
+// {model} or {error}: a failed attempt is a result, so the caller picks the next step.
+async function tryBackend(device) {
+  self.postMessage({ type: 'status', data: 'loading model (' + device + ')...' });
+  try {
+    return { model: await loadPipeline(device) };
+  } catch(error) {
+    return { error: error };
+  }
+}
+
+function reportLoadFailure(error) {
+  self.postMessage({ type: 'error', data: 'LLM load failed: ' + (error ? error.message : 'All backends exhausted'), fatal: true });
+}
+
+// What a failed WebGPU attempt means. A stalled download stops here: WASM
+// would stall on the same network. A model that never started leaves a hung
+// pipeline in this worker, so the page ends the worker and starts a fresh one
+// on WASM. Any other failure goes on to WASM here. True when the load is over.
+function webgpuFailureEndsLoad(error) {
+  if (error.kind === 'stall') {
+    reportLoadFailure(error);
+    return true;
+  }
+  if (error.kind === 'init') {
+    self.postMessage({ type: 'restart', device: 'wasm', data: error.message });
+    return true;
+  }
+  self.postMessage({ type: 'fallback', device: 'wasm' });
+  self.postMessage({ type: 'status', data: 'webgpu failed, trying wasm...' });
+  console.warn('[chat-worker] WebGPU failed:', error.message, '- falling back to WASM');
+  return false;
+}
+
+function announceReady(device) {
+  self.postMessage({ type: 'status', data: 'ready (' + device + ')' });
+  self.postMessage({ type: 'status', data: 'ready' });
+}
+
+// Try WebGPU first (fast), fall back to WASM (compatible). Device 'wasm' skips
+// WebGPU: that attempt would download the WebGPU weights before failing.
+async function loadModel(device) {
+  if (device !== 'wasm') {
+    var gpu = await tryBackend('webgpu');
+    if (gpu.model) {
+      pipe = gpu.model;
+      return announceReady('webgpu');
+    }
+    if (webgpuFailureEndsLoad(gpu.error)) return;
+  }
+  var wasm = await tryBackend('wasm');
+  if (wasm.model) {
+    pipe = wasm.model;
+    return announceReady('wasm');
+  }
+  console.warn('[chat-worker] WASM also failed:', wasm.error.message);
+  reportLoadFailure(wasm.error);
 }
 
 // ─── Uncaught-error safety net ──────────────────────────────
@@ -142,143 +266,114 @@ self.onmessageerror = function() {
   self.postMessage({ type: 'error', data: 'Worker received an unserializable message', fatal: true });
 };
 
-// ─── Message handler ───────────────────────────────────────
+// ─── Prompts ───────────────────────────────────────────────
 
-self.onmessage = async function(e) {
-  var msg = e.data;
+async function fetchText(path) {
+  try {
+    var response = await fetch(path);
+    if (response.ok) return (await response.text()).trim();
+  } catch(_) { /* use default */ }
+  return '';
+}
 
-  // ── load ──────────────────────────────────────────────
-  if (msg.type === 'load') {
-    try {
-      self.postMessage({ type: 'status', data: 'loading prompts...' });
-
-      // Fetch prompts from static files
-      try {
-        var sr = await fetch('/agents/prompts/system.md');
-        if (sr.ok) systemPrompt = (await sr.text()).trim();
-      } catch(_) { /* use default */ }
-
-      try {
-        var er = await fetch('/agents/prompts/evaluate.md');
-        if (er.ok) {
-          evalPromptTemplate = '<|im_start|>system\n' + (await er.text()).trim() +
-            '\n<|im_end|>\n<|im_start|>user\nQuestion: {{question}}\nResults: {{results}}\nContext: {{context}}\nErrors: {{errors}}\n\nEvaluate now. Return JSON only.\n<|im_end|>\n<|im_start|>assistant\n';
-        }
-      } catch(_) { /* use default */ }
-
-      try {
-        var gr = await fetch('/agents/prompts/generate.md');
-        if (gr.ok) generatePromptTemplate = (await gr.text()).trim();
-      } catch(_) { /* use default */ }
-
-      try {
-        var ar = await fetch('/agents/prompts/align.md');
-        if (ar.ok) alignPromptTemplate = (await ar.text()).trim();
-      } catch(_) { /* use default */ }
-
-      // Try WebGPU first (fast), fall back to WASM (compatible)
-      var loaded = false;
-      var lastError = null;
-
-      // Step 1: Try WebGPU, unless the page found no adapter: that attempt
-      // would download the WebGPU weights before failing.
-      if (msg.device !== 'wasm') {
-        try {
-          self.postMessage({ type: 'status', data: 'loading model (webgpu)...' });
-          pipe = await loadPipeline('webgpu', 45000);
-          loaded = true;
-          self.postMessage({ type: 'status', data: 'ready (webgpu)' });
-        } catch(gpuErr) {
-          lastError = gpuErr;
-          self.postMessage({ type: 'status', data: 'webgpu failed, trying wasm...' });
-          console.warn('[chat-worker] WebGPU failed:', gpuErr.message, '- falling back to WASM');
-        }
-      }
-
-      // Step 2: Fall back to WASM
-      if (!loaded) {
-        try {
-          self.postMessage({ type: 'status', data: 'loading model (wasm)...' });
-          pipe = await loadPipeline('wasm', 90000);
-          loaded = true;
-          self.postMessage({ type: 'status', data: 'ready (wasm)' });
-        } catch(wasmErr) {
-          lastError = wasmErr;
-          console.warn('[chat-worker] WASM also failed:', wasmErr.message);
-        }
-      }
-
-      if (loaded) {
-        self.postMessage({ type: 'status', data: 'ready' });
-      } else {
-        self.postMessage({ type: 'error', data: 'LLM load failed: ' + (lastError ? lastError.message : 'All backends exhausted'), fatal: true });
-      }
-    } catch(err) {
-      self.postMessage({ type: 'error', data: 'LLM load failed: ' + (err.message || String(err)), fatal: true });
-    }
-    return;
+// Each prompt file replaces its built-in default when it loads.
+async function loadPrompts() {
+  var system = await fetchText('/agents/prompts/system.md');
+  if (system) systemPrompt = system;
+  var evaluate = await fetchText('/agents/prompts/evaluate.md');
+  if (evaluate) {
+    evalPromptTemplate = '<|im_start|>system\n' + evaluate +
+      '\n<|im_end|>\n<|im_start|>user\nQuestion: {{question}}\nResults: {{results}}\nContext: {{context}}\nErrors: {{errors}}\n\nEvaluate now. Return JSON only.\n<|im_end|>\n<|im_start|>assistant\n';
   }
+  generatePromptTemplate = await fetchText('/agents/prompts/generate.md');
+  alignPromptTemplate = await fetchText('/agents/prompts/align.md');
+}
 
-  // ── align (pre-execution proposal validation) ──────────
-  if (msg.type === 'align') {
-    if (!pipe) {
-      self.postMessage({ type: 'alignResult', alignId: msg.alignId, data: { inScope: false, suggestedTool: 'out_of_scope', confidence: 0, reason: 'model unavailable' } });
-      return;
-    }
-    try {
-      var ap = buildAlignPrompt(msg.text, (msg.intent || {}).label || '', JSON.stringify(msg.toolScopes || []));
-      var ao = await pipe(ap, { max_new_tokens: 100, temperature: 0.1 });
-      var at = stripEnd(ao[0].generated_text.slice(ap.length));
-      var parsedAlign = parseJSON(at);
-      self.postMessage({ type: 'alignResult', alignId: msg.alignId, data: parsedAlign || { inScope: false, suggestedTool: 'out_of_scope', confidence: 0, reason: 'invalid alignment response' } });
-    } catch(err) {
-      self.postMessage({ type: 'alignResult', alignId: msg.alignId, data: { inScope: false, suggestedTool: 'out_of_scope', confidence: 0, reason: 'alignment failed' } });
-    }
-    return;
-  }
+// ─── Message handlers ──────────────────────────────────────
 
-  // ── generate (streaming chat) ──────────────────────────
-  if (msg.type === 'generate') {
-    if (!pipe) {
-      // Per-request: carries requestId, so classifier.js fails only this
-      // turn and keeps the (never-loaded) model for the next request to retry.
-      self.postMessage({ type: 'error', data: 'Model not loaded', requestId: msg.requestId });
-      self.postMessage({ type: 'done', requestId: msg.requestId });
-      return;
-    }
-    try {
-      var ctx = (msg.context || '').slice(0, 7500); // ~1.7k tokens — SmolLM2's real window is 2048
-      var prompt = buildGeneratePrompt(msg.text, ctx);
-      var out = await pipe(prompt, { max_new_tokens: 80, temperature: 0.35 });
-      var reply = stripEnd(out[0].generated_text.slice(prompt.length));
-      self.postMessage({ type: 'token', requestId: msg.requestId, token: reply });
-      self.postMessage({ type: 'done', requestId: msg.requestId });
-    } catch(err) {
-      // Per-request: a bad generation (e.g. a malformed prompt) must not cost
-      // the whole session the model — only this turn fails.
-      self.postMessage({ type: 'error', data: 'Generation failed: ' + (err.message || String(err)), requestId: msg.requestId });
-      self.postMessage({ type: 'done', requestId: msg.requestId });
-    }
-    return;
+async function handleLoad(msg) {
+  try {
+    self.postMessage({ type: 'status', data: 'loading prompts...' });
+    await loadPrompts();
+    await loadModel(msg.device);
+  } catch(error) {
+    self.postMessage({ type: 'error', data: 'LLM load failed: ' + (error.message || String(error)), fatal: true });
   }
+}
 
-  // ── evaluate (structured JSON) ─────────────────────────
-  if (msg.type === 'evaluate') {
-    if (!pipe) {
-      self.postMessage({ type: 'evalResult', evalId: msg.evalId, data: { stop: true, summary: null, confidence: 50, next: '' } });
-      return;
-    }
-    try {
-      var ep = buildEvalPrompt(msg.question, msg.results, msg.context, msg.compactErrors);
-      var eo = await pipe(ep, { max_new_tokens: 150, temperature: 0.3 });
-      var et = stripEnd(eo[0].generated_text.slice(ep.length));
-      var parsed = parseJSON(et);
-      self.postMessage({ type: 'evalResult', evalId: msg.evalId, data: parsed || { stop: true, summary: et.slice(0, 200), confidence: 60, next: '' } });
-    } catch(err) {
-      self.postMessage({ type: 'evalResult', evalId: msg.evalId, data: { stop: true, summary: null, confidence: 50, next: '' } });
-      // Per-request: carries evalId, so this logs without disabling the model.
-      self.postMessage({ type: 'error', data: 'Eval failed: ' + (err.message || String(err)), evalId: msg.evalId });
-    }
-    return;
+// The page gave up on a request.
+function handleCancel(msg) {
+  cancelRequest(msg.id);
+}
+
+// Pre-execution proposal validation.
+async function alignOnModel(msg, request, rejected) {
+  try {
+    var prompt = buildAlignPrompt(msg.text, (msg.intent || {}).label || '', JSON.stringify(msg.toolScopes || []));
+    var output = await pipe(prompt, { max_new_tokens: ALIGN_TOKENS, temperature: ALIGN_TEMPERATURE, stopping_criteria: request.stopper });
+    if (request.cancelled) return;
+    var parsed = parseJSON(stripEnd(output[0].generated_text.slice(prompt.length)));
+    self.postMessage({ type: 'alignResult', alignId: msg.alignId, data: parsed || Object.assign(rejected, { reason: 'invalid alignment response' }) });
+  } catch(error) {
+    if (request.cancelled) return;
+    self.postMessage({ type: 'alignResult', alignId: msg.alignId, data: Object.assign(rejected, { reason: 'alignment failed' }) });
   }
+}
+
+function handleAlign(msg) {
+  var rejected = { inScope: false, suggestedTool: 'out_of_scope', confidence: 0, reason: 'model unavailable' };
+  if (!pipe) return self.postMessage({ type: 'alignResult', alignId: msg.alignId, data: rejected });
+  return runOnModel(msg.alignId, function(request) { return alignOnModel(msg, request, rejected); });
+}
+
+// Streaming chat. Per-request errors carry requestId, so classifier.js fails
+// only this turn and keeps the model for the next request.
+async function generateOnModel(msg, request) {
+  try {
+    var prompt = buildGeneratePrompt(msg.text, (msg.context || '').slice(0, CONTEXT_CHARS));
+    var output = await pipe(prompt, { max_new_tokens: GENERATE_TOKENS, temperature: GENERATE_TEMPERATURE, stopping_criteria: request.stopper });
+    if (request.cancelled) return;
+    self.postMessage({ type: 'token', requestId: msg.requestId, token: stripEnd(output[0].generated_text.slice(prompt.length)) });
+  } catch(error) {
+    if (request.cancelled) return;
+    self.postMessage({ type: 'error', data: 'Generation failed: ' + (error.message || String(error)), requestId: msg.requestId });
+  }
+  self.postMessage({ type: 'done', requestId: msg.requestId });
+}
+
+function handleGenerate(msg) {
+  if (!pipe) {
+    self.postMessage({ type: 'error', data: 'Model not loaded', requestId: msg.requestId });
+    return self.postMessage({ type: 'done', requestId: msg.requestId });
+  }
+  return runOnModel(msg.requestId, function(request) { return generateOnModel(msg, request); });
+}
+
+// Structured JSON. Text that is not a verdict is no verdict, so it is never
+// passed on as a summary. A failed evaluation logs with its evalId without
+// disabling the model.
+async function evaluateOnModel(msg, request) {
+  try {
+    var prompt = buildEvalPrompt(msg.question, msg.results, msg.context, msg.compactErrors);
+    var output = await pipe(prompt, { max_new_tokens: EVAL_TOKENS, temperature: EVAL_TEMPERATURE, stopping_criteria: request.stopper });
+    if (request.cancelled) return;
+    var text = stripEnd(output[0].generated_text.slice(prompt.length));
+    self.postMessage({ type: 'evalResult', evalId: msg.evalId, data: parseJSON(text) || noVerdict() });
+  } catch(error) {
+    if (request.cancelled) return;
+    self.postMessage({ type: 'evalResult', evalId: msg.evalId, data: noVerdict() });
+    self.postMessage({ type: 'error', data: 'Eval failed: ' + (error.message || String(error)), evalId: msg.evalId });
+  }
+}
+
+function handleEvaluate(msg) {
+  if (!pipe) return self.postMessage({ type: 'evalResult', evalId: msg.evalId, data: noVerdict() });
+  return runOnModel(msg.evalId, function(request) { return evaluateOnModel(msg, request); });
+}
+
+var MESSAGE_HANDLERS = { load: handleLoad, cancel: handleCancel, align: handleAlign, generate: handleGenerate, evaluate: handleEvaluate };
+
+self.onmessage = function(event) {
+  var handler = MESSAGE_HANDLERS[event.data.type];
+  if (handler) return handler(event.data);
 };

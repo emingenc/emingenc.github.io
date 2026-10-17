@@ -1,4 +1,4 @@
-import { BYTES,bytesDoneLines,bytesLook,bytesMarks,bytesPlan,bytesSheet,freshBytes } from '../game/walk/lost-bytes.js';
+import { BYTES,bytesDoneLines,bytesDraw,bytesLook,bytesMarks,bytesPlan,bytesSheet,freshBytes,mapSheet } from '../game/walk/lost-bytes.js';
 import { uiHooksOnce,uiPowerOf } from './grid-power.js';
 import { uiBeginQuest,uiQuestAsk,uiQuestLive,uiQuestMarks,uiQuestSay } from './grid-quest-kit.js';
 import { uiQuestEvent } from './quest-run.js';
@@ -19,9 +19,14 @@ if (!result.done) {
 await uiQuestSay(app,BYTES.byteLine(taken.count));
 return;
 }
-const steps = uiRunOf(app).steps;
+const run = uiRunOf(app);
 uiKeep(app,freshBytes());
-await uiSayAll(app,bytesDoneLines(steps));
+await uiSayAll(app,bytesDoneLines(run.steps,{ mapped:run.mapped,ext:app.game.ext }));
+}
+async function uiOfferMap(app) {
+if (await uiQuestAsk(app,mapSheet()) !== 'map') return;
+const run = uiRunOf(app);
+if (run) uiKeep(app,bytesDraw(run));
 }
 async function uiOffer(app) {
 if (await uiQuestAsk(app,bytesSheet()) !== 'look') return;
@@ -29,6 +34,7 @@ if (!await uiBeginQuest(app,BYTES.quest)) return;
 const looked = bytesLook(uiRunOf(app));
 uiKeep(app,looked.run);
 await uiTake(app,looked);
+await uiOfferMap(app);
 }
 async function uiOnEnterCell(info) {
 const app = info.app;
@@ -36,6 +42,7 @@ if (!uiQuestLive(app) || app.game.opening || !uiRunOf(app)) return;
 const plan = bytesPlan(app.game.ext,uiRunOf(app),info.pos);
 if (plan.run) uiKeep(app,plan.run);
 if (plan.kind === 'offer') await uiOffer(app);
+else if (plan.kind === 'remap') await uiOfferMap(app);
 else if (plan.kind === 'pick') await uiTake(app,plan);
 }
 const uiHook = uiHooksOnce({ 'enter-cell':(info) => uiOnEnterCell(info).catch(console.error) });

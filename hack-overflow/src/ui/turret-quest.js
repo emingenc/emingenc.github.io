@@ -15,8 +15,9 @@ if (uiOpen(app,arena)) uiArenaToast(app,DOUBLE_BILLED_TEXTS.paid,'good');
 },PAID_AFTER_MS);
 }
 async function uiBilledQuest(app,arena) {
-if (questState(app.game.ext,DOUBLE_BILLED_ID) !== STAGE.active) return;
-const result = await uiQuestEvent(app,DOUBLE_BILLED_ID,{ kind:'progress' });
+const stage = questState(app.game.ext,DOUBLE_BILLED_ID);
+if (stage === STAGE.done) return;
+const result = await uiQuestEvent(app,DOUBLE_BILLED_ID,stage === STAGE.active ? { kind:'progress' } :{ type:'room-win' });
 if (!result.done || !uiOpen(app,arena)) return;
 uiArenaToast(app,DOUBLE_BILLED_TEXTS.done,'good');
 uiPaidLater(app,arena);

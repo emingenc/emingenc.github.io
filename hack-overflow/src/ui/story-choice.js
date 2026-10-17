@@ -23,6 +23,10 @@ return sized && ids.size === sheet.choices.length && uiChoiceDefaults(sheet.choi
 function uiChoiceCheck(sheet) {
 if (!uiChoiceIsSheet(sheet)) throw new RangeError('a choice sheet needs lines and ' + CHOICE_MIN + ' to ' + CHOICE_MAX + ' choices with their own ids and at most one default: ' + sheet.id);
 }
+function uiChoiceFocusAt(choices) {
+const marked = choices.findIndex((option) => option.focus === true);
+return marked >= 0 ? marked :Math.max(choices.findIndex((option) => option.default),0);
+}
 function uiChoiceMoving(app,now) {
 const walk = app.game.walk;
 const stepping = Boolean(walk.tween) && now < walk.tween.until;
@@ -92,7 +96,7 @@ return shown.buttons;
 choice.ask = function () {
 if (asked) return;
 asked = true;
-const button = shown.buttons[Math.max(sheet.choices.findIndex((option) => option.default),0)];
+const button = shown.buttons[uiChoiceFocusAt(sheet.choices)];
 shown.target.lastFocusKey = button.getAttribute('data-focus-key');
 button.focus();
 };

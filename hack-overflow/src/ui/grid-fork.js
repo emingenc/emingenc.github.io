@@ -3,6 +3,7 @@ BEATS,SIGN,forkActors,forkVerdict,inNear,inPocket,isCleared,isFindCell,holdsRece
 } from '../game/cast/fork.js';
 import { TALLY_CELL } from '../game/cast/tally.js';
 import { withBeat } from '../game/ext/ops.js';
+import { isLine } from '../game/opening.js';
 import { cellToward } from '../game/move.js';
 import { uiGridHook } from './bus.js';
 import { uiCommitExt } from './ext-storage.js';
@@ -25,6 +26,7 @@ if (verdict.pair || verdict.miss) uiTalk().then(function (talk) { return talk[wo
 }
 function uiForkDrones(app,hero) {
 const game = app.game;
+if (isLine(game.ext) && game.progress.breached.size === 0) return;
 const fork = game.fork;
 const actors = game.fight ? game.fight.actors :[];
 const verdict = forkVerdict(actors,fork.seen);

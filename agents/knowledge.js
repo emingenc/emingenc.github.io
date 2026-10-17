@@ -1,6 +1,8 @@
 // knowledge.js — Modular knowledge base powered by structured career data
 // Loads from /data/knowledge/ and provides clean search + formatting.
 // Add a JSON file to add knowledge. No code changes needed.
+/* eslint-disable max-lines-per-function, complexity, max-depth, id-length, no-magic-numbers -- legacy */
+// biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: legacy
 var KnowledgeBase = (function() {
   "use strict";
 
@@ -33,6 +35,27 @@ var KnowledgeBase = (function() {
       loaded = true;
       throw e;
     });
+  }
+
+  // A company's card data. The current role also carries its lead and
+  // bullets (each bullet cites a work.md row), which tool-about.js speaks.
+  function companyResult(entry, isCurrent) {
+    var text = function(value) { return value || ''; };
+    return {
+      type: 'company',
+      found: true,
+      company: text(entry.company),
+      role: text(entry.title),
+      period: entry.years || (entry.since ? entry.since + ' – Present' : ''),
+      location: text(entry.location),
+      description: text(entry.description),
+      highlights: entry.highlights || [],
+      lead: entry.lead || null,
+      bullets: entry.bullets || [],
+      url: text(entry.url),
+      aka: text(entry.aka),
+      isCurrent: isCurrent
+    };
   }
 
   function search(query) {
@@ -78,6 +101,17 @@ var KnowledgeBase = (function() {
       if (q.indexOf(overviewWords[oi]) !== -1) { isOverview = true; break; }
     }
 
+    // Experience asked for with numbers: "his experience, with numbers"
+    // answers from career.outcomes. It needs a results word plus either an
+    // overview word or a pronoun for him, so a plain "experience" or "career"
+    // question keeps the timeline.
+    var resultWords = ['number','result','metric','measured','measurable','impact','outcome'];
+    var isOutcomes = false;
+    for (var ri = 0; ri < resultWords.length; ri++) {
+      if (q.indexOf(resultWords[ri]) !== -1) { isOutcomes = true; break; }
+    }
+    isOutcomes = isOutcomes && !!career.outcomes && (isOverview || /\b(emin|his|he)\b/.test(q));
+
     // Check for education
     var eduWords = ['education','school','degree','study','studied','aerospace','academy','university','military'];
     var isEducation = false;
@@ -94,19 +128,11 @@ var KnowledgeBase = (function() {
 
     // Build result
     if (target) {
-      return {
-        type: 'company',
-        found: true,
-        company: target.company || '',
-        role: target.title || '',
-        period: target.years || (target.since ? target.since + ' – Present' : ''),
-        location: target.location || '',
-        description: target.description || '',
-        highlights: target.highlights || [],
-        url: target.url || '',
-        aka: target.aka || '',
-        isCurrent: isCurrent
-      };
+      return companyResult(target, isCurrent);
+    }
+
+    if (isOutcomes) {
+      return { type: 'outcomes', found: true, lead: career.outcomes.lead, bullets: career.outcomes.bullets || [] };
     }
 
     if (isOverview) {
@@ -152,16 +178,7 @@ var KnowledgeBase = (function() {
 
     // Current role as default
     if (q.indexOf('current') !== -1 || q.indexOf('now') !== -1 || q.indexOf('doing') !== -1) {
-      return {
-        type: 'company',
-        found: true,
-        company: career.current.company,
-        role: career.current.title,
-        period: career.current.since,
-        description: career.current.description || '',
-        highlights: career.current.highlights || [],
-        isCurrent: true
-      };
+      return companyResult(career.current, true);
     }
 
     return null;
@@ -201,6 +218,15 @@ var KnowledgeBase = (function() {
       tlines.push('');
       if (c.military) tlines.push(c.military);
       return { toolName: 'about', content: box('CAREER TIMELINE', tlines), data: result };
+    }
+
+    if (result.type === 'outcomes') {
+      var olines = [];
+      var obullets = result.bullets || [];
+      for (var oi2 = 0; oi2 < obullets.length; oi2++) {
+        olines.push('• ' + obullets[oi2].text);
+      }
+      return { toolName: 'about', content: box('RESULTS', olines), data: result };
     }
 
     if (result.type === 'education') {

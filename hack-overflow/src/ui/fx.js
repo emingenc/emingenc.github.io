@@ -281,24 +281,15 @@ uiFxNote(name);
 function uiFxOnBump() {
 uiFxShake('grid');
 }
-function uiFxOnCache(payload) {
-uiGridEffect('cache',[payload.cell]);
-}
-function uiFxOnGate(payload) {
-uiGridEffect('gate',payload.cells || []);
-}
-function uiFxOnSector(payload) {
-uiGridEffect('sector',[payload.cell]);
-}
 const UI_FX_ROUTES = {
 [GAME_EVENT.BUMP]:uiFxOnBump,
 [GAME_EVENT.BLOCKED]:uiFxOnBump,
 [GAME_EVENT.BREACH]:uiFxOnBreach,
 [GAME_EVENT.DISCONNECT]:uiFxOnDisconnect,
 [GAME_EVENT.JACK_IN]:uiFxOnJackIn,
-[GAME_EVENT.CACHE]:uiFxOnCache,
-[GAME_EVENT.GATE_OPEN]:uiFxOnGate,
-[GAME_EVENT.SECTOR_CLEAR]:uiFxOnSector,
+[GAME_EVENT.CACHE]:(payload) => uiGridEffect('cache',[payload.cell]),
+[GAME_EVENT.GATE_OPEN]:(payload) => uiGridEffect('gate',payload.cells || []),
+[GAME_EVENT.SECTOR_CLEAR]:(payload) => uiGridEffect('sector',[payload.cell]),
 [GAME_EVENT.ACCEPTED]:uiFxOnAccepted,
 [GAME_EVENT.LEVEL_UP]:uiFxOnLevelUp,
 [GAME_EVENT.TRACED]:uiFxOnTraced,

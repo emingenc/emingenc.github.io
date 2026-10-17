@@ -96,6 +96,12 @@
   grid-row:3;
 }
 
+@media (max-width:767px) {
+  .grid-dpad {
+    --dpad-btn:48px;
+  }
+}
+
 @media (max-height:640px) {
   .grid-dpad {
     --dpad-btn:44px;
@@ -175,3 +181,29 @@
   }
 }
 
+
+@media (hover:hover) and (pointer:fine) and (not (any-pointer:coarse)) {
+  .grid-screen[data-screen='grid'][data-input='keys'] .grid-dpad,
+  .grid-screen[data-screen='grid'][data-input='keys'] .grid-fire {
+    display:none;
+  }
+}
+
+@media (pointer:coarse) and (orientation:landscape) and (max-height:480px) {
+  .grid-screen[data-screen='grid'][data-fit='stack'] {
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto minmax(0,1fr) auto;
+    grid-template-areas:'hud travel' 'objective travel' 'stage dpad' 'power dpad';
+    column-gap:var(--sp-4);
+  }
+  .grid-screen[data-screen='grid'][data-fit='stack'] > .grid-travel {
+    align-self:start;
+  }
+  .grid-screen[data-screen='grid'][data-fit='stack'] .grid-hud-more {
+    top:56px;
+    left:calc(100% + var(--sp-4));
+    right:auto;
+    width:248px;
+    margin-top:0;
+  }
+}

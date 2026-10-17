@@ -1,4 +1,5 @@
 import { gridFitFor } from '../game/viewport.js';
+import { uiApplyInputMode,uiWireInputMode } from './grid-input-mode.js';
 
 const UI_GRID_SELECTOR = '.grid-screen';
 const UI_TOP_BARS = ['.grid-hud','.grid-objective-block'];
@@ -64,6 +65,8 @@ if (!screen) {
 uiForgetScreen();
 return;
 }
+uiWireInputMode();
+uiApplyInputMode(screen);
 const mode = uiGridFitMode();
 if (screen.getAttribute('data-fit') !== mode) screen.setAttribute('data-fit',mode);
 if (mode !== 'fill') {

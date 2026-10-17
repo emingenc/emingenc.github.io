@@ -1,7 +1,6 @@
 import { hasMet,questState } from '../ext/ops.js';
 import { STAGE } from '../quest/quests.js';
 import { TALLY_JOB as ANAGRAM_JOB } from '../walk/anagram.js';
-import { TALLY_JOB as BILLED_JOB } from '../walk/double-billed.js';
 import { FIND,holdsReceipt } from './fork.js';
 
 const TALLY_CELL = Object.freeze({ col:40,row:14 });
@@ -13,8 +12,7 @@ const TALLY_WHO = 'TALLY';
 const WELCOME = 'Welcome! Nothing stored is ever lost.';
 const OFFER = 'Lost receipt #4470. Pairs? Rescans? I pay rank.';
 const JOBS_LINE = 'More jobs, if you want them.';
-const LATER_CHOICE = Object.freeze({ id:'later',label:'NOT NOW',default:true });
-const TALLY_JOBS = Object.freeze([BILLED_JOB,ANAGRAM_JOB]);
+const TALLY_JOBS = Object.freeze([ANAGRAM_JOB]);
 const OFFER_CHOICES = Object.freeze([{ id:'take',label:'TAKE THE RUN' },{ id:'later',label:'NOT NOW',default:true }]);
 const TOASTS = Object.freeze({
 thanks:'TALLY: That is my receipt. Thank you. +5 R',
@@ -44,9 +42,4 @@ const lines = [...(met ? [] :[WELCOME]),OFFER].map((text) => ({ who:TALLY_WHO,te
 return { id:'tally-run',lines,choices:OFFER_CHOICES.map((choice) => ({ ...choice })) };
 }
 
-function jobsSheet(jobs) {
-const choices = [...jobs.map((job) => ({ id:job.id,label:job.label })),{ ...LATER_CHOICE }];
-return { id:'tally-jobs',lines:[{ who:TALLY_WHO,text:JOBS_LINE }],choices };
-}
-
-export { TALLY_CELL,MEET_ID,RUN_ID,THANKS_SOURCE,THANKS_RANK,TOASTS,FIND,JOBS_LINE,TALLY_JOBS,tallyPlan,offerSheet,jobsSheet };
+export { TALLY_CELL,MEET_ID,RUN_ID,THANKS_SOURCE,THANKS_RANK,TOASTS,FIND,JOBS_LINE,TALLY_WHO,TALLY_JOBS,tallyPlan,offerSheet };

@@ -141,12 +141,16 @@ return hurt;
 function uiIsMiteId(app,actorId) {
 return Boolean(app.game.sentry) && actorId.startsWith(MITE_ID_PREFIX);
 }
+function uiShotToastsOf(target) {
+const toasts = SHOT_TOASTS.get(target?.kind) || DRONE_SHOT_TOASTS;
+return target?.regen === 0 && toasts.still ? { ...toasts,dent:toasts.still } :toasts;
+}
 function uiDamageFoe(app,actorId,dmg) {
 if (uiIsMiteId(app,actorId)) return { outcome:app.game.sentry.hit(app,actorId,dmg),toasts:MITE_SHOT_TOASTS };
 const target = app.game.fight.actors.find((actor) => actor.id === actorId);
 const hit = hitActor(app.game.fight.actors,actorId,dmg);
 app.game.fight.actors = hit.actors;
-return { outcome:hit.killed ? 'kill' :'dent',toasts:SHOT_TOASTS.get(target?.kind) || DRONE_SHOT_TOASTS };
+return { outcome:hit.killed ? 'kill' :'dent',toasts:uiShotToastsOf(target) };
 }
 function uiShotFx(from,to,shot) {
 import('./shot-fx.js').then((module) => module.uiShotCells(from,to,shot)).catch(console.error);

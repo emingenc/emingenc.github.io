@@ -19,6 +19,12 @@ const PIP_COUNT = floodSpec.hold + 1;
 const PIP_LIT_INK = 'red';
 const PIP_DIM_INK = 'border';
 const LOCK_INK = 'cyan';
+const RING_INK = 'amber';
+const RING_TILES = 0.5;
+const RING_PULSE_TILES = 0.12;
+const RING_PX = 3;
+const RING_MS = 220;
+const FULL_TURN = Math.PI * 2;
 
 function uiBobOf(frame) {
 return frame.reducedMotion ? 0 :Math.sin(frame.now / BOB_MS) * BOB_TILES * frame.tile;
@@ -63,9 +69,20 @@ ctx.fillStyle = frame.palette[index < view.rewrites ? PIP_LIT_INK :PIP_DIM_INK];
 ctx.fillRect(spot.left + gap + index * (pip + gap),spot.top + frame.tile * PIP_TOP_TILES,pip,pip);
 }
 }
+function uiPaintRing(ctx,frame,cell) {
+const spot = uiSpotOf(cell,frame);
+if (!spot) return;
+const swell = frame.reducedMotion ? 0 :(Math.sin(frame.now / RING_MS) + 1) * HALF;
+ctx.strokeStyle = frame.palette[RING_INK];
+ctx.lineWidth = RING_PX;
+ctx.beginPath();
+ctx.arc(spot.left + frame.tile * HALF,spot.top + frame.tile * HALF,frame.tile * (RING_TILES + swell * RING_PULSE_TILES),0,FULL_TURN);
+ctx.stroke();
+}
 function uiPaintFloodMarks(ctx,frame,view) {
 view.held.map((cell) => uiSpotOf(cell,frame)).filter(Boolean).forEach((spot) => uiPaintPadlock(ctx,frame,spot));
 if (view.run) uiPaintPips(ctx,frame,view.run);
+if (view.ring) uiPaintRing(ctx,frame,view.ring);
 }
 
 export { uiPaintFloodMarks,uiRegisterFloodPainter };

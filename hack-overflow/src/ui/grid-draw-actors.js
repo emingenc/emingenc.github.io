@@ -1,23 +1,26 @@
-import { actorIntent,intentLabel } from '../game/actors.js';
+import { actorIntent } from '../game/actors.js';
 import { pulseAt } from '../game/wayfinding.js';
+import { uiWatchCombat } from './grid-combat-fx.js';
 import { uiCrashDrop,uiDrawBurst,uiDrawDust,uiDrawHitFlash,uiDroneClock,uiNoteHit,uiShakeStage } from './grid-drone-fx.js';
+import { uiBoxesMeet,uiNotchedBox,uiOutlinedText,uiTextWidth,uiWorldFont } from './grid-world-text.js';
 
 const DRONE_ART = ['x.....x','xx.x.xx','.xxexx.','..xxx..','...x...'];
 const ART_TILES = 0.9;
 const BOB_TILES = 0.04;
 const BOB_MS = 300;
-const TAG_FONT_TILES = 0.9;
-const TAG_GAP_TILES = 0.4;
-const TAG_OUTLINE_PX = 4;
-const TAG_FONT = 'px VT323, monospace';
-const TAG_TEXT_RENDERING = 'optimizeSpeed';
+const PILL = { fontPx:12,padX:6,height:18,overlap:0.3,gap:2,edge:3,tries:5 };
 const RING_RADIUS_TILES = 0.62;
 const RING_GROW_TILES = 0.18;
 const RING_PX = 3;
+const TRACK_ALPHA = 0.35;
+const COUNT_FULL = 3;
 const HALF = 0.5;
 const FULL_TURN = Math.PI * 2;
+const TOP = -Math.PI / 2;
 const ALERT_ARM = 1;
-const CALM_LABEL = 'hovers';
+const CALM_LABEL = 'HOVERS';
+
+const uiPlaced = new WeakMap();
 
 function uiBobOf(frame) {
 return frame.reducedMotion ? 0 :Math.sin(frame.now / BOB_MS) * BOB_TILES * frame.tile;
@@ -34,47 +37,72 @@ ctx.fillRect(left + col * pixel,top + row * pixel,pixel,pixel);
 });
 });
 }
-function uiDrawRing(ctx,frame,spot) {
-const pulse = pulseAt(frame.now,frame.reducedMotion);
-ctx.lineWidth = RING_PX;
-ctx.strokeStyle = frame.palette.amber;
-ctx.beginPath();
-ctx.arc(spot.left + frame.tile * HALF,spot.top + frame.tile * HALF,frame.tile * (RING_RADIUS_TILES + RING_GROW_TILES * pulse),0,FULL_TURN);
-ctx.stroke();
+function uiIntentOf(spot) {
+return spot.calm ? null :actorIntent(spot.actor);
 }
-function uiTagCentre(frame,spot,half) {
-return Math.min(Math.max(spot.left + frame.tile * HALF,half),frame.width - half);
+function uiUrgent(intent) {
+return Boolean(intent) && intent.inTicks <= ALERT_ARM;
 }
-function uiTagText(spot) {
+function uiPillText(spot) {
 if (spot.calm) return CALM_LABEL;
 const intent = actorIntent(spot.actor);
-return intent ? intentLabel(intent) :'';
+return intent ? intent.verb.toUpperCase() + ' ' + intent.inTicks :'';
+}
+function uiDrawRing(ctx,frame,spot) {
+const intent = uiIntentOf(spot);
+const pulse = pulseAt(frame.now,frame.reducedMotion);
+const centre = { x:spot.left + frame.tile * HALF,y:spot.top + frame.tile * HALF };
+const radius = frame.tile * (RING_RADIUS_TILES + RING_GROW_TILES * pulse);
+ctx.lineWidth = RING_PX;
+ctx.strokeStyle = spot.calm ? frame.palette.dim :frame.palette.amber;
+if (intent) ctx.globalAlpha = TRACK_ALPHA;
+ctx.beginPath();
+ctx.arc(centre.x,centre.y,radius,0,FULL_TURN);
+ctx.stroke();
+ctx.globalAlpha = 1;
+if (!intent) return;
+ctx.strokeStyle = uiUrgent(intent) ? frame.palette.red :frame.palette.amber;
+ctx.beginPath();
+ctx.arc(centre.x,centre.y,radius,TOP,TOP + FULL_TURN * Math.min(intent.inTicks / COUNT_FULL,1));
+ctx.stroke();
+}
+function uiPlacedBoxes(frame) {
+if (!uiPlaced.has(frame)) uiPlaced.set(frame,[]);
+return uiPlaced.get(frame);
+}
+function uiPillBox(frame,spot,width) {
+const above = spot.top >= PILL.height;
+const left = Math.min(Math.max(spot.left + frame.tile * HALF - width * HALF,PILL.edge),Math.max(frame.width - width - PILL.edge,PILL.edge));
+const step = (PILL.height + PILL.gap) * (above ? -1 :1);
+let top = above ? spot.top - PILL.height * (1 - PILL.overlap) :spot.top + frame.tile + PILL.gap;
+const taken = uiPlacedBoxes(frame);
+for (let tries = 0;tries < PILL.tries && taken.some((box) => uiBoxesMeet(box,{ left,top,width,height:PILL.height }));tries += 1) top += step;
+const box = { left,top,width,height:PILL.height };
+taken.push(box);
+return box;
+}
+function uiInView(frame,spot) {
+return spot.left + frame.tile > 0 && spot.top + frame.tile > 0 && spot.left < frame.width && spot.top < frame.height;
+}
+function uiDrawPill(ctx,frame,spot) {
+const text = uiPillText(spot);
+if (text === '') return;
+const width = uiTextWidth(ctx,text,uiWorldFont(PILL.fontPx)) + PILL.padX * 2;
+const box = uiPillBox(frame,spot,width);
+const tone = uiUrgent(uiIntentOf(spot)) ? 'red' :spot.calm ? 'dim' :'amber';
+uiNotchedBox(ctx,frame,{ ...box,edge:tone,fill:'bg' });
+uiOutlinedText(ctx,frame,{ text,x:box.left + width * HALF,y:box.top + box.height * HALF,font:uiWorldFont(PILL.fontPx),ink:'text' });
 }
 function uiDrawActorTag(ctx,frame,spot) {
-const label = uiTagText(spot);
-if (label === '') return;
-const size = Math.round(frame.tile * TAG_FONT_TILES);
-const gap = frame.tile * TAG_GAP_TILES;
-const above = spot.top >= size + gap;
-const baseline = above ? spot.top - gap :spot.top + frame.tile + gap;
-ctx.font = size + TAG_FONT;
-ctx.textRendering = TAG_TEXT_RENDERING;
-ctx.textAlign = 'center';
-ctx.textBaseline = above ? 'bottom' :'top';
-const half = ctx.measureText(label).width * HALF + TAG_OUTLINE_PX;
-const centre = uiTagCentre(frame,spot,half);
-ctx.lineWidth = TAG_OUTLINE_PX;
-ctx.strokeStyle = frame.palette.bg;
-ctx.strokeText(label,centre,baseline);
-ctx.fillStyle = frame.palette.amber;
-ctx.fillText(label,centre,baseline);
+if (!uiInView(frame,spot)) return;
+if (spot.ring || spot.calm || uiIntentOf(spot)) uiDrawRing(ctx,frame,spot);
+uiDrawPill(ctx,frame,spot);
 }
 function uiDrawDrone(ctx,frame,spot) {
 const actor = spot.actor;
-const cell = { actor,calm:spot.calm,left:(actor.col - frame.camera.col) * frame.tile,top:(actor.row - frame.camera.row) * frame.tile };
+const cell = { actor,calm:spot.calm,ring:true,left:(actor.col - frame.camera.col) * frame.tile,top:(actor.row - frame.camera.row) * frame.tile };
 const drop = uiCrashDrop(frame,{ top:cell.top,age:spot.age });
 uiDrawArt(ctx,frame,{ ...cell,drop,colour:actor.arm <= ALERT_ARM ? frame.palette.red :frame.palette.cyan });
-uiDrawRing(ctx,frame,cell);
 uiDrawActorTag(ctx,frame,cell);
 uiDrawDust(ctx,frame,spot);
 }
@@ -90,6 +118,7 @@ if (spot.actor.hp > 0) painter(ctx,frame,{ actor:spot.actor,calm:spot.calm,age:f
 else uiDrawBurst(ctx,frame,{ actor:spot.actor,age:frame.now - clock.died });
 }
 function uiDrawActors(ctx,app,frame) {
+uiWatchCombat(app,frame);
 const fight = app.game.fight;
 if (!fight) return;
 const notes = uiNoteHit(fight,frame.now);

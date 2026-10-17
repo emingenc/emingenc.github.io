@@ -1,13 +1,83 @@
 .grid-hud {
   grid-area:hud;
-  flex-wrap:wrap;
-  row-gap:var(--sp-2);
-  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) var(--sp-3) env(safe-area-inset-left,0px);
+  position:relative;
+  z-index:6;
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  gap:var(--sp-3);
+  min-height:calc(48px + env(safe-area-inset-top,0px));
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px);
   margin-bottom:0;
+  border-bottom:1px solid var(--border);
+}
+
+.grid-hud-toggle {
+  flex:none;
+  min-width:44px;
+  min-height:44px;
+  padding:0 var(--sp-4);
+  border:2px solid var(--border);
+  border-radius:var(--radius-pill);
+  background:var(--panel);
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  color:var(--bright);
+  white-space:nowrap;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
+.grid-hud-toggle::after {
+  content:'▾' / '';
+  margin-left:var(--sp-2);
+  color:var(--dim);
+}
+
+.grid-hud[data-open='1'] .grid-hud-toggle {
+  border-color:var(--primary);
+}
+
+.grid-hud[data-open='1'] .grid-hud-toggle::after {
+  content:'▴' / '';
+}
+
+.grid-hud > .btn-icon {
+  flex:none;
+  min-width:44px;
+  min-height:44px;
+}
+
+.grid-hud-more {
+  display:none;
+  position:absolute;
+  top:100%;
+  left:0;
+  right:0;
+  z-index:6;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:var(--sp-2) var(--sp-4);
+  margin-top:36px;
+  padding:var(--sp-3) var(--sp-4);
+  border:2px solid var(--primary);
+  border-radius:var(--radius-sm);
+  background:var(--panel);
+  box-shadow:0 8px 24px rgba(0,0,0,0.6);
+}
+
+.grid-hud[data-open='1'] .grid-hud-more {
+  display:flex;
+}
+
+.grid-hud-more > .btn,
+.grid-hud-more > .btn-icon {
+  flex:1 1 0;
+  min-height:48px;
 }
 
 .grid-hud-stats {
-  flex:1 1 0;
+  flex:1 1 100%;
   min-width:0;
   display:flex;
   flex-wrap:wrap;
@@ -59,6 +129,18 @@
   text-overflow:ellipsis;
 }
 
+.grid-hud-pill-go {
+  min-height:44px;
+  margin:-11px 0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--cyan);
+  text-align:left;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+
 .grid-hud-xp {
   font-family:var(--font-display);
   font-size:var(--fs-lg);
@@ -70,7 +152,7 @@
   display:block;
   flex:1 1 40px;
   height:8px;
-  max-width:240px;
+  min-width:24px;
   border:1px solid var(--border);
   background:var(--panel);
 }
@@ -99,13 +181,37 @@
 
 .grid-objective-block {
   grid-area:objective;
+  position:relative;
+  z-index:7;
+  background:var(--bg);
   min-width:0;
   display:flex;
   flex-direction:column;
   gap:var(--sp-1);
 }
 
+.grid-objective-row {
+  display:flex;
+  align-items:baseline;
+  gap:var(--sp-3);
+  min-width:0;
+}
+
+.grid-verb {
+  flex:none;
+  padding:0 var(--sp-3);
+  border-radius:var(--radius-sm);
+  background:var(--amber);
+  font-family:var(--font-display);
+  font-size:var(--fs-md);
+  line-height:1.3;
+  letter-spacing:0.06em;
+  color:var(--bg);
+  white-space:nowrap;
+}
+
 .grid-goal-row {
+  flex:none;
   display:flex;
   align-items:center;
   gap:var(--sp-3);
@@ -118,10 +224,30 @@
   font-family:var(--font-body);
   font-size:var(--fs-sm);
   color:var(--dim);
+  white-space:nowrap;
+}
+
+.grid-goal-short {
+  font-family:var(--font-display);
+  font-size:var(--fs-lg);
+  line-height:1;
+  color:var(--text);
+  white-space:nowrap;
+}
+
+.grid-hud > .grid-goal-row .grid-goal {
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
 }
 
 .grid-objective {
   margin:0;
+  flex:1 1 0;
+  min-width:0;
   font-family:var(--font-display);
   font-size:var(--fs-lg);
   color:var(--amber);
@@ -230,12 +356,6 @@
 }
 
 @media (max-width:767px) {
-  .grid-hud-level {
-    font-size:var(--fs-lg);
-  }
-  .grid-hud-map {
-    padding:var(--sp-3);
-  }
   .grid-objective {
     white-space:normal;
     overflow:visible;
@@ -257,11 +377,7 @@
 
 @media (max-height:640px) {
   .grid-hud {
-    row-gap:0;
-    padding-bottom:var(--sp-2);
-  }
-  .grid-hud-stats {
-    row-gap:0;
+    min-height:calc(44px + env(safe-area-inset-top,0px));
   }
   .grid-hud-hint,.grid-hud-pill {
     line-height:1.1;

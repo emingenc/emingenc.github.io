@@ -11,13 +11,29 @@ uiGameBus().emit(type,payload);
 
 const GRID_HOOKS = ['step','bump','tick','enter-cell','interact'];
 const gridBus = createBus();
+const claimers = new Map(GRID_HOOKS.map((name) => [name,[]]));
 
 function uiGridHook(name,fn) {
 if (!GRID_HOOKS.includes(name)) throw new RangeError('Unknown Grid hook "' + name + '"');
 return gridBus.on(name,fn);
 }
+function uiGridClaim(name,claim) {
+if (!GRID_HOOKS.includes(name)) throw new RangeError('Unknown Grid hook "' + name + '"');
+claimers.get(name).push(claim);
+}
+function uiClaimed(name,info) {
+return claimers.get(name).some(function (claim) {
+try {
+return claim(info) === true;
+} catch (error) {
+console.error(error);
+return false;
+}
+});
+}
 function uiGridEmit(app,name,payload) {
-gridBus.emit(name,{ ...payload,app });
+const info = { ...payload,app };
+if (!uiClaimed(name,info)) gridBus.emit(name,info);
 }
 
-export { uiGameBus, uiEmit, uiGridHook, uiGridEmit };
+export { uiGameBus, uiEmit, uiGridHook, uiGridClaim, uiGridEmit };
