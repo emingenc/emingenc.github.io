@@ -29,13 +29,13 @@ const legacy = loaded.stored && mapRev !== MAP_REV;
 const save = legacy ? uiMigratedSave(world,loaded) :loaded.save;
 const ext = uiLoadReconciledExt();
 return {
-world,catalog:createCatalog(content),stage:null,stageVisible:true,...uiSaveFields(world,save),notice:loaded.notice,
+world,catalog:createCatalog(content),gen:{},stage:null,stageVisible:true,...uiSaveFields(world,save),notice:loaded.notice,
 ext:legacy ? uiCommitMapRev(ext) :withMapRev(ext),
 };
 }
 const UI_LAZY_RESET = {
 coach:null,doorway:null,drawActors:null,sentryLoad:null,hudRank:null,hudPill:null,hudLoad:null,hudLoaded:false,questRuns:null,
-cast:null,fork:null,journey:null,drawCast:null,castGuard:null,drawFork:null,brute:null,drawBrute:null,reward:null,loopPinch:null,kernelUi:null,oracle:null,drawOracle:null,
+cast:null,fork:null,journey:null,drawCast:null,castGuard:null,tapAvoid:null,drawFork:null,brute:null,drawBrute:null,reward:null,loopPinch:null,windowMap:null,monoDeque:null,kernelUi:null,oracle:null,drawOracle:null,
 };
 function uiResetGameState(app,save) {
 if (app.game.kernelUi) app.game.kernelUi.undo.forEach((undo) => undo());

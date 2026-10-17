@@ -9,7 +9,8 @@ const STAR_ON = '★';
 const STAR_OFF = '☆';
 const REPLAY = { action: 'net-replay', label: 'REPLAY' };
 const BACK = { action: 'rig-back', label: 'BACK TO GRID' };
-const NEXT_ACTIONS = { w2: { action: 'net-wave2', label: 'WAVE 2' } };
+const NEXT_ACTIONS = { w2: { action: 'net-wave2', label: 'WAVE 2' }, w3: { action: 'net-wave3', label: 'WAVE 3' } };
+const MAX_JUMP = 'max';
 
 function uiNetStar(index, stars) {
   const on = index < stars;
@@ -31,22 +32,23 @@ function uiNetValues(state) {
     n: state.stream.items.length,
     par: netPar(state.stream, state.wave),
     reads: bruteReads(state.stream, state.wave),
+    jump: state.rules.jump,
   };
 }
 function uiNetHow(values) {
   const summary = uiEl('summary', { className: 'net-how-summary', text: NET_TEXTS.card.how });
   const rule = uiNetLine('net-rule', NET_TEXTS.card.stars);
-  const why = uiNetLine('net-why', fillText(NET_TEXTS.card.why, values));
+  const why = uiNetLine('net-why', fillText(values.jump === MAX_JUMP ? NET_TEXTS.card.whyMax : NET_TEXTS.card.why, values));
   return uiEl('details', { className: 'net-how', children: [summary, rule, why] });
 }
 function uiNetWinBody(state, result) {
   const values = uiNetValues(state);
   const head = [uiNetStars(result.stars), uiNetScore(state), uiNetLine('net-used', fillText(NET_TEXTS.card.used, values))];
-  return [...head, uiArenaPaidLine(result.rank, 'net-paid'), uiNetHow(values)].filter(Boolean);
+  const find = result.find ? uiNetLine('net-find', result.find) : null;
+  return [...head, uiArenaPaidLine(result.rank, 'net-paid'), find, uiNetHow(values)].filter(Boolean);
 }
 function uiNetWinActions(result) {
-  const next = NEXT_ACTIONS[result.nextMode];
-  return [REPLAY, ...(next ? [next] : []), BACK];
+  return [REPLAY, ...result.otherModes.filter((mode) => Object.hasOwn(NEXT_ACTIONS, mode)).map((mode) => NEXT_ACTIONS[mode]), BACK];
 }
 function uiNetCard(app, result) {
   const state = app.rig.arena.state;

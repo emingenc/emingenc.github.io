@@ -1,7 +1,9 @@
+import { ORACLE_CELL } from '../game/cast/oracle.js';
 import { TALLY_CELL } from '../game/cast/tally.js';
 import { chainSteps } from '../game/ext/badge-ops.js';
 import { cellToward } from '../game/move.js';
 import { BRIDGE } from '../game/power/bridge.js';
+import { SILL_CELL } from '../game/power/lane-map.js';
 import { VOLLEY } from '../game/power/volley.js';
 import { STEPS,activeSteps,caseOpen,chainOutcome,leadsOut,nextHint,payoff } from '../game/quest/first-bad-commit.js';
 import { cellAt,isPassable } from '../game/world.js';
@@ -21,8 +23,8 @@ const GIVER_CELLS = Object.freeze({
 tally:[TALLY_CELL],
 twins:BRIDGE.twins,
 brace:[VOLLEY.brace],
-oracle:[],
-sill:[],
+oracle:[ORACLE_CELL],
+sill:[SILL_CELL],
 });
 
 function uiChainCellsOf(step) {

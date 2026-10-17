@@ -10,7 +10,7 @@ return one.col === other.col && one.row === other.row;
 }
 function visit(search,cell,edge) {
 const key = cellKey(edge.next);
-if (search.trail.has(key) || !isPassable(search.world,search.progress,edge.next) || search.world.blocked?.(edge.next)) return;
+if (search.trail.has(key) || (search.avoid && search.avoid.has(key)) || !isPassable(search.world,search.progress,edge.next) || search.world.blocked?.(edge.next)) return;
 search.trail.set(key,{ back:cellKey(cell),dir:edge.dir });
 search.queue.push(edge.next);
 }
@@ -42,7 +42,7 @@ return new Set(explore({ world,progress,from,isGoal:() => false }).trail.keys())
 function findPath(world,progress,route) {
 if (sameCell(route.from,route.to)) return [];
 if (!thingAt(world,route.to) && !isPassable(world,progress,route.to)) return null;
-const { trail,hit } = explore({ world,progress,from:route.from,isGoal:(cell) => sameCell(cell,route.to) });
+const { trail,hit } = explore({ world,progress,from:route.from,avoid:route.avoid,isGoal:(cell) => sameCell(cell,route.to) });
 return hit ? [...stepsTo(trail,hit.from),hit.dir] :null;
 }
 

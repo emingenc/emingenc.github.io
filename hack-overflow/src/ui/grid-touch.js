@@ -61,7 +61,7 @@ const state = uiTouchState(app);
 if (!app.game.view || !state.node.contains(event.target)) return false;
 if (app.game.travelOpen) return false;
 const cell = uiCellForEvent(app,state.node,event);
-const intent = tapIntent(app.game.world,app.game.progress,{ from:app.game.avatar.pos,cell });
+const intent = tapIntent(app.game.world,app.game.progress,{ from:app.game.avatar.pos,cell,avoid:app.game.tapAvoid ? app.game.tapAvoid(app) :undefined });
 if (intent.kind === 'none') return false;
 uiWalkPath(app,{ dirs:intent.dirs });
 uiPlaceMarker(app,state,cell);

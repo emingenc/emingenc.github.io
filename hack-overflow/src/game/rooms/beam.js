@@ -1,7 +1,9 @@
 import { ammoMax,spendShot } from '../ammo.js';
 import { BEAM_TEXTS } from './data/beam-texts.js';
-import { ASSIST_PACE,BEAM_WAVES,BUDGET_SLACK,COMBO_CAP,DEFAULT_CTX,HEARTS,HINT_SHOTS,MITE,SCORE,SHARD } from './data/beam-wave.js';
+import { ASSIST_PACE,BEAM_WAVES,DEFAULT_CTX,HEARTS,HINT_SHOTS,MITE,SCORE,SHARD } from './data/beam-wave.js';
 import { fillText } from './data/turret-texts.js';
+import { beamBudget,beamPar,bestSplit,endOf,isLive,liveCells,loseHearts,middleOf,payShot,reject,sidesOf,waveOf,worstSide } from './beam-base.js';
+import { ROTATED_HANDLERS,rotatedExtras,rotatedMoves } from './beam-rotated.js';
 
 
 const MAX_STARS = 3;
@@ -13,17 +15,6 @@ const MOVE_BOLT_SHARD = 'bolt:shard';
 const TOASTS = BEAM_TEXTS.toast;
 const WHY = BEAM_TEXTS.why;
 
-function waveOf(wave) {
-const spec = BEAM_WAVES[wave];
-if (!spec) throw new RangeError('unknown beam wave: ' + wave);
-return spec;
-}
-function beamPar(wave) {
-return Math.ceil(Math.log2(waveOf(wave).n));
-}
-function beamBudget(wave) {
-return beamPar(wave) + BUDGET_SLACK;
-}
 function bruteShots(wave) {
 return typeof wave === 'number' ? wave : waveOf(wave).n;
 }
@@ -33,33 +24,15 @@ return BEAM_TEXTS.words[wave][side];
 function createBeam(wave,options = {}) {
 const spec = waveOf(wave);
 const bolt = Boolean(options.bolt);
-return {
+const state = {
 wave,n:spec.n,assist:Boolean(options.assist),bolt,ammo:bolt ? (options.ammo ?? ammoMax(1)) :null,lo:0,hi:spec.n - 1,
 probes:0,hearts:HEARTS,selected:null,mites:[],shard:null,shardShed:false,nextId:1,score:0,combo:0,maxCombo:0,slips:0,
 hits:0,bites:0,decoys:0,log:[],status:'running',last:null,
 };
-}
-function liveCells(state) {
-return Array.from({ length:state.hi - state.lo + 1 },(_,index) => state.lo + index);
-}
-function isLive(state,cell) {
-return Number.isInteger(cell) && cell >= state.lo && cell <= state.hi;
-}
-function middleOf(state) {
-return Math.floor((state.lo + state.hi) / 2);
+return spec.rotated ? Object.assign(state,rotatedExtras(options)) :state;
 }
 function upperMiddleOf(state) {
 return Math.floor((state.lo + state.hi + 1) / 2);
-}
-function sidesOf(state,cell) {
-return { down:cell - state.lo + BEAM_WAVES[state.wave].shotStays,up:state.hi - cell };
-}
-function worstSide(state,cell) {
-const sides = sidesOf(state,cell);
-return Math.max(sides.down,sides.up);
-}
-function bestSplit(state) {
-return Math.min(...liveCells(state).map((cell) => worstSide(state,cell)));
 }
 function middleHint(state) {
 const show = BEAM_WAVES[state.wave].hint && state.status === 'running' && state.probes < HINT_SHOTS;
@@ -67,6 +40,7 @@ return show ? middleOf(state) :null;
 }
 function beamMoves(state) {
 if (state.status !== 'running') return [];
+if (state.rotated) return rotatedMoves(state);
 const moves = liveCells(state).map((cell) => SELECT + cell);
 if (isLive(state,state.selected)) moves.push(MOVE_FIRE);
 if (state.bolt && state.mites.length > 0) moves.push(MOVE_BOLT_MITE);
@@ -83,13 +57,10 @@ return Object.assign({},state,{
 mites:state.mites.map((mite) => Object.assign({},mite)),shard:state.shard && Object.assign({},state.shard),log:state.log.slice(),
 });
 }
-function reject(turn,toast) {
-turn.state.last = { move:turn.move,ok:false,kind:'reject',toast };
-return turn.state;
-}
 function selectCell(turn) {
 const { state,move } = turn;
 const cell = Number(move.slice(SELECT.length));
+if (state.pending) return reject(turn,BEAM_TEXTS.rotated.rejectPending);
 if (!isLive(state,cell)) return reject(turn,fillText(TOASTS.rejectDead,{ cell:move.slice(SELECT.length),lo:state.lo,hi:state.hi }));
 state.selected = cell;
 state.last = { move,ok:true,kind:'select',cell,toast:fillText(BEAM_TEXTS.coach.select,{ cell }) };
@@ -132,22 +103,6 @@ state.lo = shot.to.lo;
 state.hi = shot.to.hi;
 state.log.push({ cell:shot.cell,answer:shot.answer,from:shot.from,to:shot.to });
 }
-function payShot(state,shot,play) {
-if (shot.slip) {
-state.slips += 1;
-state.combo = 0;
-return 0;
-}
-state.combo += 1;
-state.maxCombo = Math.max(state.maxCombo,state.combo);
-const points = Math.round(SCORE.shot * Math.min(state.combo,COMBO_CAP) * play.pace);
-state.score += points;
-return points;
-}
-function loseHearts(state,count) {
-state.hearts -= count;
-state.hits += count;
-}
 function tickMites(state) {
 const ticking = state.mites.map((mite) => Object.assign({},mite,{ bitesIn:mite.bitesIn - 1 }));
 const bitten = ticking.filter((mite) => mite.bitesIn <= 0).length;
@@ -173,16 +128,6 @@ return true;
 function settleProbe(state,shot) {
 const bites = tickMites(state);
 return { bites,mite:dropMite(state),shard:shedShard(state,shot) };
-}
-function endOf(state) {
-if (state.lo === state.hi) {
-state.status = 'won';
-state.score += SCORE.heart * state.hearts;
-return 'lock';
-}
-const reason = state.hearts <= 0 ? 'hearts' :state.probes >= beamBudget(state.wave) ? 'shots' :'';
-if (reason) state.status = 'lost';
-return reason;
 }
 function endLine(state,end) {
 const values = { cell:state.lo,shots:state.probes,par:beamPar(state.wave),m:state.hi - state.lo + 1,lo:state.lo,hi:state.hi };
@@ -255,12 +200,13 @@ state.last = { move,ok:true,kind:'bolt',target:'shard',points:SHARD.score,toast:
 return state;
 }
 const HANDLERS = { select:selectCell,[MOVE_FIRE]:fireShot,[MOVE_LOCK]:lockEarly,[MOVE_BOLT_MITE]:boltMite,[MOVE_BOLT_SHARD]:boltShard };
-function handlerOf(move) {
+function handlerOf(state,move) {
+if (state.rotated && Object.hasOwn(ROTATED_HANDLERS,move)) return ROTATED_HANDLERS[move];
 return HANDLERS[move.startsWith(SELECT) ? 'select' :move];
 }
 function applyBeam(state,move,ctx = DEFAULT_CTX) {
 if (state.status !== 'running' || typeof move !== 'string') return state;
-const handler = handlerOf(move);
+const handler = handlerOf(state,move);
 if (!handler) return state;
 const play = state.assist ? DEFAULT_CTX :Object.assign({ pace:ASSIST_PACE },ctx);
 return handler({ state:cloneState(state),move,play });

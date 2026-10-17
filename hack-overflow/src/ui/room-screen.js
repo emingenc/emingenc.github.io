@@ -47,4 +47,9 @@ function uiRoomEmpty() {
   return uiEl('section', { className: 'screen rig-screen', attrs: { 'data-screen': 'rig' } });
 }
 
-export { uiRoomEmpty, uiRoomShell, uiRoomOpen, uiRoomReady, uiRoomHead, uiRoomLeave };
+function uiRoomFocusKey(arena, backAction, replayAction) {
+  if (!arena) return backAction;
+  return arena.view === 'card' ? replayAction : ARENA_FOCUS_KEY;
+}
+
+export { uiRoomEmpty, uiRoomFocusKey, uiRoomShell, uiRoomOpen, uiRoomReady, uiRoomHead, uiRoomLeave };

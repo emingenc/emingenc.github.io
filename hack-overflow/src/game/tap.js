@@ -39,7 +39,7 @@ if (thing && INTERACT_KINDS.has(thing.kind)) return 'interact';
 return isPassable(world,progress,cell) ? 'walk' :'blocked';
 }
 function tapIntent(world,progress,tap) {
-const dirs = findPath(world,progress,{ from:tap.from,to:tap.cell });
+const dirs = findPath(world,progress,{ from:tap.from,to:tap.cell,avoid:tap.avoid });
 if (!dirs || dirs.length === 0) return { kind:'none',dirs:null };
 return { kind:kindOfTap(world,progress,tap.cell),dirs };
 }

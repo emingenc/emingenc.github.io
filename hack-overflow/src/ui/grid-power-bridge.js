@@ -115,6 +115,9 @@ bridge.sign = { state:createMirror(),open:false };
 uiSay(app,{ text });
 uiPowerRefresh(app);
 }
+function uiMirrorSeam(app,kind) {
+import('./quest-mirror.js').then((module) => module.uiMirrorQuest(app,kind)).catch(console.error);
+}
 function uiPair(app,index) {
 const bridge = uiBridgeOf(app);
 if (!bridge || !bridge.sign.open) return;
@@ -125,6 +128,7 @@ if (result.kind === 'mismatch') {
 bridge.sign.open = false;
 uiCommitExt(app,withFind(app.game.ext,MIRROR.find));
 }
+uiMirrorSeam(app,result.kind);
 uiPowerRefresh(app);
 }
 function uiDockChips(app,bridge) {
@@ -174,6 +178,7 @@ else if (!uiUsable(game)) uiSay(app,{ text:text.locked });
 else {
 if (!bridge.sign.open) bridge.sign = { state:createMirror(),open:true };
 uiSay(app,{ text:text.start });
+uiMirrorSeam(app,'open');
 }
 uiPowerRefresh(app);
 }

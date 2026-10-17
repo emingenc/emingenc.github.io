@@ -3,7 +3,7 @@ import { withBeat } from '../game/ext/ops.js';
 import { withTag } from '../game/ext/power-ops.js';
 import { roadBackDue,skipOrdeal } from '../game/finale/contract.js';
 import { inRing } from '../game/finale/roadback.js';
-import { MILESTONE_LINES,THRESHOLD,inSafehouse,journeyFacts,thresholdPlan } from '../game/quest/journey.js';
+import { MILESTONE_LINES,THRESHOLD,inSafehouse,journeyFacts,m4Lines,thresholdPlan } from '../game/quest/journey.js';
 import { ordealDue } from '../game/quest/milestones.js';
 import { TAIL_BEAT,owedMilestones,tailPlan } from '../game/story/catchup.js';
 import { uiGridHook } from './bus.js';
@@ -46,7 +46,8 @@ uiCommitExt(app,told);
 }
 async function uiPlayMilestone(app,id) {
 uiWriteMilestones(app,[id]);
-for (const text of MILESTONE_LINES[id]) await uiCastSay(app,{ text,kind:'info' });
+const lines = id === 'm4' ? m4Lines(app.game.ext) :MILESTONE_LINES[id];
+for (const text of lines) await uiCastSay(app,{ text,kind:'info' });
 }
 async function uiPlayCatchup(app,ids,opts) {
 uiWriteMilestones(app,ids);

@@ -1,5 +1,5 @@
 const ID_PATTERN = /^[a-z0-9-]{1,32}$/;
-const LIMITS = { rank:9999,paid:48,finds:32,beats:128,met:16,quests:16,state:3,count:99,tags:6,trials:3,allies:4,held:24,chain:31,cosmetics:16,badges:8 };
+const LIMITS = { rank:9999,paid:48,finds:32,beats:128,met:16,quests:24,state:3,count:99,tags:6,trials:3,allies:4,held:24,chain:31,cosmetics:16,badges:8 };
 
 function isId(value) {
 return typeof value === 'string' && ID_PATTERN.test(value);

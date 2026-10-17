@@ -8,6 +8,8 @@ import { fillText } from '../game/rooms/data/turret-texts.js';
 import { applyBeam,beamStars,createBeam,liveCells,middleHint,middleOf } from '../game/rooms/beam.js';
 import { uiArenaToast } from './arena-shell.js';
 import { uiBeamRecordBest } from './beam-record.js';
+import { uiBeamRunFor } from './beam-modes.js';
+import { uiBeamW3Cue,uiBeamW3Toast,uiBeamW3Values } from './beam-w3-flow.js';
 import { uiEmit } from './bus.js';
 import { uiPrefersReducedMotion } from './dom.js';
 import { uiRoomCardView,uiRoomPlayable,uiRoomWin } from './room-flow.js';
@@ -21,9 +23,9 @@ const NO_TIME = -Infinity;
 const MAX_STARS = 3;
 const PACE_FAST_MS = 5000;
 const PACE_SLOW_MS = 15000;
-const LEVEL_OF_MODE = { w1:'beam-1',w2:'beam-2' };
+const LEVEL_OF_MODE = { w1:'beam-1',w2:'beam-2',w3:'beam-3' };
 const SHOT_LINE = '{word}. The weak point is in {lo}..{hi} ({size} cells).';
-const BASE_COACH = { w1:BEAM_TEXTS.coach.w1,w2:BEAM_TEXTS.coach.w2 };
+const BASE_COACH = { w1:BEAM_TEXTS.coach.w1,w2:BEAM_TEXTS.coach.w2,w3:BEAM_TEXTS.coach.w3 };
 const NO_TARGET = 'Nothing to BOLT right now.';
 
 function uiBeamDefaultTime() {
@@ -54,9 +56,10 @@ return PACE_MAX - (PACE_MAX - ASSIST_PACE) * (elapsed - PACE_FAST_MS) / (PACE_SL
 }
 
 function uiBeamCreate(app,rig,start) {
+const run = uiBeamRunFor({ mode:start.mode,lastIndex:start.lastIndex ?? null });
 const arena = {
-rig,levelId:rig.levels[0],mode:start.mode,state:createBeam(start.mode,uiBeamOptions(app)),view:'play',result:null,coach:'',
-busyUntil:NO_TIME,thinkFrom:null,fx:{ nopeAt:NO_TIME,shotAt:NO_TIME },swallow:null,
+rig,levelId:rig.levels[0],mode:start.mode,state:createBeam(start.mode,{ ...uiBeamOptions(app),...run.options }),poolIndex:run.index,
+view:'play',result:null,coach:'',busyUntil:NO_TIME,thinkFrom:null,fx:{ nopeAt:NO_TIME,shotAt:NO_TIME },swallow:null,
 };
 arena.coach = uiBeamCoachText(arena);
 app.pendingAnnounce = null;
@@ -68,15 +71,19 @@ function uiBeamValues(state) {
 const bites = state.mites.map((mite) => mite.bitesIn);
 return {
 lo:state.lo,hi:state.hi,live:state.hi - state.lo + 1,mid:middleOf(state),cell:state.selected,points:SHARD.score,
-n:bites.length > 0 ? Math.min(...bites) :0,
+n:bites.length > 0 ? Math.min(...bites) :0,...(state.rotated ? uiBeamW3Values(state) :{}),
 };
+}
+function uiBeamBaseCoach(state) {
+return state.rotated && state.probes > 0 ? BEAM_TEXTS.coach.ends :BASE_COACH[state.wave];
 }
 const COACH_LINES = [
 { when:(state) => state.shard !== null,text:() => BEAM_TEXTS.coach.shardNow },
 { when:(state) => state.mites.length > 0,text:(state) => (state.bolt ? BEAM_TEXTS.coach.mite :BEAM_TEXTS.coach.miteNoBolt) },
 { when:(state) => middleHint(state) !== null,text:() => BEAM_TEXTS.coach.middle },
+{ when:(state) => Boolean(state.pending),text:() => BEAM_TEXTS.coach.keep },
 { when:(state) => state.selected !== null,text:() => BEAM_TEXTS.coach.select },
-{ when:() => true,text:(state) => BASE_COACH[state.wave] },
+{ when:() => true,text:uiBeamBaseCoach },
 ];
 function uiBeamCoachText(arena) {
 const state = arena.state;
@@ -142,6 +149,14 @@ const last = state.last;
 if (last.slip || last.decoy) return uiEmit(GAME_EVENT.RIG_BAD,{ rigId:BEAM_RIG_ID,reason:last.decoy ? 'decoy' :'slip' });
 return uiEmit(GAME_EVENT.RIG_GOOD,{ rigId:BEAM_RIG_ID,chain:state.combo });
 }
+function uiBeamSettle(app,toastOf) {
+const arena = app.rig.arena;
+if (arena.state.status !== 'running') return uiBeamFinish(app);
+const toast = toastOf(arena.state.last);
+uiArenaToast(app,toast.text,toast.kind);
+arena.coach = uiBeamCoachText(arena);
+return null;
+}
 function uiBeamAfterShot(app,now) {
 const arena = app.rig.arena;
 const state = arena.state;
@@ -149,11 +164,7 @@ arena.busyUntil = now + BEAM_BUSY_MS;
 arena.fx.shotAt = now;
 arena.thinkFrom = now;
 uiBeamShotCue(state);
-if (state.status !== 'running') return uiBeamFinish(app);
-const toast = uiBeamShotToast(state.last);
-uiArenaToast(app,toast.text,toast.kind);
-arena.coach = uiBeamCoachText(arena);
-return null;
+return uiBeamSettle(app,uiBeamShotToast);
 }
 function uiBeamAfterBolt(app) {
 const arena = app.rig.arena;
@@ -162,9 +173,19 @@ uiArenaToast(app,last.toast,last.dry ? 'info' :'good');
 if (!last.dry) uiEmit(GAME_EVENT.RIG_GOOD,{ rigId:BEAM_RIG_ID,chain:arena.state.combo });
 arena.coach = uiBeamCoachText(arena);
 }
+function uiBeamAfterRotated(app,now) {
+const arena = app.rig.arena;
+const state = arena.state;
+arena.busyUntil = now + BEAM_BUSY_MS;
+arena.thinkFrom = now;
+const cue = uiBeamW3Cue(state);
+if (cue) uiEmit(cue.type,{ rigId:BEAM_RIG_ID,...cue.detail });
+return uiBeamSettle(app,uiBeamW3Toast);
+}
 function uiBeamAfterMove(app,now) {
 const arena = app.rig.arena;
 const last = arena.state.last;
+if (arena.state.rotated && (last.kind === 'shot' || last.kind === 'keep')) return uiBeamAfterRotated(app,now);
 if (last.kind === 'shot') return uiBeamAfterShot(app,now);
 if (last.kind === 'bolt') return uiBeamAfterBolt(app);
 if (!last.ok) uiArenaToast(app,last.toast,'bad');

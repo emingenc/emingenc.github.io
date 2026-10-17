@@ -1,3 +1,5 @@
+import { hasBeat } from '../ext/ops.js';
+import { BEATS } from '../finale/contract.js';
 import { milestoneDue } from '../quest/journey.js';
 
 const CARD_MAX_LINES = 3;
@@ -10,6 +12,7 @@ m2:'ROOT sees you.',
 m4:'BRUTE yells, his fan smokes.',
 m5:'Tagged PATCH commit: patch-0.',
 });
+const M4_ANSWERED_PART = 'BRUTE is quiet. ROOT is not.';
 const TAIL_AT = 18;
 const TAIL_BEAT = 'tail-18';
 const TAIL_TEXT = 'GHOSTWRITER: Eighteen locks. Someone is keeping score.';
@@ -28,8 +31,10 @@ function groupsOf(parts) {
 const first = Math.ceil(parts.length / 2);
 return [parts.slice(0,first),parts.slice(first)].filter((group) => group.length > 0);
 }
-function cardLines(ids) {
-return groupsOf(ids.map((id) => CARD_PARTS[id])).map((group) => CARD_SPEAKER + group.join(' '));
+function cardLines(ids,ext) {
+const answered = Boolean(ext) && hasBeat(ext,BEATS.fan);
+const parts = ids.map((id) => (id === 'm4' && answered ? M4_ANSWERED_PART :CARD_PARTS[id]));
+return groupsOf(parts).map((group) => CARD_SPEAKER + group.join(' '));
 }
 function tailPlan(solved,before,seen) {
 if (solved < TAIL_AT || seen.includes(TAIL_BEAT)) return NOTHING;

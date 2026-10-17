@@ -1,5 +1,6 @@
 import { liveCells,middleHint,middleOf } from '../game/rooms/beam.js';
 import { uiBeamDecoy,uiBeamMarkClasses,uiBeamVar } from './beam-marks.js';
+import { uiBeamW3ValueText,uiBeamW3ValueWords } from './beam-w3-values.js';
 import { uiEl } from './dom.js';
 
 
@@ -40,19 +41,25 @@ return live.slice(start,start + ROW_CELLS);
 }
 function uiBeamCellWords(state,cell) {
 const parts = ['Cell ' + cell];
+if (state.rotated) parts.push(uiBeamW3ValueWords(state,cell));
 if (cell === state.selected) parts.push('selected');
 if (cell === middleHint(state)) parts.push('the middle');
 if (uiBeamDecoy(state,cell)) parts.push('a decoy: the range cannot shrink');
 return parts.join(', ');
 }
 function uiBeamCellClasses(state,cell) {
-const names = ['btn','arena-btn','beam-cell',...uiBeamMarkClasses(state,cell)];
+const names = ['btn','arena-btn','beam-cell',...(state.rotated ? ['beam-cell-w3'] :[]),...uiBeamMarkClasses(state,cell)];
 return names.join(' ');
+}
+function uiBeamCellLook(state,cell) {
+if (!state.rotated) return { text:String(cell) };
+const lines = [['beam-cell-ix','[' + cell + ']'],['beam-cell-val',uiBeamW3ValueText(state,cell)]];
+return { children:lines.map(([className,text]) => uiEl('span',{ className,text })) };
 }
 function uiBeamCell(state,cell) {
 const action = CELL_ACTION + cell;
 return uiEl('button',{
-className:uiBeamCellClasses(state,cell),text:String(cell),
+className:uiBeamCellClasses(state,cell),...uiBeamCellLook(state,cell),
 attrs:{
 type:'button','data-action':action,'data-focus-key':action,'data-beam-cell':String(cell),'aria-label':uiBeamCellWords(state,cell),
 'aria-pressed':String(cell === state.selected),
@@ -105,8 +112,8 @@ return { action:BOLT_ACTION,side:'beam-btn-bolt',text:'BOLT',sub:String(state.am
 function uiBeamDock(state) {
 const down = { action:DOWN_ACTION,side:'beam-btn-down',text:MINUS + '1',aria:'Select the next lower live cell' };
 const up = { action:UP_ACTION,side:'beam-btn-up',text:'+1',aria:'Select the next higher live cell' };
-const specs = [down,uiBeamFireSpec(state),up,state.bolt ? uiBeamBoltSpec(state) :null].filter(Boolean);
+const specs = [down,uiBeamFireSpec(state),up,state.bolt && !state.rotated ? uiBeamBoltSpec(state) :null].filter(Boolean);
 return uiEl('div',{ className:'beam-dock',attrs:{ role:'group','aria-label':'Beam controls' },children:specs.map(uiBeamDockButton) });
 }
 
-export { CELL_ACTION,FIRE_ACTION,DOWN_ACTION,UP_ACTION,BOLT_ACTION,ROW_CELLS,uiBeamMinimap,uiBeamCellRow,uiBeamSlider,uiBeamDock,uiBeamRowCells };
+export { CELL_ACTION,FIRE_ACTION,DOWN_ACTION,UP_ACTION,BOLT_ACTION,ROW_CELLS,uiBeamMinimap,uiBeamCellRow,uiBeamSlider,uiBeamDock,uiBeamDockButton,uiBeamRowCells };
