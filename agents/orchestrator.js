@@ -23,17 +23,21 @@ var Orchestrator;
   let opener = null;
 
   // The router has begun the turn, echoed the question and planned it.
-  function run(turn, query, plan) {
-    perform(turn, LoopPolicy.start(query, plan, memory));
+  // opts.auto is the page's own first turn (no plan trace); opts.remember
+  // === false keeps the follow-up memory as it was for the whole turn, so the
+  // visitor's first question is not judged against one they never asked.
+  // eslint-disable-next-line max-params -- signature predates this change
+  function run(turn, query, plan, opts = {}) {
+    perform(turn, LoopPolicy.start(query, plan, memory, opts), opts.remember !== false);
   }
 
   // Performs a decision's effects in order, and stops the moment the turn
   // does: Stop, a supersede, or an effect that ended it. A yield, an act or
   // an ask closes its decision; the event it produces, at once or later, goes
   // back to the policy for the next one.
-  function perform(turn, decision) {
-    memory = decision.run.memory;
-    const feed = (event) => perform(turn, LoopPolicy.next(decision.run, event));
+  function perform(turn, decision, remember) {
+    if (remember) memory = decision.run.memory;
+    const feed = (event) => perform(turn, LoopPolicy.next(decision.run, event), remember);
     for (const effect of decision.effects) {
       if (!turn.isCurrent()) return;
       EFFECTS[effect.type](turn, effect, feed);

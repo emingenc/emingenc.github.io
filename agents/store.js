@@ -1,4 +1,5 @@
 // store.js v2 — State management with working memory, multi-session persist/restore
+/* eslint-disable max-lines-per-function, id-length, no-magic-numbers, no-empty -- legacy persist */
 
 var SESSIONS_KEY = 'agent-sessions';
 var MAX_SESSIONS = 10;
@@ -26,8 +27,9 @@ function createStore(initial) {
   // ─── Multi-session persist ──────────────────────────────
   function persist() {
     try {
-      // Guard: never persist a session the visitor has not spoken in. A failed
-      // boot adds only its error note, which would otherwise write a ghost
+      // Guard: never persist a session the visitor has not spoken in (the page's
+      // own auto-run turn is not them speaking). A failed boot adds only its
+      // error note, which would otherwise write a ghost
       // session that clutters /sessions and restores in place of the welcome.
       // Drop any prior entry for this session id so /clear and /new persist
       // correctly (Run 3 fix).
@@ -64,7 +66,7 @@ function createStore(initial) {
 
   function firstUserText() {
     for (var i = 0; i < state.messages.length; i++) {
-      if (state.messages[i].role === 'user') return state.messages[i].content.slice(0, 80);
+      if (state.messages[i].role === 'user' && !state.messages[i].auto) return state.messages[i].content.slice(0, 80);
     }
     return '';
   }
@@ -115,6 +117,11 @@ function createStore(initial) {
         state.models[action.model + 'Loading'] = action.status === 'loading';
         if (action.status === 'error') state.models[action.model + 'Error'] = action.error;
         if (action.progress !== undefined) state.models.llmDownloadProgress = action.progress;
+        // bytes: {loaded, total} from a download; null starts a fresh attempt
+        // (no count, no earlier error); phase names the step it is in.
+        if (action.bytes !== undefined) state.models[action.model + 'Bytes'] = action.bytes;
+        if (action.bytes === null) state.models[action.model + 'Error'] = null;
+        if (action.phase !== undefined) state.models[action.model + 'Phase'] = action.phase;
         if (action.statusText !== undefined) state.models.llmStatusText = action.statusText;
         // On a hard LLM load failure, reset the transient progress/status
         // readouts so the store no longer claims the model is "loading model

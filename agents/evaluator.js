@@ -7,7 +7,7 @@
 var Evaluator;
 {
   const EVAL_TIMEOUT_MS = 12000;
-  const EVAL_TIMEOUT_RESULT = Object.freeze({ stop: false, summary: null, confidence: 50, nextTool: '', next: '' });
+  const EVAL_TIMEOUT_RESULT = Object.freeze({ stop: false, summary: null, confidence: 50, nextTool: '', next: '', checked: false });
   const FALLBACK_SUMMARY_CHARS = 300;
   const RELEVANCE_ACCEPT = 0.3;
   const RELEVANCE_WORD_CHARS = 3;
@@ -100,5 +100,5 @@ var Evaluator;
 
   function init(nextStore) { store = nextStore; }
 
-  Evaluator = { init, evaluate, isSelfContained, groundedAgainstProfile };
+  Evaluator = { init, evaluate, isSelfContained, groundedAgainstProfile, EVAL_TIMEOUT_MS };
 }

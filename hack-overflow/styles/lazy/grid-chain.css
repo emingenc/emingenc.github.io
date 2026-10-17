@@ -33,6 +33,7 @@
 }
 
 .grid-chain-caption,
+.grid-chain-intro,
 .grid-chain-said,
 .grid-chain-counter {
   margin:0;
@@ -40,6 +41,10 @@
   font-size:var(--fs-sm);
   line-height:1.4;
   overflow-wrap:anywhere;
+}
+
+.grid-chain-intro {
+  color:var(--amber);
 }
 
 .grid-chain-said {
@@ -77,6 +82,7 @@
 }
 
 .grid-chain-cell:focus-visible,
+.grid-chain-next:focus-visible,
 .grid-chain-exit:focus-visible {
   outline:2px solid var(--cyan);
   outline-offset:2px;
@@ -118,6 +124,7 @@
   color:var(--dim);
 }
 
+.grid-chain-next,
 .grid-chain-exit {
   min-width:44px;
   min-height:48px;
@@ -126,6 +133,11 @@
   font-size:var(--fs-lg);
   letter-spacing:0.08em;
   touch-action:manipulation;
+}
+
+.grid-chain-next {
+  border-color:var(--cyan);
+  color:var(--cyan);
 }
 
 .grid-chain-exit.is-done {

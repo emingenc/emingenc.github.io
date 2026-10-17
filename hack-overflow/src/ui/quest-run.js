@@ -1,3 +1,4 @@
+import { casePillText } from '../game/quest/case-pill.js';
 import { QUESTS,STAGE,progressQuest,pillText,rewardOf,startQuest } from '../game/quest/quests.js';
 import { uiCue } from './audio-wire.js';
 import { uiCommitExt } from './ext-storage.js';
@@ -21,11 +22,14 @@ function uiNextRun(state,event) {
 if (event.type !== ROOM_WIN) return progressQuest(state,event);
 return state.stage === STAGE.done ? state :{ ...state,stage:STAGE.done,n:QUESTS[state.id].need };
 }
-function uiQuestPillText(app) {
-const id = app.game.ext.pin;
-if (!id || !Object.hasOwn(QUESTS,id)) return null;
+function uiPinnedPill(app,id) {
 const state = uiRunOf(app.game,id);
 return state.stage === STAGE.active ? pillText(QUESTS[id],state) :null;
+}
+function uiQuestPillText(app) {
+const id = app.game.ext.pin;
+const quest = id && Object.hasOwn(QUESTS,id) ? uiPinnedPill(app,id) :null;
+return quest || casePillText(app.game.ext,app.game.save);
 }
 async function uiPinQuest(app,questId) {
 if (!Object.hasOwn(QUESTS,questId)) return;

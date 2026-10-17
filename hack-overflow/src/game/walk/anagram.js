@@ -9,8 +9,8 @@ const BINS = Object.freeze([
 { id:'ag-bin-1',key:'a1b1t1',col:19,row:17 },{ id:'ag-bin-2',key:'a1n1t1',col:23,row:17 },{ id:'ag-bin-3',key:'a1e1t1',col:27,row:17 },
 ].map((bin) => Object.freeze(bin)));
 const TEXT = Object.freeze({
-taken:'TALLY: Six crates, three bins. Match the code.',
-waiting:'TALLY: Match the crates to the bins.',
+taken:'TALLY: You carry all six. Bump the right bin.',
+waiting:'TALLY: Bump the bin that fits the top crate.',
 wrong:'Not this bin. Count the letters again.',
 full:'That bin is full.',
 done:'TALLY: Same counts, same key. The key finds the bin.',
@@ -29,7 +29,7 @@ const counts = new Map();
 return [...counts].map(([letter,count]) => letter + count).join('');
 }
 function newState() {
-return { carry:null,placed:{} };
+return { hand:CRATES.map((crate) => crate.id),placed:{} };
 }
 function crateOf(id) {
 return CRATES.find((crate) => crate.id === id);
@@ -37,27 +37,29 @@ return CRATES.find((crate) => crate.id === id);
 function binOf(id) {
 return BINS.find((bin) => bin.id === id);
 }
-function crateStanding(state) {
-return CRATES.filter((crate) => crate.id !== state.carry && !Object.hasOwn(state.placed,crate.id));
+function topOf(state) {
+return crateOf(state.hand[0]);
 }
-function solidsOf(state) {
-return [...crateStanding(state),...BINS].map(({ id,col,row }) => ({ id,col,row }));
+function handTag(state) {
+const top = topOf(state);
+if (!top) return null;
+return state.hand.length > 1 ? top.word + ' +' + (state.hand.length - 1) :top.word;
+}
+function solidsOf() {
+return BINS.map(({ id,col,row }) => ({ id,col,row }));
 }
 function binCount(state,binId) {
 return Object.values(state.placed).filter((placed) => placed === binId).length;
 }
-function pickUp(state,crateId) {
-if (!crateStanding(state).some((crate) => crate.id === crateId)) return state;
-return { ...state,carry:crateId };
-}
 function dropInto(state,binId) {
 const bin = binOf(binId);
-const crate = crateOf(state.carry);
+const crate = topOf(state);
 if (!bin || !crate) return { kind:'empty',state,count:0 };
 const count = binCount(state,binId);
-if (keyOf(crate.word) !== bin.key) return { kind:'wrong',state:{ ...state,carry:null },count };
+const rest = state.hand.slice(1);
+if (keyOf(crate.word) !== bin.key) return { kind:'wrong',state:{ ...state,hand:[...rest,crate.id] },count };
 if (count >= BIN_SIZE) return { kind:'full',state,count };
-return { kind:'ok',state:{ carry:null,placed:{ ...state.placed,[crate.id]:binId } },count:count + 1 };
+return { kind:'ok',state:{ hand:rest,placed:{ ...state.placed,[crate.id]:binId } },count:count + 1 };
 }
 
-export { QUEST_ID,BIN_SIZE,CRATES,BINS,TEXT,TALLY_JOB,keyOf,newState,crateOf,binOf,crateStanding,solidsOf,binCount,pickUp,dropInto };
+export { QUEST_ID,BIN_SIZE,CRATES,BINS,TEXT,TALLY_JOB,keyOf,newState,crateOf,binOf,topOf,handTag,solidsOf,binCount,dropInto };

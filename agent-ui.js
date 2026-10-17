@@ -5,6 +5,10 @@
 // runs; ■ Stop or Esc interrupts), the command menu, the live status line and the page's
 // following of new output. Posts and the game the agent opens stay in the
 // page as cards (Orchestrator.setOpener).
+// With nothing restored, no URL trigger and nothing queued, the page runs its
+// own first turn (AUTO_QUESTION) once the welcome has painted.
+// After every turn setSuggestions repaints the chips and the "ask next" rows;
+// html.typing (prompt focused) lets index.astro hide the chips on touch.
 // URL triggers keep their { source: 'url' } marker: router.js uses it to
 // refuse destructive commands (/forget, /clear) that arrive from a link.
 import { RunView } from './agents/run-view.js';
@@ -12,8 +16,10 @@ import { ModelView } from './agents/model-view.js';
 import { createPaletteView } from './agents/palette-view.js';
 import { createPageView } from './agents/page-view.js';
 
+const AUTO_QUESTION = 'What does Emin do at Cresta?';
 const MAX_QUEUED = 3;
 const QUEUED_ITEM_CHARS = 28;
+const AUTO_OPTIONS = Object.freeze({ source: 'auto', tool: 'about' });
 const ID_RADIX = 36;
 const ID_START = 2;
 const ID_END = 6;
@@ -41,9 +47,13 @@ const els = {
   hint: byId('composerHint'),
   queued: byId('queuedNote'),
   turnList: byId('turnList'),
+  chips: byId('suggestChips'),
+  askNext: byId('askNext'),
 };
 let queued = [];
 let booted = false;
+// True until the auto-run settles: the build-time chips already follow it.
+let autoPending = false;
 
 const store = window.createStore({
   session: {
@@ -59,6 +69,8 @@ const store = window.createStore({
   ui: { isProcessing: false, thinkingState: 'idle', thinkingLabel: '', contextPct: 0 },
 });
 
+// Loaded after the first paint, like anatomy.js.
+const suggestions = () => import('./agents/suggest-view.js');
 const page = createPageView({ doc: byId('docWrap'), chip: byId('jumpChip'), list: els.turnList });
 const runView = new RunView({
   store, page, finePointer, onRunStart, onRunEnd,
@@ -118,6 +130,7 @@ function showQueue(prefix) {
 
 const clip = (text) => (text.length > QUEUED_ITEM_CHARS ? text.slice(0, QUEUED_ITEM_CHARS - 1) + '…' : text);
 
+// True when a queued message was started.
 function drainQueue() {
   const next = queued.shift();
   if (queued.length) showQueue('');
@@ -126,6 +139,17 @@ function drainQueue() {
     els.hint.hidden = false;
   }
   if (next) setTimeout(() => submit(next.text, next.opts), 0);
+  return Boolean(next);
+}
+
+// Not while booting, auto-running or mid-turn: the build-time chips stand in.
+const canSuggest = () => booted && !autoPending && !runView.isRunning();
+
+function setSuggestions() {
+  if (!canSuggest()) return;
+  const { messages, session } = store.getState();
+  const turn = { messages, sid: session.id, tool: runView.lastTool() };
+  suggestions().then((module) => canSuggest() && module.paintNext({ chips: els.chips, rows: els.askNext }, turn)).catch(() => {});
 }
 
 function setSendMode(mode) {
@@ -137,14 +161,16 @@ function setSendMode(mode) {
 }
 
 function onRunStart() {
+  if (!els.askNext.hidden) suggestions().then((module) => module.createSuggestView({ rows: els.askNext }).hideRows()).catch(() => {});
   setSendMode('stop');
   els.hint.textContent = finePointer ? HINTS.runFine : HINTS.runCoarse;
 }
 
 function onRunEnd() {
+  autoPending = false;
   setSendMode('send');
   els.hint.textContent = finePointer ? HINTS.idleFine : HINTS.idleCoarse;
-  drainQueue();
+  if (!drainQueue()) setSuggestions();
   const active = document.activeElement;
   if (finePointer && (!active || active === document.body)) els.input.focus({ preventScroll: true });
 }
@@ -224,7 +250,16 @@ function wireComposer() {
   els.input.addEventListener('input', () => palette.syncToInput());
   els.input.addEventListener('keydown', onInputKey);
   document.addEventListener('keydown', onGlobalKey);
-  wireChips(byId('suggestChips'));
+  wireChips(els.chips);
+  wireChips(els.askNext);
+  wireTypingMode();
+}
+
+// html.typing while the prompt has focus (the chips hide on a touch screen).
+function wireTypingMode() {
+  const root = document.documentElement;
+  els.input.addEventListener('focus', () => root.classList.add('typing'));
+  els.input.addEventListener('blur', () => root.classList.remove('typing'));
 }
 
 // /new and /resume repaint the transcript through these, so the run view
@@ -234,10 +269,12 @@ function wrapRenderer() {
   window.Renderer.showWelcome = () => {
     runView.reset();
     showWelcome();
+    setSuggestions();
   };
   window.Renderer.showRestored = (state) => {
     runView.reset();
     showRestored(state);
+    setSuggestions();
   };
 }
 
@@ -263,8 +300,12 @@ function queryTrigger() {
   return params.get('q') || params.get('ask') || params.get('query') || '';
 }
 
+function urlTriggerText() {
+  return (window.location.hash && hashTrigger(window.location.hash)) || queryTrigger();
+}
+
 function checkURLTriggers() {
-  const text = (window.location.hash && hashTrigger(window.location.hash)) || queryTrigger();
+  const text = urlTriggerText();
   if (text) submit(text, { source: 'url' });
 }
 
@@ -285,13 +326,14 @@ function finishBoot() {
   booted = true;
   els.input.disabled = false;
   if (finePointer) els.input.focus({ preventScroll: true });
-  drainQueue();
+  if (!drainQueue()) setSuggestions();
 }
 
 // A failed load still opens the composer: the visitor sees what went wrong
 // and the tools that need no loaded data keep working.
 function failBoot(error) {
   console.error('[agent-ui] boot failed', error);
+  autoPending = false;
   store.dispatch({ type: 'MESSAGE_ADD', message: { role: 'error', type: 'text', content: BOOT_FAILED_NOTE, ts: '' } });
   finishBoot();
 }
@@ -303,9 +345,17 @@ function boot() {
   });
   Promise.all([window.Tools.loadFAQ(), window.KnowledgeBase.load()]).then(() => {
     if (store.restore()) window.Renderer.showRestored(store.getState());
-    else window.Renderer.showWelcome();
+    else showWelcomeAndAutoRun();
     checkURLTriggers();
   }, failBoot);
+}
+
+// The welcome's WELCOME_DONE drains the queue, so whether a chip was queued
+// is read before it paints.
+function showWelcomeAndAutoRun() {
+  autoPending = queued.length === 0 && !urlTriggerText();
+  window.Renderer.showWelcome();
+  if (autoPending) window.Router.handleInput(AUTO_QUESTION, AUTO_OPTIONS);
 }
 
 function showPlaceholder() {

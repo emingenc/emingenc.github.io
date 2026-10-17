@@ -11,6 +11,7 @@ import { uiEmit, uiGridEmit } from './bus.js';
 import { uiCommitSave } from './game-state.js';
 import { uiRenderApp, uiRenderKeepingFocus } from './app.js';
 import { uiObjectiveChanged } from './grid-objective.js';
+import { uiHudOutlived } from './grid-hud.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiJackIn } from './breach-flow.js';
 import { uiOpenLevelUp } from './screen-levelup.js';
@@ -233,7 +234,7 @@ uiHookEvent(app,{ event:result.event,pos:game.avatar.pos,from });
 const hurt = UI_TICKING_EVENTS.has(result.event.type) && uiActorsTick(app);
 const rerender = UI_STEP_HANDLERS[result.event.type](app,{ event:result.event,from,deliberate:result.deliberate });
 uiHookEntered(app,from);
-if (rerender || hurt) uiRenderKeepingFocus(app);
+if (rerender || hurt || uiHudOutlived(game)) uiRenderKeepingFocus(app);
 }
 
 export { uiApplyStepEvent, uiNearDir, uiOpenReadyLevelUp, uiLevelUpAfterRender, uiLevelUpAfter, uiFinaleRoute };

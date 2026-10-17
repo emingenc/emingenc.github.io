@@ -3,6 +3,7 @@
 // highlighted. The rows come from the knowledge files in index.astro
 // (#docWrap). Text only: nothing here takes HTML.
 import { make } from './dom.js';
+import { FILE_NAMES, lineRangeLabel } from './steps.js';
 
 function lineItem(row) {
   const item = make('li', row.hit ? 'hit' : '');
@@ -30,4 +31,13 @@ export function readFigure(meta, rows) {
   });
   figure.append(caption, list);
   return figure;
+}
+
+// The rows a source names, cited: the figure a tool's result line, a receipt
+// and a sources-row button each open. `by` is the caption's "read by".
+// page: {rowsFor(source), tokensFor(sources)}.
+export function citeFigure(page, by, source) {
+  const rows = page.rowsFor(source).map((row) => ({ line: row.line, text: row.text, hit: true }));
+  const range = lineRangeLabel(source.lines) || 'all lines';
+  return readFigure({ name: FILE_NAMES[source.file], range, tool: by, tok: page.tokensFor([source]) }, rows);
 }

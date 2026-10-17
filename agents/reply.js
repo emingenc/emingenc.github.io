@@ -15,7 +15,9 @@ var Reply;
   const CANNED_WORD_BASE_MS = 30;
   const CANNED_WORD_JITTER_MS = 20;
   const GENERATION_TIMEOUT_LINE = '─── generation timed out ───';
-  const UNSUPPORTED_ANSWER = 'I don\'t have enough verified information to answer that reliably.';
+  const GENERATION_FAILED_LINE = '─── generation failed: answered from the files ───';
+  const DRAFT_UNCHECKED_LINE = '─── could not check the draft: answered from the files ───';
+  const DRAFT_REJECTED_LINE = '─── checked against the files: draft not supported, replaced by the file answer ───';
 
   let store = null;
 
@@ -86,7 +88,7 @@ var Reply;
       const progress = state.models.llmDownloadProgress || 0;
       return replyFaqOr(turn, text, `Text generation model is downloading... (${progress}%). Try again soon.`);
     }
-    return replyFaqOr(turn, text, Tools.reducedModeMessage());
+    return replyFaqOr(turn, text, Tools.reducedModeMessage(text));
   }
 
   // ─── Loading allowed, model ready: stream a generation ─────────────────
@@ -104,14 +106,18 @@ var Reply;
     turn.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: Tools.contextExhaustedMessage(), ts: '' } });
   }
 
+  function sayLine(turn, content) {
+    turn.dispatch({ type: 'MESSAGE_ADD', message: { role: 'system', type: 'system', content, ts: '', noTs: true } });
+  }
+
   function onGenerationTimeout(turn, close) {
     close();
-    turn.dispatch({ type: 'MESSAGE_ADD', message: { role: 'system', type: 'system', content: GENERATION_TIMEOUT_LINE, ts: '', noTs: true } });
+    sayLine(turn, GENERATION_TIMEOUT_LINE);
     turn.end();
   }
 
-  // Rides into working memory as an OBSERVE, ahead of the grounded check, so
-  // the evaluator's compactErrors carries a generation error to the model.
+  // Rides into working memory as an OBSERVE, so the next turn's context
+  // carries a generation error.
   function observeGenerationError(turn, result) {
     if (!result?.error) return;
     turn.dispatch({ type: 'OBSERVE', tool: 'chat', satisfied: false, confidence: 0, error: result.error, reason: 'generation-error' });
@@ -132,8 +138,16 @@ var Reply;
       cancelTimeout();
       close();
       observeGenerationError(turn, result);
+      if (result?.error) return answerFromFilesAfterFailure(turn, text);
       groundedEvaluate(turn, { question: text, text: sink.text() });
     });
+  }
+
+  // No draft to check: the visitor gets the file answer and is told why.
+  function answerFromFilesAfterFailure(turn, text) {
+    turn.trace('chat → generation failed, answering from the files');
+    sayLine(turn, GENERATION_FAILED_LINE);
+    replyFaqOr(turn, text, Tools.faqFallback());
   }
 
   // ─── Grounded evaluation of a generated answer ─────────────────────────
@@ -142,7 +156,7 @@ var Reply;
       turn.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'llm-summary', content: `<div class="llm-summary">${escapeHtml(summary)}</div>`, ts: '' } });
       return;
     }
-    turn.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: faqContentOr(question, UNSUPPORTED_ANSWER), ts: '' } });
+    turn.dispatch({ type: 'MESSAGE_ADD', message: { role: 'agent', type: 'faq', content: faqContentOr(question, Tools.outOfScopeMessage(question)), ts: '' } });
   }
 
   function settleGroundedEvaluation(turn, answer, result) {
@@ -151,6 +165,7 @@ var Reply;
     const accepted = Boolean(result?.stop) && confidence >= GROUNDED_ACCEPT_CONFIDENCE &&
       Evaluator.groundedAgainstProfile(answer.text);
     turn.trace(`eval → ${accepted ? 'grounded pass' : 'replan'} · confidence ${confidence}`);
+    if (!accepted && answer.text.trim()) sayLine(turn, result?.checked === false ? DRAFT_UNCHECKED_LINE : DRAFT_REJECTED_LINE);
     dispatchGroundedReply(turn, answer.question, accepted ? result.summary : null);
     turn.trace(accepted ? 'stop → grounded summary ready' : 'stop → unsupported claim rejected');
     turn.end();

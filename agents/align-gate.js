@@ -166,5 +166,5 @@ var AlignmentGate;
     return pending ? settle(pending, text, intent) : Promise.resolve(keywordRedirect(text, defaultToolFor(intent)));
   }
 
-  AlignmentGate = { check };
+  AlignmentGate = { check, ALIGN_TIMEOUT_MS };
 }

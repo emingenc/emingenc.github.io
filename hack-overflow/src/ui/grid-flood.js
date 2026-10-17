@@ -1,17 +1,20 @@
 import { GAME_EVENT } from '../game/game-events.js';
 import { hasBeat } from '../game/ext/ops.js';
-import { floodAllowed } from '../game/power/flood.js';
+import { floodAllowed,floodSpec } from '../game/power/flood.js';
 import { uiGameBus } from './bus.js';
 import { uiRegisterShotToasts } from './grid-actors.js';
 import { uiDrawActors } from './grid-draw-actors.js';
 import { uiPaintFloodMarks,uiRegisterFloodPainter } from './grid-flood-draw.js';
-import { uiFloodLive,uiFloodOf,uiRunFlood,uiStandDown } from './grid-flood-run.js';
+import { uiFloodBusy,uiFloodLive,uiFloodOf,uiFloodOffered,uiFloodRing,uiHold,uiLetIt,uiOfferFlood,uiRunFlood,uiStandDown } from './grid-flood-run.js';
 import { uiHangFloodStrip } from './grid-flood-strip.js';
+import { uiInstallHeal } from './grid-heal.js';
 import { uiAddChips,uiPowerOf } from './grid-power.js';
 import { uiStoryClosed } from './story-dialogue.js';
 
 const BIT_TOASTS = { kill:{ text:'FLOOD BIT CUT',kind:'info' },dent:{ text:'FLOOD BIT HIT',kind:'info' } };
 const STAND_DOWN = { id:'flood-stand-down',label:'STAND DOWN',aria:'Stand down the write-protect flood',tone:'warn' };
+const HOLD = { id:'flood-hold',label:'HOLD',aria:'Hold the lock against the write-protect flood' };
+const LET_IT = { id:'flood-let-it',label:'LET IT',aria:'Let ROOT rewrite the lock',tone:'warn' };
 let uiBound = null;
 let uiHooked = false;
 
@@ -41,21 +44,22 @@ uiBusy:Boolean(app.story) || Boolean(game.travelOpen) || Boolean(app.menuOpen) |
 async function uiEnterFlood(app) {
 const game = app.game;
 const key = game.pendingFlood;
-const run = uiFloodOf(game);
-if (key && !(run && run.live) && (app.story || app.screen === 'levelup')) {
+const busy = uiFloodBusy(app);
+if (key && !busy && (app.story || app.screen === 'levelup')) {
 if (app.story) uiStoryClosed(app).then(() => uiEnterFlood(app));
 return false;
 }
 game.pendingFlood = null;
-if (!key || (run && run.live) || !uiFirstSolve(game,key) || !floodAllowed(uiGateState(app)).ok) return false;
-return uiRunFlood(app,key);
+if (!key || busy || !uiFirstSolve(game,key) || !floodAllowed(uiGateState(app)).ok) return false;
+if (!game.drawActors) game.drawActors = uiDrawActors;
+return hasBeat(game.ext,floodSpec.beat) ? uiOfferFlood(app,key) :uiRunFlood(app,key);
 }
 function uiPaintMarks(ctx,app,frame) {
 const game = app.game;
 const cellOf = (key) => game.world.terminals[key];
 const held = (game.ext.held || []).filter((key) => Object.hasOwn(game.world.terminals,key)).map(cellOf);
 const run = uiFloodOf(game);
-uiPaintFloodMarks(ctx,frame,{ held,run:run && run.live ? { cell:cellOf(run.key),rewrites:run.rewrites } :null });
+uiPaintFloodMarks(ctx,frame,{ held,run:run && run.live ? { cell:cellOf(run.key),rewrites:run.rewrites } :null,ring:uiFloodRing(app) });
 }
 function uiWrapPaint(game) {
 const inner = game.drawCast;
@@ -70,13 +74,19 @@ game.drawCast = paint;
 function uiInstallFlood(app) {
 const game = app.game;
 uiBindBus(app);
+if (uiPowerOf(game).floodHung) return;
+uiPowerOf(game).floodHung = true;
+uiInstallHeal(app);
 uiRegisterShotToasts('flood',BIT_TOASTS);
 uiRegisterFloodPainter();
 if (!game.drawActors) game.drawActors = uiDrawActors;
 uiWrapPaint(game);
-uiHangFloodStrip(game,{ live:uiFloodLive,standDown:uiStandDown });
+uiHangFloodStrip(game,{ live:uiFloodLive,offered:uiFloodOffered,standDown:uiStandDown,hold:uiHold,letIt:uiLetIt });
 uiPowerOf(game).flood = null;
-uiAddChips(game,(shown) => (uiFloodLive(shown) ? [{ ...STAND_DOWN,run:uiStandDown }] :[]));
+uiAddChips(game,(shown) => {
+if (uiFloodOffered(shown)) return [{ ...HOLD,run:uiHold },{ ...LET_IT,run:uiLetIt }];
+return uiFloodLive(shown) ? [{ ...STAND_DOWN,run:uiStandDown }] :[];
+});
 }
 
 export { uiEnterFlood,uiInstallFlood };

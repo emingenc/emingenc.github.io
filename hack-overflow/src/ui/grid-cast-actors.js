@@ -1,6 +1,6 @@
 import { registerActorKind } from '../game/actors.js';
 import { CRATE_TOASTS,crateActors,commitActive } from '../game/cast/patch.js';
-import { SENTINEL_CELL,SENTINEL_ID,SHOT_TOASTS,SHOW_RANGE,nearSentinel,sentinelDue } from '../game/cast/refusal.js';
+import { LINE_SENTINEL,SENTINEL_CELL,SENTINEL_ID,SHOT_TOASTS,SHOW_RANGE,nearSentinel,sentinelDue } from '../game/cast/refusal.js';
 import { isLine } from '../game/opening.js';
 import { createSentinel } from '../game/sentinel.js';
 import { ensureFight,uiRegisterShotToasts } from './grid-actors.js';
@@ -39,7 +39,7 @@ return sentinelDue(game.ext,facts) && Boolean(game.sentry) && !game.opening && n
 }
 function uiStandSentinel(game) {
 ensureFight(game);
-if (!uiHas(game,SENTINEL_ID)) game.fight.actors = [...game.fight.actors,createSentinel({ id:SENTINEL_ID,...SENTINEL_CELL })];
+if (!uiHas(game,SENTINEL_ID)) game.fight.actors = [...game.fight.actors,createSentinel({ id:SENTINEL_ID,...SENTINEL_CELL,...(isLine(game.ext) ? LINE_SENTINEL :{}) })];
 uiTakeMiteB(game);
 }
 function uiClearSentinel(game) {

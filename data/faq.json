@@ -25,7 +25,7 @@
             "BSc Aerospace Engineering",
             "Self-taught developer",
             "Former Air Defense Officer",
-            "249+ GitHub stars · 47 repos"
+            "250+ GitHub stars · 46 repos"
           ]
         }
       ]
@@ -41,7 +41,7 @@
         "★6   llm_adaptive_router — LLM routing",
         "★4   smart_glass_mcp — AI connector"
       ],
-      "footer": "github.com/emingenc — 47 repos"
+      "footer": "github.com/emingenc — 46 repos"
     },
     "contact": {
       "title": "CONNECT",
@@ -148,6 +148,7 @@
     {
       "q": "How are you?",
       "keywords": [
+        "how are u",
         "how are you",
         "how do you do",
         "how's it going",
@@ -168,7 +169,15 @@
         "cheers",
         "grateful",
         "thnx",
-        "thank u"
+        "thank u",
+        "thanks so much",
+        "thanks a lot",
+        "thanks very much",
+        "thanks again",
+        "thank you so much",
+        "thank you very much",
+        "much appreciated",
+        "appreciate it"
       ],
       "a": "You're welcome! Anything else you'd like to know about Emin's work?"
     },
@@ -196,7 +205,10 @@
         "laugh",
         "pun",
         "make me laugh",
-        "tell joke"
+        "tell joke",
+        "tell me a joke",
+        "tell a joke",
+        "joke about"
       ],
       "a": "Why did the AI engineer bring a ladder to work? They heard the models needed <i>higher</i> accuracy! 😄<br><br>Want to hear about Emin's actual work? Try /about or /repos."
     },
@@ -236,7 +248,7 @@
         "tell me about emin",
         "who is emin gench"
       ],
-      "a": "<b>Emin Gench</b> is based in Vancouver, BC, and works as a Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a>. Self-taught developer, BSc Aerospace Engineering, former Air Defense Officer. 47 open source repos, 249+ GitHub stars."
+      "a": "<b>Emin Gench</b> is based in Vancouver, BC, and works as a Forward Deployed AI Engineer at <a href='https://cresta.com' target='_blank'>Cresta AI</a>. Self-taught developer, BSc Aerospace Engineering, former Air Defense Officer. 46 open source repos, 250+ GitHub stars."
     },
     {
       "q": "What does Emin do?",
@@ -354,7 +366,28 @@
         "available",
         "looking for",
         "opportunity",
-        "hire emin"
+        "hire emin",
+        "hireable",
+        "are you hiring",
+        "open to hire",
+        "available for hire",
+        "co-founder",
+        "cofounder",
+        "co-founding",
+        "cofounding",
+        "founding engineer",
+        "looking for work",
+        "new role",
+        "opportunities",
+        "can i hire",
+        "hire him",
+        "open for work",
+        "open for hire",
+        "is he available",
+        "is emin available",
+        "are you available",
+        "is he hiring",
+        "is emin hiring"
       ],
       "a": "Reach him on <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>. Open to open-source and smart-glasses projects. Not taking new roles. <b>Currently at Cresta AI.</b>"
     },
@@ -420,7 +453,7 @@
         "all repos",
         "all projects"
       ],
-      "a": "<b>47 repos, 249+ GitHub stars.</b> Top: even_glasses (★78), telegramGPT (★52), G1 Voice AI (★25), g1_flutter (★18), visionlink (★11). Full list: <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
+      "a": "<b>46 repos, 250+ GitHub stars.</b> Top: even_glasses (★78), telegramGPT (★52), G1 Voice AI (★25), g1_flutter (★18), visionlink (★11). Full list: <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
     },
     {
       "q": "Most popular project?",
@@ -444,7 +477,7 @@
         "code",
         "github profile"
       ],
-      "a": "<a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a> — 47 repos, 249+ stars."
+      "a": "<a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a> — 46 repos, 250+ stars."
     },
     {
       "q": "Star count?",
@@ -455,7 +488,7 @@
         "total stars",
         "star count"
       ],
-      "a": "<b>249+ total</b> across 47 repositories."
+      "a": "<b>250+ total</b> across 46 repositories."
     },
     {
       "q": "telegramGPT?",
@@ -818,7 +851,7 @@
         "contribute open source",
         "github career"
       ],
-      "a": "<b>Very important.</b> Emin's 47 repos are his portfolio. Open source demonstrates skills, attracts opportunities, builds reputation. Even small contributions show you can read code and collaborate."
+      "a": "<b>Very important.</b> Emin's 46 repos are his portfolio. Open source demonstrates skills, attracts opportunities, builds reputation. Even small contributions show you can read code and collaborate."
     },
     "══════ BLOG ══════",
     {
@@ -915,7 +948,13 @@
         "contract",
         "consult",
         "gig",
-        "freelance work"
+        "freelance work",
+        "consulting work",
+        "contract work",
+        "do contract work",
+        "freelancer",
+        "freelancing",
+        "consultant"
       ],
       "a": "Reach him on <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>. Open to open-source and smart-glasses projects. Not taking new roles. <b>Full-time at Cresta AI.</b>"
     },
@@ -983,7 +1022,14 @@
         "how does this page",
         "how do you work",
         "how are you built",
-        "how it works"
+        "how it works",
+        "the router",
+        "your router",
+        "agent loop",
+        "your architecture",
+        "explain your architecture",
+        "needle",
+        "smollm2"
       ],
       "a": "<b>Two small models and a few tools, all in this tab.</b><ol><li><b>Route.</b> Needle (26M parameters) reads your question and picks a tool. Site questions like this one go straight to this FAQ.</li><li><b>Read.</b> The tool reads Emin's own files: career, repos, skills, posts and this FAQ. Ask about Emin's work, then tap the file name under a tool call to see the lines it read.</li><li><b>Check.</b> SmolLM2 (360M parameters) helps check the plan and the result, and handles small talk. A reply that claims something Emin's files don't say is dropped.</li></ol><p>Both run in your browser: Needle on WASM, SmolLM2 on WebGPU (or WASM). <b>0 servers, 0 API calls, zero tracking.</b></p><p>26M + 360M parameters, over 7,000× smaller than Kimi K3 (2.8 trillion). Not the size, it's how you use it. (But seriously, 26M params 🫠)</p>"
     },
@@ -1111,7 +1157,7 @@
         "cresta company",
         "about cresta"
       ],
-      "a": "<a href='https://cresta.com' target='_blank'>Cresta</a> is the leading generative AI platform for customer experience — turning every conversation into a competitive advantage. Its platform gives frontline teams real-time AI coaching during live conversations, powers fully autonomous AI Voice and Chat Agents, analyzes millions of conversations with AI, and translates across 30+ languages in real time. Fortune 500 customers include Intuit, Hilton, Cox, and Alaska Airlines. Founded by Stanford AI researchers, backed by Sequoia, a16z, and Greylock."
+      "a": "<a href='https://cresta.com' target='_blank'>Cresta</a> is the leading generative AI platform for customer experience — turning every conversation into a competitive advantage. Its platform gives frontline teams real-time AI coaching during live conversations, powers fully autonomous AI Voice and Chat Agents, analyzes millions of conversations with AI, and translates across 30+ languages in real time. Customers include Fortune 500 companies such as Intuit, Hilton and Alaska Airlines, and Cox. Founded by Stanford AI researchers, backed by Sequoia, a16z, and Greylock."
     },
     {
       "q": "Role at Cresta?",
@@ -1490,6 +1536,31 @@
       ],
       "a": "Treats prompts as <b>code</b> — versioned, tested, iterated. Structured prompts, clear instructions, few-shot examples. Measures by task performance, not vibes."
     },
+    {
+      "q": "Prompt injection?",
+      "keywords": [
+        "ignore instructions",
+        "disregard instructions",
+        "forget instructions",
+        "ignore all",
+        "ignore your",
+        "ignore previous",
+        "ignore prior",
+        "disregard all",
+        "disregard your",
+        "disregard previous",
+        "disregard prior",
+        "forget all",
+        "forget your",
+        "forget previous",
+        "forget prior",
+        "your system prompt",
+        "your hidden prompt",
+        "jailbreak",
+        "developer mode"
+      ],
+      "a": "Telling me to ignore my instructions does not change what I do. Your question goes to a fixed set of tools and I answer from Emin's published notes. There is nothing hidden to extract: my prompts are plain files that ship with this page, under <code>/agents/prompts/</code>. For how it all fits together, tap <span class=\"cmd-link\" onclick=\"window.quickCmd('How does this work?')\" style=\"color:var(--accent);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px\">How does this work?</span>"
+    },
     "══════ TURKISH ══════",
     {
       "q": "Türkçe?",
@@ -1583,7 +1654,7 @@
         "neler yaptı",
         "calismalari"
       ],
-      "a": "47 GitHub deposu, 249+ yıldız. telegramGPT, llm_adaptive_router, harness-engineering. <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
+      "a": "46 GitHub deposu, 250+ yıldız. telegramGPT, llm_adaptive_router, harness-engineering. <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
     },
     {
       "q": "İletişim?",
@@ -1720,7 +1791,7 @@
         "what do you know",
         "abilities"
       ],
-      "a": "I answer questions about <b>Emin Gench:</b> career, 47 repos, tech skills, education, military background, blog, contact. Commands: /about, /repos, /contact, /skills, /blog, /help."
+      "a": "I answer questions about <b>Emin Gench:</b> career, 46 repos, tech skills, education, military background, blog, contact. Commands: /about, /repos, /contact, /skills, /blog, /help."
     },
     "══════ RECRUITER ══════",
     {
@@ -1789,7 +1860,7 @@
         "recommendation",
         "character reference"
       ],
-      "a": "His work is the reference: 47 repos, 249+ stars, clear career progression. GitHub + LinkedIn are best professional references."
+      "a": "His work is the reference: 46 repos, 250+ stars, clear career progression. GitHub + LinkedIn are best professional references."
     },
     {
       "q": "Remote?",
@@ -1875,7 +1946,7 @@
         "fun",
         "life outside"
       ],
-      "a": "Building — 47 repos show this is both work and passion. Background suggests interests in aviation, defense tech, and continuous learning. Genuinely enjoys the craft of engineering."
+      "a": "Building — 46 repos show this is both work and passion. Background suggests interests in aviation, defense tech, and continuous learning. Genuinely enjoys the craft of engineering."
     },
     {
       "q": "Personality?",
@@ -2081,7 +2152,7 @@
       "Hmm, not sure about that. I'm specialized in Emin's career, projects, and skills. Try asking about Cresta AI, open source, or his self-taught journey.",
       "That's outside my knowledge. Try: /about, /repos, /contact, /skills, or /blog.",
       "I don't know that, but I'm great at questions about Emin Gench! Ask about his career, projects, or background.",
-      "Can't help with that, unfortunately. But I can tell you about Emin's 47 repos, his FDE role, or his aerospace-to-AI transition."
+      "Can't help with that, unfortunately. But I can tell you about Emin's 46 repos, his FDE role, or his aerospace-to-AI transition."
     ]
   },
   "welcome": {

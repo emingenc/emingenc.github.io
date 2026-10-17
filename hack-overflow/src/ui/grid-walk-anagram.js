@@ -1,8 +1,8 @@
 import { questState } from '../game/ext/ops.js';
 import { STAGE } from '../game/quest/quests.js';
-import { BIN_SIZE,BINS,QUEST_ID,TEXT,binCount,binOf,crateOf,crateStanding,dropInto,newState,pickUp,solidsOf } from '../game/walk/anagram.js';
+import { BIN_SIZE,BINS,QUEST_ID,TEXT,binCount,binOf,dropInto,handTag,newState,solidsOf } from '../game/walk/anagram.js';
 import { uiHooksOnce,uiPowerOf,uiPowerSay } from './grid-power.js';
-import { uiPropGuard,uiQuestLive,uiQuestMarks,uiQuestPaint,uiQuestSay } from './grid-quest-kit.js';
+import { uiPropGuard,uiQuestLive,uiQuestPaint,uiQuestSay } from './grid-quest-kit.js';
 import { uiRect } from './grid-quest-marks.js';
 import { uiSpotOf } from './grid-spot.js';
 import { uiQuestEvent } from './quest-run.js';
@@ -25,12 +25,7 @@ if (!power.anagram) power.anagram = newState();
 return power.anagram;
 }
 function uiSolids(app) {
-const board = uiBoardOf(app.game);
-return board ? solidsOf(board) :[];
-}
-function uiCrateMarks(app) {
-const board = uiBoardOf(app.game);
-return board ? crateStanding(board).map((crate) => ({ kind:'number',col:crate.col,row:crate.row,n:crate.word,tone:'amber' })) :[];
+return uiBoardOf(app.game) ? solidsOf() :[];
 }
 function uiText(ctx,box) {
 ctx.font = Math.round(box.size) + FONT;
@@ -59,14 +54,14 @@ if (pip >= spot.count) uiRect(ctx,{ left:box.left + BIN_EDGE,top:box.top + BIN_E
 }
 function uiPaintCarried(ctx,app,frame) {
 const board = uiBoardOf(app.game);
-const crate = board && crateOf(board.carry);
-const spot = crate && uiSpotOf(app.game.avatar.pos,frame);
+const tag = board && handTag(board);
+const spot = tag && uiSpotOf(app.game.avatar.pos,frame);
 if (!spot) return;
 const tile = frame.tile;
 const left = spot.left + tile * TAG.inset;
 const top = spot.top - tile * TAG.rise;
 uiRect(ctx,{ left,top,width:tile * (1 - TAG.inset * 2),height:tile * TAG.height,colour:frame.palette.amber });
-uiText(ctx,{ left:spot.left + tile * HALF,top:top + tile * TAG.height * HALF,size:tile * TAG.size,colour:frame.palette.bg,text:crate.word });
+uiText(ctx,{ left:spot.left + tile * HALF,top:top + tile * TAG.height * HALF,size:tile * TAG.size,colour:frame.palette.bg,text:tag });
 }
 function uiPaintBoard(ctx,app,frame) {
 const board = uiBoardOf(app.game);
@@ -79,10 +74,6 @@ uiPaintCarried(ctx,app,frame);
 }
 function uiSay(app,text) {
 uiPowerSay(app,{ text });
-}
-function uiTake(app,board,crateId) {
-uiPowerOf(app.game).anagram = pickUp(board,crateId);
-uiSay(app,TEXT.crate(crateOf(crateId).word));
 }
 async function uiBinFull(app) {
 const result = await uiQuestEvent(app,QUEST_ID,{ kind:'progress' });
@@ -104,7 +95,7 @@ uiSay(app,TEXT.binCount(bin.key,drop.count));
 if (drop.count >= BIN_SIZE) await uiBinFull(app);
 }
 async function uiBinBump(app,board,bin) {
-if (board.carry) await uiDrop(app,board,bin);
+if (board.hand.length) await uiDrop(app,board,bin);
 else uiSay(app,TEXT.binCode(bin.key));
 }
 function uiOnBump(info) {
@@ -113,13 +104,11 @@ const prop = info.event && info.event.prop;
 if (!prop || !uiQuestLive(app)) return;
 const board = uiBoardOf(app.game);
 if (!board) return;
-if (crateOf(prop)) uiTake(app,board,prop);
-else if (binOf(prop)) uiBinBump(app,board,binOf(prop)).catch(console.error);
+if (binOf(prop)) uiBinBump(app,board,binOf(prop)).catch(console.error);
 }
 const uiHook = uiHooksOnce({ bump:uiOnBump });
 function uiInstallAnagram(app) {
 uiPropGuard(app,uiSolids);
-uiQuestMarks(app,uiCrateMarks);
 uiQuestPaint(app,uiPaintBoard);
 uiHook();
 }

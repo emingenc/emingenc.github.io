@@ -3,6 +3,7 @@ import { withPosition } from '../game/save.js';
 import { uiPrefersReducedMotion } from './dom.js';
 import { uiCommitSave } from './game-state.js';
 import { uiShowToast } from './grid-toast.js';
+import { uiSpeaking } from './grid-speech.js';
 import { uiRenderKeepingFocus } from './app.js';
 
 const POLL_MS = 100;
@@ -24,7 +25,7 @@ function uiCastStill(app) {
 return uiCastUntil(app,function () { return !uiWalking(app); });
 }
 function uiToastFree(game) {
-return !game.toast && (!game.toastQueue || game.toastQueue.length === 0);
+return !game.toast && (!game.toastQueue || game.toastQueue.length === 0) && !uiSpeaking();
 }
 async function uiCastSay(app,toast) {
 await uiCastUntil(app,function () { return uiToastFree(app.game); });

@@ -7,6 +7,8 @@
 // alignment gate accepts. LoopPolicy turns that decision into a plan and the
 // orchestrator runs it. Turn owns every turn from begin() to its end, so
 // input that arrives while one runs is dropped: agent-ui has queued it.
+// The page's first turn is {source: 'auto', tool}: it names its tool, so it
+// skips the classifier, and it only ever asks a question.
 'use strict';
 
 var Router;
@@ -16,6 +18,9 @@ var Router;
   const FAST_PATH_CONFIDENCE = 100;
   const FAST_PATH_REASON = 'knowledge fast-path';
   const FAST_PATH_LABEL = 'routing';
+  const AUTO_REASON = 'auto-run on load';
+  // The page's own first turn leaves the follow-up memory alone and plans in silence.
+  const AUTO_OPTIONS = Object.freeze({ auto: true, remember: false });
   const CLASSIFY_LABEL = 'thinking...';
   const SESSIONS_LABEL = 'listing sessions';
   const SESSIONS_DELAY_MS = 200;
@@ -26,7 +31,7 @@ var Router;
   let store = null;
 
   const addMessage = (message) => ({ type: 'MESSAGE_ADD', message });
-  const userSays = (content) => addMessage({ role: 'user', type: 'text', content, ts: '' });
+  const userSays = (content, extra) => addMessage({ role: 'user', type: 'text', content, ts: '', ...extra });
   const errorSays = (content) => addMessage({ role: 'error', type: 'text', content, ts: '' });
   const agentSays = (content) => addMessage({ role: 'agent', type: 'faq', content, ts: '' });
   const systemSays = (content) => addMessage({ role: 'system', type: 'system', content, ts: '', noTs: true });
@@ -38,7 +43,8 @@ var Router;
   // run-view files a visitor line that arrives while the chooser is open as
   // the paused turn's answer step. A slash command closes the chooser and
   // runs like any other input.
-  function handleInput(text, { source } = {}) {
+  function handleInput(text, { source, tool } = {}) {
+    if (source === 'auto') return autoRun(text, tool);
     if (Turn.isPaused()) {
       if (!Tools.isSlash(text)) return answerChooser(text);
       Turn.abandon();
@@ -49,6 +55,20 @@ var Router;
     if (source === 'url' && Tools.isDestructiveCommand(text)) return refuseLink(turn, text);
     if (Tools.isSlash(text)) return runCommand(turn, text);
     return routeQuestion(turn, text);
+  }
+
+  // An auto-run names its tool, is no command, and never takes over a turn
+  // or answers a chooser: it is refused, without a trace, in any of those.
+  const mayAutoRun = (text, tool) => Boolean(tool) && !Tools.isSlash(text) && !Turn.isPaused() && !Turn.isBusy();
+
+  // The page asks its own question, with the tool named: the classifier's
+  // model is not ready at load, and no command ever runs this way.
+  function autoRun(text, tool) {
+    if (!mayAutoRun(text, tool)) return;
+    const turn = Turn.begin();
+    turn.dispatch(userSays(text, { auto: true }));
+    turn.busy('classifying', FAST_PATH_LABEL);
+    runLoop(turn, text, { tool, confidence: FAST_PATH_CONFIDENCE, reason: AUTO_REASON }, AUTO_OPTIONS);
   }
 
   function answerChooser(text) {
@@ -208,8 +228,9 @@ var Router;
 
   // LoopPolicy turns the decision into a plan, adding the other tools a
   // compound question names, and the orchestrator runs the turn from there.
-  function runLoop(turn, text, decision) {
-    Orchestrator.run(turn, text, LoopPolicy.planFor(text, decision));
+  // eslint-disable-next-line max-params -- signature predates this change
+  function runLoop(turn, text, decision, opts) {
+    Orchestrator.run(turn, text, LoopPolicy.planFor(text, decision), opts);
   }
 
   // ─── Wiring ──────────────────────────────────────────────────────────────

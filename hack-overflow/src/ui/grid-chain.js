@@ -8,17 +8,18 @@ import { VOLLEY } from '../game/power/volley.js';
 import { STEPS,activeSteps,caseOpen,chainOutcome,leadsOut,nextHint,payoff } from '../game/quest/first-bad-commit.js';
 import { cellAt,isPassable } from '../game/world.js';
 import { uiRenderApp } from './app.js';
+import { uiGridClaim } from './bus.js';
 import { uiCosmeticEnter } from './cosmetic-pay.js';
 import { uiCommitExt } from './ext-storage.js';
-import { uiOrdealSheet } from './grid-ordeal-sheet.js';
-import { uiHooksOnce } from './grid-power.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiWalkReleaseAll } from './grid-walk.js';
 import { uiLinkStyle } from './lazy-style.js';
 import { uiPayRank } from './rank-pay.js';
-import { uiStoryChoice } from './story-dialogue.js';
+import { uiQuestRoute,uiQuestTravel } from './quest-travel.js';
+import { uiRefreshPill } from './rank-hud.js';
 
 const STYLE_HREF = 'styles/lazy/grid-chain.css';
+const CARD_HREF = 'styles/lazy/grid-chain-card.css';
 const STEP_RANK = 10;
 const GIVER_CELLS = Object.freeze({
 tally:[TALLY_CELL],
@@ -53,32 +54,37 @@ function uiStepFaced(game) {
 const faced = uiFaced(game);
 return uiChainOwed(game).find((step) => uiChainCellsOf(step).some((cell) => cell.col === faced.col && cell.row === faced.row)) || null;
 }
-function uiIntroSheet(step) {
-return {
-id:'chain-' + step.id,lines:step.intro.map((line) => ({ ...line })),
-choices:[{ id:'open',label:'OPEN CASE FILE' },{ id:'later',label:'NOT NOW',default:true }],
-};
-}
-function uiFoundSheet(step) {
-return { id:'chain-found-' + step.id,lines:[{ ...step.found }],choices:[{ id:'ok',label:'FILE IT' }] };
-}
-function uiPayoffSheet() {
-return { id:'chain-payoff',lines:payoff.lines.map((line) => ({ ...line })),choices:[{ id:'ok',label:'CASE CLOSED' }] };
-}
 async function uiRunPanel(app,state,step) {
-const [ui] = await Promise.all([import('./grid-chain-panel.js'),uiLinkStyle(STYLE_HREF)]);
+const closes = chainOutcome(app.game.ext,step.bit).payoff;
+const [ui] = await Promise.all([import('./grid-chain-panel.js'),uiLinkStyle(STYLE_HREF),closes ? uiLinkStyle(CARD_HREF) :null]);
 return new Promise(function (resolve) {
 uiWalkReleaseAll(app);
 app.game.walk.plan = null;
-state.panel = { step,puzzle:step.puzzle.start(),said:'',done:false,ui,close:function (won) {
+const panel = { step,puzzle:step.puzzle.start(),said:'',done:false,closes:false,next:null,filing:null,ui,close:function () {
 state.panel = null;
 app.lastFocusKey = 'grid-stage';
 uiRenderApp(app);
-resolve(won);
-} };
+resolve(panel);
+},onSolve:function () { uiChainSolved(app,panel); } };
+state.panel = panel;
 app.lastFocusKey = 'chain-cell-0';
 uiRenderApp(app);
 });
+}
+function uiLeadTo(app,panel,lead) {
+panel.close();
+uiQuestTravel(app,uiChainCellsOf(lead)[0]);
+}
+function uiNextLead(app,step) {
+const owed = uiChainOwed(app.game).filter((item) => item.id !== step.id);
+return owed.find((item) => uiQuestRoute(app,uiChainCellsOf(item)[0])) || owed[0] || null;
+}
+function uiChainSolved(app,panel) {
+const step = panel.step;
+const lead = uiNextLead(app,step);
+panel.closes = chainOutcome(app.game.ext,step.bit).payoff;
+panel.next = lead ? { name:lead.name,go:() => uiLeadTo(app,panel,lead) } :null;
+panel.filing = uiChainFile(app,step);
 }
 async function uiChainSolve(app,step) {
 await uiPayRank(app,'fbc-' + step.id,STEP_RANK);
@@ -89,16 +95,11 @@ const out = outcome();
 if (out.ext !== app.game.ext) uiCommitExt(app,out.ext);
 return { firstTime:first.firstTime,payoff:first.payoff };
 }
-async function uiChainDone(app,state,step) {
-await uiOrdealSheet(app,uiFoundSheet(step));
-if (app.game.chain !== state) return;
+async function uiChainFile(app,step) {
 const result = await uiChainSolve(app,step);
-if (!result.payoff) {
-uiChainLeadsOut(app);
-return;
-}
-uiShowToast(app,{ text:'BADGE: ' + payoff.badgeName + ' . BIT wears the ' + payoff.cosmeticName,kind:'reward',replace:true });
-await uiOrdealSheet(app,uiPayoffSheet());
+await uiRefreshPill(app);
+if (result.payoff) uiShowToast(app,{ text:'BADGE: ' + payoff.badgeName + ' . BIT wears the ' + payoff.cosmeticName,kind:'reward',replace:true });
+return result;
 }
 function uiChainLeadsOut(app) {
 const line = leadsOut(app.game.ext);
@@ -111,15 +112,13 @@ if (!hint) return;
 state.hinted = true;
 uiShowToast(app,{ text:hint,kind:'info' });
 }
-async function uiChainPlay(app,state,step) {
-state.holding = true;
-if (await uiRunPanel(app,state,step)) await uiChainDone(app,state,step);
-}
 async function uiChainCase(app,state,step) {
 state.busy = true;
+state.holding = true;
 try {
-const pick = await uiStoryChoice(app,uiIntroSheet(step));
-if (app.game.chain === state && pick === 'open') await uiChainPlay(app,state,step);
+const panel = await uiRunPanel(app,state,step);
+const result = panel.filing ? await panel.filing :null;
+if (result && !result.payoff && app.game.chain === state) uiChainLeadsOut(app);
 } finally {
 state.holding = false;
 state.busy = false;
@@ -129,11 +128,18 @@ uiChainHint(app,state,step);
 function uiChainBump(info) {
 const app = info.app;
 const state = uiChainOf(app);
-if (!state || state.busy || app.screen !== 'grid' || app.story || (info.event && info.event.prop)) return;
+if (!state || state.busy || app.screen !== 'grid' || app.story || (info.event && info.event.prop)) return false;
 const step = uiStepFaced(app.game);
-if (step) uiChainCase(app,state,step).catch(console.error);
+if (!step) return false;
+uiChainCase(app,state,step).catch(console.error);
+return true;
 }
-const uiHook = uiHooksOnce({ bump:uiChainBump });
+let uiClaimed = false;
+function uiHook() {
+if (uiClaimed) return;
+uiClaimed = true;
+uiGridClaim('bump',uiChainBump);
+}
 function uiWrapPaint(game,state) {
 const inner = game.drawCast;
 if (inner && inner.isChain) return;
@@ -180,7 +186,15 @@ const state = uiChainOf(app);
 if (!state) return;
 uiCosmeticEnter(app);
 uiHangPanel(app.game);
-if (state.panel) state.panel.close(false);
+if (state.panel) state.panel.close();
+uiRefreshPill(app).catch(console.error);
 }
 
-export { GIVER_CELLS,STEP_RANK,uiChainActive,uiChainCellsOf,uiChainEnter,uiChainOf,uiChainOwed,uiChainSolve,uiInstallChain };
+function uiChainGoLead(app) {
+const state = uiChainOf(app);
+const lead = uiChainOwed(app.game)[0];
+if (!state || state.busy || app.story || app.game.ext.pin || !lead) return false;
+return uiQuestTravel(app,uiChainCellsOf(lead)[0]);
+}
+
+export { GIVER_CELLS,STEP_RANK,uiChainActive,uiChainCellsOf,uiChainEnter,uiChainGoLead,uiChainOf,uiChainOwed,uiChainSolve,uiInstallChain };

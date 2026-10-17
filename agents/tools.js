@@ -285,7 +285,7 @@ var Tools = (function() {
       '2016–20  Indie Game Dev (emdi_apps) — Founder',
       '',
       'BSc Aerospace Engineering · Turkish Air Force Academy',
-      '249+ GitHub stars · 47 repos',
+      '250+ GitHub stars · 46 repos',
       'Former Air Defense Officer'
     ];
     return { toolName: 'about', content: box('EMIN GENCH', items), data: null };
@@ -308,7 +308,33 @@ var Tools = (function() {
     return line;
   }
 
+  // The lead paragraph and receipts list for a lead + bullets answer: each
+  // bullet is a work.md row quoted with a button that opens that row. All
+  // text is escaped; the row number is forced to an integer.
+  function receiptsHtml(open, lead, bullets) {
+    var esc = Tools.html.escape;
+    var items = bullets.map(function(bullet) {
+      var row = parseInt(bullet.row, 10);
+      var tag = bullet.tag ? '<span class="tag">' + esc(bullet.tag) + '</span> ' : '';
+      return '<li>' + tag + '<span class="tx">' + esc(bullet.text) + '</span> ' +
+        '<button type="button" class="rc" data-receipt="' + row + '" aria-label="Source: work.md line ' + row + '">work.md:' + row + '</button></li>';
+    });
+    return '<p class="lead">' + esc(open + lead.text) + '</p><ul class="receipts">' + items.join('') + '</ul>';
+  }
+
+  // The answers that quote their rows: "his experience, with numbers" and
+  // the Cresta question, whose lead and bullets each cite a work.md row.
+  function receiptsReply(ctx) {
+    var data = ctx.data;
+    if (!data || !data.lead) return null;
+    if (data.type === 'outcomes') return receiptsHtml(ctx.open, data.lead, data.bullets || []);
+    var cresta = data.isCurrent && data.namedInQuestion && (data.bullets || []).length;
+    return cresta ? receiptsHtml(ctx.open, data.lead, data.bullets) : null;
+  }
+
   function reply(ctx) {
+    var receipts = receiptsReply(ctx);
+    if (receipts) return receipts;
     // Company prose replaces the generic bio only when the question named
     // that company (namesCompany above). Every other card is followed by
     // the generic bio: timeline, education, tech stack, blog post, or a
@@ -316,14 +342,17 @@ var Tools = (function() {
     if (ctx.data && ctx.data.namedInQuestion) {
       return aboutCompanyProse(ctx.data, ctx.isFollowUp);
     }
-    return ctx.open + 'Emin Gench is based in Vancouver, BC, and works as a <b>Forward Deployed AI Engineer at Cresta AI</b> — an AI builder with a B.Sc. in aerospace engineering from the Turkish Air Force Academy and a former Air Defense Officer; he works where systems thinking meets large language models. Before Cresta: Goodfintech (AI engineer), Vivoo (ML engineer), Novit AI (full-stack AI engineer), and indie game dev. He also builds open source — 249+ GitHub stars across 47 repos.';
+    return ctx.open + 'Emin Gench is based in Vancouver, BC, and works as a <b>Forward Deployed AI Engineer at Cresta AI</b> — an AI builder with a B.Sc. in aerospace engineering from the Turkish Air Force Academy and a former Air Defense Officer; he works where systems thinking meets large language models. Before Cresta: Goodfintech (AI engineer), Vivoo (ML engineer), Novit AI (full-stack AI engineer), and indie game dev. He also builds open source — 250+ GitHub stars across 46 repos.';
   }
 
-  var KEYWORDS = ['emin','gench','bio','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','resume','cv','who','work','job','role','career','background','experience','title','company','position','education','degree','history','past','worked','studied','teams','lead','manage','shipped','launched','delivered','location','living','based','school','university','built','made','opportunities','available','employer','yourself','him','his','study','he'];
+  // Routing keywords leave out pronouns and verbs every question carries
+  // ("he", "built", "work"): they made other answers print the bio too.
+  var ROUTE_KEYWORDS = ['emin','gench','bio','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','resume','cv','career','background','experience','education','degree','history','employer','worked','studied','school','university','yourself'];
+  var KEYWORDS = ROUTE_KEYWORDS.concat(['who','work','job','role','title','company','position','past','teams','lead','manage','shipped','launched','delivered','location','living','based','built','made','opportunities','available','study','him','his','he']);
 
   Tools.register('about', {
     run: runAbout,
-    routeKeywords: KEYWORDS,
+    routeKeywords: ROUTE_KEYWORDS,
     reply: reply,
     meta: { description: 'Emin Gench biography, career, current role at Cresta AI', keywords: KEYWORDS, scopeWords: ['emin','gench','archangel','goodfintech','vivoo','novit','cresta','aerospace','fde','vancouver','career','role','job','work','title','position','company','employer','background','experience','education','degree','school','university','history','past','worked','studied','lead','manage','team','shipped','launched','delivered','built','made','location','based','living','available','opportunities','engineer','resume','cv','bio','his','him','he','yourself','study'], selfContained: true, category: 'discover', params: {} }
   });
@@ -351,7 +380,7 @@ var Tools = (function() {
       return '*' + repo.stars + '  ' + link(url, repo.name, 'repo-link') + ' — ' + repo.desc;
     });
     lines.push('');
-    lines.push(link('https://github.com/emingenc', 'github.com/emingenc — 47 repos', 'repo-link'));
+    lines.push(link('https://github.com/emingenc', 'github.com/emingenc — 46 repos', 'repo-link'));
     return {
       toolName: 'repos',
       content: box('OPEN SOURCE', lines),
@@ -360,7 +389,7 @@ var Tools = (function() {
   }
 
   function reply(ctx) {
-    return ctx.open + 'He has <b>47 repositories</b> and <b>249+ GitHub stars</b>. The one people find first: <b>even_glasses</b> — a smart-glasses integration platform (78★ and counting), plus <b>telegramGPT</b> (52★) and a voice AI assistant (25★).';
+    return ctx.open + 'He has <b>46 repositories</b> and <b>250+ GitHub stars</b>. The one people find first: <b>even_glasses</b> — a smart-glasses integration platform (78★ and counting), plus <b>telegramGPT</b> (52★) and a voice AI assistant (25★).';
   }
 
   var KEYWORDS = ['repos','repo','github','project','code','open source','built','star','repository','portfolio','contribution','deploy','deployment','pipeline','infra','devops','ci/cd','docs','documentation','apps','applications','features','PR','pull request','patch','commit'];
@@ -827,7 +856,7 @@ var Tools = (function() {
       'This entire website runs AI models locally in your browser. No servers!',
       'Emin taught himself to code while serving as an Air Defense Officer.',
       'The G1 smart glasses ecosystem spans 6 repos across 5 programming languages.',
-      '249+ GitHub stars earned through open source, not marketing.',
+      '250+ GitHub stars earned through open source, not marketing.',
       'Emin has a BSc in Aerospace Engineering — literally rocket science.',
       faqFact,
       'The optional chat model (SmolLM2-360M) is a 278 MB download (369 MB without WebGPU) and runs entirely in your browser.',
@@ -1148,12 +1177,12 @@ var Tools = (function() {
     var FAQ = Tools.getFAQ();
     if (!FAQ || !FAQ.faq) return null;
     var l = text.toLowerCase();
-    var best = null, bestScore = 0, bestSpecific = false;
+    var best = null, bestScore = 0, bestLongest = 0;
 
     for (var f = 0; f < FAQ.faq.length; f++) {
       var kws = FAQ.faq[f].keywords;
       if (!kws) continue;
-      var score = 0, specific = false;
+      var score = 0, specific = false, longest = 0;
       for (var k = 0; k < kws.length; k++) {
         var kw = kws[k];
         var hit = false;
@@ -1167,26 +1196,29 @@ var Tools = (function() {
           hit = true;
         }
         // A keyword outside fuzzyMatch's generic filler list (STOP_WORDS) names
-        // something specific — used below to break ties between two entries
-        // that scored equally (e.g. "today" vs "weather" for a weather question).
+        // something specific.
         if (hit && !STOP_WORDS[kw]) specific = true;
+        if (hit && kw.length > longest) longest = kw.length;
       }
-      // On a tie the entry with a specific-keyword hit wins, instead of
-      // whichever entry happens to sit earlier in the array.
-      if (score > bestScore || (score === bestScore && score > 0 && specific && !bestSpecific)) {
-        bestScore = score; best = FAQ.faq[f]; bestSpecific = specific;
+      // A match built entirely out of generic filler words (e.g. a bare "who"
+      // or "you" hitting "Who are you?") isn't a real signal — same reasoning
+      // as fuzzyMatch's solo-signal guard. Without this, "Who won the last
+      // Super Bowl?" got answered as if it were about Emin, and "does he do
+      // consulting" scored 3 on "do" for "What does Emin do?", outranking
+      // "Freelance?". Such an entry is never a candidate.
+      if (!specific) continue;
+      // On a tie the entry whose longest matched keyword is longer wins
+      // ("how are you" over "hi"), instead of whichever entry happens to sit
+      // earlier in the array.
+      var ties = score === bestScore && score > 0;
+      if (score > bestScore || (ties && longest > bestLongest)) {
+        bestScore = score; best = FAQ.faq[f]; bestLongest = longest;
       }
     }
 
     // Lower threshold for short queries (single keyword is enough for "bye"/"thanks")
     var minScore = text.length < 30 ? 1 : 2;
-    // A match built entirely out of generic filler words (e.g. a bare "who" or
-    // "you" hitting "Who are you?") isn't a real signal — same reasoning as
-    // fuzzyMatch's solo-signal guard. Without this, an off-topic question like
-    // "Who won the last Super Bowl?" cleared the score threshold on "who" alone
-    // and got answered as if it were about Emin. Requiring one specific-keyword
-    // hit still allows every existing entry (none rely purely on filler words).
-    if (best && bestScore >= minScore && bestSpecific) {
+    if (best && bestScore >= minScore) {
       return { toolName: 'faq', content: '<div class="faq-response">' + best.a + '</div>', data: null };
     }
     return null;
@@ -1204,42 +1236,87 @@ var Tools = (function() {
   // classifier misroutes these ('tools on this site' → skills, 'learning hub'
   // → chat/LLM, 'is there a blog?' → chat/LLM), which produces wrong answers
   // or stalls. Matching these BEFORE classification guarantees the FAQ answer.
+  //
+  // The later patterns catch what no tool can answer (injection, thanks, a
+  // joke, hello, hiring, the router): Needle's keywords sent those to a stray
+  // tool or the chat model. A greeting or thanks counts only as the whole
+  // message, so "hi, show me your repos" still reaches /repos.
+  var FAST_PATH_PATTERNS = [
+    // Site tools (NOT Emin's tech stack — those still go to skills). A bare
+    // "tools are" also matches the tech-stack questions "what tools are in
+    // his stack" and "what tools are you best at", so "tools are" counts
+    // only before "on this site/page/website" or "here".
+    /tools (on|here|available|does this)|tools are (available )?(on this (site|page|website)|here)\b|site tools|list of tools|tool list/,
+    // Site mechanics / local agent. "how do you work" is scoped to the
+    // agent's own mechanism (no trailing "with" — "how do you work with
+    // clients" is a role question, not a chat-mechanics one), and
+    // "data leaves/stays" requires a device/browser anchor so a bare
+    // "where does my data stay" (no destination named) falls through to
+    // normal classification instead of forcing this fast path.
+    /how does this (chat|site|website|page|agent|work)|how do you work(?!\s+with)|how are you built|how is this (site|built|agent built)|100% local|run(s)? (entirely )?locally|runs (entirely )?in your browser|on-?device|local model|privacy|private|data (leaves?|stays?)( (on|in))? (my|your|the) (device|browser)|no servers|no api calls|zero (servers|tracking)/,
+    // Learning hub (Emin's ultrafocus.space project)
+    /learning hub|learning-hub|learning library|learn hub|learning center/,
+    // Blog existence/overview (topic queries still go to the /blog tool)
+    /is there a blog|does (he|emin) have a blog|has a blog|blog posts|blog articles|does emin write/,
+    // The agent itself: its router, loop and architecture (the "How does this work?" entry)
+    /how (does|do|is) (the |your |this )?(router|needle|agent loop|routing)\b|what(?:'s| is| are) (the |your )?(needle|router|agent loop|smollm2?)\b|\byour (agent loop|router|architecture)\b|explain your (architecture|design|system|loop|agent)/,
+    // Prompt injection and probing for the prompt
+    /\b(ignore|disregard|forget) (all |your )?(previous |prior )?instructions\b|\byour (system|hidden) prompt\b|jailbreak|developer mode/,
+    // Hiring, availability, freelance and co-founding
+    /\b(open|available) (to|for) (work|hire|hiring|new roles?|opportunit(y|ies))\b|\blooking for (work|new roles?|opportunit(y|ies))\b|\bhireable\b|\bco-?found(er|ers|ing)?\b|\bfounding engineer\b|\bfreelanc(e|er|ing)\b|\bconsult(ing|ant|ancy)\b|\bcontract(ing)? (work|role|basis|gig)|\b(is|are) (he|emin|you) (hiring|available)\b|\bcan i hire\b|\bhire (him|emin)\b/,
+    // A joke
+    /\b(jokes?|make me laugh|something funny)\b/,
+    // Only a greeting, how-are-you, or thanks
+    /^\W*(hi|hello|hey|yo|howdy|hola|sup|good (morning|afternoon|evening))( there| everyone| all| again)?\W*$/,
+    /^\W*((hi|hello|hey|yo)\W+(there\W+)?)?(how are (you|u)|how's it going|how you doing|what's up)( doing)?( today)?\W*$/,
+    /^\W*((thanks|thank you)( a lot| so much| very much| again)?|thank u|thx|thnx|cheers|much appreciated|appreciate it)\W*((that|this|it)( was| is)? (helpful|great|good|useful|awesome|nice|perfect)|(that|this|it) helps|great|nice|perfect|helpful|got it|ok|okay)?\W*$/
+  ];
+
   function detectKnowledgeFastPath(text) {
     var lower = (text || '').toLowerCase();
-    var patterns = [
-      // Site tools (NOT Emin's tech stack — those still go to skills). A bare
-      // "tools are" also matches the tech-stack questions "what tools are in
-      // his stack" and "what tools are you best at", so "tools are" counts
-      // only before "on this site/page/website" or "here".
-      /tools (on|here|available|does this)|tools are (available )?(on this (site|page|website)|here)\b|site tools|list of tools|tool list/,
-      // Site mechanics / local agent. "how do you work" is scoped to the
-      // agent's own mechanism (no trailing "with" — "how do you work with
-      // clients" is a role question, not a chat-mechanics one), and
-      // "data leaves/stays" requires a device/browser anchor so a bare
-      // "where does my data stay" (no destination named) falls through to
-      // normal classification instead of forcing this fast path.
-      /how does this (chat|site|website|page|agent|work)|how do you work(?!\s+with)|how are you built|how is this (site|built|agent built)|100% local|run(s)? (entirely )?locally|runs (entirely )?in your browser|on-?device|local model|privacy|private|data (leaves?|stays?)( (on|in))? (my|your|the) (device|browser)|no servers|no api calls|zero (servers|tracking)/,
-      // Learning hub (Emin's ultrafocus.space project)
-      /learning hub|learning-hub|learning library|learn hub|learning center/,
-      // Blog existence/overview (topic queries still go to the /blog tool)
-      /is there a blog|does (he|emin) have a blog|has a blog|blog posts|blog articles|does emin write/
-    ];
-    for (var i = 0; i < patterns.length; i++) {
-      if (patterns[i].test(lower)) return 'faq';
+    for (var i = 0; i < FAST_PATH_PATTERNS.length; i++) {
+      if (FAST_PATH_PATTERNS[i].test(lower)) return 'faq';
     }
     return null;
   }
 
   // ─── Canned prose ────────────────────────────────────────
-  function outOfScopeMessage() {
-    return 'I can help with Emin\'s portfolio: his work, projects, skills, smart glasses, blog, or contact details. I don\'t have verified information about that topic. Try <b>/help</b> to see what I can explore.';
+  // The honest miss: it echoes the visitor's words and offers two links that
+  // run. While Needle is still loading it says so instead.
+  function missLinks() {
+    var cmdLink = Tools.html.cmdLink;
+    return 'Try ' + cmdLink('/about', 'his background') + ' or ' + cmdLink('/repos', 'his projects') + ', or type <b>/help</b>.';
   }
 
-  function reducedModeMessage() {
+  function matcherLoading() {
+    var state = Tools._store && Tools._store.getState();
+    return Boolean(state && state.models && state.models.needleLoading && !state.models.needleReady);
+  }
+
+  var MISS_ECHO_MAX = 80;
+  function missEcho(query) {
+    var chars = Array.from(String(query));
+    var cut = chars.length > MISS_ECHO_MAX ? chars.slice(0, MISS_ECHO_MAX).join('') + '…' : chars.join('');
+    return Tools.html.escape(cut);
+  }
+
+  function missMessage(query, why) {
+    var echo = query ? ' "<b>' + missEcho(query) + '</b>"' : ' that';
+    if (matcherLoading()) {
+      return 'My question matcher is still loading, so I may have missed what you meant by' + echo + '. Ask again in a moment, or ' + missLinks().replace(/^Try/, 'try');
+    }
+    return 'I couldn\'t find anything on' + echo + ' in what Emin has published.' + (why ? ' ' + why : '') + ' ' + missLinks();
+  }
+
+  function outOfScopeMessage(query) {
+    return missMessage(query);
+  }
+
+  function reducedModeMessage(query) {
     // Reached both when the model never loaded and when it loaded but then
     // hit a fatal error mid-session (worker crash) — word it so neither case
     // reads as wrong.
-    return 'I\'m running in <b>reduced mode</b> — the on-device language model isn\'t available in this session (it either couldn\'t load or stopped responding), so I can\'t write free-form answers. I can still help with Emin\'s work, projects, skills, smart glasses, blog, and commands — try <b>/help</b> or ask about a specific topic.';
+    return missMessage(query, 'The on-device chat model is not running in this session (it either couldn\'t load or stopped responding), so I can only answer from his notes.');
   }
 
   // Soft heads-up shown alongside (never instead of) a real answer: the
@@ -1250,7 +1327,7 @@ var Tools = (function() {
   }
 
   function profileFacts() {
-    return 'TRUSTED PROFILE FACTS: Emin Gench is based in Vancouver, BC, Canada, and works as a Forward Deployed AI Engineer at Cresta AI. Previously Goodfintech (AI Engineer), Vivoo (Machine Learning Engineer), Novit AI (Full-stack AI Engineer), E-Kalite Software (Python Developer/QA), and indie game development (Founder, emdi_apps). He builds open-source AI and smart-glasses projects, including even_glasses, telegramGPT, G1 Voice AI, g1_flutter, and visionlink. He has 47 repositories and 249+ GitHub stars. Do not infer a different residence or employer.';
+    return 'TRUSTED PROFILE FACTS: Emin Gench is based in Vancouver, BC, Canada, and works as a Forward Deployed AI Engineer at Cresta AI. Previously Goodfintech (AI Engineer), Vivoo (Machine Learning Engineer), Novit AI (Full-stack AI Engineer), E-Kalite Software (Python Developer/QA), and indie game development (Founder, emdi_apps). He builds open-source AI and smart-glasses projects, including even_glasses, telegramGPT, G1 Voice AI, g1_flutter, and visionlink. He has 46 repositories and 250+ GitHub stars. Do not infer a different residence or employer.';
   }
 
   function llmConsentMessage(megabytes) {

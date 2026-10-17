@@ -19,7 +19,7 @@ game.toastTimer = window.setTimeout(function () { uiAdvanceToast(app); },ms);
 }
 function uiLastToastText(game) {
 const queue = uiToastQueue(game);
-return queue.length > 0 ? queue[queue.length - 1].text :game.toast && game.toast.text;
+return queue.length > 0 ? queue[queue.length - 1].text :game.toast?.text;
 }
 function uiAdvanceToast(app) {
 const game = app.game;
@@ -33,6 +33,7 @@ uiRenderKeepingFocus(app);
 function uiShowToast(app,toast) {
 const game = app.game;
 if (!toast.announced) uiAnnounce(toast.text);
+if (game.toastTap?.(toast)) return;
 if (!game.toast || uiReplaces(game,toast)) { window.clearTimeout(game.toastTimer); uiToastQueue(game).length = 0; uiStartToast(app,toast); return; }
 if (toast.text === uiLastToastText(game)) return;
 const queue = uiToastQueue(game);
@@ -40,7 +41,7 @@ queue.push(toast);
 while (queue.length > UI_TOAST_PENDING_MAX) queue.shift();
 }
 function uiLiveToast(game) {
-return game.toast && game.toast.until > Date.now() ? game.toast :null;
+return game.toast?.until > Date.now() ? game.toast :null;
 }
 function uiToastBanner(toast) {
 const line = uiEl('div',{
