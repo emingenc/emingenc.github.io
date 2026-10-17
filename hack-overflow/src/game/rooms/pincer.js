@@ -1,5 +1,5 @@
 import { PINCER_TEXTS,fillText } from './data/pincer-texts.js';
-import { CANNON_SLOTS,LOOKUP_STEPS,SORT_STEPS } from './data/pincer-waves.js';
+import { CANNON_SLOTS,HINT_MOVES,LOOKUP_STEPS,SORT_STEPS } from './data/pincer-waves.js';
 import { eat,pairsOf,pillarsOf,specOf,sumOf,win } from './pincer-base.js';
 import { canBank,canStep,currentArea,playBank,playDamFire,playDamPointer } from './pincer-dam.js';
 import { pincerWhyNot } from './pincer-refuse.js';
@@ -42,6 +42,13 @@ return Object.assign(base,WAVE_EXTRAS[spec.id](stream));
 }
 function pincerSum(state) {
 return sumOf(state);
+}
+function pincerHint(state) {
+const show = specOf(state).id === 'w1' && state.status === 'running' && state.steps < HINT_MOVES;
+if (!show) return null;
+const sum = sumOf(state);
+if (sum === state.stream.target) return null;
+return sum < state.stream.target ? 'l' :'r';
 }
 function pincerTotalPairs(stream) {
 return allPairs(stream).length;
@@ -227,5 +234,5 @@ return draft;
 
 export {
 createPincer,applyPincer,pincerMoves,pincerSum,pincerTotalPairs,pincerPar,pincerStars,bruteChecks,eaterNext,
-pairsLeft,pincerArea,pillarsOf,pincerWhyNot,
+pairsLeft,pincerArea,pillarsOf,pincerWhyNot,pincerHint,
 };

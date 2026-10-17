@@ -1,5 +1,6 @@
 import { growHp,maxHeartsOf } from '../game/hp.js';
 import { rankLevel } from '../game/rank.js';
+import { uiCue } from './audio-wire.js';
 import { uiCommitExt } from './ext-storage.js';
 
 function uiHeartWord(count) {
@@ -24,6 +25,7 @@ uiCommitExt(app,after);
 uiGrowHearts(app.game);
 const up = uiRankUpText(before,app.game.ext);
 hud.uiSayOnGrid(app,up);
+if (up) uiCue(app,'RANK_UP');
 await hud.uiRefreshHud(app);
 return { paid:true,rank:rankOf(app.game.ext),gain:rankOf(app.game.ext) - rankOf(before),up };
 }

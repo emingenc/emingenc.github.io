@@ -13,6 +13,8 @@ start:'Sum {sum}, target {t}. Move the cannon that changes the sum the right way
 low:'Sum {sum} is below {t}. Raise it: L> moves the left cannon up.',
 high:'Sum {sum} is above {t}. Lower it: <R moves the right cannon down.',
 equal:'Sum {sum} = {t}. FIRE now.',
+hintLow:'Sum {sum} is low. Sorted: MOVE L> to a bigger pillar.',
+hintHigh:'Sum {sum} is high. Sorted: MOVE <R to a smaller pillar.',
 dropHint:'The wrong cannon can throw the answer away. Low sum: L>. High sum: <R.',
 plank:'Plank pillar {v}: a spare FIRE there is +150 and ROOT skips a tile. It costs a charge and a step.',
 floorLow:'{floor} tiles of bridge left. Every wasted move is floor you lose.',

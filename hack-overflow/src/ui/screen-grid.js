@@ -64,20 +64,24 @@ import('./grid-oracle.js').then(function (oracle) { oracle.uiInstallOracle(app);
 import('./grid-brute.js').then(function (brute) { brute.uiInstallBrute(app); }).catch(function () {});
 import('./grid-power.js').then(function (power) { power.uiInstallPower(app); }).catch(function () {});
 }
+function uiEnterPlan(app) {
+const plan = uiEntryPlan(app);
+if (plan === 'signpost') uiSignpostTurret(app);
+if (plan === 'play') uiLoadOpening(app);
+else uiStoryOnGrid(app);
+}
 function uiEnterGrid(app) {
 app.screen = 'grid';
 app.lastFocusKey = 'grid-stage';
 uiOpenReadyLevelUp(app);
 uiLoadSentry(app);
 uiLoadHeroes(app);
-const plan = uiEntryPlan(app);
-if (plan === 'signpost') uiSignpostTurret(app);
-if (plan === 'play') uiLoadOpening(app);
-else uiStoryOnGrid(app);
+if (app.game.ext && app.game.ext.audio) uiEnterPlan(app);
+else import('./jack-in-card.js').then(function (card) { card.uiJackInEnter(app,uiEnterPlan); },function () { uiEnterPlan(app); });
 }
 function uiRenderGrid(app) {
 const children = [
-uiGridHud(app),uiGridObjective(app),uiGridStage(app),uiGridToast(app),uiGridTouchLayer(app),app.game.drawPower ? app.game.drawPower(app) :null,uiGridDpad(app),uiGridFire(app),uiGridTravel(app),
+uiGridHud(app),uiGridObjective(app),uiGridStage(app),uiGridToast(app),uiGridTouchLayer(app),app.game.drawPower ? app.game.drawPower(app) :null,uiGridDpad(app),uiGridFire(app),uiGridTravel(app),app.game.drawRank ? app.game.drawRank(app) :null,
 ];
 return uiEl('section',{ className:'screen grid-screen',attrs:{ 'data-screen':'grid','data-fit':uiGridFitMode() },children:children.filter(Boolean) });
 }

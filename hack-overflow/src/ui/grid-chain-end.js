@@ -1,6 +1,7 @@
 import { hasBadge } from '../game/ext/badge-ops.js';
 import { payoff } from '../game/quest/first-bad-commit.js';
 import { uiRenderKeepingFocus } from './app.js';
+import { uiCue } from './audio-wire.js';
 import { uiEl } from './dom.js';
 
 const BADGE_NAMES = Object.freeze({ 'reviewer-1':'REVIEWER I',[payoff.badge]:payoff.badgeName });
@@ -15,6 +16,7 @@ const line = payoff.endingLine;
 return uiEl('p',{ className:'ghost-quip',children:[uiEl('span',{ className:'ghost-quip-who',text:line.who }),' ' + line.text] });
 }
 function uiEndingExtras(app) {
+uiCue(app,'ROOT_ACCESS');
 const ending = app.game.ending;
 const ext = app.game.ext || {};
 const badges = uiBadgesLine(ext);

@@ -1,4 +1,5 @@
 import { QUESTS,STAGE,progressQuest,pillText,rewardOf,startQuest } from '../game/quest/quests.js';
+import { uiCue } from './audio-wire.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiPayRank } from './rank-pay.js';
 import { uiRefreshHud,uiSayOnGrid } from './rank-hud.js';
@@ -39,6 +40,7 @@ function uiFinishInExt(app,def,ops) {
 let ext = ops.withQuest(app.game.ext,def.id,STAGE.done);
 if (ext.pin === def.id) ext = ops.withPin(ext,null);
 uiCommitExt(app,def.reward.find ? ops.withFind(ext,def.reward.find) :ext);
+if (def.reward.find) uiCue(app,'FIND');
 }
 function uiDoneText(def,reward) {
 if (reward.rank > 0) return def.name + ': +' + reward.rank + ' R';

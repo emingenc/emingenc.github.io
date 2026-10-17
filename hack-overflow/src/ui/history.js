@@ -20,6 +20,7 @@ function uiBackOnMenu(app) {
 return app.confirmReset ? 'reset-cancel' :'menu-close';
 }
 function uiBackOnScreen(app) {
+if (app.screen === 'grid' && app.game && app.game.drawRank) return 'rank-close';
 if (app.screen === 'grid' && app.game && app.game.travelOpen) return 'travel-close';
 return Object.hasOwn(UI_BACK_BY_SCREEN,app.screen) ? UI_BACK_BY_SCREEN[app.screen] :null;
 }

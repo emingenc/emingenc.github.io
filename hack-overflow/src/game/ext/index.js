@@ -52,6 +52,7 @@ field('held',ids(LIMITS.held)),
 field('chain',whole(LIMITS.chain)),
 field('cosmetics',ids(LIMITS.cosmetics)),
 field('badges',ids(LIMITS.badges)),
+field('audio',pick(['on','silent'])),
 ];
 
 function makeExtFields() {

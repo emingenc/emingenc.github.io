@@ -1,6 +1,7 @@
 import { withBeat } from '../game/ext/ops.js';
 import { drawerReady,refactorDue } from '../game/finale/refactor.js';
 import { rewardDue } from '../game/finale/reward.js';
+import { uiCue } from './audio-wire.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiCastSay } from './grid-cast-act.js';
 import { uiHangKernel } from './grid-kernel-chips.js';
@@ -55,6 +56,7 @@ const { uiPayRank } = await import('./rank-pay.js');
 await uiPayRank(app,outcome.source,outcome.rank);
 if (app.game.gen !== gen) return;
 uiCommitExt(app,fusion.trial.trialClear(app.game.ext));
+uiCue(app,'FUSION');
 for (const text of outcome.lines) await uiCastSay(app,{ text,kind:'reward' });
 }
 function uiTrialScene(fusion,app) {

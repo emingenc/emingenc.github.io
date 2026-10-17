@@ -1,4 +1,5 @@
 import { uiChainCellsOf,uiChainOwed } from './grid-chain.js';
+import { uiCosmeticWatch } from './cosmetic-pay.js';
 import { uiPaintBit,uiPaintRows } from './grid-chain-bit.js';
 
 const MARK = ['.ccc.','c...c','....c','...c.','..c..','.....','..c..'];
@@ -18,6 +19,7 @@ uiPaintRows(ctx,MARK_ART,{ palette:frame.palette,pixel,left,top });
 }
 function uiPaintChain(ctx,app,frame) {
 uiChainOwed(app.game).forEach((step) => uiChainCellsOf(step).forEach((cell) => uiPaintMark(ctx,frame,cell)));
+uiCosmeticWatch(app);
 uiPaintBit(ctx,app,frame);
 }
 

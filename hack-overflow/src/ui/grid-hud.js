@@ -55,9 +55,12 @@ attrs:{ type:'button','data-action':'map-open','data-focus-key':'map-open','aria
 function uiTextNode(tag,className,text) {
 return text ? uiEl(tag,{ className,text }) :null;
 }
+function uiRankButton(text) {
+return text ? uiEl('button',{ className:'grid-hud-rank',text,attrs:{ type:'button','data-action':'rank-open','data-focus-key':'rank-open','aria-label':text + ', details' } }) :null;
+}
 function uiHudTop(game) {
 const level = uiEl('span',{ className:'grid-hud-level',text:'LV ' + game.progress.level + ' · ' + game.progress.rank });
-return uiEl('div',{ className:'grid-hud-top',children:[level,uiTextNode('span','grid-hud-rank',game.hudRank)].filter(Boolean) });
+return uiEl('div',{ className:'grid-hud-top',children:[level,uiRankButton(game.hudRank)].filter(Boolean) });
 }
 function uiHudStats(game) {
 const progress = game.progress;
