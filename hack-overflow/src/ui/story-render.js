@@ -1,5 +1,5 @@
 import { TYPE_MS_PER_CHAR,isOneLine,lineAt,typedChars } from '../game/story/story.js';
-import { uiEl, uiPrefersReducedMotion } from './dom.js';
+import { uiEl, uiPointerIsCoarse, uiPrefersReducedMotion } from './dom.js';
 
 const STORY_NEXT_KEY = 'story-next';
 const STORY_SKIP_KEY = 'story-skip';
@@ -14,7 +14,7 @@ uiStoryTimer = 0;
 }
 function uiStoryTyped(story) {
 const line = lineAt(story.flow);
-if (story.revealed || isOneLine(story.flow)) return line.text.length;
+if (story.revealed || isOneLine(story.flow) || uiPointerIsCoarse()) return line.text.length;
 const elapsedMs = performance.now() - story.lineStartedAt;
 return typedChars({ length:line.text.length,elapsedMs,reduced:Boolean(uiPrefersReducedMotion()) });
 }
@@ -24,17 +24,20 @@ return uiStoryTyped(story) >= lineAt(story.flow).text.length;
 function uiStoryIsLastLine(story) {
 return lineAt(story.flow).last && story.flow.beat === story.flow.queue.length - 1;
 }
-function uiChoosePrompt(count) {
-return count > 1 ? 'CHOOSE (1-' + count + ')' :'CHOOSE';
+function uiStoryAsks(story) {
+return Boolean(story.choice) && story.choice.choices.length > 1;
 }
 function uiStoryPromptText(story) {
 if (!uiStoryLineDone(story)) return '';
-if (!uiStoryIsLastLine(story)) return 'TAP TO CONTINUE';
-return story.choice ? uiChoosePrompt(story.choice.choices.length) :'TAP TO CLOSE';
+const touch = uiPointerIsCoarse();
+const verb = touch ? 'TAP TO ' :'CLICK OR ENTER TO ';
+if (!uiStoryIsLastLine(story)) return verb + 'CONTINUE';
+if (!uiStoryAsks(story)) return verb + 'CLOSE';
+return touch ? 'TAP ONE' :'CHOOSE (1-' + story.choice.choices.length + ')';
 }
 function uiStoryTapLabel(story) {
 if (!uiStoryIsLastLine(story)) return 'Continue';
-return story.choice ? 'Choose below' :'Close';
+return uiStoryAsks(story) ? 'Choose below' :'Close';
 }
 function uiStoryCountText(flow) {
 const beat = flow.queue[flow.beat];
@@ -78,8 +81,8 @@ uiStoryTimer = window.setInterval(function () { uiStoryTick(story,parts); },TYPE
 function uiStorySkipButton() {
 return uiEl('button',{
 className:'story-skip',
-text:'SKIP',
-attrs:{ type:'button','data-action':STORY_SKIP_KEY,'data-focus-key':STORY_SKIP_KEY,'aria-label':'Skip the story' },
+text:'SKIP \u25B8\u25B8',
+attrs:{ type:'button','data-action':STORY_SKIP_KEY,'data-focus-key':STORY_SKIP_KEY,'aria-label':'Skip ahead' },
 });
 }
 function uiStoryTrapFocus(overlay,controlsNow) {
@@ -102,10 +105,10 @@ const children = [parts.button,parts.choices && parts.choices.node,foot].filter(
 return uiEl('div',{ className:'story-panel',children });
 }
 function uiStorySkipIfMore(story) {
-return uiStoryIsLastLine(story) || story.choice ? null :uiStorySkipButton();
+return uiStoryIsLastLine(story) ? null :uiStorySkipButton();
 }
 function uiStoryChoices(app,story) {
-if (!story.choice || !uiStoryIsLastLine(story)) return null;
+if (!uiStoryAsks(story) || !uiStoryIsLastLine(story)) return null;
 const buttons = story.choice.buttons(app);
 const waiting = uiStoryLineDone(story) ? '' :STORY_WAITING_CLASS;
 const node = uiEl('div',{ className:STORY_CHOICES_CLASS + waiting,attrs:{ role:'group','aria-label':'Choices' },children:buttons });
@@ -140,4 +143,4 @@ return overlay;
 }
 
 
-export { uiStoryIfOpen,uiStoryLineDone,uiStoryStopTimer };
+export { uiStoryAsks,uiStoryIfOpen,uiStoryIsLastLine,uiStoryLineDone,uiStoryStopTimer };

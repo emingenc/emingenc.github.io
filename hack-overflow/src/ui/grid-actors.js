@@ -148,10 +148,19 @@ const hit = hitActor(app.game.fight.actors,actorId,dmg);
 app.game.fight.actors = hit.actors;
 return { outcome:hit.killed ? 'kill' :'dent',toasts:SHOT_TOASTS.get(target?.kind) || DRONE_SHOT_TOASTS };
 }
+function uiShotFx(from,to,shot) {
+import('./shot-fx.js').then((module) => module.uiShotCells(from,to,shot)).catch(console.error);
+}
+function uiFoeCell(game,actorId) {
+const foe = uiLiveFoes(game).find((live) => live.id === actorId);
+return foe ? { col:foe.col,row:foe.row } :null;
+}
 function uiHitFoe(app,actorId,dmg) {
 const maxBefore = ensureFight(app.game).hp.max;
+const target = uiFoeCell(app.game,actorId);
 const result = uiDamageFoe(app,actorId,dmg);
 const landed = !FIZZLES.has(result.outcome);
+if (target) uiShotFx(app.game.avatar.pos,target,{ hit:landed,kill:result.outcome === 'kill',heavy:dmg > 1 });
 if (landed) uiEmit(GAME_EVENT.RIG_GOOD,{ rigId:GRID_RIG_ID,chain:1 });
 if (app.game.fight.hp.max > maxBefore) return landed;
 uiShowToast(app,result.toasts[result.outcome]);

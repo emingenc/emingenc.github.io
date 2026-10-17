@@ -9,6 +9,7 @@ import { uiPincerCard } from './pincer-card.js';
 import { PINCER_RIG_ID, uiPincerCommit, uiPincerCreate, uiPincerNow, uiPincerSpoken } from './pincer-flow.js';
 import { uiPincerCardTitle, uiPincerHeading, uiPincerHeadingLabel } from './pincer-modes.js';
 import { uiPincerDock, uiPincerScene } from './pincer-scene.js';
+import { uiRoomBody } from './room-screen.js';
 import { uiPincerSlideCancel, uiPincerSlideDown, uiPincerSlideUp } from './pincer-slide.js';
 
 
@@ -18,9 +19,9 @@ const ASSIST_ACTION = 'arena-assist';
 const PLANK_ACTION = 'pincer-plank';
 const ACTION_PREFIX = 'pincer-';
 const MOVE_OF_ACTION = {
-  'pincer-l': 'l', 'pincer-r': 'r', 'pincer-fire': 'fire', [PLANK_ACTION]: 'plank', 'pincer-sort': 'sort', 'pincer-lookup': 'lookup', 'pincer-bank': 'bank',
+  'pincer-l': 'l', 'pincer-r': 'r', 'pincer-fire': 'fire', [PLANK_ACTION]: 'plank', 'pincer-sort': 'sort', 'pincer-bank': 'bank',
 };
-const ACTION_OF_KEY = { l: 'pincer-l', r: 'pincer-r', f: 'pincer-fire', p: PLANK_ACTION, s: 'pincer-sort', k: 'pincer-lookup', b: 'pincer-bank' };
+const ACTION_OF_KEY = { l: 'pincer-l', r: 'pincer-r', f: 'pincer-fire', p: PLANK_ACTION, s: 'pincer-sort', b: 'pincer-bank' };
 const MODE_OF_ACTION = { 'pincer-wave1': 'w1', 'pincer-wave2': 'w2', 'pincer-wave3': 'w3' };
 function uiPincerRuleText(state) {
   if (specOf(state).dam) return PINCER_TEXTS.rule3;
@@ -47,7 +48,7 @@ function uiPincerHeader(app, arena) {
 function uiPincerRender(app) {
   const arena = uiPincerArena(app);
   if (!arena) return uiEl('section', { className: 'screen rig-screen', attrs: { 'data-screen': 'rig' } });
-  const body = arena.view === 'card' ? [uiPincerCard(app, arena.result)] : uiPincerPlayView(app);
+  const body = uiRoomBody(app, arena, { play: () => uiPincerPlayView(app), card: () => uiPincerCard(app, arena.result) });
   return uiEl('section', {
     className: 'screen rig-screen arena-screen pincer-screen' + (arena.view === 'card' ? ' is-card' : ''),
     attrs: { 'data-screen': 'rig', 'data-rig': PINCER_RIG_ID, tabindex: '-1', 'data-focus-key': ARENA_FOCUS_KEY },

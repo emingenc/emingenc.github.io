@@ -89,11 +89,12 @@ className:'code-line',
 children:[uiEl('span',{ className:'code-line-num',text:String(lineNumber) }),textSpan],
 });
 }
-function uiLineChip(text,hasError) {
-return uiEl('span',{ className:'line-chip' + (hasError ? ' line-chip-error' :''),text:text });
+function uiLineChip(text,spec) {
+const className = 'line-chip' + (spec.hasError ? ' line-chip-error' :'');
+return uiEl('span',{ className,text:text,attrs:{ 'data-action':'remove-' + spec.position,title:'Remove ' + text } });
 }
 function uiEditorChips(lineTexts,markIndex) {
-return lineTexts.map(function (text,position) { return uiLineChip(text,position === markIndex); });
+return lineTexts.map(function (text,position) { return uiLineChip(text,{ position,hasError:position === markIndex }); });
 }
 function uiSlotIndent(skeleton) {
 const slotLine = skeleton.find(function (line) { return line.indexOf(UI_SLOT_MARKER) !== -1; });

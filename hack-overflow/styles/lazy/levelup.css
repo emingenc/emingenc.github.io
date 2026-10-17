@@ -103,7 +103,7 @@
   white-space:nowrap;
 }
 
-.levelup-continue {
+.levelup-continue,.debrief-continue {
   position:sticky;
   bottom:var(--sp-5);
 }

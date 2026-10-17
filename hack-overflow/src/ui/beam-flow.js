@@ -5,13 +5,14 @@ import { rankLevel } from '../game/rank.js';
 import { ASSIST_PACE,PACE_MAX,SHARD } from '../game/rooms/data/beam-wave.js';
 import { BEAM_TEXTS } from '../game/rooms/data/beam-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
-import { applyBeam,beamStars,createBeam,liveCells,middleHint,middleOf } from '../game/rooms/beam.js';
+import { applyBeam,beamStars,createBeam,middleHint,middleOf,scopeCells } from '../game/rooms/beam.js';
 import { uiArenaToast } from './arena-shell.js';
 import { uiBeamRecordBest } from './beam-record.js';
 import { uiBeamRunFor } from './beam-modes.js';
 import { uiBeamW3Cue,uiBeamW3Toast,uiBeamW3Values } from './beam-w3-flow.js';
 import { uiEmit } from './bus.js';
 import { uiPrefersReducedMotion } from './dom.js';
+import { uiShotSelectors } from './shot-fx.js';
 import { uiRoomCardView,uiRoomPlayable,uiRoomWin } from './room-flow.js';
 
 
@@ -59,7 +60,7 @@ function uiBeamCreate(app,rig,start) {
 const run = uiBeamRunFor({ mode:start.mode,lastIndex:start.lastIndex ?? null });
 const arena = {
 rig,levelId:rig.levels[0],mode:start.mode,state:createBeam(start.mode,{ ...uiBeamOptions(app),...run.options }),poolIndex:run.index,
-view:'play',result:null,coach:'',busyUntil:NO_TIME,thinkFrom:null,fx:{ nopeAt:NO_TIME,shotAt:NO_TIME },swallow:null,
+view:'play',result:null,coach:'',critique:'',busyUntil:NO_TIME,thinkFrom:null,fx:{ nopeAt:NO_TIME,shotAt:NO_TIME },swallow:null,
 };
 arena.coach = uiBeamCoachText(arena);
 app.pendingAnnounce = null;
@@ -83,11 +84,13 @@ const COACH_LINES = [
 { when:(state) => middleHint(state) !== null,text:() => BEAM_TEXTS.coach.middle },
 { when:(state) => Boolean(state.pending),text:() => BEAM_TEXTS.coach.keep },
 { when:(state) => state.selected !== null,text:() => BEAM_TEXTS.coach.select },
+{ when:(state) => state.round > 0 && state.roundShots === 0,text:() => BEAM_TEXTS.coach.round2 },
 { when:() => true,text:uiBeamBaseCoach },
 ];
 function uiBeamCoachText(arena) {
 const state = arena.state;
 if (state.status !== 'running') return '';
+if (arena.critique) return arena.critique;
 const line = COACH_LINES.find((item) => item.when(state));
 return fillText(line.text(state),uiBeamValues(state));
 }
@@ -112,13 +115,19 @@ arena.state = next;
 uiBeamAfterMove(app,now);
 return next.last.ok;
 }
-function uiBeamNudge(app,delta,now) {
+function uiBeamStepCell(state,delta) {
+const cells = scopeCells(state);
+if (state.selected === null) return middleOf(state);
+const beyond = delta > 0 ? cells.find((cell) => cell > state.selected) :cells.filter((cell) => cell < state.selected).pop();
+return beyond ?? cells[delta > 0 ? cells.length - 1 :0];
+}
+function uiBeamStep(app,delta,now) {
 if (!uiRoomPlayable(app)) return false;
-const state = app.rig.arena.state;
-const live = liveCells(state);
-const at = live.indexOf(state.selected);
-const target = at < 0 ? middleOf(state) :live[Math.min(live.length - 1,Math.max(0,at + delta))];
-return uiBeamCommit(app,'select:' + target,now);
+return uiBeamCommit(app,'select:' + uiBeamStepCell(app.rig.arena.state,delta),now);
+}
+function uiBeamTap(app,cell,now) {
+if (!uiBeamCommit(app,'select:' + cell,now)) return false;
+return uiBeamCommit(app,'fire',now);
 }
 function uiBeamBoltMove(state) {
 if (state.shard) return 'bolt:shard';
@@ -135,13 +144,19 @@ function uiBeamNoping(arena,now) {
 return now - arena.fx.nopeAt < NOPE_MS;
 }
 function uiBeamShooting(arena,now) {
-return arena.state.last !== null && arena.state.last.kind === 'shot' && now - arena.fx.shotAt < BEAM_SHOT_MS * 2;
+const last = arena.state.last;
+return last !== null && last.kind === 'shot' && last.end !== 'round' && now - arena.fx.shotAt < BEAM_SHOT_MS * 2;
 }
 
 
-function uiBeamShotToast(last) {
+function uiBeamBadLine(last,state) {
+const bite = last.events.bites > 0 ? (state.bolt ? BEAM_TEXTS.toast.bite :BEAM_TEXTS.toast.biteNoBolt) :'';
+return [last.why,bite].filter(Boolean).join(' ');
+}
+function uiBeamShotToast(last,state) {
+if (last.end === 'round') return { text:last.toast,kind:'good' };
 const failed = last.slip || last.decoy || last.events.bites > 0;
-if (failed) return { text:last.toast,kind:'bad' };
+if (failed) return { text:uiBeamBadLine(last,state),kind:'bad' };
 return { text:fillText(SHOT_LINE,{ word:last.answer,lo:last.to.lo,hi:last.to.hi,size:last.kept }),kind:'good' };
 }
 function uiBeamShotCue(state) {
@@ -149,13 +164,26 @@ const last = state.last;
 if (last.slip || last.decoy) return uiEmit(GAME_EVENT.RIG_BAD,{ rigId:BEAM_RIG_ID,reason:last.decoy ? 'decoy' :'slip' });
 return uiEmit(GAME_EVENT.RIG_GOOD,{ rigId:BEAM_RIG_ID,chain:state.combo });
 }
+function uiBeamCritique(last) {
+return (last.slip || last.decoy) && last.end !== 'round' ? last.why : '';
+}
 function uiBeamSettle(app,toastOf) {
 const arena = app.rig.arena;
 if (arena.state.status !== 'running') return uiBeamFinish(app);
-const toast = toastOf(arena.state.last);
+const toast = toastOf(arena.state.last,arena.state);
 uiArenaToast(app,toast.text,toast.kind);
 arena.coach = uiBeamCoachText(arena);
 return null;
+}
+function uiBeamOrigin(cell) {
+const own = '.beam-cells [data-beam-cell="' + cell + '"]';
+const found = typeof document !== 'undefined' && typeof document.querySelector === 'function' && document.querySelector(own);
+return found ? own :'.beam-cells';
+}
+function uiBeamShotFx(state,failed) {
+const cell = state.last.cell;
+const target = state.rotated ? '[data-beam-cell="' + cell + '"]' :'.beam-lane .beam-col:nth-child(' + (cell + 1) + ')';
+uiShotSelectors(uiBeamOrigin(cell),[target],{ hit:!failed,kill:state.status === 'won' || state.last.end === 'round',heavy:false });
 }
 function uiBeamAfterShot(app,now) {
 const arena = app.rig.arena;
@@ -164,11 +192,16 @@ arena.busyUntil = now + BEAM_BUSY_MS;
 arena.fx.shotAt = now;
 arena.thinkFrom = now;
 uiBeamShotCue(state);
+const last = state.last;
+arena.critique = uiBeamCritique(last);
+uiBeamShotFx(state,last.slip || last.decoy || last.events.bites > 0);
 return uiBeamSettle(app,uiBeamShotToast);
 }
 function uiBeamAfterBolt(app) {
 const arena = app.rig.arena;
 const last = arena.state.last;
+arena.critique = '';
+uiShotSelectors('.beam-btn-bolt',[last.dry ? '.beam-lane' :'.beam-shard,.beam-mite'],{ hit:!last.dry,kill:false,heavy:true });
 uiArenaToast(app,last.toast,last.dry ? 'info' :'good');
 if (!last.dry) uiEmit(GAME_EVENT.RIG_GOOD,{ rigId:BEAM_RIG_ID,chain:arena.state.combo });
 arena.coach = uiBeamCoachText(arena);
@@ -178,6 +211,8 @@ const arena = app.rig.arena;
 const state = arena.state;
 arena.busyUntil = now + BEAM_BUSY_MS;
 arena.thinkFrom = now;
+arena.critique = '';
+if (state.last.kind === 'shot') uiBeamShotFx(state,state.last.slip);
 const cue = uiBeamW3Cue(state);
 if (cue) uiEmit(cue.type,{ rigId:BEAM_RIG_ID,...cue.detail });
 return uiBeamSettle(app,uiBeamW3Toast);
@@ -217,6 +252,6 @@ return null;
 }
 
 export {
-BEAM_RIG_ID,BEAM_BUSY_MS,BEAM_SHOT_MS,uiBeamSetClock,uiBeamTime,uiBeamCreate,uiBeamCoachText,uiBeamSpoken,uiBeamCommit,uiBeamNudge,
+BEAM_RIG_ID,BEAM_BUSY_MS,BEAM_SHOT_MS,uiBeamSetClock,uiBeamTime,uiBeamCreate,uiBeamCoachText,uiBeamSpoken,uiBeamCommit,uiBeamStep,uiBeamTap,
 uiBeamBolt,uiBeamBoltMove,uiBeamNoping,uiBeamShooting,uiBeamAssist,uiBeamPace,
 };

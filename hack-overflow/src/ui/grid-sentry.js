@@ -2,6 +2,7 @@ import { growHp,maxHeartsOf,passDoorway } from '../game/hp.js';
 import { cellToward } from '../game/move.js';
 import { dangerCells,mitesView,miteAt,resetMites,sentryMites,tickMites,zapMite } from '../game/mites.js';
 import { COACH_RANGE,CORRIDOR_MOUTH,MITE_RANGE,SENTRY_REGION,SHOT_COOLDOWN_MS,SHOT_RANGE } from '../game/sentry-lanes.js';
+import { lineQuiet } from '../game/opening.js';
 import { createExt,withZap } from '../game/save-ext.js';
 import { isOpen } from '../game/world.js';
 import { analytics } from '../analytics.js';
@@ -162,11 +163,12 @@ settle:function () { uiActive(app,state); },
 wait:function () { uiAnnounce(WAIT_TEXT); uiEndCoach(app.game,state); },
 danger:function () { uiDanger(app,state); },
 reset:function () { app.game.fight.mites = resetMites(uiMitesOf(app.game)); },
+quiet:function () { uiRetire(app,state); },
 };
 }
 function uiInstallSentry(app) {
 const game = app.game;
-if (game.sentry || !uiBarrierClosed(game)) return;
+if (game.sentry || !uiBarrierClosed(game) || lineQuiet(game.ext)) return;
 const fight = ensureFight(game);
 fight.mites = sentryMites();
 uiNoteMouth(game);

@@ -4,9 +4,13 @@ import { spawnParticles, updateParticles } from '../game/particles.js';
 const UI_FX_SHAPE = { plusBar:0.34,ringLine:0.07 };
 
 let uiGridPool = [];
+let uiGridPainters = [];
 
 function uiGridBurst(emission) {
 uiGridPool = spawnParticles(uiGridPool,emission);
+}
+function uiGridPainter(painter) {
+if (!uiGridPainters.includes(painter)) uiGridPainters = [...uiGridPainters,painter];
 }
 function uiSnapPx(value,dpr) {
 return Math.max(Math.round(value * dpr),1) / dpr;
@@ -50,10 +54,11 @@ ctx.restore();
 }
 function uiDrawFx(frame) {
 if (frame.reducedMotion) uiGridPool = [];
+uiGridPainters.forEach(function (painter) { painter(frame); });
 if (uiGridPool.length === 0) return;
 uiGridPool = updateParticles(uiGridPool,frame.now);
 const view = { left:frame.camera.col,top:frame.camera.row,unit:frame.tile,dpr:frame.dpr,palette:frame.palette };
 uiDrawParticles(frame.ctx,uiGridPool,view);
 }
 
-export { uiDrawFx, uiGridBurst, uiDrawParticles };
+export { uiDrawFx, uiGridBurst, uiGridPainter, uiDrawParticles };

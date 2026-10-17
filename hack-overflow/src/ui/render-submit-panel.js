@@ -8,9 +8,10 @@ import { ui, uiRenderApp } from './app.js';
 
 const UI_SYNTAX_ERROR_VERDICT = 'SYNTAX ERROR';
 const UI_BUDGET_N_EXPLAINER = 'n = total length of the list and string inputs';
+const UI_FIRST_TRY_SENTENCE = 'First try = your first BREACH.';
 function uiProbeBreachRuleText(problem) {
 const counts = testCounts(problem.cases);
-return 'PROBE checks the examples — free. BREACH runs ' + counts.total + ' tests (' + counts.examples + ' examples + ' + counts.hidden + ' hidden) + the max test; ' + UI_BREACH_TRACE_CLAUSE + '.';
+return 'PROBE checks the examples — free. BREACH runs ' + counts.total + ' tests (' + counts.examples + ' examples + ' + counts.hidden + ' hidden) + the max test; ' + UI_BREACH_TRACE_CLAUSE + '. ' + UI_FIRST_TRY_SENTENCE;
 }
 function uiSubmitHeader(result) {
 if (result.verdict === UI_SYNTAX_ERROR_VERDICT) return UI_SYNTAX_ERROR_VERDICT + '.';
@@ -96,10 +97,18 @@ if (result.verdict === VERDICT_WORDS.P) return uiSubmitAcceptedLines(ctx,result)
 if (result.test !== null) return uiSubmitSmallDetailNodes(ctx,result);
 return result.verdict === VERDICT_WORDS.T ? uiSubmitMaxTleLines(ctx,result) :uiSubmitMaxGenericLines(ctx,result);
 }
+const UI_VERDICT_NOTES = {
+replay:'Same line as before: its verdict, replayed free. No TRACE.',
+mercy:'ROOT holds your FIRST TRY star. Fix the line and BREACH again: a clean one takes it back.',
+};
+function uiVerdictNoteNodes(ctx) {
+const note = UI_VERDICT_NOTES[ctx.app.game.breach.note];
+return note ? [uiEl('p',{ className:'panel-detail panel-note',text:note })] :[];
+}
 function uiSubmitPanelBody(ctx,result) {
 if (result.verdict === UI_SYNTAX_ERROR_VERDICT) return uiEl('div',{ className:'test-panel-body',children:[uiSyntaxBody(ctx)] });
 const header = uiEl('p',{ className:'panel-header',text:uiSubmitHeader(result) });
-return uiEl('div',{ className:'test-panel-body',children:[header].concat(uiSubmitDetailNodes(ctx,result)) });
+return uiEl('div',{ className:'test-panel-body',children:[header,...uiSubmitDetailNodes(ctx,result),...uiVerdictNoteNodes(ctx)] });
 }
 function uiPanelAnnounceText(kind,data) {
 return kind === 'run' ? uiRunAnnounceText(data) :uiSubmitHeader(data);

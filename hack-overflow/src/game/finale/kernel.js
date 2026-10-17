@@ -53,7 +53,7 @@ const SLOT_POWERS = Object.freeze({ volley:'plate',net:'net',field:'lookup',halv
 const PHASE_POWERS = Object.freeze({
 1:Object.freeze(['lookup']),2:Object.freeze(['lookup','plate']),3:Object.freeze([]),4:Object.freeze(['pincer']),5:Object.freeze(['net','plate']),
 });
-const FICTION_LABEL = 'game fiction: two real ops interleaved';
+const SHIELD_DO = 'Each tick, do the NOW verb. A volley is 5 PUSH, 5 POP, CLEAR.';
 
 function createKernel() {
 return { trials:{ lookup:KERNEL_TRIALS,pincer:KERNEL_TRIALS,plate:KERNEL_TRIALS,net:KERNEL_TRIALS },used:[],root:{ n:0,you:0,stopped:false },assistUsed:false };
@@ -311,7 +311,7 @@ return { kernel:{ ...kernel,assistUsed:true },out:{ ...out,hurt:false,note:BRUTE
 }
 
 export {
-KERNEL_TRIALS,CLONE_CELLS,PHASES,KERNEL_TOASTS,FICTION_LABEL,
+KERNEL_TRIALS,CLONE_CELLS,PHASES,KERNEL_TOASTS,SHIELD_DO,
 createKernel,kernelRefill,kernelUse,kernelBadge,rootTick,rootPace,powerOfSlot,phasePowers,opPowers,youOp,rootStop,createPhase,askedCodes,slotOf,
 telegraph,tagClone,recallAllClones,playVerb,pressHalve,pressFusion,phaseTruth,bruteLine,phaseToast,askLine,viewParts,phaseDoneLines,
 applyBruteAssist,swapLine,solvePhase1Line,

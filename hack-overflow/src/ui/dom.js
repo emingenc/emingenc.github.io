@@ -53,7 +53,7 @@ window.setTimeout(function () { uiFlushAnnounce(live); },UI_ANNOUNCE_DELAY_MS);
 function uiFindByFocusKey(root,key) {
 if (!key) return null;
 const node = root.querySelector('[data-focus-key="' + key + '"]');
-return node && !node.disabled ? node :null;
+return node && !node.disabled && !node.closest('[inert]') ? node :null;
 }
 function uiRestoreFocus(root,key,fallback) {
 const node = uiFindByFocusKey(root,key) || fallback || root;

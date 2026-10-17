@@ -1,6 +1,7 @@
 import { registerActorKind } from '../game/actors.js';
 import { CRATE_TOASTS,crateActors,commitActive } from '../game/cast/patch.js';
 import { SENTINEL_CELL,SENTINEL_ID,SHOT_TOASTS,SHOW_RANGE,nearSentinel,sentinelDue } from '../game/cast/refusal.js';
+import { isLine } from '../game/opening.js';
 import { createSentinel } from '../game/sentinel.js';
 import { ensureFight,uiRegisterShotToasts } from './grid-actors.js';
 import { uiRegisterCastPainters } from './grid-cast-draw.js';
@@ -54,7 +55,8 @@ game.fight.actors = uiActorsOf(game).map((actor) => (actor.id === SENTINEL_ID ? 
 }
 function uiStandCrates(game) {
 ensureFight(game);
-const missing = crateActors(game.cast.broken).filter((crate) => !uiHas(game,crate.id));
+const hero = game.avatar.pos;
+const missing = crateActors(game.cast.broken,isLine(game.ext)).filter((crate) => !uiHas(game,crate.id) && !(crate.col === hero.col && crate.row === hero.row));
 game.fight.actors = [...game.fight.actors,...missing];
 }
 function uiSyncCrates(app,follows) {
@@ -66,8 +68,12 @@ function uiFreshBroken(game) {
 const seen = game.cast.broken;
 return uiActorsOf(game).filter((actor) => actor.kind === 'crate' && actor.hp <= 0 && !seen.includes(actor.id)).map((actor) => actor.id);
 }
+function uiBreakStack(game) {
+if (!isLine(game.ext) || !uiActorsOf(game).some((actor) => actor.kind === 'crate' && actor.hp <= 0)) return;
+game.fight.actors = uiActorsOf(game).map((actor) => (actor.kind === 'crate' && actor.hp > 0 ? { ...actor,hp:0 } :actor));
+}
 function uiStandingCrates(game) {
 return uiActorsOf(game).filter((actor) => actor.kind === 'crate' && actor.hp > 0).map((actor) => actor.id);
 }
 
-export { uiTeachKinds,uiSentinelOf,uiSyncSentinel,uiTelegraph,uiSyncCrates,uiFreshBroken,uiStandingCrates };
+export { uiTeachKinds,uiSentinelOf,uiSyncSentinel,uiTelegraph,uiSyncCrates,uiFreshBroken,uiBreakStack,uiStandingCrates };

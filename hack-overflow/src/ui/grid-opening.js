@@ -1,6 +1,8 @@
 import { GAME_EVENT } from '../game/game-events.js';
+import { DRONE_BEAT,LINE_BEAT,isLine } from '../game/opening.js';
 import { createOpening, openingDroneCell, shiftOpening, stepOpening } from '../game/opening-steps.js';
-import { createExt, markOpeningDone } from '../game/save-ext.js';
+import { withBeat } from '../game/ext/ops.js';
+import { createExt,markOpeningDone } from '../game/save-ext.js';
 import { analytics } from '../analytics.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiEmit } from './bus.js';
@@ -63,11 +65,11 @@ window.clearTimeout(game.opening.timer);
 game.opening = null;
 if (game.fight) game.fight.calm = false;
 uiRestoreHearts(game);
-uiCommitExt(app,markOpeningDone(game.ext || createExt()));
-analytics.track('opening_done');
+uiCommitExt(app,withBeat(game.ext || createExt(),DRONE_BEAT));
 uiOpeningToast(app,{ text:DONE_TOAST,kind:'info' });
 uiStoryOnGrid(app);
 uiRenderKeepingFocus(app);
+import('./grid-cast-patch.js').then(function (patch) { return patch.uiPatchArrive(app); }).catch(function () {});
 }
 function uiOpeningCoachText(app) {
 const fight = app.game.fight;
@@ -111,8 +113,16 @@ if (app.game.opening) uiSchedulePulse(app);
 function uiSchedulePulse(app) {
 app.game.opening.timer = window.setTimeout(function () { uiOpeningPulse(app); },OPENING_PULSE_MS);
 }
+function uiStartLine(app) {
+uiCommitExt(app,withBeat(markOpeningDone(app.game.ext || createExt()),LINE_BEAT));
+if (app.game.sentry && app.game.sentry.quiet) app.game.sentry.quiet();
+analytics.track('opening_done');
+uiStoryOnGrid(app);
+uiRenderKeepingFocus(app);
+}
 function uiStartOpening(app,clock = uiDefaultClock) {
 if (app.game.opening) return;
+if (!isLine(app.game.ext || createExt())) { uiStartLine(app); return; }
 const now = clock();
 app.game.drawActors = uiDrawActors;
 app.game.opening = { state:createOpening(now),last:now,clock,timer:null,moved:false };

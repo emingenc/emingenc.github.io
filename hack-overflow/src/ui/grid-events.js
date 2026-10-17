@@ -183,8 +183,10 @@ const unseen = meeting.skip.filter((id) => !app.game.save.story.includes(id));
 if (unseen.length > 0) uiCommitSave(app,markBeatsSeen(app.game.save,unseen));
 return uiStoryClosed(app);
 }
+const UI_MEETING_BEAT = /^(rig|lab)-.+-intro$/;
 function uiRigMeeting(app,rig) {
 const labId = rig.storyId ?? rig.labId;
+if (app.game.save.story.some((id) => UI_MEETING_BEAT.test(id))) return import('./room-meeting.js').then(function (meeting) { return meeting.uiRoomMeeting(app,rig,labId); });
 if (labId === TURRET_LAB_ID) return uiShowMeeting(app,rigMeeting(rig.id,labId));
 return import('../game/story/machine-beats.js').then(function (machine) { return uiShowMeeting(app,rigMeeting(rig.id,labId,machine)); });
 }

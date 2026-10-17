@@ -16,11 +16,14 @@ var Classifier;
 
   let store = null;
   let needleWorker = null;
+  let routerStarted = false;
   let llmWorker = null;
   // A crash or load failure ends the chat model for the session: enabling it
-  // again would re-download 272-363MB in a loop, so the page stays on its
-  // FAQ and canned answers instead.
+  // again would re-download it in a loop, so the page stays on its FAQ and
+  // canned answers instead.
   let llmFailedThisSession = false;
+  let chatDevice = 'webgpu';
+  let planKnown = false;
   // id -> {resolve, signal, onAbort, onToken?, error?} for each request a
   // reply may still settle.
   const pending = new Map();
@@ -33,12 +36,13 @@ var Classifier;
   // ─── Needle: intent classification ─────────────────────────────────────
   const NEEDLE_LIFECYCLE = {
     ready: () => modelStatus('needle', 'ready'),
-    decoderReady: () => modelStatus('needleFc', 'ready'),
     status: (msg) => store.dispatch({ type: 'MODEL_PROGRESS', model: 'needle', text: msg.data }),
     error: (msg) => needleFailed(msg.data),
   };
 
-  function initNeedle() {
+  function startRouter() {
+    if (routerStarted || !store) return;
+    routerStarted = true;
     modelStatus('needle', 'loading');
     try {
       needleWorker = new Worker(NEEDLE_URL, { type: 'module' });
@@ -90,7 +94,7 @@ var Classifier;
     error: (msg) => (msg.fatal ? dropLLMWorker(msg.data) : console.warn('[chat-worker]', msg.data)),
   };
 
-  function initDecoder() {
+  function initChatWorker() {
     if (llmWorker) return; // already loading or loaded
     modelStatus('llm', 'loading');
     try {
@@ -99,7 +103,7 @@ var Classifier;
       // A worker-level failure (a script error, say) is as fatal as a crash
       // reported from inside the worker.
       llmWorker.onerror = (event) => dropLLMWorker(`Worker failed: ${event.message}`);
-      llmWorker.postMessage({ type: 'load' });
+      llmWorker.postMessage({ type: 'load', device: chatDevice });
     } catch (err) {
       dropLLMWorker(err.message);
     }
@@ -221,30 +225,52 @@ var Classifier;
     });
   }
 
-  // ─── Consent and readiness ─────────────────────────────────────────────
+  // ─── The chat model's policy and readiness ──────────────────────────────
   function isLLMReady() { return store.getState().models.llmReady; }
-  function hasLLMConsent() { return store.getState().models.llmConsent === true; }
-  function isLLMConsentPending() { return store.getState().models.llmConsent === null; }
+  function llmPolicy() { return store.getState().models.llmPolicy; }
 
-  // Loads the chat model on the visitor's opt-in, or when a reply finds it
-  // neither ready nor loading; after a crash the page stays on its FAQ and
-  // canned answers rather than download it again. Needle's function-calling
-  // decoder loads alongside it.
+  // The button, or a reply that finds the model neither ready nor loading.
+  // Returns 'failed' (after a crash: no second download), 'running' (already
+  // on), 'resumed' (a declined model's worker back on) or 'started'. Before
+  // the adapter probe answers, the start waits for it.
   function enableLLM() {
-    if (llmFailedThisSession) return;
-    store.dispatch({ type: 'LLM_CONSENT', value: true });
-    initDecoder();
-    if (needleWorker && store.getState().models.needleReady) needleWorker.postMessage({ type: 'initDecoder' });
+    if (llmFailedThisSession) return 'failed';
+    if (llmWorker && llmPolicy() === 'auto') return 'running';
+    store.dispatch({ type: 'LLM_POLICY', value: 'auto' });
+    if (llmWorker) return 'resumed';
+    if (planKnown) initChatWorker();
+    return 'started';
   }
 
-  // On-device AI is on by default. init never reads a stored consent: store.js
-  // still writes the 'llm-consent' key, but nothing reads it back.
-  function init(nextStore) {
+  // Returns false when the chat model was already off.
+  function declineLLM() {
+    if (llmPolicy() === 'off') return false;
+    store.dispatch({ type: 'LLM_POLICY', value: 'off' });
+    return true;
+  }
+
+  // 0 until the adapter probe answers.
+  function chatMegabytes() {
+    return store.getState().models.llmDownloadMB || 0;
+  }
+
+  // An answer the visitor gave while the probe ran stands.
+  function applyChatPlan(plan) {
+    chatDevice = plan.device;
+    planKnown = true;
+    const value = llmPolicy() === 'ask' ? plan.start : llmPolicy();
+    store.dispatch({ type: 'LLM_POLICY', value, megabytes: plan.megabytes });
+    if (value === 'auto') initChatWorker();
+  }
+
+  // Until the probe answers the chat model is behind its button. Environment
+  // and adapter are parameters so a test states them outright.
+  function init(nextStore, { environment = ModelPolicy.readEnvironment(), adapter = ModelPolicy.hasAdapter() } = {}) {
     store = nextStore;
-    initNeedle();
-    store.dispatch({ type: 'LLM_CONSENT', value: true });
-    initDecoder();
+    store.dispatch({ type: 'LLM_POLICY', value: 'ask' });
+    if (ModelPolicy.routerStart(environment) === 'auto') startRouter();
+    return Promise.resolve(adapter).then((found) => applyChatPlan(ModelPolicy.chatPlan(environment, found)));
   }
 
-  Classifier = { init, classify, generate, evaluate, align, enableLLM, isLLMReady, hasLLMConsent, isLLMConsentPending };
+  Classifier = { init, startRouter, classify, generate, evaluate, align, enableLLM, declineLLM, chatMegabytes, isLLMReady, llmPolicy };
 }

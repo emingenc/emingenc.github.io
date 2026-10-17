@@ -1,6 +1,6 @@
 import { BEAM_TEXTS } from '../game/rooms/data/beam-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
-import { beamBudget } from '../game/rooms/beam.js';
+import { roundBudget } from '../game/rooms/beam.js';
 import { uiBeamNoping,uiBeamTime } from './beam-flow.js';
 import { uiBeamW3Reads } from './beam-w3-values.js';
 import { uiEl } from './dom.js';
@@ -9,7 +9,7 @@ import { uiEl } from './dom.js';
 const READS = [['lo','a[lo]'],['mid','a[mid]'],['hi','a[hi]']];
 
 function uiBeamChips(state) {
-const shots = fillText(BEAM_TEXTS.coach.chip,{ k:state.probes,budget:beamBudget(state.wave),lo:state.lo,hi:state.hi });
+const shots = fillText(BEAM_TEXTS.coach.chip,{ k:state.roundShots,budget:roundBudget(state.n),lo:state.lo,hi:state.hi });
 const target = 'FIND ' + state.stream.target;
 const chips = [uiEl('span',{ className:'beam-chip beam-shots',text:shots }),uiEl('span',{ className:'beam-chip beam-target',text:target })];
 return uiEl('p',{ className:'beam-top',children:chips });

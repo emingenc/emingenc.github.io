@@ -1,6 +1,9 @@
 import { HALVE } from '../game/finale/halve.js';
 import { askLine } from '../game/finale/kernel.js';
 import { uiRenderKeepingFocus } from './app.js';
+import { uiEntryAim } from './grid-kernel-halve-draw.js';
+import { uiPlacedCell } from './grid-kernel-paint.js';
+import { uiShotCells } from './shot-fx.js';
 
 const SEPARATOR = ' . ';
 const BIG_STEP = 8;
@@ -31,6 +34,12 @@ uiRenderKeepingFocus(app);
 function uiHalveReset(app) {
 app.game.kernel = { ...app.game.kernel,cursor:null };
 }
+function uiHalveShot(app,out) {
+const kernel = app.game.kernel;
+const aim = uiEntryAim(uiHalveCursor(kernel));
+const view = app.game.view;
+uiShotCells(app.game.avatar.pos,view ? uiPlacedCell(view,kernel.phase.n,aim) :aim,{ hit:!out.hurt,kill:out.phase.done,heavy:false });
+}
 function uiHalveTele(halve) {
 const shot = halve.shots + 1;
 const count = shot <= HALVE.budget ? 'SHOT ' + shot + ' of ' + HALVE.budget :'SHOT ' + shot + SEPARATOR + 'PAR ' + HALVE.budget;
@@ -50,4 +59,4 @@ const chips = [...CURSOR_MOVES.map((move) => uiMoveChip(app,move)),uiFireChip(ap
 return { ask:askLine(phase),tele:uiHalveTele(phase.halve),note:'',fiction:'',chips };
 }
 
-export { uiHalveCursor,uiHalveMove,uiHalveReset,uiHalveView };
+export { uiHalveCursor,uiHalveMove,uiHalveReset,uiHalveShot,uiHalveView };

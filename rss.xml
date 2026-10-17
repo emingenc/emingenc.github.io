@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Emin Gench — writing</title>
+    <link>https://emingenc.github.io/blog/</link>
+    <description>Writing on AI, software engineering, and building things that ship.</description>
+    <language>en</language>
+    <atom:link href="https://emingenc.github.io/rss.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>The gauntlet loop — stop letting your AI grade its own homework</title>
+      <link>https://emingenc.github.io/blog/gauntlet-loops/</link>
+      <guid isPermaLink="true">https://emingenc.github.io/blog/gauntlet-loops/</guid>
+      <pubDate>Sat, 15 Aug 2026 12:00:00 GMT</pubDate>
+      <description>A post-deliverable QA ritual: fan out independent critics, compare against real examples, and recurse until zero open critiques.</description>
+      <category>ai</category>
+      <category>agents</category>
+      <category>engineering</category>
+      <category>quality</category>
+    </item>
+    <item>
+      <title>Building AI agents that ship — lessons from the field</title>
+      <link>https://emingenc.github.io/blog/hello-world/</link>
+      <guid isPermaLink="true">https://emingenc.github.io/blog/hello-world/</guid>
+      <pubDate>Sun, 12 Jul 2026 00:00:00 GMT</pubDate>
+      <description>Lessons learned building and deploying AI systems across four companies — from guardrails and monitoring to shipping fast.</description>
+      <category>ai</category>
+      <category>engineering</category>
+      <category>agents</category>
+    </item>
+  </channel>
+</rss>

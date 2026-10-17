@@ -22,16 +22,6 @@
   left:max(var(--sp-5),env(safe-area-inset-left,0px));
 }
 
-.pincer-screen.is-card {
-  height:auto;
-  min-height:100dvh;
-  overflow:visible;
-}
-
-.pincer-screen.is-card .arena-scroll {
-  max-height:calc(100dvh - var(--arena-header-h) - var(--sp-6) - env(safe-area-inset-bottom,0px));
-}
-
 .pincer-screen > .arena-header,
 .pincer-screen > .arena-rule,
 .pincer-screen > .arena-coach,
@@ -145,17 +135,11 @@
   outline:2px dashed var(--amber);
   outline-offset:-4px;
   z-index:1;
+  justify-self:center;
+  width:44px;
+  min-width:44px;
   touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
-}
-
-.pincer-pillar.is-plank[data-action]::after {
-  content:"";
-  position:absolute;
-  top:var(--pincer-cannon-h);
-  right:-6px;
-  bottom:0;
-  left:-6px;
 }
 
 .pincer-pillar.is-hit {
@@ -174,6 +158,7 @@
   justify-content:center;
   height:var(--pincer-cannon-h);
   font-family:var(--font-display);
+  z-index:2;
   font-size:var(--fs-lg);
   cursor:grab;
   touch-action:none;
@@ -341,10 +326,18 @@
   letter-spacing:0;
 }
 
-.pincer-dock .pincer-btn-sort,
-.pincer-dock .pincer-btn-lookup {
+.pincer-dock .pincer-btn-sort {
   border-color:var(--cyan);
   color:var(--cyan);
+}
+
+.pincer-dock .pincer-btn-sort.is-pulse {
+  animation:pincer-sort-pulse 800ms steps(2,end) infinite;
+}
+
+@keyframes pincer-sort-pulse {
+  0%,100% { box-shadow:0 0 0 0 var(--cyan); }
+  50% { box-shadow:0 0 0 3px var(--cyan); }
 }
 
 .pincer-dock .pincer-btn-bank {
@@ -356,17 +349,26 @@
 .pincer-banner {
   margin:0;
   padding:0 var(--sp-3);
+  color:var(--magenta);
   font-size:var(--fs-sm);
   line-height:1.2;
   text-align:center;
 }
 
-.pincer-banner.is-memory {
-  color:var(--magenta);
+.pincer-rail.is-settle .pincer-pillar {
+  animation:pincer-settle 400ms steps(5,end);
 }
 
-.pincer-banner.is-time {
-  color:var(--amber);
+.pincer-rail.is-settle .pincer-pillar:nth-child(odd) {
+  animation-name:pincer-settle-up;
+}
+
+@keyframes pincer-settle {
+  from { background:var(--cyan); opacity:0.3; transform:translateY(-28px); }
+}
+
+@keyframes pincer-settle-up {
+  from { background:var(--cyan); opacity:0.3; transform:translateY(28px); }
 }
 
 
@@ -515,6 +517,16 @@
 
   .pincer-tile.is-next {
     animation:none;
+  }
+
+  .pincer-rail.is-settle .pincer-pillar,
+  .pincer-rail.is-settle .pincer-pillar:nth-child(odd) {
+    animation:none;
+  }
+
+  .pincer-dock .pincer-btn-sort.is-pulse {
+    animation:none;
+    box-shadow:0 0 0 3px var(--cyan);
   }
 
   .pincer-scene.is-nope {

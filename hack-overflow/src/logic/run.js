@@ -1,7 +1,7 @@
 import { createProfile, demoProfile } from './profile.js';
 import { scheduleForRun, practiceSchedule, earliestDueDay } from './schedule.js';
 import { buildTray } from './tray.js';
-import { canAppendChip, appendChip, removeLastChip, clearLine } from './line.js';
+import { canAppendChip, appendChip, removeLastChip, removeChipAt, clearLine } from './line.js';
 import { applyRun, applySubmit, applyShowLine } from './run-judge.js';
 import { BUILD_PHASE, RESULT_PHASE, REVIEW_PHASE } from './run-phase.js';
 
@@ -55,6 +55,13 @@ if (index < 0 || index >= run.lock.tray.order.length) return run;
 if (!canAppendChip(run.lock.line)) return run;
 return withLine(run,appendChip(run.lock.line,run.lock.tray.order[index]));
 }
+function removeIndexFromId(optionId) {
+const match = /^remove-(\d+)$/.exec(optionId);
+return match ? Number(match[1]) :null;
+}
+function applyRemoveAt(run,index) {
+return run.phase === BUILD_PHASE ? withLine(run,removeChipAt(run.lock.line,index)) :run;
+}
 function applyBackspace(run) {
 return run.phase === BUILD_PHASE ? withLine(run,removeLastChip(run.lock.line)) :run;
 }
@@ -90,6 +97,8 @@ practice:(catalog,run) => applyPractice(catalog,run),
 function act(catalog,run,optionId) {
 const chipIndex = chipIndexFromId(optionId);
 if (chipIndex !== null) return applyChip(run,chipIndex);
+const removeIndex = removeIndexFromId(optionId);
+if (removeIndex !== null) return applyRemoveAt(run,removeIndex);
 const handler = ACT_HANDLERS[optionId];
 return handler ? handler(catalog,run) :run;
 }

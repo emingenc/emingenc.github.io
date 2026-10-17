@@ -19,16 +19,6 @@
   left:max(var(--sp-5),env(safe-area-inset-left,0px));
 }
 
-.turret-screen.is-card {
-  height:auto;
-  min-height:100dvh;
-  overflow:visible;
-}
-
-.turret-screen.is-card .arena-scroll {
-  max-height:calc(100dvh - var(--arena-header-h) - var(--sp-6) - env(safe-area-inset-bottom,0px));
-}
-
 .turret-screen > .arena-header,
 .turret-screen > .arena-coach,
 .turret-screen > .turret-board,

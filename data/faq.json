@@ -50,7 +50,7 @@
         "linkedin.com/in/emingench",
         "x.com/emingench"
       ],
-      "footer": "Open to: open source collaboration"
+      "footer": "Open to open-source and smart-glasses projects. Not taking new roles."
     },
     "skills": {
       "title": "TECH STACK",
@@ -356,7 +356,7 @@
         "opportunity",
         "hire emin"
       ],
-      "a": "<b>Currently at Cresta AI</b> — not looking for new roles. Open to open source collaboration. Reach: reach out via GitHub or LinkedIn."
+      "a": "Reach him on <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>. Open to open-source and smart-glasses projects. Not taking new roles. <b>Currently at Cresta AI.</b>"
     },
     {
       "q": "Languages spoken?",
@@ -403,7 +403,7 @@
         "born",
         "birthday"
       ],
-      "a": "Not publicly listed. Based on his career timeline (graduated Academy, served as officer, 7+ years in tech), late 20s to early 30s. His experience matters more than his age."
+      "a": "Not publicly listed. Based on his career timeline (graduated Academy, served as officer, 8+ years in tech), late 20s to early 30s. His experience matters more than his age."
     },
     "══════ OPEN SOURCE ══════",
     {
@@ -880,7 +880,7 @@
         "github profile",
         "get in touch"
       ],
-      "a": "📧 GitHub/LinkedIn<br>🐙 <a href='https://github.com/emingenc' target='_blank'>GitHub</a><br>💼 <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a><br>🐦 <a href='https://x.com/emingench' target='_blank'>X/Twitter</a>"
+      "a": "Best way to reach Emin: <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>. Open to open-source and smart-glasses projects. Not taking new roles.<br>🐙 <a href='https://github.com/emingenc' target='_blank'>GitHub</a><br>💼 <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a><br>🐦 <a href='https://x.com/emingench' target='_blank'>X/Twitter</a>"
     },
     {
       "q": "Email?",
@@ -891,7 +891,7 @@
         "emin email",
         "e-mail"
       ],
-      "a": "GitHub/LinkedIn"
+      "a": "Emin does not publish an email address. Reach him on <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>."
     },
     {
       "q": "Social media?",
@@ -917,7 +917,7 @@
         "gig",
         "freelance work"
       ],
-      "a": "<b>Full-time at Cresta AI</b> — not available for freelance. Open to open source collaboration: reach out via GitHub or LinkedIn."
+      "a": "Reach him on <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>. Open to open-source and smart-glasses projects. Not taking new roles. <b>Full-time at Cresta AI.</b>"
     },
     {
       "q": "Speaking?",
@@ -1010,7 +1010,7 @@
         "llm model",
         "ai engine"
       ],
-      "a": "<b>SmolLM2-360M-Instruct</b> (WebGPU) + custom ONNX encoder for intent routing. Both local. Model 272MB (363MB without WebGPU), cached after first download."
+      "a": "<b>SmolLM2-360M-Instruct</b> (WebGPU) + custom ONNX encoder for intent routing. Both local. The chat model is 278 MB (369 MB without WebGPU), cached after first download."
     },
     {
       "q": "Privacy?",
@@ -1048,7 +1048,7 @@
         "airplane mode",
         "without internet"
       ],
-      "a": "After first visit: <b>yes</b>. Model cached in browser (272MB, or 363MB without WebGPU). AI works without internet once cached."
+      "a": "After first visit: <b>yes</b>. Chat model cached in browser (278 MB, or 369 MB without WebGPU). AI works without internet once cached."
     },
     {
       "q": "Downloading message?",
@@ -1060,7 +1060,7 @@
         "download progress",
         "why downloading"
       ],
-      "a": "Model downloads on first visit (~1-3 min), caches permanently. <b>Subsequent visits instant.</b> If it re-downloads, your browser may be clearing cache on refresh."
+      "a": "The chat model downloads by itself only on a fast desktop with WebGPU (~1-3 min). On a phone or a slow connection a <b>load chat model</b> button asks first. Once cached, <b>later visits are instant.</b> If it downloads again, your browser may be clearing its cache."
     },
     {
       "q": "Open source site?",
@@ -1111,7 +1111,7 @@
         "cresta company",
         "about cresta"
       ],
-      "a": "<a href='https://cresta.com' target='_blank'>Cresta</a> is the leading generative AI platform for customer experience — turning every conversation into a competitive advantage. Its platform gives contact center agents real-time AI coaching during live calls, powers fully autonomous AI Voice and Chat Agents, analyzes millions of conversations with AI, and translates across 30+ languages in real time. Fortune 500 customers include Intuit, Hilton, Cox, and Alaska Airlines. Founded by Stanford AI researchers, backed by Sequoia, a16z, and Greylock."
+      "a": "<a href='https://cresta.com' target='_blank'>Cresta</a> is the leading generative AI platform for customer experience — turning every conversation into a competitive advantage. Its platform gives frontline teams real-time AI coaching during live conversations, powers fully autonomous AI Voice and Chat Agents, analyzes millions of conversations with AI, and translates across 30+ languages in real time. Fortune 500 customers include Intuit, Hilton, Cox, and Alaska Airlines. Founded by Stanford AI researchers, backed by Sequoia, a16z, and Greylock."
     },
     {
       "q": "Role at Cresta?",
@@ -1122,7 +1122,7 @@
         "cresta day to day",
         "daily work cresta"
       ],
-      "a": "<b>Forward Deployed AI Engineer</b> — works with customers to deploy and customize AI contact center solutions. Integrations, model customization, production reliability."
+      "a": "<b>Forward Deployed AI Engineer</b> — works with customers to deploy and customize production AI agents for Fortune 500 companies. Integrations, model customization, production reliability."
     },
     {
       "q": "Join date?",
@@ -1732,7 +1732,7 @@
         "career opportunity",
         "looking for role"
       ],
-      "a": "<b>At Cresta AI</b> — not exploring new roles. Open to open source collaboration. Recruiters: he'll reach out if his situation changes."
+      "a": "Recruiters: say hello on <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>. Open to open-source and smart-glasses projects. Not taking new roles. <b>At Cresta AI.</b>"
     },
     {
       "q": "Send job description?",
@@ -1743,7 +1743,7 @@
         "job opening",
         "job posting"
       ],
-      "a": "Appreciated, but not currently exploring. Open source collaboration ideas welcome: reach out via GitHub or LinkedIn."
+      "a": "Appreciated. Open to open-source and smart-glasses projects. Not taking new roles. Open-source ideas are welcome on <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>."
     },
     {
       "q": "Visa status?",

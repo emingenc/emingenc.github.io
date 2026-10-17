@@ -3,24 +3,23 @@ import { rankFor, traceCapacity } from '../game/progress.js';
 import { EXPLOITS } from '../game/exploits.js';
 import { unlockText } from '../game/messages.js';
 import { uiEl, uiPointerIsCoarse } from './dom.js';
+import { uiLinkStyles } from './lazy-style.js';
 import { uiEmit } from './bus.js';
 import { uiEnterGrid } from './screen-grid.js';
 
 function uiOpenLevelUp(app,levelUp) {
+uiLinkStyles(['styles/lazy/levelup.css']);
 app.game.levelUp = { ...levelUp,openedAt:performance.now() };
 app.screen = 'levelup';
 app.lastFocusKey = 'levelup-continue';
 uiEmit(GAME_EVENT.LEVEL_UP,{ before:levelUp.before,after:levelUp.after,unlocks:levelUp.unlocks });
-}
-function uiUnlockLines(app) {
-return app.game.levelUp.unlocks.map(function (unlock) { return unlockText(app.game.world,unlock); });
 }
 function uiUnlockExploitKey(exploit) {
 return EXPLOITS[exploit === 'scanMk2' ? 'scan' :exploit].key;
 }
 function uiUnlockCardMeta(unlock) {
 if (unlock.kind === 'trace') return '+' + (unlock.capacity - traceCapacity(unlock.level - 1));
-if (unlock.kind === 'exploit' && !uiPointerIsCoarse()) return 'BUTTON or KEY ' + uiUnlockExploitKey(unlock.exploit);
+if (unlock.kind === 'exploit' && !uiPointerIsCoarse()) return 'In a breach: press ' + uiUnlockExploitKey(unlock.exploit);
 return '';
 }
 function uiUnlockCard(world,unlock,index) {
@@ -53,13 +52,21 @@ function uiUnlockGroup(world,group,allUnlocks) {
 const cards = group.unlocks.map(function (unlock) { return uiUnlockCard(world,unlock,allUnlocks.indexOf(unlock)); });
 return uiEl('ul',{ className:'levelup-cards',children:cards });
 }
-function uiUnlockGroups(app) {
-const unlocks = app.game.levelUp.unlocks;
+function uiUnlockGroups(world,levelUp) {
+const unlocks = levelUp.unlocks;
 const groups = uiGroupByLevel(unlocks);
-const labelled = app.game.levelUp.after - app.game.levelUp.before > 1;
+const labelled = levelUp.after - levelUp.before > 1;
 return groups.map(function (group) {
-return uiEl('div',{ className:'levelup-group',children:[labelled ? uiLevelLabel(group.level,unlocks.indexOf(group.unlocks[0])) :null,uiUnlockGroup(app.game.world,group,unlocks)] });
+return uiEl('div',{ className:'levelup-group',children:[labelled ? uiLevelLabel(group.level,unlocks.indexOf(group.unlocks[0])) :null,uiUnlockGroup(world,group,unlocks)] });
 });
+}
+function uiLevelUpBody(world,levelUp) {
+return [
+uiEl('p',{ className:'levelup-kicker',text:'LEVEL UP' }),
+uiEl('h1',{ className:'levelup-title',text:'LV ' + levelUp.after }),
+uiEl('p',{ className:'levelup-rank',text:'CALLSIGN: ' + rankFor(levelUp.after) }),
+uiEl('div',{ className:'levelup-unlocks',attrs:{ role:'group','aria-label':'Unlocked' },children:uiUnlockGroups(world,levelUp) }),
+];
 }
 function uiRenderLevelUp(app) {
 const levelUp = app.game.levelUp;
@@ -67,10 +74,7 @@ const section = uiEl('section',{
 className:'screen screen-card levelup-screen',
 attrs:{ 'data-screen':'levelup' },
 children:[
-uiEl('p',{ className:'levelup-kicker',text:'LEVEL UP' }),
-uiEl('h1',{ className:'levelup-title',text:'LV ' + levelUp.after }),
-uiEl('p',{ className:'levelup-rank',text:'CALLSIGN: ' + rankFor(levelUp.after) }),
-uiEl('div',{ className:'levelup-unlocks',attrs:{ role:'group','aria-label':'Unlocked' },children:uiUnlockGroups(app) }),
+...uiLevelUpBody(app.game.world,levelUp),
 uiEl('button',{
 className:'btn btn-primary levelup-continue',
 text:'CONTINUE',
@@ -86,10 +90,13 @@ if (actionId !== 'levelup-continue') return false;
 uiEnterGrid(app);
 return true;
 }
-function uiLevelUpAnnounce(app) {
-const lines = uiUnlockLines(app);
+function uiLevelUpSpeech(world,levelUp) {
+const lines = levelUp.unlocks.map(function (unlock) { return unlockText(world,unlock); });
 const unlocked = lines.length > 0 ? ' Unlocked: ' + lines.join('; ') + '.' :'';
-return 'Callsign: ' + rankFor(app.game.levelUp.after) + '.' + unlocked;
+return 'Callsign: ' + rankFor(levelUp.after) + '.' + unlocked;
+}
+function uiLevelUpAnnounce(app) {
+return uiLevelUpSpeech(app.game.world,app.game.levelUp);
 }
 function uiLevelUpScreen() {
 return {
@@ -101,4 +108,4 @@ applyAction:uiApplyLevelUpAction,
 };
 }
 
-export { uiLevelUpScreen, uiOpenLevelUp };
+export { uiLevelUpScreen, uiOpenLevelUp, uiLevelUpBody, uiLevelUpSpeech };

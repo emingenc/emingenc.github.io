@@ -15,7 +15,7 @@ var Context;
     evaluationTokens: 800,    // forEvaluation's conversation budget
     toolResultChars: 500,     // this turn's tool chars, capped per result
     promptClampChars: 7500,   // forGeneration's final clamp (SmolLM2's real window)
-    meterTokens: 1600,        // SmolLM2-360M's real window the meter reads against
+    meterTokens: 1600,        // the context meter's full scale; SmolLM2's real window is 2048 (chat-worker.js)
     compactErrorChars: 150,   // evaluator's compact tool-error strings are cut to this
     summaryEveryUserTurns: 4, // rolling-summary cadence
     summaryQuestionChars: 80,

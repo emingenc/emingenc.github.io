@@ -49,7 +49,7 @@ function uiDrawFollower(ctx,app,frame) {
 const cast = app.game.cast;
 if (cast.dragged) return;
 const hero = app.game.avatar.pos;
-if (cast.trail && trailLost(cast.trail,hero)) cast.trail = null;
+if (cast.trail && cast.role !== 'walk' && trailLost(cast.trail,hero)) cast.trail = null;
 if (!cast.trail) return;
 const cell = trailPose(cast.trail,{ now:frame.now,still:frame.reducedMotion });
 const apart = Math.max(Math.abs(cell.col - frame.avatar.col),Math.abs(cell.row - frame.avatar.row));
@@ -59,7 +59,7 @@ function uiDrawCast(ctx,app,frame) {
 const role = app.game.cast.role;
 if (role !== 'none') uiDrawBench(ctx,frame);
 if (role === 'busy' || role === 'talk') uiDrawArtAt(ctx,frame,{ cell:PATCH_CELL,name:'patch' });
-if (role === 'follow') uiDrawFollower(ctx,app,frame);
+if (role === 'follow' || role === 'walk') uiDrawFollower(ctx,app,frame);
 }
 
 export { uiDrawCast,uiRegisterCastPainters };

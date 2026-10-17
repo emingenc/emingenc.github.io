@@ -11,6 +11,7 @@ import { uiAddChips,uiPowerOf,uiPowerRefresh,uiPowerSay as uiSay } from './grid-
 import { uiBridgeInReach } from './grid-power-bridge.js';
 import { uiSpendTrial } from './grid-power-lend.js';
 import { uiPaintShields } from './grid-shield-draw.js';
+import { uiShotCells } from './shot-fx.js';
 
 const POWER_ID = 'pincer';
 const SPAWN_NEAR = 5;
@@ -119,6 +120,7 @@ if (shield.live && shield.live !== locker.id) uiBreakOff(app,shield);
 if (!shield.live) uiBegin(app,shield,locker);
 const result = applyBridge(shield.state,move,puzzleFor(locker.id));
 shield.state = result.state;
+if (move === 'fire' && result.kind !== 'none') uiShotCells(app.game.avatar.pos,locker.drone,{ hit:result.kind === 'win',kill:result.kind === 'win',heavy:false });
 uiSay(app,{ text:result.note,kind:result.kind === 'win' ? 'reward' :'info' });
 if (result.kind === 'win') uiWin(app,shield,locker);
 uiSafeTick(app,locker.id);

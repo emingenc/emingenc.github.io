@@ -1,13 +1,14 @@
 // chat-worker.js — SmolLM2-360M chat completion via Transformers.js v4
 //
 // Handles:
-//   load     → download model from HuggingFace (cached after first visit)
-//               Tries WebGPU first, falls back to WASM on timeout/failure
+//   load     → {device?} download model from HuggingFace (cached after first visit)
+//               Tries WebGPU first, falls back to WASM on timeout/failure;
+//               device 'wasm' skips WebGPU (the page found no adapter)
 //   generate → {text, requestId, systemPrompt?} → streaming tokens → token/done/error
 //   evaluate → {question, results, evalId, context, compactErrors} → evalResult
 //
 // Uses Transformers.js v4 from jsDelivr CDN (cached by browser after first load).
-// Model: onnx-community/SmolLM2-360M-Instruct-ONNX (272MB q4f16 download on WebGPU, 363MB q8 on the WASM fallback; cached in browser).
+// Model: onnx-community/SmolLM2-360M-Instruct-ONNX (q4f16 on WebGPU, q8 on WASM; sizes in model-policy.js; cached in browser).
 
 import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0/dist/transformers.min.js';
 
@@ -179,16 +180,19 @@ self.onmessage = async function(e) {
       var loaded = false;
       var lastError = null;
 
-      // Step 1: Try WebGPU
-      try {
-        self.postMessage({ type: 'status', data: 'loading model (webgpu)...' });
-        pipe = await loadPipeline('webgpu', 45000);
-        loaded = true;
-        self.postMessage({ type: 'status', data: 'ready (webgpu)' });
-      } catch(gpuErr) {
-        lastError = gpuErr;
-        self.postMessage({ type: 'status', data: 'webgpu failed, trying wasm...' });
-        console.warn('[chat-worker] WebGPU failed:', gpuErr.message, '- falling back to WASM');
+      // Step 1: Try WebGPU, unless the page found no adapter: that attempt
+      // would download the WebGPU weights before failing.
+      if (msg.device !== 'wasm') {
+        try {
+          self.postMessage({ type: 'status', data: 'loading model (webgpu)...' });
+          pipe = await loadPipeline('webgpu', 45000);
+          loaded = true;
+          self.postMessage({ type: 'status', data: 'ready (webgpu)' });
+        } catch(gpuErr) {
+          lastError = gpuErr;
+          self.postMessage({ type: 'status', data: 'webgpu failed, trying wasm...' });
+          console.warn('[chat-worker] WebGPU failed:', gpuErr.message, '- falling back to WASM');
+        }
       }
 
       // Step 2: Fall back to WASM

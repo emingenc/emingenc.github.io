@@ -35,7 +35,7 @@ const emptying = state.last !== null && state.last.move === 'shrink';
 const breaking = netWouldTear(state) || netSum(state) > state.stream.k;
 return state.l < state.r && (emptying || breaking) ? 'shrink' :orFirst(state,'extend');
 }
-function eagerShrinkBot(state) {
+function trimFirstBot(state) {
 const overflows = netSum(state) + netPeek(state) > state.stream.k;
 return state.l < state.r && overflows ? 'shrink' :orFirst(state,'extend');
 }
@@ -49,5 +49,5 @@ return moves[Math.floor(next() * moves.length)];
 
 export {
 solveNet,playBot,extendSpamBot,extendSpamBot as neverShrinkBot,shrinkSpamBot,rawJumpBot,rebuildBot,
-rebuildBot as restartBot,eagerShrinkBot,randomBot,
+rebuildBot as restartBot,trimFirstBot,randomBot,
 };

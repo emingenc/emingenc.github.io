@@ -6,6 +6,7 @@ import { uiCommitSave } from './game-state.js';
 import { uiLabPayRank } from './lab-rank.js';
 import { uiLinkStyles } from './lazy-style.js';
 import { uiStoryLabFinish, uiStoryLabOpen } from './machine-dialogue.js';
+import { uiRoomHintInto } from './room-hint.js';
 import { uiEnterGrid } from './screen-grid.js';
 import { LAB_FRAME, uiLabCoachChunk, uiLabLevelOf, uiLabRenderEmpty, uiLabRenderPlay, uiLabRenderSelect } from './lab-render.js';
 
@@ -189,7 +190,7 @@ return { type:'action',id };
 }
 function uiLabRender(app) {
 if (!app.lab) return uiLabRenderEmpty();
-return app.lab.view === 'play' ? uiLabRenderPlay(app) :uiLabRenderSelect(app);
+return uiRoomHintInto(app,'context',app.lab.view === 'play' ? uiLabRenderPlay(app) :uiLabRenderSelect(app));
 }
 function uiLabAnnounce() {
 return LAB_RIG.title + '. ' + LAB_FRAME;

@@ -1,5 +1,5 @@
 import { uiTurretPlayable } from './turret-flow.js';
-import { uiTurretFieldClass } from './turret-scene.js';
+import { uiSceneClass, uiTurretFieldClass } from './turret-scene.js';
 
 
 const DRAG_SLOP_PX = 6;
@@ -27,7 +27,7 @@ function uiDragHover(slotNode) {
 function uiDragFieldClass() {
   const arena = uiDragArena();
   const field = arena && arena.nodes ? arena.nodes.field : null;
-  if (field) field.className = uiTurretFieldClass(arena);
+  if (field) uiSceneClass(field, uiTurretFieldClass(arena));
 }
 function uiDragKeyListener() {
   const arena = uiDragArena();

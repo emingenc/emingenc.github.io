@@ -43,7 +43,8 @@ function uiNetHow(values) {
 }
 function uiNetWinBody(state, result) {
   const values = uiNetValues(state);
-  const head = [uiNetStars(result.stars), uiNetScore(state), uiNetLine('net-used', fillText(NET_TEXTS.card.used, values))];
+  const flick = state.flicked ? uiNetLine('net-flick', NET_TEXTS.card.flick) : null;
+  const head = [uiNetStars(result.stars), uiNetScore(state), uiNetLine('net-used', fillText(NET_TEXTS.card.used, values)), flick];
   const find = result.find ? uiNetLine('net-find', result.find) : null;
   return [...head, uiArenaPaidLine(result.rank, 'net-paid'), find, uiNetHow(values)].filter(Boolean);
 }

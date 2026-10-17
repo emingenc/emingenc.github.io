@@ -26,11 +26,16 @@ function netBest(state) {
 return state.best;
 }
 
+function sumPeekOver(state) {
+const peek = netPeek(state);
+return peek !== undefined && state.sum + peek > state.stream.k;
+}
 const JUDGES = {
 distinct:{
 enter:(state,item) => { state.count[item] = (state.count[item] ?? 0) + 1; },
 leave:(state,item) => { state.count[item] -= 1; },
 blocked:(state) => (state.count[netPeek(state)] ?? 0) > 0,
+pointless:(state) => !JUDGES.distinct.blocked(state),
 strained:() => false,
 tearWhy:(state) => fillText(NET_TEXTS.toast.tear,{ x:netPeek(state) }),
 wastedWhy:() => NET_TEXTS.toast.wasted,
@@ -40,9 +45,10 @@ sum:{
 enter:(state,item) => { state.sum += item; },
 leave:(state,item) => { state.sum -= item; },
 blocked:(state) => state.sum > state.stream.k,
+pointless:(state) => !JUDGES.sum.blocked(state) && !sumPeekOver(state),
 strained:(state) => state.sum > state.stream.k,
 tearWhy:(state) => fillText(NET_TEXTS.toast.tearSum,{ sum:state.sum,k:state.stream.k }),
-wastedWhy:(state) => fillText(NET_TEXTS.toast.wastedSum,{ sum:state.sum,k:state.stream.k }),
+wastedWhy:(state) => fillText(NET_TEXTS.toast.wastedSum,{ sum:state.sum,k:state.stream.k,x:netPeek(state) }),
 strainWhy:(state) => fillText(NET_TEXTS.toast.strain,{ sum:state.sum,k:state.stream.k }),
 },
 };
@@ -68,12 +74,20 @@ function netWouldTear(state) {
 return state.status === 'running' && state.r < state.stream.items.length && judgeOf(state).blocked(state);
 }
 
+const FORCED = {
+distinct:(state) => (state.rules.jump === 'max' ? lastSeen(state) === NOT_SEEN :!judgeOf(state).blocked(state)),
+sum:(state) => state.sum + netPeek(state) <= state.stream.k,
+};
+
 const LEGAL = {
 extend:(state) => state.r < state.stream.items.length,
 shrink:(state) => state.l < state.r,
 jump:(state) => Boolean(state.rules.jump) && lastSeen(state) !== NOT_SEEN,
 flick:(state) => !state.flicked && state.l <= state.stream.gold && state.stream.gold < state.r,
 };
+function netForced(state) {
+return state.status === 'running' && state.r < state.stream.items.length && FORCED[state.rules.judge](state);
+}
 function netMoves(state) {
 if (state.status !== 'running') return [];
 return MOVE_ORDER.filter((move) => LEGAL[move](state));
@@ -105,7 +119,7 @@ state.last = judge.strained(state) ? outcome('extend','strain',judge.strainWhy(s
 }
 function playShrink(state) {
 const judge = judgeOf(state);
-const wasted = !judge.blocked(state);
+const wasted = judge.pointless(state);
 const why = wasted ? judge.wastedWhy(state) :'';
 judge.leave(state,state.stream.items[state.l]);
 state.l += 1;
@@ -140,7 +154,6 @@ state.steps += 1;
 function playFlick(state) {
 const gold = state.stream.items[state.stream.gold];
 state.flicked = true;
-state.steps += 1;
 state.score += NET_SCORE.gold;
 state.last = outcome('flick','flick',fillText(NET_TEXTS.toast.flick,{ x:gold,points:NET_SCORE.gold }));
 }
@@ -203,4 +216,4 @@ return total + readsFrom(scratch);
 },0);
 }
 
-export { createNet,applyNet,netMoves,netPar,netLine,netStars,netBest,netPeek,netSum,netWouldTear,bruteReads };
+export { createNet,applyNet,netMoves,netForced,netPar,netLine,netStars,netBest,netPeek,netSum,netWouldTear,bruteReads };

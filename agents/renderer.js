@@ -38,12 +38,12 @@ var Renderer = (function() {
   // javascript:/vbscript:/data: URLs.
   var SANITIZE_BAD_TAGS = ['script', 'iframe', 'frame', 'frameset', 'object', 'embed', 'link', 'meta', 'base', 'style', 'svg', 'math', 'noscript', 'template', 'form'];
   var SANITIZE_URL_ATTRS = { href: 1, src: 1, action: 1, 'xlink:href': 1 };
-  // cmdLink()/askBox()/llm_consentMessage() (tools.js) are the only authors of
+  // cmdLink()/askBox()/llmConsentMessage() (tools-match.js) are the only authors of
   // onclick in trusted card markup, always with exactly these shapes — any
   // other on* value is an injection, not an authored handler, so it gets
   // stripped like the rest. A quickCmd() argument can't hold a backslash: a JS
   // escape ('\x2f') would run a different command than the text checked below.
-  var SANITIZE_SAFE_ONCLICK = /^window\.(?:(?:quickCmd|_answerAsk)\((?:'[^'"<>\\]*'|-?\d+)\)|_enableLLM\(\))$/;
+  var SANITIZE_SAFE_ONCLICK = /^window\.(?:(?:quickCmd|_answerAsk)\((?:'[^'"<>\\]*'|-?\d+)\)|_enableLLM\(\)|_declineLLM\(\))$/;
 
   function isDangerousUrl(value) {
     var v = String(value == null ? '' : value).replace(/[\s\u0000-\u001f]+/g, '').toLowerCase();
@@ -116,6 +116,8 @@ var Renderer = (function() {
   // Cap the live transcript — long sessions shouldn't bloat the DOM.
   var MAX_TRANSCRIPT_NODES = 60;
   var MINUTE_MS = 60000;
+  var CONTEXT_WARN_PCT = 50;
+  var CONTEXT_FULL_PCT = 80;
   var RESTORE_PAINT_DELAY_MS = 50;
   var unsubscribe = null;
 
@@ -214,20 +216,9 @@ var Renderer = (function() {
     if (!el.output.querySelector('[data-streaming]')) el.output.removeAttribute('aria-busy');
   }
 
-  // agent-ui owns the input (it queues typing while a turn runs), so this
-  // only drives the optional thinking row and never disables or focuses it.
-  function renderThinking(state, action) {
-    if (action.type !== 'THINKING' || !el.thinking) return;
-    var ui = state.ui;
-    var busy = ui.isProcessing && ui.thinkingState !== 'idle';
-    el.thinking.style.display = busy ? 'flex' : 'none';
-    el.thinking.className = 'thinking' + (busy && ui.thinkingState === 'executing' ? ' executing' : '');
-    if (busy && el.thinkingLabel) el.thinkingLabel.textContent = ui.thinkingLabel || 'thinking';
-  }
-
   function renderContextBar(state) {
     var pct = state.ui.contextPct;
-    var color = pct < 50 ? 'var(--green)' : pct < 80 ? 'var(--yellow)' : 'var(--red)';
+    var color = pct < CONTEXT_WARN_PCT ? 'var(--green)' : pct < CONTEXT_FULL_PCT ? 'var(--yellow)' : 'var(--red)';
     if (el.ctxBar) { el.ctxBar.style.width = pct + '%'; el.ctxBar.style.background = color; }
     if (el.sCtxFill) { el.sCtxFill.style.width = pct + '%'; el.sCtxFill.style.background = color; }
     if (el.sCtxPct) el.sCtxPct.textContent = Math.round(pct) + '%';
@@ -383,52 +374,28 @@ var Renderer = (function() {
     }, RESTORE_PAINT_DELAY_MS);
   }
 
-  // ─── v2: Decoder status ───────────────────────────────────
-  // Paints one status string on #sModel (header status line) and #inputModel
-  // (composer status row). It folds in the needle classifier's state
-  // (state.models.needle*, set by store.js's generic MODEL_STATUS reducer)
-  // since the header advertises both models as one pair.
-  function llmLoadingDetail(m) {
-    if (m.llmDownloadProgress > 0) return m.llmDownloadProgress + '%';
-    if (m.llmStatusText) return m.llmStatusText;
-    return 'loading...';
-  }
-
-  function modelStatus(m) {
-    if (m.needleError || m.llmError) {
-      return { text: (m.llmError ? 'smollm2' : 'needle') + ' unavailable', tone: 'error' };
-    }
-    if (m.llmReady && (m.needleReady || !m.needleLoading)) {
-      return { text: 'ready', tone: 'ready' };
-    }
-    if (m.llmLoading) return { text: 'smollm2 ' + llmLoadingDetail(m), tone: 'loading' };
-    if (m.needleLoading) return { text: 'needle loading...', tone: 'loading' };
-    if (m.needleReady) return { text: 'ready', tone: 'ready' };
-    return { text: 'loading...', tone: 'loading' };
-  }
-
-  function renderLLMStatus(state) {
-    var s = modelStatus(state.models);
-    if (el.sModel) el.sModel.textContent = s.text;
-    if (el.sModelDot) el.sModelDot.className = 'model-dot ' + s.tone;
-    if (el.inputModel) el.inputModel.textContent = s.text;
-    if (el.inputModelDot) el.inputModelDot.className = 'model-dot ' + s.tone;
-  }
-
   // ─── State change handler ────────────────────────────────
+  // Each action type paints what it changed; one the renderer does not know
+  // (RESTORE is handled by showRestored) paints nothing.
+  var ON_ACTION = {
+    CONTEXT_UPDATE: function(state) { renderContextBar(state); },
+    SESSION_START: function(state) { renderSession(state); renderContextBar(state); },
+    NEW_SESSION: function(state) { renderSession(state); renderContextBar(state); },
+    MESSAGE_ADD: function(state, action) { renderMessage(action.message, true); renderContextBar(state); },
+    MESSAGE_STREAM: function(state, action) {
+      var streamMsg = findMsgById(state, action.id);
+      if (streamMsg) renderStreamChunk(streamMsg, action.chunk);
+    },
+    MESSAGE_STREAM_DONE: function(state, action) { finishStream(action.id); renderContextBar(state); },
+    CLEAR: function(state) { el.output.innerHTML = ''; renderContextBar(state); },
+    ASK_USER: function(state) { renderAskUser(state); },
+    USER_RESPONSE: function(state) { renderAskUser(state); },
+    RESUME: function(state) { renderAskUser(state); }
+  };
+
   function onStateChange(state, action) {
-    switch (action.type) {
-      case 'THINKING': renderThinking(state, action); break;
-      case 'CONTEXT_UPDATE': renderContextBar(state); break;
-      case 'SESSION_START': case 'NEW_SESSION': renderSession(state); renderContextBar(state); break;
-      case 'MESSAGE_ADD': renderMessage(action.message, true); renderContextBar(state); break;
-      case 'MESSAGE_STREAM': var streamMsg = findMsgById(state, action.id); if (streamMsg) renderStreamChunk(streamMsg, action.chunk); break;
-      case 'MESSAGE_STREAM_DONE': finishStream(action.id); renderContextBar(state); break;
-      case 'MODEL_STATUS': renderLLMStatus(state); break;
-      case 'CLEAR': el.output.innerHTML = ''; renderContextBar(state); break;
-      case 'ASK_USER': case 'USER_RESPONSE': case 'RESUME': renderAskUser(state); break;
-      case 'RESTORE': break; // handled separately
-    }
+    var paint = Object.prototype.hasOwnProperty.call(ON_ACTION, action.type) ? ON_ACTION[action.type] : null;
+    if (paint) paint(state, action);
   }
 
   function findMsgById(state, id) {

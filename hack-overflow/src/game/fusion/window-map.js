@@ -51,14 +51,14 @@ if (left === undefined) return 'Not in the map.';
 return left > 0 ? 'Missing ' + missing + '.' :'Spare.';
 }
 function extend(state,puzzle) {
-if (covered(state)) return mistake(state,'late-extend','The window covers. EXTEND only makes it longer: BEST it, or SHRINK.');
+if (covered(state)) return mistake(state,'late-extend','The window covers. EXTEND only makes it longer: SHRINK while it still covers, or BEST when the next SHRINK would break it.');
 const letter = puzzle.text[state.head];
 const left = state.count[letter];
 const count = left === undefined ? state.count :{ ...state.count,[letter]:left - 1 };
 const missing = left !== undefined && left > 0 ? state.missing - 1 :state.missing;
 const next = finish({ ...state,head:state.head + 1,count,missing,moves:state.moves + 1 },puzzle);
 if (next.status === 'won') return { state:next,kind:'win',note:winNote(next,puzzle) };
-if (covered(next)) return { state:next,kind:'extend',note:letter + ' in. Covered: ' + windowMapText(next,undefined,puzzle) + '. BEST it, then SHRINK.' };
+if (covered(next)) return { state:next,kind:'extend',note:letter + ' in. Covered: ' + windowMapText(next,undefined,puzzle) + '. SHRINK while it still covers; BEST when the next SHRINK would break it.' };
 return { state:next,kind:'extend',note:letter + ' in. ' + extendTail(left,missing) };
 }
 function shrinkNote(letter,before,next) {

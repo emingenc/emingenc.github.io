@@ -3,7 +3,7 @@ import { uiProblemByKey, uiLockLeftColumn } from './render-lock-left.js';
 import { uiSyntaxCheck } from './render-run-panel.js';
 import { uiOnboardingBanner } from './onboarding.js';
 import { uiCodePanel, uiChipDropGhosts } from './render-code.js';
-import { uiTraySection } from './render-tray.js';
+import { uiTraySection, uiKeyLegendRow } from './render-tray.js';
 import { uiActionRows } from './render-actions.js';
 import { uiTestPanel } from './render-submit-panel.js';
 
@@ -15,7 +15,7 @@ return ctx;
 }
 function uiLockRightColumn(ctx) {
 const onboarding = uiOnboardingBanner(ctx.app);
-const children = [uiCodePanel(ctx),uiTraySection(ctx),onboarding,uiActionRows(ctx)].concat(uiChipDropGhosts(ctx));
+const children = [uiCodePanel(ctx),uiTraySection(ctx),onboarding,uiActionRows(ctx),uiKeyLegendRow()].concat(uiChipDropGhosts(ctx));
 return uiEl('div',{ className:'lock-right',children:children.filter(Boolean) });
 }
 function uiLockBody(app,run,view) {

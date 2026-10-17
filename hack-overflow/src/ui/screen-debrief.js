@@ -3,11 +3,12 @@ import { prettyLine } from '../logic/solution-form.js';
 import { segmentIntoChips } from '../logic/line.js';
 import { GAME_EVENT } from '../game/game-events.js';
 import { clamp01, countUpValue } from '../game/ease.js';
+import { levelBand } from '../game/progress.js';
 import { STAR_CAP_WITH_EXPLOIT } from '../game/breach.js';
 import { uiEl, uiPrefersReducedMotion } from './dom.js';
 import { uiEmit } from './bus.js';
 import { uiEnterGrid } from './screen-grid.js';
-import { uiOpenLevelUp } from './screen-levelup.js';
+import { uiLevelUpBody, uiLevelUpSpeech } from './screen-levelup.js';
 import { uiBreachQuip } from './story-quip.js';
 import { uiProblemByKey } from './render-lock-left.js';
 import { uiResultFamilyBlock, uiResultComplexity, uiResultMaxTest, uiResultClassFormBlock, uiResultEvidence, uiSolveLink, UI_EVIDENCE_FIRST_TRY, UI_EVIDENCE_SHOW_LINE } from './render-result.js';
@@ -17,6 +18,8 @@ const TYPE_MAX_MS = 650;
 const STAR_STEP_MS = 180;
 const XP_COUNT_MS = 900;
 const DEBRIEF_TICK_MS = 60;
+const PERCENT = 100;
+const XP_FLASH_MS = 500;
 
 function uiTitleTiming(text,reducedMotion) {
 return reducedMotion ? 0 :Math.min(text.length * TYPE_CHAR_MS,TYPE_MAX_MS);
@@ -32,6 +35,15 @@ return { type:GAME_EVENT.STAR,payload:{ index,of:MAX_STARS_PER_LOCK },atMs };
 function uiXpEvent(outcome,atMs,durationMs) {
 return { type:GAME_EVENT.XP,payload:{ gained:outcome.gained,xp:outcome.xpAfter,durationMs,source:'breach' },atMs };
 }
+function uiLevelledUp(outcome) {
+return outcome.levelAfter > outcome.levelBefore;
+}
+function uiOutcomeLevelUp(outcome) {
+return { before:outcome.levelBefore,after:outcome.levelAfter,unlocks:outcome.unlocks };
+}
+function uiLevelUpEvents(outcome,atMs) {
+return uiLevelledUp(outcome) ? [{ type:GAME_EVENT.LEVEL_UP,payload:uiOutcomeLevelUp(outcome),atMs }] :[];
+}
 function uiDebriefPlan(outcome,reducedMotion) {
 const titleText = outcome.number + '. ' + outcome.name;
 const titleMs = uiTitleTiming(titleText,reducedMotion);
@@ -39,11 +51,19 @@ const starStep = reducedMotion ? 0 :STAR_STEP_MS;
 const starAtMs = uiStarAtMs(titleMs,starStep);
 const starsEndMs = titleMs + MAX_STARS_PER_LOCK * starStep;
 const xpDurationMs = reducedMotion || outcome.gained === 0 ? 0 :XP_COUNT_MS;
-const events = [...uiStarEvents(outcome,starAtMs),uiXpEvent(outcome,starsEndMs,xpDurationMs)];
-return { titleText,titleMs,starAtMs,xpAtMs:starsEndMs,xpDurationMs,events,totalMs:starsEndMs + xpDurationMs };
+const totalMs = starsEndMs + xpDurationMs;
+const events = [...uiStarEvents(outcome,starAtMs),uiXpEvent(outcome,starsEndMs,xpDurationMs),...uiLevelUpEvents(outcome,totalMs)];
+return { titleText,titleMs,starAtMs,xpAtMs:starsEndMs,xpDurationMs,events,totalMs };
 }
-function uiScheduleDebriefEvent(event) {
-return window.setTimeout(function () { uiEmit(event.type,event.payload); },event.atMs);
+function uiScheduleDebriefEvent(debrief,event) {
+const fire = event.type === GAME_EVENT.LEVEL_UP ? function () { uiFlushLevelUp(debrief); } :function () { uiEmit(event.type,event.payload); };
+return window.setTimeout(fire,event.atMs);
+}
+function uiFlushLevelUp(debrief) {
+const event = debrief.levelUp;
+if (!event) return;
+debrief.levelUp = null;
+uiEmit(event.type,event.payload);
 }
 function uiStopDebriefInterval(debrief) {
 if (debrief.intervalId === null) return;
@@ -69,13 +89,16 @@ const shown = uiTitleShown(debrief.plan,elapsed);
 root.querySelector('.debrief-title-shown').textContent = shown;
 root.querySelector('.debrief-title-rest').textContent = debrief.plan.titleText.slice(shown.length);
 root.querySelector('.debrief-xp').textContent = uiXpText(app.game.outcome,debrief.plan,elapsed);
+uiPatchXpMeter(root.querySelector('.debrief-xpmeter'),uiXpBarState(app.game.outcome,debrief.plan,elapsed));
 }
 function uiOpenDebrief(app) {
 const outcome = app.game.outcome;
 app.screen = 'debrief';
 app.lastFocusKey = 'debrief-continue';
 const plan = uiDebriefPlan(outcome,uiPrefersReducedMotion());
-const debrief = { plan,startedAt:performance.now(),timers:plan.events.map(uiScheduleDebriefEvent),intervalId:null };
+const levelUp = plan.events.find(function (event) { return event.type === GAME_EVENT.LEVEL_UP; }) ?? null;
+const debrief = { plan,startedAt:performance.now(),timers:[],intervalId:null,levelUp };
+debrief.timers = plan.events.map(function (event) { return uiScheduleDebriefEvent(debrief,event); });
 app.game.debrief = debrief;
 if (plan.totalMs > 0) debrief.intervalId = window.setInterval(function () { uiDebriefTick(app); },DEBRIEF_TICK_MS);
 }
@@ -116,6 +139,40 @@ if (!outcome.replay) return '+' + shown + ' XP';
 if (outcome.gained > 0) return 'REPLAY +' + shown + ' XP (' + outcome.bestBefore + '★ → ' + outcome.stars + '★)';
 return 'best already ' + outcome.bestBefore + '★ · +0 XP';
 }
+function uiXpBarState(outcome,plan,elapsed) {
+const band = levelBand(outcome.xpBefore + uiXpShown(outcome,plan,elapsed));
+const fill = band.span > 0 ? band.into / band.span :1;
+const label = band.next === null ? 'MAX LEVEL' :'LV ' + band.level + ' · ' + band.into + '/' + band.span + ' XP';
+return { level:band.level,pct:Math.round(fill * PERCENT),label };
+}
+function uiFlashXpLabel(label) {
+if (label.animate) label.animate({ color:['var(--amber)','inherit'],transform:['scale(1.3)','none'] },XP_FLASH_MS);
+}
+function uiPatchXpMeter(meter,state) {
+const bar = meter.querySelector('.debrief-xpbar');
+const fill = meter.querySelector('.debrief-xpbar-fill');
+const label = meter.querySelector('.debrief-xpbar-label');
+fill.style.transition = parseFloat(fill.style.width) > state.pct ? 'none' :'';
+fill.style.width = state.pct + '%';
+bar.setAttribute('aria-valuenow',state.pct);
+bar.setAttribute('aria-valuetext',state.label);
+label.textContent = state.label;
+if (meter.getAttribute('data-level') === String(state.level)) return;
+meter.setAttribute('data-level',state.level);
+uiFlashXpLabel(label);
+}
+function uiXpMeter(outcome,plan,elapsed) {
+const state = uiXpBarState(outcome,plan,elapsed);
+const bar = uiEl('div',{
+className:'debrief-xpbar',
+attrs:{ role:'progressbar','aria-valuemin':'0','aria-valuemax':String(PERCENT) },
+children:[uiEl('div',{ className:'debrief-xpbar-fill' })],
+});
+const label = uiEl('p',{ className:'debrief-xpbar-label' });
+const meter = uiEl('div',{ className:'debrief-xpmeter',attrs:{ 'data-level':state.level },children:[bar,label] });
+uiPatchXpMeter(meter,state);
+return meter;
+}
 function uiDebriefNote(text) {
 return uiEl('p',{ className:'debrief-note',text:text });
 }
@@ -147,22 +204,26 @@ return prettyLine(segmentIntoChips(outcome.acceptedText,problem.palette));
 function uiDebriefClassFormHeading(outcome) {
 return outcome.acceptedText ? UI_ACCEPTED_LINE_HEADING :UI_REFERENCE_LINE_HEADING;
 }
-function uiDebriefIntel(outcome,plan,elapsed) {
-const problem = uiProblemByKey(outcome.key);
+function uiDelayUntilSettled(node,timing) {
+node.style.animationDelay = (timing.plan.totalMs - timing.elapsed) + 'ms';
+return node;
+}
+function uiDebriefLesson(problem,timing) {
+const children = [uiResultFamilyBlock(problem.idea,problem.invariant),uiResultComplexity(problem.time,problem.space)];
+return uiDelayUntilSettled(uiEl('div',{ className:'debrief-lesson',children }),timing);
+}
+function uiDebriefIntel(outcome,problem,timing) {
 const lineText = uiDebriefLineText(outcome,problem);
 const node = uiEl('div',{
 className:'debrief-intel',
 children:[
-uiResultFamilyBlock(problem.idea,problem.invariant),
-uiResultComplexity(problem.time,problem.space),
 uiResultMaxTest(problem),
 uiResultClassFormBlock(problem,lineText,uiDebriefClassFormHeading(outcome)),
 uiSolveLink(problem.slug),
 uiResultEvidence(uiDebriefEvidenceNote(outcome)),
 ],
 });
-node.style.animationDelay = (plan.totalMs - elapsed) + 'ms';
-return node;
+return uiDelayUntilSettled(node,timing);
 }
 function uiDebriefTitleNode(plan,elapsed) {
 const shown = uiTitleShown(plan,elapsed);
@@ -181,44 +242,52 @@ text:'CONTINUE',
 attrs:{ type:'button','data-action':'debrief-continue','data-focus-key':'debrief-continue' },
 });
 }
-function uiDebriefChildren(outcome,timing) {
+function uiLevelUpBlock(app,timing) {
+const outcome = app.game.outcome;
+if (!uiLevelledUp(outcome)) return null;
+const node = uiEl('div',{ className:'debrief-levelup',children:uiLevelUpBody(app.game.world,uiOutcomeLevelUp(outcome)) });
+node.style.setProperty('--levelup-elapsed',(timing.plan.totalMs - timing.elapsed) + 'ms');
+return node;
+}
+function uiDebriefChildren(app,timing) {
+const outcome = app.game.outcome;
 const { plan,elapsed } = timing;
+const problem = uiProblemByKey(outcome.key);
 return [
 uiEl('p',{ className:'debrief-kicker',text:'BREACHED · ' + outcome.lockName }),
 uiDebriefTitleNode(plan,elapsed),
 uiStarsRow(outcome,plan,elapsed),
 uiEl('p',{ className:'debrief-xp',text:uiXpText(outcome,plan,elapsed) }),
+uiXpMeter(outcome,plan,elapsed),
+uiLevelUpBlock(app,timing),
 uiBreachQuip(outcome),
 uiCapNote(outcome),
 uiSectorNote(outcome),
+uiDebriefLesson(problem,timing),
 uiDebriefContinueButton(),
-uiDebriefIntel(outcome,plan,elapsed),
+uiDebriefIntel(outcome,problem,timing),
 ];
 }
 function uiRenderDebrief(app) {
-const outcome = app.game.outcome;
 const debrief = app.game.debrief;
 const elapsed = uiDebriefElapsed(debrief);
 return uiEl('section',{
 className:'screen screen-card debrief-screen',
 attrs:{ 'data-screen':'debrief' },
-children:uiDebriefChildren(outcome,{ plan:debrief.plan,elapsed }).filter(Boolean),
+children:uiDebriefChildren(app,{ plan:debrief.plan,elapsed }).filter(Boolean),
 });
 }
 function uiApplyDebriefAction(app,actionId) {
 if (actionId !== 'debrief-continue') return false;
-const outcome = app.game.outcome;
-if (outcome.levelAfter > outcome.levelBefore) {
-uiOpenLevelUp(app,{ before:outcome.levelBefore,after:outcome.levelAfter,unlocks:outcome.unlocks,source:'breach' });
-} else {
+uiFlushLevelUp(app.game.debrief);
 uiEnterGrid(app);
-}
 return true;
 }
 function uiDebriefAnnounce(app) {
 const outcome = app.game.outcome;
 const cap = uiExploitCapApplies(outcome) ? ' Exploit used: capped at ' + STAR_CAP_WITH_EXPLOIT + ' stars.' :'';
-return 'Breached ' + outcome.number + '. ' + outcome.name + ': ' + outcome.stars + ' of ' + MAX_STARS_PER_LOCK + ' stars, plus ' + outcome.gained + ' XP.' + cap;
+const levelUp = uiLevelledUp(outcome) ? ' ' + uiLevelUpSpeech(app.game.world,uiOutcomeLevelUp(outcome)) :'';
+return 'Breached ' + outcome.number + '. ' + outcome.name + ': ' + outcome.stars + ' of ' + MAX_STARS_PER_LOCK + ' stars, plus ' + outcome.gained + ' XP.' + cap + levelUp;
 }
 function uiDebriefScreen() {
 return {
@@ -231,4 +300,4 @@ sync:function (app,active) { uiSyncDebrief(app,active); },
 };
 }
 
-export { uiDebriefScreen, uiOpenDebrief, uiDebriefPlan, uiXpText };
+export { uiDebriefScreen, uiOpenDebrief, uiDebriefPlan, uiXpText, uiXpBarState };

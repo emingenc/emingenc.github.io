@@ -19,10 +19,13 @@ function uiShieldValues(state) {
   };
 }
 const COACH = SHIELD_TEXTS.coach;
+function mixedNow(state, arena) {
+  return state.spec.plainVolleys > 0 && state.vi === state.spec.plainVolleys && (!arena.manual || state.gi === 0);
+}
 const BRACKET_LINES = [
-  { id: 'mixed', when: (state) => state.spec.plainVolleys > 0 && state.gi === 0 && state.vi === state.spec.plainVolleys, text: COACH.mixed },
-  { id: 'end', when: (state) => glyphOf(state) === END_GLYPH, text: COACH.end },
-  { id: 'open', when: (state) => isOpener(glyphOf(state)), text: COACH.open },
+  { id: 'mixed', when: mixedNow, text: COACH.mixed },
+  { id: 'end', when: (state) => glyphOf(state) === END_GLYPH, text: COACH.end, auto: COACH.endAuto },
+  { id: 'open', when: (state) => isOpener(glyphOf(state)), text: COACH.open, auto: COACH.openAuto },
   { id: 'close', when: (state) => answerFor(state) === 'pop', text: COACH.close },
   { id: 'breach', when: (state) => answerFor(state) === 'breach' && state.stack.length > 0, text: COACH.breach },
   { id: 'stray', when: (state) => answerFor(state) === 'breach', text: COACH.stray },
@@ -31,10 +34,14 @@ const FOG_LINE = { id: 'fog', when: (state) => state.vi === 0 && state.gi === 0,
 function isTie(state) {
   return state.stack.length > 0 && uiShieldTop(state) === glyphOf(state);
 }
+function towersNow(state, arena) {
+  if (arena.manual) return state.vi === 0 && state.gi <= (arena.ask === true ? 1 : 0);
+  return arena.ask !== true || arena.seen.ask === true;
+}
 const TOWER_LINES = [
   { id: 'ask', when: (state, arena) => arena.ask === true && state.vi === 0 && state.gi === 0, text: THIRD_WAVE[NEXT_TALLER_ID].ask },
   { id: 'towerEnd', when: (state) => Boolean(state.last && state.last.blocked && state.last.leftovers > 0), text: COACH.towerEnd },
-  { id: 'towers', when: (state, arena) => state.vi === 0 && state.gi <= (arena.ask === true ? 1 : 0), text: COACH.towers },
+  { id: 'towers', when: towersNow, text: COACH.towers, auto: COACH.towersAuto },
   { id: 'taller', when: (state) => answerFor(state) === 'pop', text: COACH.taller },
   { id: 'tie', when: isTie, text: COACH.tie },
 ];
@@ -49,7 +56,7 @@ function uiShieldTeach(arena) {
   arena.seen[line.id] = true;
   const values = uiShieldValues(state);
   const left = state.last ? state.last.leftovers : 0;
-  return fillText(line.text, Object.assign(values, { k: left }));
+  return fillText(!arena.manual && line.auto ? line.auto : line.text, Object.assign(values, { k: left }));
 }
 function towerOutcome(last) {
   if (last.blocked) return COACH.towerClear;
@@ -71,8 +78,18 @@ function uiShieldCoachText(arena) {
   if (state.status !== 'running') return '';
   const teach = uiShieldTeach(arena);
   if (teach) return teach;
-  if (shieldHint(state) && !HINT_YIELDS.has(state.last?.kind)) return COACH.hint;
-  return uiShieldOutcomeLine(state) || fillText(plainLine(state), uiShieldValues(state));
+  const note = arena.manual ? '' : uiShieldNote(arena);
+  if (shieldHint(state) && !HINT_YIELDS.has(state.last?.kind) && !note) return COACH.hint;
+  return note || uiShieldSaid(arena);
+}
+function uiShieldSaid(arena) {
+  const outcome = arena.manual ? uiShieldOutcomeLine(arena.state) : '';
+  return outcome || fillText(plainLine(arena.state), uiShieldValues(arena.state));
+}
+function uiShieldNote(arena) {
+  const note = arena.deflected === true ? COACH.deflect : '';
+  arena.deflected = false;
+  return note;
 }
 function uiShieldSpoken(arena) {
   const state = arena.state;

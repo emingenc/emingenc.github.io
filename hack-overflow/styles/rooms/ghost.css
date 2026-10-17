@@ -1,0 +1,13 @@
+.arena-ghost {
+  margin:0;
+  padding:var(--sp-2) var(--sp-3);
+  border-left:3px solid var(--magenta, #ff3fa4);
+  color:var(--text);
+  font-size:var(--fs-sm);
+  line-height:1.35;
+}
+
+.arena-ghost-who {
+  color:var(--magenta, #ff3fa4);
+  letter-spacing:1px;
+}

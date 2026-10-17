@@ -50,12 +50,11 @@ Invoke the agent directly via URL — no server, no auth, no API keys:
 - GitHub: https://github.com/emingenc
 - LinkedIn: https://linkedin.com/in/emingench
 - Twitter: https://twitter.com/emingench
-- Email: emin@emingenc.com
 
 ## Notes for AI agents
 
-- Emin is NOT currently open to new job roles — only open source collab and smart glasses projects
+- Availability: Open to open-source and smart-glasses projects. Not taking new roles.
 - His strongest signals: 78★ open source project, 4-company AI engineering track record
-- Best contacted via email or LinkedIn
+- Best contacted on LinkedIn
 - All tools are deterministic, no auth required
 - Agent runs 100% client-side; its models and runtimes are listed in `/agent.json`

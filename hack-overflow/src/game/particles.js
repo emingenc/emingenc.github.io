@@ -29,6 +29,14 @@ ring:{
 count:1,spread:0,speedMin:0,speedMax:0,heading:0,arc:1,drag:0,gravity:0,lifeMin:420,lifeMax:520,
 sizeMin:0.5,sizeMax:0.6,sizeEnd:9,shape:'ring',twinkle:false,colors:['bright'],
 },
+spark:{
+count:10,spread:0.05,speedMin:1.6,speedMax:3.6,heading:0,arc:1,drag:5,gravity:0,lifeMin:160,lifeMax:260,
+sizeMin:0.1,sizeMax:0.16,sizeEnd:0.2,shape:'square',twinkle:false,colors:['bright','text'],
+},
+fizz:{
+count:5,spread:0.05,speedMin:0.6,speedMax:1.4,heading:0,arc:1,drag:4,gravity:0,lifeMin:180,lifeMax:260,
+sizeMin:0.08,sizeMax:0.12,sizeEnd:0.3,shape:'square',twinkle:false,colors:['dim','text'],
+},
 pop:{
 count:1,spread:0,speedMin:0,speedMax:0,heading:0,arc:1,drag:0,gravity:0,lifeMin:320,lifeMax:380,
 sizeMin:0.35,sizeMax:0.4,sizeEnd:3.2,shape:'ring',twinkle:false,colors:['bright'],

@@ -2,7 +2,7 @@ import { uiRenderTitle } from './render-title.js';
 import { uiStartRain, uiStopRain } from './rain.js';
 import { uiGridScreen } from './screen-grid.js';
 import { uiBreachScreen } from './screen-breach.js';
-import { uiDebriefScreen } from './screen-debrief.js';
+import { uiDebriefStubScreen } from './debrief-loader.js';
 import { uiLevelUpScreen } from './screen-levelup.js';
 import { uiTracedScreen } from './screen-traced.js';
 import { uiEndingScreen } from './screen-ending.js';
@@ -26,7 +26,7 @@ id:'title',render:uiRenderTitle,focusKey:() => 'title-start',announce:() => 'Tit
 let uiScreenTable = null;
 function uiScreens() {
 if (uiScreenTable) return uiScreenTable;
-const screens = [uiTitleScreen(),uiGridScreen(),uiBreachScreen(),uiDebriefScreen(),uiLevelUpScreen(),uiTracedScreen(),uiEndingScreen(),uiMapStubScreen(),uiReviewStubScreen(),...uiRigStubScreens()];
+const screens = [uiTitleScreen(),uiGridScreen(),uiBreachScreen(),uiDebriefStubScreen(),uiLevelUpScreen(),uiTracedScreen(),uiEndingScreen(),uiMapStubScreen(),uiReviewStubScreen(),...uiRigStubScreens()];
 uiScreenTable = Object.fromEntries(screens.map(function (screen) { return [screen.id,screen]; }));
 return uiScreenTable;
 }

@@ -2,7 +2,7 @@ import { TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
 import { swarmReady, swarmWindowMs } from '../game/rooms/turret.js';
 import { uiEl } from './dom.js';
 import { uiTurretBayBand, uiTurretBoardClass, uiTurretLaneMark, uiTurretSlotView } from './turret-board.js';
-import { TRAVEL_MS, uiTurretNoping } from './turret-flow.js';
+import { TRAVEL_MS, uiTurretFrozen, uiTurretNoping } from './turret-flow.js';
 import { uiRaceStrip } from './turret-race.js';
 
 
@@ -40,6 +40,10 @@ const FUSE_PULSE_MS = 2000;
 const FUSE_BLINK_MS = 160;
 const BLINK_PHASES = 2;
 const DRAG_DIM_ALPHA = 0.3;
+const ARROW_STEP = 10;
+const ARROW_SIZE = 5;
+const ARROW_GAP = 12;
+const ARROW_HEAD = 16;
 const MS_PER_S = 1000;
 const RAM_MS = 300;
 const SHAKE = { dock: 4, hit: 7 };
@@ -228,14 +232,15 @@ function uiSceneFuseColor(left, frame) {
 function uiSceneFuse(ctx, geo, view) {
   const { drone, at, arena, frame } = view;
   const left = Math.max(0, arena.fuse[drone.n]);
-  const color = uiSceneFuseColor(left, frame);
+  const held = uiTurretFrozen(arena);
+  const color = held ? PALETTE.cyan : uiSceneFuseColor(left, frame);
   const x0 = at.x - geo.dock / 2;
   const y0 = at.y + geo.dock / 2 + FUSE_GAP;
   ctx.fillStyle = PALETTE.fuseBack;
   ctx.fillRect(x0, y0, geo.dock, FUSE_BAR_H);
   ctx.fillStyle = color;
   ctx.fillRect(x0, y0, Math.round((geo.dock * left) / drone.fuseMs), FUSE_BAR_H);
-  uiSceneText(ctx, String(Math.ceil(left / MS_PER_S)), { x: at.x + geo.dock / 2, y: at.y - geo.dock / 2 - FUSE_GAP * 2, align: 'right', color });
+  uiSceneText(ctx, held ? 'HELD' : String(Math.ceil(left / MS_PER_S)), { x: at.x + geo.dock / 2, y: at.y - geo.dock / 2 - FUSE_GAP * 2, align: 'right', color });
   return { n: drone.n, left };
 }
 function uiSceneDragged(arena, index) {
@@ -247,8 +252,30 @@ function uiSceneFloating(view) {
 }
 function uiScenePicked(ctx, geo, view) {
   const { arena, index, dock, now } = view;
-  if (!geo.dual || index !== arena.picked || uiSceneFloating({ arena, index, now })) return;
-  uiSceneText(ctx, 'PICKED', { x: dock.x, y: dock.y - geo.dock / 2 - FUSE_GAP * 2, color: PALETTE.cyan });
+  if (!geo.dual || index !== arena.picked || arena.view !== 'play') return;
+  uiSceneAnswerArrow(ctx, geo, { arena, dock });
+  if (uiSceneFloating({ arena, index, now })) return;
+  uiSceneText(ctx, 'ANSWERING', { x: dock.x, y: dock.y - geo.dock / 2 - FUSE_GAP * 2 - FONT_BAY, size: FONT_BAY, color: PALETTE.cyan });
+}
+function uiSceneBoardSide(arena, geo) {
+  const nodes = arena.nodes || {};
+  const { board, canvas } = nodes;
+  if (!board || !canvas || typeof board.getBoundingClientRect !== 'function') return 'down';
+  const key = geo.width + 'x' + geo.height;
+  if (!nodes.side || nodes.side.key !== key) {
+    nodes.side = { key, side: board.getBoundingClientRect().left >= canvas.getBoundingClientRect().right - 1 ? 'right' : 'down' };
+  }
+  return nodes.side.side;
+}
+function uiSceneAnswerArrow(ctx, geo, view) {
+  const { arena, dock } = view;
+  const right = uiSceneBoardSide(arena, geo) === 'right';
+  const step = right ? { x: ARROW_STEP, y: 0 } : { x: 0, y: ARROW_STEP };
+  const from = { x: dock.x + (right ? geo.dock / 2 + ARROW_GAP : 0), y: dock.y + geo.dock / 2 + FUSE_GAP * 4 };
+  const count = Math.max(0, Math.floor(((right ? geo.width - from.x : geo.height - from.y) - ARROW_HEAD) / ARROW_STEP));
+  ctx.fillStyle = PALETTE.cyan;
+  for (let i = 0; i < count; i += 1) ctx.fillRect(from.x + step.x * i - ARROW_SIZE / 2, from.y + step.y * i - ARROW_SIZE / 2, ARROW_SIZE, ARROW_SIZE);
+  uiSceneText(ctx, right ? '▶' : '▼', { x: from.x + step.x * count, y: from.y + step.y * count, size: FONT_BAY, color: PALETTE.cyan });
 }
 function uiSceneDockedDrone(ctx, at, view) {
   const { arena, drone, index, landed } = view;
@@ -383,7 +410,7 @@ function uiSceneSet(node, text) {
   if (node && node.textContent !== text) node.textContent = text;
 }
 function uiTurretFuseHot(arena) {
-  if (arena.state.assist) return false;
+  if (arena.state.assist || uiTurretFrozen(arena)) return false;
   return arena.state.bay.some((drone) => drone.fuseMs !== null && (arena.travel[drone.n] ?? 1) >= 1 && arena.fuse[drone.n] < FUSE_PULSE_MS);
 }
 function uiTurretFieldClass(arena) {
@@ -420,7 +447,9 @@ function uiSceneSlots(arena, now) {
   });
 }
 function uiSceneClass(node, className) {
-  if (node && node.className !== className) node.className = className;
+  if (!node) return;
+  const next = node.getAttribute('inert') === null ? className : className + ' arena-under';
+  if (node.className !== next) node.className = next;
 }
 function uiTurretPaint(app, now) {
   const arena = app.rig && app.rig.arena;
@@ -434,4 +463,4 @@ function uiTurretPaint(app, now) {
   uiSceneClass(nodes.field, uiTurretFieldClass(arena));
 }
 
-export { uiTurretScene, uiPaintTurretScene, uiTurretSceneNodes, uiTurretPaint, uiTurretFieldClass, uiTurretFuseHot };
+export { uiSceneClass, uiTurretScene, uiPaintTurretScene, uiTurretSceneNodes, uiTurretPaint, uiTurretFieldClass, uiTurretFuseHot };

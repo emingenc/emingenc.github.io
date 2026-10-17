@@ -2,6 +2,7 @@ import { TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
 import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
 import { hintOffer, keyFor, turretTarget } from '../game/rooms/turret.js';
 import { uiEl } from './dom.js';
+import { uiTurretFrozen } from './turret-flow.js';
 
 
 const SLOT_ACTION = 'turret-slot-';
@@ -12,7 +13,6 @@ const VERIFY_ACTION = 'turret-verify';
 const EVICT_ACTION = 'turret-evict';
 const LAST_TTL = 1;
 const FOG_MARK = '?';
-const HINT_LAST_DRONE = 2;
 const FIRST_SLOT = 1;
 
 function uiTurretSlotLabel(slot, count, shown) {
@@ -24,10 +24,13 @@ function uiTurretTtlLabel(state, slot) {
   const ttl = state.ttl[slot];
   return state.spec.cap > 0 && state.board[slot] > 0 ? ', expires in ' + ttl : '';
 }
+function uiTurretEvicting(arena) {
+  return arena.evict === true || uiTurretFrozen(arena);
+}
 function uiTurretSlotClasses(arena, slot, lit) {
   const state = arena.state;
   const dark = state.spec.dark ? ' is-dark' : '';
-  const evictable = arena.evict && lit ? ' is-evictable' : '';
+  const evictable = uiTurretEvicting(arena) && lit ? ' is-evictable' : '';
   const last = state.spec.cap > 0 && lit && state.ttl[slot] <= LAST_TTL ? ' is-last' : '';
   return 'turret-slot' + dark + (lit ? ' is-lit' : '') + (slot === uiTurretHintSlot(state) ? ' is-hint' : '') + evictable + last;
 }
@@ -35,7 +38,7 @@ function uiTurretHintSlot(state) {
   const offer = hintOffer(state);
   if (offer) return offer.slot;
   const lead = state.bay[0];
-  return lead && lead.n <= HINT_LAST_DRONE ? keyFor(state, lead) : 0;
+  return lead && lead.n <= state.spec.spelled ? keyFor(state, lead) : 0;
 }
 function uiTurretSlotShown(arena, slot) {
   return !arena.state.spec.dark || Object.hasOwn(arena.reveal, slot);
@@ -63,7 +66,7 @@ function uiTurretLaneMark(state, lane, value) {
   return state.spec.fog > 0 && lane >= state.spec.fog ? FOG_MARK : value;
 }
 function uiTurretBoardClass(arena, noping) {
-  return 'turret-board' + (noping ? ' turret-nope' : '') + (arena.pointerDriven ? ' is-pointer' : '') + (arena.evict ? ' is-evicting' : '');
+  return 'turret-board' + (noping ? ' turret-nope' : '') + (arena.pointerDriven ? ' is-pointer' : '') + (uiTurretEvicting(arena) ? ' is-evicting' : '');
 }
 function uiTurretBoard(app) {
   const arena = app.rig.arena;
@@ -105,15 +108,19 @@ function uiTurretTag(app) {
   if (arena.state.spec.cap > 0) return uiEl('div', { className: 'turret-verbs', children: [uiTurretStoreVerb(drone, true), uiTurretEvictVerb(arena)] });
   return uiTurretStoreVerb(drone, false);
 }
+function uiTurretEvictLabel(armed, held) {
+  if (armed) return 'armed, tap the tag to remove';
+  return held ? 'the board is full, tap a lit slot to remove its tag' : 'then tap the tag to remove';
+}
 function uiTurretEvictVerb(arena) {
   const armed = arena.evict === true;
-  const sub = uiEl('span', { className: 'turret-tag-hint', text: armed ? 'tap a lit slot' : 'board full? free a slot' });
+  const sub = uiEl('span', { className: 'turret-tag-hint', text: armed || uiTurretFrozen(arena) ? 'tap a lit slot' : 'free a slot early' });
   const word = uiEl('span', { className: 'turret-tag-word turret-evict-word', text: 'EVICT' });
   return uiEl('button', {
     className: 'btn arena-btn arena-verb turret-evict' + (armed ? ' is-armed' : ''),
     attrs: {
       type: 'button', 'data-action': EVICT_ACTION, 'data-focus-key': EVICT_ACTION, 'aria-pressed': String(armed),
-      'aria-label': 'Evict: ' + (armed ? 'armed, tap the tag to remove' : 'then tap the tag to remove') + ' (key E)',
+      'aria-label': 'Evict: ' + uiTurretEvictLabel(armed, uiTurretFrozen(arena)) + ' (key E)',
     },
     children: [word, sub],
   });

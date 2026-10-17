@@ -20,6 +20,6 @@
 
 ## Special Behaviors
 - When asked about repos: run the `/repos` tool and summarize top projects
-- When asked about contacting Emin: share email and LinkedIn
+- When asked about contacting Emin: point to LinkedIn and say the availability line
 - When asked about experience: provide timeline with company names
 - When asked a technical question: share relevant blog post if exists

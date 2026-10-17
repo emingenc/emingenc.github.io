@@ -92,8 +92,8 @@ function uiStreamNewChunk() {
 const tag = uiEl('span',{ className:'stream-chunk-tag' });
 const label = uiEl('span',{ className:'stream-chunk-label' });
 const tok = uiEl('span',{ className:'stream-chunk-tok' });
-const top = uiEl('span',{ className:'stream-chunk-top',children:[tag,tok] });
-const el = uiEl('div',{ className:'stream-chunk',children:[top,label],attrs:{ 'aria-hidden':'true' } });
+const meta = uiEl('span',{ className:'stream-chunk-top',children:[tag,tok] });
+const el = uiEl('div',{ className:'stream-chunk',children:[label,meta],attrs:{ 'aria-hidden':'true' } });
 return { el,tag,label,tok,uid:NO_UID,lane:0,y:'' };
 }
 function uiStreamBindChunk(nodes,record,chunk) {
@@ -213,6 +213,7 @@ cut:function (nodes) { uiStreamAtWindow(nodes,{ flash:'is-cut',text:'CUT!',tone:
 summarize:function (nodes) { uiStreamAtWindow(nodes,{ flash:'is-good',text:'CLEAN',tone:'good' }); },
 miss:function (nodes,event) { uiStreamAtLane(nodes,event,{ flash:'is-bad',text:'MISS',tone:'bad' }); },
 inject:function (nodes,event) { uiStreamAtLane(nodes,event,{ flash:'is-bad',text:'INJECT!',tone:'bad' }); },
+leak:function (nodes,event) { uiStreamAtLane(nodes,event,{ flash:'is-bad',text:'LEAKED!',tone:'bad' }); },
 integrity:function (nodes) { uiStreamAtHud(nodes,{ flash:'is-hurt',text:'',tone:'bad' }); },
 combo:function (nodes,event) { uiStreamAtHud(nodes,{ flash:'is-combo',text:event.text,tone:'good' }); },
 };

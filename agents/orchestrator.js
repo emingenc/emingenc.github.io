@@ -1,8 +1,10 @@
 // orchestrator.js — the agent loop. Every turn runs
 //
-//   plan → act → observe → evaluate → next | answer
+//   plan → act → observe → next | answer
 //
-// and this file performs it, effect by effect. LoopPolicy decides: it answers
+// and this file performs it, effect by effect. A registry tool's card is
+// self-contained and passes without a check; only a model-generated answer is
+// evaluated, by Reply, before it is spoken. LoopPolicy decides: it answers
 // each event with a new run record and the effects to perform, in order.
 // Turn owns the turn's lifecycle (its lock, timers, pause and single end),
 // Reply speaks when no tool answers, and Context owns the prompt the model
@@ -12,6 +14,7 @@
 var Orchestrator;
 
 {
+  const YIELD_MS = 0;
   const NO_MEMORY = Object.freeze({ lastQuery: '', lastTool: '' });
 
   // The last question a step ran for, and its tool: the policy's follow-up
@@ -25,8 +28,8 @@ var Orchestrator;
   }
 
   // Performs a decision's effects in order, and stops the moment the turn
-  // does: Stop, a supersede, or an effect that ended it. A wait, an act or
-  // an ask closes its decision; the event it yields, at once or later, goes
+  // does: Stop, a supersede, or an effect that ended it. A yield, an act or
+  // an ask closes its decision; the event it produces, at once or later, goes
   // back to the policy for the next one.
   function perform(turn, decision) {
     memory = decision.run.memory;
@@ -44,7 +47,7 @@ var Orchestrator;
     trace: (turn, { text }) => turn.trace(text),
     dispatch: (turn, { action }) => turn.dispatch(action),
     busy: (turn, { state, label }) => turn.busy(state, label),
-    wait: (turn, { ms, event }, feed) => turn.after(ms, () => feed(event)),
+    yield: (turn, { event }, feed) => turn.after(YIELD_MS, () => feed(event)),
     act: (turn, { tool, input }, feed) => feed(act(tool, input)),
     ask: (turn, { question, options }, feed) => turn.ask(question, options, (option) => feed({ type: 'answered', option })),
     reply: (turn, { text }) => Reply.send(turn, text),

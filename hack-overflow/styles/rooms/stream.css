@@ -135,6 +135,11 @@
   font-size:var(--fs-md);
 }
 
+.stream-stat > :last-child {
+  text-align:right;
+  overflow-wrap:anywhere;
+}
+
 .stream-stat-label {
   color:var(--dim);
 }
@@ -151,6 +156,49 @@
 
 .stream-result.is-fail {
   border-color:var(--red);
+}
+
+.stream-readout {
+  margin:0 0 var(--sp-3);
+  padding:var(--sp-3);
+  border:2px solid var(--border);
+  border-radius:var(--radius-md);
+  background:var(--bg);
+}
+
+.stream-readout-title {
+  margin:0 0 var(--sp-1);
+  color:var(--cyan);
+  font-family:var(--font-display);
+  font-size:var(--fs-md);
+}
+
+.stream-readout-meta {
+  margin:0 0 var(--sp-2);
+  color:var(--dim);
+  font-size:var(--fs-xs);
+}
+
+.stream-readout-list {
+  display:flex;
+  flex-direction:column;
+  gap:var(--sp-1);
+  margin:0;
+  padding:0;
+  list-style:none;
+  font-size:var(--fs-sm);
+}
+
+.stream-readout-line {
+  overflow-wrap:anywhere;
+}
+
+.stream-readout-line.is-fact {
+  color:var(--primary);
+}
+
+.stream-readout-line.is-bad {
+  color:var(--amber);
 }
 
 .stream-fail-text {
@@ -346,31 +394,40 @@ body:has(.stream-play) {
 
 .stream-chunk {
   position:absolute;
-  left:var(--sp-2);
-  right:var(--sp-2);
+  left:var(--sp-1);
+  right:var(--sp-1);
   top:calc(var(--y,0) * 100%);
+  z-index:calc(var(--y,0) * 1000);
   transform:translateY(-100%);
+  box-sizing:border-box;
   display:flex;
   flex-direction:column;
-  gap:var(--sp-1);
-  padding:var(--sp-2) var(--sp-3);
+  justify-content:flex-start;
+  gap:0;
+  height:calc(var(--stack,0.11) * 100%);
+  min-height:26px;
+  padding:2px var(--sp-2);
+  overflow:hidden;
   border:2px solid var(--border);
   border-radius:var(--radius-sm);
   background:var(--bg);
   text-align:left;
-  line-height:1.15;
+  line-height:1.1;
   pointer-events:none;
 }
 
 .stream-chunk-top {
   display:flex;
+  align-items:center;
   justify-content:space-between;
-  gap:var(--sp-2);
+  gap:var(--sp-1);
   font-size:var(--fs-xs);
+  white-space:nowrap;
 }
 
 .stream-chunk-tag {
-  padding:0 var(--sp-2);
+  padding:0 var(--sp-1);
+  line-height:1.2;
   border:1px solid currentColor;
   border-radius:var(--radius-pill);
   font-weight:bold;
@@ -380,14 +437,19 @@ body:has(.stream-play) {
   color:var(--dim);
 }
 
+@media (max-width:480px) {
+  .stream-chunk-top {
+    font-size:calc(var(--fs-xs) * 0.85);
+  }
+}
+
 .stream-chunk-label {
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
+  display:block;
   overflow:hidden;
   font-family:var(--font-display);
-  font-size:var(--fs-lg);
-  overflow-wrap:anywhere;
+  font-size:var(--fs-md);
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 
 .stream-chunk.is-key {

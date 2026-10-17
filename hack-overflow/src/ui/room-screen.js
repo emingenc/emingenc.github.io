@@ -1,9 +1,10 @@
 import { rigOf } from '../game/rig-catalog.js';
 import {
-  ARENA_FOCUS_KEY, uiArenaCoach, uiArenaHeader, uiArenaLeave, uiArenaLeaveTooSoon, uiArenaOpen, uiArenaRule, uiArenaToastNode,
+  ARENA_FOCUS_KEY, uiArenaCoach, uiArenaHeader, uiArenaLeave, uiArenaLeaveTooSoon, uiArenaMoment, uiArenaOpen, uiArenaRule, uiArenaToastNode,
 } from './arena-shell.js';
 import { uiEl } from './dom.js';
 import { uiLinkStyles } from './lazy-style.js';
+import { uiRoomHintNode } from './room-hint.js';
 
 
 function uiRoomShell(app, arena, parts) {
@@ -20,6 +21,17 @@ function uiRoomShell(app, arena, parts) {
     attrs: { 'data-screen': 'rig', 'data-rig': rigId, tabindex: '-1', 'data-focus-key': ARENA_FOCUS_KEY },
     children: [header, uiArenaToastNode(app), ...body],
   });
+}
+
+function uiRoomBody(app, arena, views) {
+  if (arena.view !== 'card') return [app.rig.hintDone ? null : uiRoomHintNode(app, app.rig, app.rig.rigId), ...views.play()].filter(Boolean);
+  app.rig.hintDone = true;
+  const under = views.play();
+  under.forEach((node) => {
+    node.className += ' arena-under';
+    node.setAttribute('inert', '');
+  });
+  return [...under, uiArenaMoment(app), views.card()].filter(Boolean);
 }
 
 function uiRoomOpen(app, rigId, create) {
@@ -52,4 +64,4 @@ function uiRoomFocusKey(arena, backAction, replayAction) {
   return arena.view === 'card' ? replayAction : ARENA_FOCUS_KEY;
 }
 
-export { uiRoomEmpty, uiRoomFocusKey, uiRoomShell, uiRoomOpen, uiRoomReady, uiRoomHead, uiRoomLeave };
+export { uiRoomBody, uiRoomEmpty, uiRoomFocusKey, uiRoomShell, uiRoomOpen, uiRoomReady, uiRoomHead, uiRoomLeave };

@@ -42,7 +42,7 @@ for (let count = 0; count < cap && current.status === 'running'; count += 1) cur
 return current;
 }
 function linearBot(state) {
-const cell = Math.max(state.lo,state.probes);
+const cell = Math.max(state.lo,state.roundShots);
 return selectThenFire(state,cell);
 }
 function loBot(state) {

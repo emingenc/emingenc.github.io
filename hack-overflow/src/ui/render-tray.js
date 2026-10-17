@@ -45,9 +45,10 @@ const text = 'ARROWS move chip | ENTER/SPACE add | ⌫ backspace | SHIFT+⌫ cle
 return uiEl('p',{ className:'key-legend',text:text });
 }
 function uiTraySection(ctx) {
-const children = [uiRevealedLine(ctx),uiChipTray(ctx),uiTrayNote(ctx)];
-if (!uiPointerIsCoarse()) children.push(uiKeyLegend());
-return uiEl('div',{ className:'tray-section',children:children });
+return uiEl('div',{ className:'tray-section',children:[uiRevealedLine(ctx),uiChipTray(ctx),uiTrayNote(ctx)].filter(Boolean) });
+}
+function uiKeyLegendRow() {
+return uiPointerIsCoarse() ? null :uiKeyLegend();
 }
 
-export { uiTraySection };
+export { uiTraySection, uiKeyLegendRow };

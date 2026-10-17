@@ -4,14 +4,14 @@ const list = (text) => text.split(' ').map(Number);
 const W1_SPEC = {
   ...TURRET_W1, id: 'w1', targets: [{ from: 1, t: TURRET_W1.t0 }, { from: TURRET_W1.tSwitch, t: TURRET_W1.t1 }],
   dark: false, goldEvery: 0, billed: false, endless: false, hintAt: 4, fuseStep: 0, fuseFloor: 0, swarm: null,
-  cap: 0, ttl: 0, fog: 0,
+  cap: 0, ttl: 0, fog: 0, spelled: 3,
 };
 const W2_SPEC = {
-  ...W1_SPEC, id: 'w2', n: 12, targets: null, cycle: list('10 12 9'), group: 4, dark: true, goldEvery: 8, billed: true,
+  ...W1_SPEC, id: 'w2', n: 12, targets: null, cycle: list('10 12 9'), group: 4, dark: true, goldEvery: 8, billed: true, spelled: 2,
 };
 const W3_SPEC = {
   ...W1_SPEC, id: 'w3', n: 12, targets: [{ from: 1, t: TURRET_W1.t0 }], dualFrom: Infinity, fuse2From: Infinity, hintAt: 0,
-  cap: 3, ttl: 4, fog: 2,
+  cap: 3, ttl: 4, fog: 2, spelled: 2,
 };
 const OVERFLOW_SPEC = {
   ...W2_SPEC, id: 'overflow', n: 0, endless: true, hintAt: 0, goldEvery: 8, fuseStep: 100, fuseFloor: 3000,
