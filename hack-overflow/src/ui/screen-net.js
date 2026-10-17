@@ -9,11 +9,11 @@ import { uiNetCard } from './net-card.js';
 import { uiNetDrag } from './net-drag.js';
 import { NET_RIG_ID, uiNetClearNope, uiNetCommit, uiNetCreate, uiNetNoping, uiNetNow, uiNetPlayable, uiNetSpoken } from './net-flow.js';
 import { uiNetDock, uiNetMagnifier, uiNetScene, uiNetStrip } from './net-scene.js';
+import { uiRoomFocusKey } from './room-screen.js';
 
 
 const BACK_ACTION = 'rig-back';
 const REPLAY_ACTION = 'net-replay';
-const WAVE_ACTION = 'net-wave2';
 const ASSIST_ACTION = 'arena-assist';
 const FLICK_ACTION = 'net-flick';
 const ACTION_PREFIX = 'net-';
@@ -23,6 +23,9 @@ const ACTION_OF_KEY = {
 };
 const STYLESHEETS = ['styles/rooms/rig-shell.css', 'styles/rooms/arena.css', 'styles/rooms/net.css'];
 const SUM_JUDGE = 'sum';
+const MAX_JUMP = 'max';
+const MODE_OF_ACTION = { 'net-wave2': 'w2', 'net-wave3': 'w3' };
+const HEADINGS = { w2: 'NET · W2', w3: 'NET · W3' };
 const NOPE_CLEAR_MS = 260;
 
 function uiNetArena(app) {
@@ -32,7 +35,9 @@ const uiGesture = uiNetDrag({ playable: uiNetPlayable, commit: uiNetCommit, now:
 
 
 function uiNetRuleText(arena) {
-  return arena.state.rules.judge === SUM_JUDGE ? NET_TEXTS.ruleSum : NET_TEXTS.rule;
+  const { rules } = arena.state;
+  if (rules.judge === SUM_JUDGE) return NET_TEXTS.ruleSum;
+  return rules.jump === MAX_JUMP ? NET_TEXTS.ruleMax : NET_TEXTS.rule;
 }
 function uiNetPlayView(app) {
   const arena = app.rig.arena;
@@ -41,7 +46,7 @@ function uiNetPlayView(app) {
 function uiNetRender(app) {
   const arena = uiNetArena(app);
   if (!arena) return uiEl('section', { className: 'screen rig-screen', attrs: { 'data-screen': 'rig' } });
-  const view = { hearts: arena.state.integrity, heartsMax: NET_INTEGRITY, score: arena.state.score, title: arena.rig.title, assist: false };
+  const view = { hearts: arena.state.integrity, heartsMax: NET_INTEGRITY, score: arena.state.score, title: HEADINGS[arena.mode] ?? arena.rig.title, assist: false };
   const body = arena.view === 'card' ? [uiNetCard(app, arena.result)] : uiNetPlayView(app);
   return uiEl('section', {
     className: 'screen rig-screen arena-screen net-screen' + (arena.view === 'card' ? ' is-card' : ''),
@@ -56,9 +61,7 @@ function uiNetAnnounce(app) {
   return arena.rig.title + '. ' + uiNetSpoken(arena) + ' ' + arena.coach;
 }
 function uiNetFocusKey(app) {
-  const arena = uiNetArena(app);
-  if (!arena) return BACK_ACTION;
-  return arena.view === 'card' ? REPLAY_ACTION : ARENA_FOCUS_KEY;
+  return uiRoomFocusKey(uiNetArena(app), BACK_ACTION, REPLAY_ACTION);
 }
 
 
@@ -97,19 +100,22 @@ function uiNetReplay(app) {
   const arena = app.rig.arena;
   if (arena.view === 'card') uiNetRestart(app, { lastIndex: arena.poolIndex, mode: arena.mode });
 }
-function uiNetNextWave(app) {
+function uiNetWaveButton(app, actionId) {
   const arena = app.rig.arena;
-  if (arena.view === 'card' && arena.result.nextMode) uiNetRestart(app, { lastIndex: null, mode: arena.result.nextMode });
+  const offered = arena.result?.otherModes;
+  const mode = MODE_OF_ACTION[actionId];
+  if (arena.view === 'card' && offered && offered.includes(mode)) uiNetRestart(app, { lastIndex: null, mode });
 }
 function uiNetNoAssist() {
   return null;
 }
 const UI_NET_ACTIONS = {
-  [BACK_ACTION]: uiNetLeave, [ASSIST_ACTION]: uiNetNoAssist, [REPLAY_ACTION]: uiNetReplay, [WAVE_ACTION]: uiNetNextWave,
+  [BACK_ACTION]: uiNetLeave, [ASSIST_ACTION]: uiNetNoAssist, [REPLAY_ACTION]: uiNetReplay,
 };
 function uiNetApplyAction(app, actionId) {
   if (!uiNetArena(app)) return false;
   if (Object.hasOwn(UI_NET_ACTIONS, actionId)) UI_NET_ACTIONS[actionId](app);
+  else if (Object.hasOwn(MODE_OF_ACTION, actionId)) uiNetWaveButton(app, actionId);
   else if (Object.hasOwn(MOVE_OF_ACTION, actionId)) uiNetPlay(app, actionId);
   return Object.hasOwn(UI_NET_ACTIONS, actionId) || actionId.startsWith(ACTION_PREFIX);
 }

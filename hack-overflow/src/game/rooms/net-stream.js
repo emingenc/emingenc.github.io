@@ -99,7 +99,8 @@ function spamWhy(plan) {
 return play(plan,extendSpamBot).status === 'failed' ? '' :'spam';
 }
 function rawJumpWhy(plan) {
-return play(plan,rawJumpBot).status === 'failed' ? '' :'raw jump';
+const raw = Object.assign({},plan.rules,{ jump:'raw' });
+return play({ stream:plan.stream,rules:raw },rawJumpBot).status === 'failed' ? '' :'raw jump';
 }
 function rebuildWhy(extra) {
 return function check(plan) {

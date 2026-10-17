@@ -5,6 +5,8 @@ const CORRIDOR = Object.freeze({ minCol:34,maxCol:34,minRow:5,maxRow:10 });
 const MOUTH = Object.freeze({ col:34,row:10 });
 const NEAR = Object.freeze({ minCol:30,maxCol:45,minRow:0,maxRow:13 });
 const SIGN = Object.freeze({ col:35,row:10 });
+const ORACLE_CELL = Object.freeze({ col:33,row:7 });
+const ORACLE_APPROACH = Object.freeze({ col:34,row:7 });
 const ROW_WIDTH = POCKET.maxCol - POCKET.minCol + 1;
 const ROW_COUNT = POCKET.maxRow - POCKET.minRow + 1;
 const DOOR_COUNT = ROW_WIDTH * ROW_COUNT;
@@ -77,6 +79,6 @@ return hasBeat(ext,beat) ? { text:text + '.',beat:null } :{ text:text + ': ' + M
 }
 
 export {
-POCKET,CORRIDOR,MOUTH,NEAR,SIGN,DOORS,DOOR_COUNT,FIRST_DOOR,LAST_DOOR,NO_DOOR,ANSWERS,BEATS,FIND,REWARD,TOASTS,
+POCKET,CORRIDOR,MOUTH,NEAR,SIGN,ORACLE_CELL,ORACLE_APPROACH,DOORS,DOOR_COUNT,FIRST_DOOR,LAST_DOOR,NO_DOOR,ANSWERS,BEATS,FIND,REWARD,TOASTS,
 inPocket,inNear,doorCell,doorAt,createOracle,isLive,openDoor,doorTell,hasEarned,
 };

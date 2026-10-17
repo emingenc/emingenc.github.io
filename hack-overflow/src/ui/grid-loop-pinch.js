@@ -1,118 +1,23 @@
-import { withBeat } from '../game/ext/ops.js';
-import { drawerReady,refactorDue } from '../game/finale/refactor.js';
-import { rewardDue } from '../game/finale/reward.js';
 import { applyLoopPinch,createLoopPinch,loopPinchMistake } from '../game/fusion/loop-pinch.js';
-import { LIT_BEAT,LIT_LINES,OFFER_ID,OFFER_LINES,loopPinchDue,trialClear,trialOutcome,trialReady,trialView } from '../game/fusion/loop-pinch-trial.js';
-import { uiRenderKeepingFocus } from './app.js';
-import { uiCommitExt } from './ext-storage.js';
-import { uiCastSay } from './grid-cast-act.js';
+import * as trial from '../game/fusion/loop-pinch-trial.js';
 import { uiPaintLoopPinch } from './grid-loop-pinch-draw.js';
-import { uiHangKernel } from './grid-kernel-chips.js';
-import { LET_GO_ID,uiAwaitChip,uiBenchBumped,uiExclusive,uiHookBench,uiLetGo,uiLiveState,uiReleaseStrip,uiSceneState,uiTellInBackground } from './grid-scene-strip.js';
-import { uiSay } from './grid-kernel-common.js';
-import { uiAtBench,uiCovered,uiFinaleBusy,uiFinaleYields } from './grid-reward.js';
-import { uiStoryChoice } from './story-dialogue.js';
+import { uiFusionEnter,uiInstallFusion } from './grid-fusion-scene.js';
 
 
-const LET_GO = { id:LET_GO_ID,label:'LET GO',aria:'Let go of the trial. Nothing is lost, you can come back',tone:'warn' };
-const CHIP_PREFIX = 'move-';
+const LOOP_PINCH = {
+key:'loopPinch',
+hook:'loop-pinch',
+rules:{ create:createLoopPinch,apply:applyLoopPinch,mistake:loopPinchMistake },
+trial:{ ...trial,due:trial.loopPinchDue },
+paint:uiPaintLoopPinch,
+others:(game) => Boolean(game.windowMap && game.windowMap.busy),
+};
 
-function uiStateOf(game) {
-return game.loopPinch && game.loopPinch.gen === game.gen ? game.loopPinch :null;
-}
-function uiLive(app) {
-return Boolean(uiLiveState(app,uiStateOf));
-}
-function uiBenchTaken(game) {
-const { ext,progress,save } = game;
-return Boolean(game.reward && game.reward.busy) || rewardDue(ext,save) || refactorDue(progress.won,ext,save) || drawerReady(progress.won,ext,save);
-}
-async function uiPress(app,state) {
-const view = trialView(state.run);
-const pick = await uiAwaitChip(app,state,{ ...view,chips:[...view.chips,LET_GO] });
-if (pick === LET_GO.id) return false;
-const out = applyLoopPinch(state.run,pick.slice(CHIP_PREFIX.length));
-state.run = out.state;
-if (out.note) uiSay(app,out.note,loopPinchMistake(out.kind) ? 'warn' :'info');
-return true;
-}
-async function uiRun(app,state) {
-const gen = app.game.gen;
-while (state.run.status === 'running') {
-if (!await uiPress(app,state) || app.game.gen !== gen) return null;
-}
-return state.run;
-}
-async function uiPlay(app,state) {
-const ui = uiHangKernel(app);
-state.ui = ui;
-state.run = createLoopPinch();
-ui.paint = (ctx,frame) => uiPaintLoopPinch(ctx,frame,state.run);
-try {
-return await uiRun(app,state);
-} finally {
-ui.paint = null;
-uiReleaseStrip(app,state,ui);
-}
-}
-async function uiSettle(app,run) {
-const gen = app.game.gen;
-const outcome = trialOutcome(run);
-const { uiPayRank } = await import('./rank-pay.js');
-await uiPayRank(app,outcome.source,outcome.rank);
-if (app.game.gen !== gen) return;
-uiCommitExt(app,trialClear(app.game.ext));
-for (const text of outcome.lines) await uiCastSay(app,{ text,kind:'reward' });
-}
-function uiTrialScene(app) {
-const state = uiStateOf(app.game);
-const gen = app.game.gen;
-return uiExclusive(state,async function () {
-const pick = await uiStoryChoice(app,{ id:OFFER_ID,lines:OFFER_LINES,choices:[{ id:'go',label:'TRY IT' },{ id:'later',label:'NOT NOW',default:true }] });
-if (app.game.gen !== gen) return;
-if (pick !== 'go') state.declined = true;
-const game = app.game;
-if (pick !== 'go' || uiFinaleBusy(game) || !trialReady(game.progress.won,game.ext,game.save)) return;
-const run = await uiPlay(app,state);
-if (run) await uiSettle(app,run);
-});
-}
-async function uiAnnounce(app) {
-uiCommitExt(app,withBeat(app.game.ext,LIT_BEAT));
-for (const text of LIT_LINES) await uiCastSay(app,{ text,kind:'reward' });
-}
-function uiIdle(app) {
-return uiLive(app) && !uiFinaleBusy(app.game) && !uiCovered(app) && !uiStateOf(app.game).busy && !uiBenchTaken(app.game);
-}
-function uiOnBump(payload) {
-const app = uiBenchBumped(payload);
-if (!app || !uiIdle(app)) return;
-const game = app.game;
-const state = uiStateOf(game);
-if (loopPinchDue(game.progress.won,game.ext,game.save)) {
-uiTellInBackground(state,() => uiAnnounce(app));
-} else if (trialReady(game.progress.won,game.ext,game.save) && !state.declined) uiTrialScene(app).catch(console.error);
-}
-function uiOnMove(info) {
-const app = info.app;
-const state = uiLiveState(app,uiStateOf);
-if (!state) return;
-if (state.cancel && uiFinaleYields(app.game)) state.cancel();
-if (state.declined && !uiAtBench(app.game.avatar.pos)) state.declined = false;
-if (!uiIdle(app)) return;
-const game = app.game;
-if (!loopPinchDue(game.progress.won,game.ext,game.save)) return;
-uiTellInBackground(state,() => uiAnnounce(app));
-}
 function uiInstallLoopPinch(app) {
-app.game.loopPinch = uiSceneState(app.game);
-uiHookBench('loop-pinch',uiOnBump,uiOnMove);
+uiInstallFusion(LOOP_PINCH,app);
 }
-
 function uiLoopPinchEnter(app) {
-const state = uiStateOf(app.game);
-uiLetGo(state);
-if (state) state.declined = false;
+uiFusionEnter(LOOP_PINCH,app);
 }
 
-export { uiInstallLoopPinch,uiLoopPinchEnter };
+export { LOOP_PINCH,uiInstallLoopPinch,uiLoopPinchEnter };

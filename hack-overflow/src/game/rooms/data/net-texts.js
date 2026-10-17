@@ -1,11 +1,14 @@
 const NET_TEXTS = {
 rule:'Slide one net over the stream. EXTEND takes the peeked item in, SHRINK lets the oldest go. Never hold a repeat.',
+ruleMax:'Slide one net over the hidden stream. EXTEND takes the peeked item in, SHRINK lets the oldest go. JUMP never moves l back.',
 ruleSum:'Slide one net over the weights. Keep the sum at or under K: EXTEND takes the peeked item in, SHRINK lets the oldest go.',
 coach:{
 start:'Peek {x}. New to the net: EXTEND. Already in it: SHRINK past it first.',
 fresh:'Peek {x} is not in the net. EXTEND.',
 dup:'Peek {x} is already in the net. SHRINK until it leaves.',
 jump:'Peek {x} was last at {at}. JUMP moves l to {to} in one move.',
+outside:'Peek {x} was last at {at}, already outside the net. JUMP would stay at l={l}. EXTEND.',
+watch:'Peek {x}. Look in the net: inside, SHRINK or JUMP past it. Outside, EXTEND.',
 sumLow:'Sum {sum} is within K={k}. EXTEND.',
 sumHigh:'Sum {sum} > K={k}. SHRINK until the sum is {k} or less.',
 gold:'The gold item is in the net. Tap it for +{points}; it costs one move.',
@@ -30,6 +33,7 @@ used:'{steps} moves for {n} items; perfect is {par}. BRUTE rebuilt the net from 
 stars:'1 clear, 2 no tear and no wasted move, 3 also moves <= par.',
 how:'How scoring works',
 why:'WHY IT MATTERS: BRUTE rebuilds the net from every start: {reads} reads. A sliding window moves each edge forward once: O(n).',
+whyMax:'WHY IT MATTERS: BRUTE rebuilds the net from every start: {reads} reads. JUMP is l = max(l, last+1): a copy behind l is already out, so l never moves back. O(n).',
 },
 };
 function fillText(template,values) {

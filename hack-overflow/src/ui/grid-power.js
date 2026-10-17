@@ -32,6 +32,9 @@ const ENCOUNTERS = [
 () => import('./grid-chain.js'),
 () => import('./grid-reward.js'),
 () => import('./grid-loop-pinch.js'),
+() => import('./grid-window-map.js'),
+() => import('./grid-mono-deque.js'),
+() => import('./grid-quests.js'),
 ];
 
 function uiNewPower(game) {

@@ -13,6 +13,9 @@ const SEPARATOR = ' · ';
 const METER_GAP = '  /  ';
 const SNAG_MARK = '✕';
 const WAVE_1_ONLY = 'wave 1 only';
+const JUMP_MAX_SUB = 'l = max()';
+const MAX_JUMP = 'max';
+const JUMP_MAX_ARIA = 'JUMP: l = max(l, last copy + 1), the tail never moves back, so a copy already outside the net wastes the move';
 const DOCK = [
   { move: 'shrink', action: 'net-shrink', text: 'SHRINK', aria: 'SHRINK: let the oldest item go, the tail moves right' },
   { move: 'extend', action: 'net-extend', text: 'EXTEND', aria: 'EXTEND: take the peeked item in, the head moves right' },
@@ -104,7 +107,7 @@ function uiNetTileClasses(state, index, snag) {
   return names.filter(Boolean).join(' ');
 }
 function uiNetTile(state, index) {
-  const snag = index === state.r && netWouldTear(state);
+  const snag = index === state.r && state.rules.snags && netWouldTear(state);
   const tappable = index === state.stream.gold && uiNetFlickable(state);
   const attrs = { 'aria-label': uiNetTileWords(state, index, snag) };
   if (tappable) Object.assign(attrs, { type: 'button', 'data-action': FLICK_ACTION, 'data-focus-key': FLICK_ACTION });
@@ -181,13 +184,19 @@ function uiNetMagnifier(app) {
 }
 
 
+function uiNetJumpMax(state, spec) {
+  return spec.move === 'jump' && state.rules.jump === MAX_JUMP;
+}
+function uiNetDockLabel(state, spec) {
+  if (spec.move === 'jump' && !state.rules.jump) return 'JUMP: ' + WAVE_1_ONLY;
+  return uiNetJumpMax(state, spec) ? JUMP_MAX_ARIA : spec.aria;
+}
 function uiNetDockAttrs(state, spec) {
-  const waveOff = spec.move === 'jump' && !state.rules.jump;
   const attrs = {
     type: 'button',
     'data-action': spec.action,
     'data-focus-key': spec.action,
-    'aria-label': waveOff ? 'JUMP: ' + WAVE_1_ONLY : spec.aria,
+    'aria-label': uiNetDockLabel(state, spec),
   };
   if (!netMoves(state).includes(spec.move)) attrs['aria-disabled'] = 'true';
   return attrs;
@@ -195,7 +204,8 @@ function uiNetDockAttrs(state, spec) {
 function uiNetDockButton(state, spec) {
   const word = uiEl('span', { className: 'net-verb', text: spec.text });
   const waveOff = spec.move === 'jump' && !state.rules.jump;
-  const sub = waveOff ? uiEl('span', { className: 'net-sub', text: WAVE_1_ONLY }) : null;
+  const subText = waveOff ? WAVE_1_ONLY : (uiNetJumpMax(state, spec) ? JUMP_MAX_SUB : '');
+  const sub = subText ? uiEl('span', { className: 'net-sub', text: subText }) : null;
   return uiEl('button', { className: 'btn arena-btn arena-verb net-btn', attrs: uiNetDockAttrs(state, spec), children: [word, sub] });
 }
 

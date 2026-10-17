@@ -21,9 +21,11 @@ function uiTravelStateWords(target) {
 if (target.kind !== 'terminal' || target.state !== 'breached') return uiTravelState(target);
 return 'BREACHED, ' + target.stars + ' of ' + MAX_STARS_PER_LOCK + ' stars';
 }
-function uiRouteTo(game,id) {
+function uiRouteTo(app,id) {
+const game = app.game;
 const thing = game.world.things[id];
-return findPath(game.world,game.progress,{ from:game.avatar.pos,to:{ col:thing.col,row:thing.row } });
+const avoid = game.tapAvoid ? game.tapAvoid(app) :undefined;
+return findPath(game.world,game.progress,{ from:game.avatar.pos,to:{ col:thing.col,row:thing.row },avoid });
 }
 function uiTravelSectorText(world,target) {
 return (target.kind === 'terminal' || target.kind === 'rig') && target.sector ? sectorName(world,target.sector) :'';
@@ -115,7 +117,7 @@ return actionId.indexOf(UI_TRAVEL_PREFIX) === 0 && actionId !== 'travel-toggle';
 function uiTravelTo(app,actionId) {
 const game = app.game;
 const id = actionId.slice(UI_TRAVEL_PREFIX.length);
-const dirs = Object.hasOwn(game.world.things,id) ? uiRouteTo(game,id) :null;
+const dirs = Object.hasOwn(game.world.things,id) ? uiRouteTo(app,id) :null;
 if (dirs) uiWalkPath(app,{ dirs });
 else uiShowToast(app,{ text:'No route there yet',kind:'warn' });
 game.travelOpen = false;

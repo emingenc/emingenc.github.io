@@ -1,6 +1,8 @@
 import { NET_MODES } from '../game/rooms/data/net-waves.js';
 import { createNet } from '../game/rooms/net.js';
 import { buildPool, pickStream } from '../game/rooms/net-stream.js';
+import { uiNetHasBest } from './net-record.js';
+import { uiRoomLabCleared, uiRoomModeOpen } from './room-modes.js';
 
 
 const LAB_ID = 'net';
@@ -8,17 +10,19 @@ const LAB_LEVEL = 'net-1';
 const FIRST_MODE = NET_MODES[0];
 
 function uiNetCleared(app) {
-  const labs = app.game.save.labs;
-  return Boolean(labs[LAB_ID] && labs[LAB_ID][LAB_LEVEL] && labs[LAB_ID][LAB_LEVEL].best > 0);
+  return uiRoomLabCleared(app, LAB_ID, LAB_LEVEL);
+}
+function uiNetWaveCleared(app, mode) {
+  return mode === FIRST_MODE ? uiNetCleared(app) : uiNetHasBest(app, mode);
+}
+function uiNetModeOpen(app, mode) {
+  return uiRoomModeOpen(mode, (wave) => uiNetWaveCleared(app, wave));
 }
 function uiNetFirstMode() {
   return FIRST_MODE;
 }
 function uiNetOtherModes(app, mode) {
-  return uiNetCleared(app) ? NET_MODES.filter((id) => id !== mode) : [];
-}
-function uiNetModeOpen(app, mode) {
-  return mode === FIRST_MODE || (NET_MODES.includes(mode) && uiNetCleared(app));
+  return NET_MODES.filter((id) => id !== mode && uiNetModeOpen(app, id));
 }
 function uiNetRunFor(app, start) {
   const mode = uiNetModeOpen(app, start.mode) ? start.mode : FIRST_MODE;

@@ -1,5 +1,5 @@
 import { BEATS,FIND,GHOST_SHEET,TOASTS,answerThe8,hasOffered,isCleared } from '../game/cast/fork.js';
-import { MEET_ID,RUN_ID,THANKS_RANK,THANKS_SOURCE,TOASTS as TALLY_TOASTS,offerSheet,tallyPlan } from '../game/cast/tally.js';
+import { MEET_ID,RUN_ID,THANKS_RANK,THANKS_SOURCE,TALLY_JOBS,TOASTS as TALLY_TOASTS,jobsSheet,offerSheet,tallyPlan } from '../game/cast/tally.js';
 import { hasBeat,questState,withBeat,withFind,withMet,withQuest } from '../game/ext/ops.js';
 import { STAGE } from '../game/quest/quests.js';
 import { uiCommitExt } from './ext-storage.js';
@@ -90,17 +90,25 @@ if (pick !== 'take') return;
 await (await uiQuestRunner()).uiPinQuest(app,RUN_ID);
 uiSay(app,TALLY_TOASTS.taken);
 }
+async function uiTallyJobs(app,jobs) {
+const pick = await uiAsk(app,jobsSheet(jobs));
+const job = jobs.find((row) => row.id === pick);
+if (!job) return;
+await (await uiQuestRunner()).uiPinQuest(app,job.id);
+uiSay(app,job.taken);
+}
 async function uiTallyThanks(app,met) {
 if (!met) uiCommitExt(app,withMet(app.game.ext,MEET_ID));
 uiSay(app,TALLY_TOASTS.thanks,'reward');
 const { uiPayRank } = await import('./rank-pay.js');
 await uiPayRank(app,THANKS_SOURCE,THANKS_RANK);
 }
-async function uiTallyBump(app) {
-const plan = tallyPlan(app.game.ext);
+async function uiTallyBump(app,jobs = TALLY_JOBS) {
+const plan = tallyPlan(app.game.ext,jobs);
 if (plan.kind === 'thanks') await uiTallyThanks(app,plan.met);
 else if (plan.kind === 'offer') await uiTallyOffer(app,plan.met);
-else uiSay(app,TALLY_TOASTS[plan.kind]);
+else if (plan.kind === 'jobs') await uiTallyJobs(app,plan.jobs);
+else uiSay(app,plan.job ? plan.job.waiting :TALLY_TOASTS[plan.kind]);
 }
 
 export { uiForkEnter,uiSignBump,uiTakeReceipt,uiPairFound,uiPairMiss,uiTallyBump };

@@ -18,6 +18,11 @@ const tags = tagsOf(ext);
 const next = tags[id] === value ? null :tableWith(ext,'tags',[id,value]);
 return next && next[id] === value ? { ...ext,tags:next } :ext;
 }
+function withoutTag(ext,id) {
+const tags = tagsOf(ext);
+if (!Object.hasOwn(tags,id)) return ext;
+return { ...ext,tags:Object.fromEntries(Object.entries(tags).filter(([key]) => key !== id)) };
+}
 function trialsOf(ext,power) {
 return repairOf('trials')(ext && ext.trials)[power] ?? 0;
 }
@@ -34,4 +39,4 @@ const lends = trials && tableWith(ext,'lends',[ally,lendsOf(ext,ally) + 1]);
 return lends ? { ...ext,trials,lends } :ext;
 }
 
-export { lendsOf,lendTrials,spendTrial,tagsOf,trialsOf,withTag };
+export { lendsOf,lendTrials,spendTrial,tagsOf,trialsOf,withTag,withoutTag };

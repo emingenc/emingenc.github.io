@@ -41,7 +41,8 @@ if (ext.pin === def.id) ext = ops.withPin(ext,null);
 uiCommitExt(app,def.reward.find ? ops.withFind(ext,def.reward.find) :ext);
 }
 function uiDoneText(def,reward) {
-return def.name + (reward.rank > 0 ? ': +' + reward.rank + ' R' :' done');
+if (reward.rank > 0) return def.name + ': +' + reward.rank + ' R';
+return def.name + ' done' + (def.reward.label ? ': ' + def.reward.label :'');
 }
 async function uiSayAndPay(app,def) {
 const reward = rewardOf(def);

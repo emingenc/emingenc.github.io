@@ -15,7 +15,15 @@ return app.screen === 'grid' && state && app.game.ext && app.game.progress ? sta
 }
 
 function uiSceneState(game) {
-return { gen:game.gen,busy:false,declined:false,run:null,ui:null,cancel:null };
+const fresh = Boolean(game.scenes) && game.scenes.length > 0 && game.scenes[0].gen === game.gen;
+const peers = fresh ? game.scenes :[];
+const state = { gen:game.gen,busy:false,declined:false,run:null,ui:null,cancel:null,peers };
+peers.push(state);
+game.scenes = peers;
+return state;
+}
+function uiPeerBusy(state) {
+return state.peers.some((peer) => peer !== state && peer.busy);
 }
 
 function uiLetGo(state) {
@@ -51,7 +59,7 @@ uiGridHook('bump',onBump);
 }
 
 async function uiExclusive(state,work) {
-if (state.busy) return;
+if (state.busy || uiPeerBusy(state)) return;
 state.busy = true;
 try {
 await work();
@@ -61,6 +69,7 @@ state.busy = false;
 }
 
 function uiTellInBackground(state,task) {
+if (state.busy || uiPeerBusy(state)) return;
 state.busy = true;
 task().catch(console.error).finally(() => { state.busy = false; });
 }

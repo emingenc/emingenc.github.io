@@ -3,6 +3,7 @@ import { BUSY_MS, TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
 import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
 import { OVERFLOW_PACE_DRONES, REVEAL_MS } from '../game/rooms/data/turret-waves.js';
 import { bruteChecksAt } from '../game/rooms/turret-race.js';
+import { billedDue } from '../game/walk/double-billed.js';
 import {
   applyTurret, bruteCompares, hintOffer, keyFor, paceAt, swarmReady, swarmWindowMs, turretStars, turretTarget, verifyHint,
 } from '../game/rooms/turret.js';
@@ -228,12 +229,18 @@ function uiTurretBadToast(app, last) {
 function uiTurretSelfToast(app, last) {
   if (last.self && app.rig.arena.state.spec.dark) uiArenaToast(app, fillText(TURRET_TEXTS.toast.self, { v: last.v, t: last.t }), 'info');
 }
+function uiTurretQuest(app, arena) {
+  if (arena.billedSent || !billedDue(arena.state, app.game.ext)) return;
+  arena.billedSent = true;
+  import('./turret-quest.js').then((quest) => quest.uiBilledQuest(app, arena)).catch(console.error);
+}
 function uiTurretStaleArm(arena) {
   return arena.evict && (arena.state.last.kind === 'fuse' || arena.state.bay[0]?.n !== arena.armedFor);
 }
 function uiTurretAfterMove(app, now) {
   const arena = app.rig.arena;
   const last = arena.state.last;
+  uiTurretQuest(app, arena);
   uiTurretCue(arena.state);
   uiTurretMotion(arena, now);
   uiTurretReveal(arena, now);

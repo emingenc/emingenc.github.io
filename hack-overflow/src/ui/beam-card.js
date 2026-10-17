@@ -12,12 +12,14 @@ const STAR_OFF = '☆';
 const PERCENT = 100;
 const MIN_BAR_PERCENT = 6;
 const LESSON = 'Halving: 16 cells -> 8 -> 4 -> 2 -> 1';
-const TITLES = { w1:BEAM_TEXTS.card.title,w2:'WAVE 2 CLEAR' };
+const TITLES = { w1:BEAM_TEXTS.card.title,w2:'WAVE 2 CLEAR',w3:BEAM_TEXTS.card.title3 };
 const BEST_LINE = 'BEST {score}';
 const NEW_BEST_LINE = 'NEW BEST {score}';
-const FAIL_RULE = 'Each shot must halve the live range: select the middle, then FIRE.';
-const SWITCH_ACTIONS = { w1:'beam-wave1',w2:'beam-wave2' };
-const SWITCH_LABELS = { w1:'WAVE 1',w2:'WAVE 2' };
+const FAIL_RULES = { w1:'Each shot must halve the live range: select the middle, then FIRE.',w3:BEAM_TEXTS.card.failRule3 };
+const STARS_RULES = { w1:BEAM_TEXTS.card.stars,w3:BEAM_TEXTS.card.stars3 };
+const WHYS = { w1:BEAM_TEXTS.card.why,w3:BEAM_TEXTS.card.why3 };
+const SWITCH_ACTIONS = { w1:'beam-wave1',w2:'beam-wave2',w3:'beam-wave3' };
+const SWITCH_LABELS = { w1:'WAVE 1',w2:'WAVE 2',w3:'WAVE 3' };
 
 function uiBeamActions(app,mode) {
 const others = uiBeamOtherModes(app,mode).map((id) => ({ action:SWITCH_ACTIONS[id],label:SWITCH_LABELS[id] }));
@@ -58,21 +60,25 @@ function uiBeamHow(rule,why) {
 const summary = uiEl('summary',{ className:'turret-how-summary',text:BEAM_TEXTS.card.how });
 return uiEl('details',{ className:'turret-how',children:[summary,uiBeamLine('turret-rule',rule),uiBeamLine('turret-why',why)] });
 }
+function uiBeamWordsFor(table,mode) {
+return table[mode] ?? table.w1;
+}
 function uiBeamLessonLines(state,result) {
-const lines = result.mode === 'w1' && result.firstClear ? [LESSON,BEAM_TEXTS.card.next] :[];
+const first = result.mode === 'w1' && result.firstClear ? [LESSON,BEAM_TEXTS.card.next] :[];
+const lines = result.mode === 'w3' ? [BEAM_TEXTS.card.lesson3] :first;
 return lines.map((line) => uiBeamLine('beam-lesson',line));
 }
 function uiBeamWinBody(state,result) {
 const values = { shots:state.probes,n:bruteShots(state.wave),par:beamPar(state.wave) };
 const head = [uiBeamStars(result.stars),uiBeamScore(state),...uiBeamBestLine(result),uiBeamLine('turret-used',fillText(BEAM_TEXTS.card.used,values))];
 const lesson = uiBeamLessonLines(state,result);
-return [...head,uiBeamVersus(state),...lesson,uiArenaPaidLine(result.rank,'beam-paid'),uiBeamHow(BEAM_TEXTS.card.stars,fillText(BEAM_TEXTS.card.why,values))].filter(Boolean);
+return [...head,uiBeamVersus(state),...lesson,uiArenaPaidLine(result.rank,'beam-paid'),uiBeamHow(uiBeamWordsFor(STARS_RULES,result.mode),fillText(uiBeamWordsFor(WHYS,result.mode),values))].filter(Boolean);
 }
 function uiBeamCard(app,result) {
 const state = app.rig.arena.state;
 const actions = uiBeamActions(app,result.mode);
 if (!result.won) {
-const lines = [result.why || '',FAIL_RULE].filter(Boolean);
+const lines = [result.why || '',uiBeamWordsFor(FAIL_RULES,result.mode)].filter(Boolean);
 return uiArenaCard(app,{ title:BEAM_TEXTS.card.failTitle,tone:'fail',lines,body:[uiBeamScore(state)],actions });
 }
 return uiArenaCard(app,{ title:TITLES[result.mode],lines:[],body:uiBeamWinBody(state,result),actions });

@@ -1,5 +1,7 @@
 import { hasMet,questState } from '../ext/ops.js';
 import { STAGE } from '../quest/quests.js';
+import { TALLY_JOB as ANAGRAM_JOB } from '../walk/anagram.js';
+import { TALLY_JOB as BILLED_JOB } from '../walk/double-billed.js';
 import { FIND,holdsReceipt } from './fork.js';
 
 const TALLY_CELL = Object.freeze({ col:40,row:14 });
@@ -10,6 +12,9 @@ const THANKS_RANK = 5;
 const TALLY_WHO = 'TALLY';
 const WELCOME = 'Welcome! Nothing stored is ever lost.';
 const OFFER = 'Lost receipt #4470. Pairs? Rescans? I pay rank.';
+const JOBS_LINE = 'More jobs, if you want them.';
+const LATER_CHOICE = Object.freeze({ id:'later',label:'NOT NOW',default:true });
+const TALLY_JOBS = Object.freeze([BILLED_JOB,ANAGRAM_JOB]);
 const OFFER_CHOICES = Object.freeze([{ id:'take',label:'TAKE THE RUN' },{ id:'later',label:'NOT NOW',default:true }]);
 const TOASTS = Object.freeze({
 thanks:'TALLY: That is my receipt. Thank you. +5 R',
@@ -21,16 +26,27 @@ done:'TALLY: All stored. Thank you.',
 function isPaid(ext,source) {
 return Boolean(ext.rank) && Array.isArray(ext.rank.paid) && ext.rank.paid.includes(source);
 }
-function tallyPlan(ext) {
+function stageOf(ext,job) {
+return questState(ext,job.id);
+}
+function tallyPlan(ext,jobs = TALLY_JOBS) {
 const met = hasMet(ext,MEET_ID);
 if (holdsReceipt(ext) && !isPaid(ext,THANKS_SOURCE)) return { kind:'thanks',met };
 const stage = questState(ext,RUN_ID);
-if (stage === STAGE.done) return { kind:'done',met };
-return { kind:stage === STAGE.active ? 'waiting' :'offer',met };
+if (stage !== STAGE.done) return { kind:stage === STAGE.active ? 'waiting' :'offer',met };
+const job = jobs.find((row) => stageOf(ext,row) === STAGE.active);
+if (job) return { kind:'waiting',met,job };
+const open = jobs.filter((row) => stageOf(ext,row) !== STAGE.done);
+return open.length ? { kind:'jobs',met,jobs:open } :{ kind:'done',met };
 }
 function offerSheet(met) {
 const lines = [...(met ? [] :[WELCOME]),OFFER].map((text) => ({ who:TALLY_WHO,text }));
 return { id:'tally-run',lines,choices:OFFER_CHOICES.map((choice) => ({ ...choice })) };
 }
 
-export { TALLY_CELL,MEET_ID,RUN_ID,THANKS_SOURCE,THANKS_RANK,TOASTS,FIND,tallyPlan,offerSheet };
+function jobsSheet(jobs) {
+const choices = [...jobs.map((job) => ({ id:job.id,label:job.label })),{ ...LATER_CHOICE }];
+return { id:'tally-jobs',lines:[{ who:TALLY_WHO,text:JOBS_LINE }],choices };
+}
+
+export { TALLY_CELL,MEET_ID,RUN_ID,THANKS_SOURCE,THANKS_RANK,TOASTS,FIND,JOBS_LINE,TALLY_JOBS,tallyPlan,offerSheet,jobsSheet };
