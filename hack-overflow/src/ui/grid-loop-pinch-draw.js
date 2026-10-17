@@ -37,9 +37,9 @@ ctx.font = Math.round(frame.tile * MARK_TILES) + FONT_FACE;
 ctx.fillText(look.mark,spot.left + frame.tile * MIDDLE,spot.top + frame.tile * MARK_AT);
 }
 
-function uiPaintLoopPinch(ctx,frame,run) {
-LOOP_PINCH.nums.forEach(function (value,at) {
-const spot = uiSpotOf(VALUE_CELLS[at],frame);
+function uiPaintLoopPinch(ctx,frame,run,puzzle = LOOP_PINCH) {
+puzzle.nums.forEach(function (value,at) {
+const spot = at < VALUE_CELLS.length ? uiSpotOf(VALUE_CELLS[at],frame) :null;
 if (spot) uiPaintValue(ctx,frame,{ spot,value,look:uiRoleOf(run,at) });
 });
 }

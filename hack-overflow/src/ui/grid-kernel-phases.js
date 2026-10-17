@@ -1,25 +1,24 @@
 import { hasBeat,withBeat } from '../game/ext/ops.js';
 import { KERNEL_FRONT } from '../game/finale/roadback.js';
 import {
-  FICTION_LABEL,KERNEL_TOASTS,PHASES,askLine,bruteLine,createKernel,createPhase,kernelBadge,kernelRefill,kernelUse,phaseToast,phaseTruth,playVerb,
-  powerOfSlot,pressBridge,recallAllClones,rootPace,rootStop,rootTick,slotOf,tagClone,telegraph,youOp,
+  KERNEL_TOASTS,PHASES,applyBruteAssist,createKernel,createPhase,kernelRefill,kernelUse,opPowers,phaseDoneLines,phaseToast,phaseTruth,
+  rootPace,rootStop,rootTick,youOp,
 } from '../game/finale/kernel.js';
+import { BRUTE_ASSIST,countersignDone,spokenLine } from '../game/finale/root-lines.js';
 import { uiGhostOffer } from './finale-offer.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiCastSay } from './grid-cast-act.js';
 import { uiDropKernel } from './grid-kernel-chips.js';
 import { uiCarryToFront,uiSay,uiSeams } from './grid-kernel-common.js';
+import { uiHalveReset } from './grid-kernel-halve.js';
 import { uiKernelHurt,uiSetRevive } from './grid-kernel-hurt.js';
+import { uiFieldTele,uiKernelView } from './grid-kernel-view.js';
 
-const PHASE_POWERS = { 1:['lookup'],2:['lookup','plate'],3:['pincer'] };
-const VOLLEY_VERBS = [{ verb:'push',label:'PUSH' },{ verb:'pop',label:'POP' },{ verb:'clear',label:'CLEAR' }];
-const BRIDGE_MOVES = [
-{ move:'l',label:'L>',aria:'Move the left pointer right' },{ move:'fire',label:'FIRE',aria:'Fire' },{ move:'r',label:'<R',aria:'Move the right pointer left' },
-];
-const SEPARATOR = ' . ';
-const MIXED = 2;
-const LOOKUP = 1;
+const SHIELD = 2;
+const HALVE_PHASE = 3;
+const DEQUE_PHASE = 5;
+const PATCH_SPEAKER = 'PATCH';
 
 function uiUnder(app) {
 return Boolean(app.story) || Boolean(app.game.travelOpen);
@@ -29,73 +28,30 @@ const kernel = app.game.kernel;
 app.game.kernel = { ...kernel,settle:null };
 if (kernel.settle) kernel.settle(result);
 }
-function uiTelegraphText(phase) {
-const told = telegraph(phase);
-return told.now + SEPARATOR + told.next;
-}
-function uiTrialsText(app) {
-const { kernel,progress } = app.game;
-const badges = PHASE_POWERS[kernel.n].map((power) => [power.toUpperCase(),kernelBadge(kernel,power,progress.won)]);
-return badges.filter(([,badge]) => badge).map(([name,badge]) => name + ' ' + badge).join(SEPARATOR);
-}
-function uiRunAct(app,act) {
-return function () {
-if (uiUnder(app) || !app.game.kernel.settle) return;
-uiKernelOp(app,act);
-};
-}
-function uiTagChips(app,phase) {
-return phase.clones.filter((clone) => clone.hp > 0).map((clone) => ({
-id:'tag-' + clone.id,label:clone.code,aria:'Tag ' + clone.code,selected:phase.tagged.includes(clone.id),
-run:uiRunAct(app,{ slot:'field',play:(now) => tagClone(now,clone.id) }),
-}));
-}
-function uiRecallChip(app) {
-return { id:'recall',label:'RECALL ALL',aria:'Recall all tagged',run:uiRunAct(app,{ slot:'field',play:recallAllClones }) };
-}
-function uiVerbChips(app,phase) {
-if (!phase.volley) return [];
-return VOLLEY_VERBS.map((one) => ({ id:'verb-' + one.verb,label:one.label,run:uiRunAct(app,{ slot:'volley',play:(now) => playVerb(now,one.verb) }) }));
-}
-function uiBridgeChips(app,phase) {
-if (!phase.bridge) return [];
-return BRIDGE_MOVES.map((one) => ({ id:'bridge-' + one.move,label:one.label,aria:one.aria,run:uiRunAct(app,{ slot:'bridge',play:(now) => pressBridge(now,one.move) }) }));
-}
-function uiChipsOf(app,phase) {
-if (phase.bridge) return uiBridgeChips(app,phase);
-return [uiRecallChip(app),...uiVerbChips(app,phase),...uiTagChips(app,phase)];
-}
-function uiBridgeAsk(phase) {
-const { l,r } = phase.bridge;
-return askLine(phase) + SEPARATOR + 'L ' + l + SEPARATOR + 'R ' + r;
-}
-function uiViewOf(app) {
-const kernel = app.game.kernel;
-const phase = kernel.phase;
-return {
-n:kernel.n,head:'K' + kernel.n + ' ' + phase.name,count:'ROOT ' + kernel.root.n + SEPARATOR + 'YOU ' + kernel.root.you,
-ask:phase.bridge ? uiBridgeAsk(phase) :askLine(phase),tele:kernel.n === MIXED ? uiTelegraphText(phase) :'',
-note:uiTrialsText(app),fiction:kernel.n === MIXED ? FICTION_LABEL :'',chips:uiChipsOf(app,phase),
-};
-}
-function uiSpend(app,power) {
+function uiSpend(app,powers) {
 const game = app.game;
-const used = kernelUse(game.kernel,power,game.progress.won);
+const used = kernelUse(game.kernel,powers,game.progress.won);
 if (used.ok) game.kernel = used.kernel;
 return used.ok;
 }
-function uiNoteOf(out,phase) {
-if (out.hurt || phase.n !== MIXED) return out.note;
-return uiTelegraphText(phase);
+function uiNoteOf(out) {
+if (out.hurt || out.phase.n !== SHIELD) return out.note;
+return uiFieldTele(out.phase);
 }
 function uiSayNote(app,out) {
-const text = uiNoteOf(out,out.phase);
+const text = uiNoteOf(out);
 if (text) uiSay(app,text,out.hurt ? 'warn' :'info');
 }
 function uiCount(app,out) {
 const game = app.game;
 const gained = out.phase.ops - game.kernel.phase.ops;
 game.kernel = { ...game.kernel,phase:out.phase,root:rootTick(youOp(game.kernel,gained),rootPace(out.phase)).root };
+}
+function uiAssist(app,out) {
+const game = app.game;
+const result = applyBruteAssist(game.kernel,game.ext,out);
+game.kernel = result.kernel;
+return result.out;
 }
 function uiBlow(app) {
 const blow = uiKernelHurt(app,app.game.avatar.pos);
@@ -107,23 +63,27 @@ if (out.hurt && uiBlow(app)) return;
 if (out.phase.done) uiSettle(app,'won');
 uiRenderKeepingFocus(app);
 }
-function uiKernelOp(app,act) {
-if (!uiSpend(app,powerOfSlot(act.slot))) return;
-const out = act.play(app.game.kernel.phase);
+function uiKernelOp(app,play) {
+if (uiUnder(app) || !app.game.kernel.settle) return;
+const before = app.game.kernel.phase;
+const out = play(before);
 if (out.kind === 'idle') {
 if (out.note) uiSay(app,out.note,'info');
 return;
 }
+if (!uiSpend(app,opPowers(before))) return;
 uiCount(app,out);
-uiSayNote(app,out);
-uiAfterOp(app,out);
+if (out.phase.n === HALVE_PHASE && out.kind !== 'outside') uiHalveReset(app);
+const shown = uiAssist(app,out);
+uiSayNote(app,shown);
+uiAfterOp(app,shown);
 }
 function uiBeginAttempt(app,spec) {
 const game = app.game;
 const record = kernelRefill({ ...game.kernel,root:createKernel().root });
 const attempt = game.kernel.n === spec.n ? game.kernel.attempt + 1 : 1;
-game.kernel = { ...record,n:spec.n,attempt,phase:createPhase(spec.n),active:true,settle:null };
-uiSeams(app).view = () => uiViewOf(app);
+game.kernel = { ...record,n:spec.n,attempt,cursor:null,phase:createPhase(spec.n),active:true,settle:null };
+uiSeams(app).view = () => uiKernelView(app,(play) => uiKernelOp(app,play));
 uiCarryToFront(app);
 }
 function uiAttempt(app,spec) {
@@ -140,22 +100,34 @@ function uiClearStrip(app) {
 if (app.game.kernelUi) app.game.kernelUi.view = null;
 uiRenderKeepingFocus(app);
 }
-async function uiWon(app,spec) {
+function uiDoneKind(line) {
+return line.who === PATCH_SPEAKER ? 'reward' :line.kind;
+}
+async function uiWon(app) {
 const game = app.game;
+const phase = game.kernel.phase;
 game.kernel = rootStop(game.kernel);
 uiClearStrip(app);
-uiCommitExt(app,withBeat(game.ext,spec.beat));
-if (spec.n === LOOKUP) await uiCastSay(app,{ text:bruteLine(game.kernel.phase.ops),kind:'info' });
+uiCommitExt(app,withBeat(game.ext,PHASES[phase.n - 1].beat));
+for (const line of phaseDoneLines(phase)) {
+if (app.game !== game) return;
+await uiCastSay(app,{ text:spokenLine(line),kind:uiDoneKind(line) });
+}
+}
+async function uiBruteOpening(app,spec) {
+const game = app.game;
+if (spec.n === DEQUE_PHASE && countersignDone(game.ext) && !game.kernel.assistUsed) await uiCastSay(app,{ text:BRUTE_ASSIST.opening,kind:'info' });
 }
 async function uiPlayPhase(app,spec) {
 await uiCastSay(app,{ text:phaseToast(spec.n),kind:'info' });
+await uiBruteOpening(app,spec);
 await uiOffer(app,spec);
 let result = await uiAttempt(app,spec);
 while (result !== 'won') {
 await uiCastSay(app,{ text:KERNEL_TOASTS.again,kind:'warn' });
 result = await uiAttempt(app,spec);
 }
-await uiWon(app,spec);
+await uiWon(app);
 }
 function uiInstall(app) {
 const game = app.game;
