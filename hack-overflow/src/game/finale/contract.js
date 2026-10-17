@@ -1,7 +1,7 @@
 import { hasBeat,withBeat,withGhost } from '../ext/ops.js';
 
 const BEATS = Object.freeze({
-ordeal:'ordeal',home:'ordeal-home',m4:'m4',m5:'m5',roadback:'roadback',kernel:Object.freeze(['k-1','k-2','k-3']),halted:'halted',fan:'fan-done',
+ordeal:'ordeal',home:'ordeal-home',m4:'m4',m5:'m5',roadback:'roadback',kernel:Object.freeze(['k-1','k-2','k-3','k-4','k-5']),reveal:'root-reveal',halted:'halted',fan:'fan-done',
 });
 const WRONG_EVERY = 3;
 const SKIPPED = Object.freeze([BEATS.ordeal,BEATS.m4,BEATS.m5]);

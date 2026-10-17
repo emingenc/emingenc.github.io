@@ -1,6 +1,15 @@
 import { floodedOf,ghostCells,nextOf } from '../game/finale/roadback.js';
+import { uiPaintFusion } from './grid-kernel-fusion-draw.js';
+import { uiHalveCursor } from './grid-kernel-halve.js';
+import { uiPaintHalve } from './grid-kernel-halve-draw.js';
 import { uiSpotOf } from './grid-spot.js';
 
+const HALVE_PHASE = 3;
+const ROW_PLACES = Object.freeze({
+1:{ col:21,row:14,wide:7 },2:{ col:21,row:14,wide:7 },3:{ col:21,row:14,wide:11 },
+4:{ col:25,row:17,wide:7 },5:{ col:22,row:17,wide:10 },
+});
+const TOP_MARGIN = 0.4;
 const FLOOD_FILL = 'rgba(180,30,60,0.55)';
 const NEXT_EDGE = '#ff5577';
 const GHOST_EDGE = '#00e5ff';
@@ -51,13 +60,27 @@ ctx.textAlign = 'center';
 ctx.textBaseline = 'middle';
 ctx.fillText(clone.code,box.left + box.size * MIDDLE,box.top + box.size * MIDDLE);
 }
+function uiPaintClones(ctx,frame,phase) {
+phase.clones.filter((clone) => clone.hp > 0).forEach((clone) => uiPaintClone(ctx,frame,{ ...clone,tagged:phase.tagged.includes(clone.id) }));
+}
+function uiRowFrame(frame,n) {
+const place = ROW_PLACES[n];
+const col = place.col + place.wide * MIDDLE - frame.width / frame.tile * MIDDLE;
+const row = Math.max(place.row,frame.camera.row + TOP_MARGIN);
+return { ...frame,camera:{ ...frame.camera,col,row:frame.camera.row + place.row - row } };
+}
+function uiPaintPhase(ctx,frame,kernel) {
+const phase = kernel.phase;
+const placed = uiRowFrame(frame,phase.n);
+if (phase.n === HALVE_PHASE) uiPaintHalve(ctx,placed,phase,uiHalveCursor(kernel));
+else if (phase.fusion) uiPaintFusion(ctx,placed,phase.fusion);
+else uiPaintClones(ctx,placed,phase);
+}
 function uiKernelPaint(app) {
 return function (ctx,frame) {
 const game = app.game;
 if (game.roadback && game.roadback.chase) uiPaintFlood(ctx,frame,game.roadback);
-const phase = game.kernel && game.kernel.active ? game.kernel.phase :null;
-if (!phase) return;
-phase.clones.filter((clone) => clone.hp > 0).forEach((clone) => uiPaintClone(ctx,frame,{ ...clone,tagged:phase.tagged.includes(clone.id) }));
+if (game.kernel && game.kernel.active && game.kernel.phase) uiPaintPhase(ctx,frame,game.kernel);
 };
 }
 
