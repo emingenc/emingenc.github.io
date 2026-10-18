@@ -13,7 +13,7 @@ import { ensureFight,uiDroneAlive } from './grid-actors.js';
 import { uiDrawMites } from './grid-draw-mites.js';
 import { uiDrawHitFlash } from './grid-drone-fx.js';
 import { uiDrawActors } from './grid-draw-actors.js';
-import { DANGER_HINT,WAIT_TEXT,sentryCoachLine } from './grid-sentry-coach.js';
+import { DANGER_HINT,DANGER_STOP,WAIT_TEXT,sentryCoachLine } from './grid-sentry-coach.js';
 import { uiShowToast } from './grid-toast.js';
 
 const BARRIER_ID = 'barrier-sentry';
@@ -148,9 +148,8 @@ return zapped.killed ? 'kill' :'dent';
 }
 function uiDanger(app,state) {
 state.dangerAt = performance.now();
-if (state.hinted) return;
+uiShowToast(app,{ text:state.hinted ? DANGER_STOP :DANGER_HINT,kind:'info' });
 state.hinted = true;
-uiShowToast(app,{ text:DANGER_HINT,kind:'info' });
 uiRenderKeepingFocus(app);
 }
 function uiSentryFor(app,state) {

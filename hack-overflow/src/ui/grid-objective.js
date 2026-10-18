@@ -86,4 +86,4 @@ children:[uiEl('div',{ className:'grid-objective-row',children:[uiVerbNode(game,
 });
 }
 
-export { uiObjectiveText, uiObjectiveVerb, uiObjectiveChanged, uiGoalRow, uiGridObjective };
+export { uiCurrentObjective, uiObjectiveText, uiObjectiveVerb, uiObjectiveChanged, uiGoalRow, uiGridObjective };

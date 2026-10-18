@@ -3,7 +3,7 @@ import { hasBeat,hasFind,withFind } from '../game/ext/ops.js';
 import { trialsOf } from '../game/ext/power-ops.js';
 import { cellToward } from '../game/move.js';
 import { BRIDGE,applyBridge,bridgeStandDown,createBridge } from '../game/power/bridge.js';
-import { MIRROR,createMirror,mirrorPairs,mirrorText,pairLabel,revealPair } from '../game/power/mirror.js';
+import { MIRROR,createMirror,judgePair,mirrorText } from '../game/power/mirror.js';
 import { usablePowers } from '../game/power/powers.js';
 import { uiGridHook } from './bus.js';
 import { uiCommitExt } from './ext-storage.js';
@@ -27,6 +27,10 @@ const DOCK = [
 { id:'bridge-l',label:'L>',aria:'Move the left pointer right',tone:'dock',move:'l' },
 { id:'bridge-fire',label:'FIRE',aria:'Fire at the sum',tone:'dock-fire',move:'fire' },
 { id:'bridge-r',label:'<R',aria:'Move the right pointer left',tone:'dock',move:'r' },
+];
+const VERDICTS = [
+{ id:'pair-same',label:'SAME: move in',aria:'The two letters are the same: move both pointers in',tone:'pair',verdict:'same' },
+{ id:'pair-differ',label:'DIFFERENT: stop',aria:'The two letters are different: stop here',tone:'pair',verdict:'differ' },
 ];
 let uiHooked = false;
 
@@ -120,10 +124,10 @@ uiPowerRefresh(app);
 function uiMirrorSeam(app,kind) {
 import('./quest-mirror.js').then((module) => module.uiMirrorQuest(app,kind)).catch(console.error);
 }
-function uiPair(app,index) {
+function uiJudge(app,verdict) {
 const bridge = uiBridgeOf(app);
 if (!bridge || !bridge.sign.open) return;
-const result = revealPair(bridge.sign.state,index);
+const result = judgePair(bridge.sign.state,verdict);
 bridge.sign.state = result.state;
 uiSay(app,{ text:result.note,kind:result.kind === 'mismatch' ? 'reward' :'info' });
 if (result.kind === 'mismatch') {
@@ -139,11 +143,7 @@ return DOCK.map((chip) => ({ ...chip,run:() => uiBridgePress(app,chip.move) }));
 }
 function uiPairChips(app,bridge) {
 if (!bridge.sign.open) return [];
-const state = bridge.sign.state;
-return mirrorPairs(MIRROR.plates).map((pair,index) => ({
-id:'pair-' + index,label:pairLabel(state,index),aria:'Pair ' + (index + 1) + ': ' + pairLabel(state,index),
-tone:'pair',selected:index < state.shown,run:() => uiPair(app,index),
-}));
+return VERDICTS.map((chip) => ({ ...chip,run:() => uiJudge(app,chip.verdict) }));
 }
 function uiHallChips(app) {
 const bridge = uiBridgeOf(app);

@@ -2,6 +2,7 @@ import { uiEl } from './dom.js';
 
 const POWER_LABEL = 'POWER';
 const MAX_ROOMY = 3;
+const STAND_DOWN = 'STAND DOWN';
 
 function uiChipClass(chip) {
 const tone = chip.tone ? ' is-' + chip.tone : '';
@@ -33,9 +34,12 @@ return uiEl('span',{ className,text });
 }
 function uiPowerStrip(view) {
 const notes = [view.mode && uiNote('grid-power-mode',view.mode),view.badge && uiNote('grid-power-badge',view.badge)].filter(Boolean);
+const stands = view.chips.filter((chip) => chip.label === STAND_DOWN);
+const chips = view.chips.filter((chip) => chip.label !== STAND_DOWN || chip === stands[0]);
+const press = (chip) => (chip === stands[0] ? stands : [chip]).forEach((one) => view.onChip(one));
 const list = uiEl('div',{
-className:'grid-power-chips' + (view.chips.length > MAX_ROOMY ? ' is-tight' :''),attrs:{ role:'group','aria-label':'Power controls' },
-children:[...notes,...view.chips.map((chip) => uiChipNode(chip,view.onChip))],
+className:'grid-power-chips' + (chips.length > MAX_ROOMY ? ' is-tight' :''),attrs:{ role:'group','aria-label':'Power controls' },
+children:[...notes,...chips.map((chip) => uiChipNode(chip,press))],
 });
 const lent = view.trials ? [uiNote('grid-power-trials',view.trials)] :[];
 return uiEl('div',{ className:'grid-power' + (lent.length ? ' has-trials' :''),children:[...lent,uiPowerButton(view),list] });

@@ -1,4 +1,5 @@
 import { tapIntent, tapCellFor, createDpadGesture, dpadDown, dpadUp, dpadClickIsGhost, dpadLeaveScreen } from '../game/tap.js';
+import { thingAt } from '../game/world.js';
 import { uiEl } from './dom.js';
 import { uiDpadDirFor } from './grid-dpad.js';
 import { uiWalkPath, uiWalkPress, uiWalkRelease } from './grid-walk.js';
@@ -63,7 +64,8 @@ if (app.game.travelOpen) return false;
 const cell = uiCellForEvent(app,state.node,event);
 const intent = tapIntent(app.game.world,app.game.progress,{ from:app.game.avatar.pos,cell,avoid:app.game.tapAvoid ? app.game.tapAvoid(app) :undefined });
 if (intent.kind === 'none') return false;
-uiWalkPath(app,{ dirs:intent.dirs });
+uiWalkPath(app,{ dirs:intent.dirs,target:{ cell,id:thingAt(app.game.world,cell)?.id } });
+app.game.touchAid?.tip(app,true);
 uiPlaceMarker(app,state,cell);
 return true;
 }
@@ -80,7 +82,7 @@ if (!app.game.view || !state.node.contains(event.target) || app.game.travelOpen)
 if (app.game.aimTap && app.game.aimTap(app,uiCellForEvent(app,state.node,event))) return true;
 const actor = uiDroneNearPoint(app,uiPointForEvent(app,state.node,event));
 if (!actor) return false;
-uiGridPing(app,actor.id,1);
+if (!app.game.touchAid?.tap(app,actor,event)) uiGridPing(app,actor.id,1);
 uiPlaceMarker(app,state,{ col:actor.col,row:actor.row });
 return true;
 }
@@ -179,6 +181,7 @@ uiWalkPress(app,dir);
 uiWalkRelease(app,dir);
 if (app.screen !== 'grid') { uiLeaveDpadScreen(state,{ pointerId:event.pointerId,at }); return; }
 uiStartHoldTimer(app,state,{ pointerId:event.pointerId,dir,delayMs:down.holdAt - at });
+app.game.touchAid?.tip(app);
 }
 function uiGridPointerDown(event,app) {
 if (event.button > 0) return false;

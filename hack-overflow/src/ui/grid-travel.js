@@ -1,65 +1,31 @@
 import { findPath } from '../game/path.js';
-import { sectorName } from '../game/messages.js';
 import { travelTargets } from '../game/travel.js';
-import { MAX_STARS_PER_LOCK } from '../logic/index.js';
 import { uiEl } from './dom.js';
-import { uiStarGlyphs } from './format.js';
 import { uiWalkPath, uiWalkReleaseAll } from './grid-walk.js';
 import { uiShowToast } from './grid-toast.js';
+import { uiLinkStyle } from './lazy-style.js';
 import { uiRoveKeyDown } from './menu.js';
+import { uiRenderKeepingFocus } from './app.js';
 
 const UI_TRAVEL_PREFIX = 'travel-';
 const UI_TRAVEL_PANEL_ID = 'grid-travel-panel';
 const UI_TRAVEL_CLOSE_KEY = 'travel-close';
+const UI_TRAVEL_LIST_STYLE = 'styles/lazy/grid-travel-list.css';
+const UI_ROUTE_CHIPS = ['go','resume','around'];
 let uiTravelListScroll = 0;
-function uiTravelState(target) {
-if (target.kind === 'rig') return 'MACHINE';
-if (target.kind === 'terminal') return target.state === 'breached' ? 'BREACHED ' + uiStarGlyphs(target.stars) :'LOCKED';
-return target.kind === 'core' ? 'READY' :'OPEN';
-}
-function uiTravelStateWords(target) {
-if (target.kind !== 'terminal' || target.state !== 'breached') return uiTravelState(target);
-return 'BREACHED, ' + target.stars + ' of ' + MAX_STARS_PER_LOCK + ' stars';
-}
 function uiRouteTo(app,id) {
 const game = app.game;
 const thing = game.world.things[id];
 const avoid = game.tapAvoid ? game.tapAvoid(app) :undefined;
 return findPath(game.world,game.progress,{ from:game.avatar.pos,to:{ col:thing.col,row:thing.row },avoid });
 }
-function uiTravelSectorText(world,target) {
-return (target.kind === 'terminal' || target.kind === 'rig') && target.sector ? sectorName(world,target.sector) :'';
-}
-function uiTravelStepsText(target) {
-return target.steps + (target.steps === 1 ? ' step' :' steps');
-}
-function uiTravelMetaText(world,target) {
-const sector = uiTravelSectorText(world,target);
-return (sector ? sector + ' · ' :'') + uiTravelStepsText(target);
-}
-function uiTravelAriaLabel(world,target) {
-const parts = ['Go to ' + target.label,uiTravelSectorText(world,target),uiTravelStateWords(target),uiTravelStepsText(target)];
-return parts.filter(Boolean).join(', ');
-}
-function uiTravelInfo(world,target) {
-return uiEl('span',{ className:'travel-go-info',children:[
-uiEl('span',{ className:'travel-go-meta',text:uiTravelMetaText(world,target) }),
-uiEl('span',{ className:'travel-go-state',text:uiTravelState(target) }),
-] });
-}
-function uiTravelBody(world,target) {
-return uiEl('span',{ className:'travel-go-body',children:[uiEl('span',{ className:'travel-go-name',text:target.label }),uiTravelInfo(world,target)] });
-}
-function uiTravelButton(world,target,key) {
-return uiEl('button',{
-className:'btn btn-ghost travel-go',
-attrs:{ type:'button','data-action':key,'data-focus-key':key,'aria-label':uiTravelAriaLabel(world,target) },
-children:[uiEl('span',{ className:'travel-go-tag',text:'GO' }),uiTravelBody(world,target)],
-});
-}
-function uiTravelRow(world,target) {
+function uiTravelFlatList(targets) {
+const rows = targets.map(function (target) {
 const key = UI_TRAVEL_PREFIX + target.id;
-return { node:uiTravelButton(world,target,key),key };
+const text = 'GO ' + target.label + ' · ' + target.steps + ' steps';
+return { key,node:uiEl('button',{ className:'btn btn-ghost travel-go',text,attrs:{ type:'button','data-action':key,'data-focus-key':key } }) };
+});
+return { node:uiEl('ul',{ className:'grid-travel-list',children:rows.map((row) => uiEl('li',{ children:[row.node] })) }),stops:rows };
 }
 function uiTravelClose() {
 return uiEl('button',{
@@ -69,16 +35,16 @@ attrs:{ type:'button','data-action':'travel-toggle','data-focus-key':UI_TRAVEL_C
 }
 function uiTravelPanel(app,targets) {
 const close = { node:uiTravelClose(),key:UI_TRAVEL_CLOSE_KEY };
-const rows = targets.map((target) => uiTravelRow(app.game.world,target));
+const view = app.game.travelView;
+const body = view ? view.list(app,targets) :uiTravelFlatList(targets);
 const heading = uiEl('h2',{ className:'grid-travel-heading',text:'TRAVEL (' + targets.length + ')' });
-const list = uiEl('ul',{ className:'grid-travel-list',children:rows.map((row) => uiEl('li',{ children:[row.node] })) });
-list.addEventListener('scroll',function () { uiTravelListScroll = list.scrollTop; });
+body.node.addEventListener('scroll',function () { uiTravelListScroll = body.node.scrollTop; });
 const panel = uiEl('div',{
 className:'grid-travel-panel',
 attrs:{ id:UI_TRAVEL_PANEL_ID,role:'dialog','aria-label':'Travel' },
-children:[uiEl('div',{ className:'grid-travel-head',children:[heading,close.node] }),list],
+children:[uiEl('div',{ className:'grid-travel-head',children:[heading,close.node] }),body.node],
 });
-panel.addEventListener('keydown',uiRoveKeyDown(app,[close,...rows]));
+panel.addEventListener('keydown',uiRoveKeyDown(app,[close,...body.stops]));
 return panel;
 }
 function uiTravelToggle(app,count) {
@@ -94,12 +60,22 @@ function uiRestoreTravelScroll(panel) {
 const list = panel.querySelector('.grid-travel-list');
 queueMicrotask(function () { list.scrollTop = uiTravelListScroll; });
 }
+function uiLoadTravelView(app) {
+const game = app.game;
+if (game.travelView || game.travelViewLoad) return;
+game.travelViewLoad = Promise.all([import('./grid-travel-list.js'),uiLinkStyle(UI_TRAVEL_LIST_STYLE)]).then(function ([view]) {
+game.travelView = view;
+if (game.travelOpen && app.screen === 'grid' && typeof document !== 'undefined') uiRenderKeepingFocus(app);
+},function () { game.travelViewLoad = null; });
+}
 function uiGridTravel(app) {
+uiLoadTravelView(app);
 const targets = travelTargets(app.game.world,app.game.progress,app.game.avatar.pos,app.game.save);
 const panel = uiTravelPanel(app,targets);
 if (app.game.travelOpen) uiRestoreTravelScroll(panel);
 else panel.setAttribute('hidden','');
-return uiEl('nav',{ className:'grid-travel',attrs:{ 'aria-label':'Travel' },children:[uiTravelToggle(app,targets.length),panel] });
+const chips = app.game.route?.bar(app,targets) || [];
+return uiEl('nav',{ className:'grid-travel',attrs:{ 'aria-label':'Travel' },children:[uiTravelToggle(app,targets.length),...chips,panel] });
 }
 function uiToggleTravel(app) {
 const game = app.game;
@@ -117,8 +93,11 @@ return actionId.indexOf(UI_TRAVEL_PREFIX) === 0 && actionId !== 'travel-toggle';
 function uiTravelTo(app,actionId) {
 const game = app.game;
 const id = actionId.slice(UI_TRAVEL_PREFIX.length);
+if (game.travelView?.act(app,id)) return;
+const thing = game.world.things[id];
 const dirs = Object.hasOwn(game.world.things,id) ? uiRouteTo(app,id) :null;
-if (dirs) uiWalkPath(app,{ dirs });
+if (UI_ROUTE_CHIPS.includes(id)) game.route?.[id](app);
+else if (dirs) uiWalkPath(app,{ dirs,target:{ cell:{ col:thing.col,row:thing.row },id } });
 else uiShowToast(app,{ text:'No route there yet',kind:'warn' });
 game.travelOpen = false;
 app.lastFocusKey = 'grid-stage';

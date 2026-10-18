@@ -40,6 +40,13 @@ if (target) return { verb:'TAG',target };
 const bolt = nearestAwakeFoe(uiLiveFoes(game),hero);
 return bolt ? { verb:'BOLT',target:targetOf('foe',bolt) } :null;
 }
+function uiReady(app) {
+return uiPlan(app) !== null;
+}
+function uiAimMark(app) {
+const plan = uiPlan(app);
+return plan ? { col:plan.target.col,row:plan.target.row,verb:plan.verb } :null;
+}
 function uiNameOf(game,id) {
 return tagName(id,uiTagIds(game),uiFoes(game));
 }
@@ -163,7 +170,7 @@ const names = tagNames(uiTagIds(game),uiFoes(game));
 return [...Object.keys(names).map((id) => uiTagChip(app,id,names)),...uiActionChips(app,names)];
 }
 function uiModeLookup() {
-return { id:'lookup',name:'LOOKUP',aim:true,aimLabel:uiAimLabel,chips:uiChips,fire:uiFire,tap:uiTap };
+return { id:'lookup',name:'LOOKUP',aim:true,aimLabel:uiAimLabel,aimMark:uiAimMark,ready:uiReady,chips:uiChips,fire:uiFire,tap:uiTap };
 }
 
 export { uiModeLookup };

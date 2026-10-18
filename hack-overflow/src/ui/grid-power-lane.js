@@ -1,23 +1,29 @@
 import { withFind } from '../game/ext/ops.js';
 import { trialsOf } from '../game/ext/power-ops.js';
 import { cellToward } from '../game/move.js';
-import { LANE,LANE_TEXT,applyLane,createLane } from '../game/power/lane.js';
+import { LANE,LANE_TEXT,applyLane,createLane,laneFrame,laneLine } from '../game/power/lane.js';
 import { SILL_APPROACH,SILL_CELL,inPocket } from '../game/power/lane-map.js';
 import { usablePowers } from '../game/power/powers.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiAddChips,uiHooksOnce,uiPowerOf,uiPowerRefresh,uiPowerSay } from './grid-power.js';
 import { uiLend,uiSpendTrial } from './grid-power-lend.js';
 import { uiPaintLane } from './grid-power-lane-draw.js';
+import { uiShowToast } from './grid-toast.js';
 import { uiPayRank } from './rank-pay.js';
 
 const POWER_ID = LANE.power;
 const STAND_DOWN = { id:'lane-stand-down',label:'STAND DOWN',aria:'Stand down',tone:'warn' };
 const DOCK = [
 { id:'lane-shrink',label:'SHRINK',aria:'Shrink the frame: drop its first shot',tone:'lane',move:'shrink' },
-{ id:'lane-extend',label:'EXTEND',aria:'Extend the frame: take the next shot in',tone:'lane',move:'extend' },
+{ id:'lane-extend',label:'EXTEND',aria:'Extend the frame: take the next shot in',tone:'lane',move:'extend',first:true },
 { id:'lane-catch',label:'CATCH',aria:'Catch: the frame holds the longest run',tone:'lane-catch',move:'catch' },
 ];
 
+function uiStartText() {
+const letters = LANE.shots.map((shot) => shot.glyph).join(' ');
+const held = laneFrame(createLane()).map((shot) => shot.glyph).join(' ');
+return 'SILL\'s lane: ' + letters + '. The lit frame holds ' + held + '. First move: ' + laneLine()[0].toUpperCase() + '.';
+}
 function uiLaneOf(app) {
 const power = app.game.power;
 return power && power.gen === app.game.gen && power.lane ? power.lane :null;
@@ -71,7 +77,8 @@ uiBreakOff(app,lane);
 }
 function uiLaneChips(app) {
 if (!uiLaneInReach(app)) return [];
-const dock = DOCK.map((chip) => ({ ...chip,run:() => uiLanePress(app,chip.move) }));
+const fresh = !uiLaneOf(app).live && uiLaneOf(app).state.moves === 0;
+const dock = DOCK.map(({ first,...chip }) => ({ ...chip,tone:first && fresh ? 'lane-first' :chip.tone,run:() => uiLanePress(app,chip.move) }));
 return uiLaneOf(app).live ? [...dock,{ ...STAND_DOWN,run:uiStandDown }] :dock;
 }
 function uiShowNet(app) {
@@ -84,7 +91,10 @@ if (lane.talking) return;
 lane.talking = true;
 try {
 const lent = await uiLend(app,{ ally:LANE.ally,power:POWER_ID,lines:LANE_TEXT });
-if (lent && uiLaneOf(app) === lane) uiShowNet(app);
+if (lent && uiLaneOf(app) === lane) {
+uiShowNet(app);
+uiShowToast(app,{ text:uiStartText(),kind:'info' });
+}
 } finally {
 lane.talking = false;
 }
@@ -104,7 +114,7 @@ function uiOnEnterCell(info) {
 const app = info.app;
 const lane = uiLaneOf(app);
 if (!lane) return;
-if (inPocket(info.pos) && !inPocket(info.from)) uiPowerSay(app,{ text:uiUsable(app.game) ? LANE_TEXT.start :LANE_TEXT.locked });
+if (inPocket(info.pos) && !inPocket(info.from)) uiPowerSay(app,{ text:uiUsable(app.game) ? uiStartText() :LANE_TEXT.locked });
 else if (!inPocket(info.pos) && inPocket(info.from)) uiBreakOff(app,lane);
 }
 const uiHook = uiHooksOnce({ bump:uiOnBump,'enter-cell':uiOnEnterCell });
@@ -131,4 +141,4 @@ uiWrapPaint(game);
 uiHook();
 }
 
-export { uiInstallLane,uiLaneInReach,uiLanePress };
+export { uiInstallLane,uiLaneInReach,uiLanePress,uiStartText };

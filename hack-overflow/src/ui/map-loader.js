@@ -1,11 +1,13 @@
 import { analytics } from '../analytics.js';
 import { uiEl } from './dom.js';
 import { uiWalkReleaseAll } from './grid-walk.js';
+import { uiLinkStyle } from './lazy-style.js';
 import { uiEnterGrid } from './screen-grid.js';
 
 const UI_MAP_SCREEN_ID = 'map';
 const UI_MAP_CLOSE_KEY = 'map-close';
 const UI_MAP_LOADING_TEXT = 'Map loading.';
+const UI_MAP_STYLE_HREF = 'styles/lazy/map.css';
 const UI_MAP_SECTION_CLASS = 'screen screen-card map-screen';
 
 let uiMapDelegate = null;
@@ -50,7 +52,7 @@ return app.screen === 'grid' && !app.game.breach && !app.menuOpen;
 }
 async function uiOpenMap(app,importer = uiImportMap) {
 if (!uiMapCanOpen(app)) return;
-const mod = await uiLoadMapModule(importer);
+const [mod] = await Promise.all([uiLoadMapModule(importer),uiLinkStyle(UI_MAP_STYLE_HREF)]);
 if (!uiMapCanOpen(app)) return;
 uiMapDelegate = mod.uiMapScreen();
 uiWalkReleaseAll(app);

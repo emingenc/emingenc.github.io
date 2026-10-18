@@ -74,43 +74,6 @@
   text-align:left;
 }
 
-.travel-go-tag {
-  flex:none;
-  color:var(--primary);
-}
-
-.travel-go-body {
-  flex:1;
-  min-width:0;
-  display:flex;
-  flex-direction:column;
-  gap:var(--sp-1);
-}
-
-.travel-go-name {
-  line-height:1.2;
-  overflow-wrap:break-word;
-}
-
-.travel-go-info {
-  display:flex;
-  flex-wrap:wrap;
-  align-items:baseline;
-  column-gap:var(--sp-4);
-  row-gap:var(--sp-1);
-}
-
-.travel-go-meta {
-  font-size:var(--fs-md);
-  color:var(--dim);
-}
-
-.travel-go-state {
-  margin-left:auto;
-  color:var(--dim);
-  white-space:nowrap;
-}
-
 @media (max-width:767px) {
   .grid-travel-panel {
     top:auto;

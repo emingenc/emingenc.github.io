@@ -9,6 +9,7 @@ import { uiShowToast } from './grid-toast.js';
 import { uiLinkStyle } from './lazy-style.js';
 
 const STYLE_HREF = 'styles/lazy/grid-power.css';
+const STRIP_HOLD_CELLS = 3;
 const INTRO_TOAST = 'LOOKUP: tag it, then RECALL it. A tag is a key. Keys find things fast.';
 const MODES = {
 lookup:() => import('./grid-power-lookup.js'),
@@ -28,6 +29,7 @@ const ENCOUNTERS = [
 () => import('./grid-locker.js'),
 () => import('./grid-shield.js'),
 () => import('./grid-power-pads.js'),
+() => import('./grid-power-aim.js'),
 () => import('./grid-flood.js'),
 () => import('./grid-siege.js'),
 () => import('./grid-chain.js'),
@@ -40,7 +42,7 @@ const ENCOUNTERS = [
 
 function uiNewPower(game) {
 return {
-gen:game.gen,installed:false,aim:false,mode:'',tags:{},selected:null,pick:null,told:new Set(),modes:{},loading:{},spots:[],chips:[],
+gen:game.gen,installed:false,aim:false,mode:'',tags:{},selected:null,pick:null,told:new Set(),modes:{},loading:{},spots:[],chips:[],taps:[],stripAt:null,
 badge:(powerId) => uiBadge(game,powerId),
 };
 }
@@ -78,6 +80,9 @@ uiPowerOf(game).spots.push(spots);
 }
 function uiAddChips(game,chips) {
 uiPowerOf(game).chips.push(chips);
+}
+function uiAddTap(game,tap) {
+uiPowerOf(game).taps.push(tap);
 }
 function uiAddGuard(game,guard) {
 const inner = game.castGuard;
@@ -138,6 +143,26 @@ const mode = uiActiveMode(game) || uiPowerOf(game).modes[uiReadyIds(game)[0]];
 const own = mode.chips ? mode.chips(app) :[];
 return [...own,...uiPowerOf(game).chips.flatMap((chips) => chips(app) || [])].sort((first,second) => uiChipRank(first) - uiChipRank(second));
 }
+function uiStripPressable(app,mode) {
+const game = app.game;
+const power = uiPowerOf(game);
+if (mode && mode.aim) return true;
+if (Object.keys(power.tags).length > 0) return true;
+if (power.chips.some((chips) => (chips(app) || []).length > 0)) return true;
+return uiReadyIds(game).some((id) => power.modes[id].ready && power.modes[id].ready(app));
+}
+function uiStripWanted(app,mode) {
+const power = uiPowerOf(app.game);
+const pos = app.game.avatar && app.game.avatar.pos;
+if (uiStripPressable(app,mode)) {
+power.stripAt = pos ? { col:pos.col,row:pos.row } :null;
+return true;
+}
+if (!power.stripAt || !pos) return false;
+if (Math.max(Math.abs(pos.col - power.stripAt.col),Math.abs(pos.row - power.stripAt.row)) <= STRIP_HOLD_CELLS) return true;
+power.stripAt = null;
+return false;
+}
 function uiDrawPower(app) {
 const game = app.game;
 uiSyncModes(app);
@@ -148,6 +173,7 @@ uiSyncTags(game);
 uiPrune(game);
 const mode = uiActiveMode(game);
 if (!mode) uiModeOff(game);
+if (!uiStripWanted(app,mode)) return null;
 return uiPowerStrip({
 mode:mode ? mode.name :'',badge:mode ? uiPowerOf(game).badge(mode.id) :'',trials:uiTrialsNote(game,mode ? mode.id :''),chips:uiStripChips(app),
 onPower:() => uiPowerAct(app,uiPowerPress),onChip:(chip) => uiPowerAct(app,chip.run),
@@ -158,6 +184,7 @@ const mode = uiActiveMode(app.game);
 return Boolean(mode && mode.fire && mode.fire(app,dmg));
 }
 function uiAimTap(app,cell) {
+if (uiPowerOf(app.game).taps.some((tap) => tap(app,cell))) return true;
 const mode = uiActiveMode(app.game);
 return Boolean(mode && mode.tap && mode.tap(app,cell));
 }
@@ -244,4 +271,4 @@ Object.entries(hooks).forEach(([name,fn]) => uiGridHook(name,fn));
 };
 }
 
-export { CHIP_RANK_LAST,CHIP_RANK_RECALL,CHIP_RANK_TAG,uiInstallPower,uiModeOff,uiPowerOf,uiPowerSay,uiHooksOnce,uiAddGuard,uiAddTagSpot,uiAddChips,uiTagSpots,uiTagIds,uiPowerRefresh,uiPrune };
+export { CHIP_RANK_LAST,CHIP_RANK_RECALL,CHIP_RANK_TAG,uiActiveMode,uiAddTap,uiInstallPower,uiModeOff,uiPowerOf,uiPowerSay,uiHooksOnce,uiAddGuard,uiAddTagSpot,uiAddChips,uiTagSpots,uiTagIds,uiPowerRefresh,uiPrune };

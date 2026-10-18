@@ -1008,7 +1008,7 @@
         "your portfolio site",
         "emin website"
       ],
-      "a": "<b>Emin's AI agent portfolio.</b> Two small models, Needle 26M and SmolLM2 360M, run 100% locally in your browser. No servers, no API calls. Ask <b>How does this work?</b> for the details. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
+      "a": "<b>Emin's AI agent portfolio.</b> Two small models, Needle 26M and SmolLM2 360M, run 100% locally in your browser. No servers, no API calls. Ask <b>How does this work?</b> for the details. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>The built site is on GitHub</a>."
     },
     {
       "q": "How does this work?",
@@ -1031,7 +1031,8 @@
         "needle",
         "smollm2"
       ],
-      "a": "<b>Two small models and a few tools, all in this tab.</b><ol><li><b>Route.</b> Needle (26M parameters) reads your question and picks a tool. Site questions like this one go straight to this FAQ.</li><li><b>Read.</b> The tool reads Emin's own files: career, repos, skills, posts and this FAQ. Ask about Emin's work, then tap the file name under a tool call to see the lines it read.</li><li><b>Check.</b> SmolLM2 (360M parameters) helps check the plan and the result, and handles small talk. A reply that claims something Emin's files don't say is dropped.</li></ol><p>Both run in your browser: Needle on WASM, SmolLM2 on WebGPU (or WASM). <b>0 servers, 0 API calls, zero tracking.</b></p><p>26M + 360M parameters, over 7,000× smaller than Kimi K3 (2.8 trillion). Not the size, it's how you use it. (But seriously, 26M params 🫠)</p>"
+      "cites": "how",
+      "a": "<b>Two small models and a few tools, all in this tab.</b><ol><li><b>Plan.</b> Needle (26M parameters, a 36 MB download) reads your question and picks a tool. Site questions like this one go straight to this FAQ.</li><li><b>Act.</b> The tool reads Emin's own files: career, repos, skills, posts and notes on this site. Tap the file name under a tool call to see the lines it read.</li><li><b>Observe and evaluate.</b> SmolLM2 (360M parameters, optional, a 278 MB download or 369 MB without WebGPU) helps check the result and handles small talk. A reply that claims something Emin's files don't say is dropped.</li></ol><p>Both run in your browser: Needle on WASM, SmolLM2 on WebGPU (or WASM). <b>0 servers, 0 API calls, no analytics on the home page.</b> Reading a notes file takes about 1 ms (measured 2026-10-17). More than 400 automated tests cover the router, the loop and the answers. The <a href='/static#how'>profile page</a> draws the loop.</p><p>26M + 360M parameters, over 7,000× smaller than Kimi K3 (2.8 trillion). Not the size, it's how you use it.</p>"
     },
     {
       "q": "How built?",
@@ -1039,6 +1040,9 @@
         "built with",
         "tech stack website",
         "how built",
+        "how was this site built",
+        "how was this built",
+        "how was this made",
         "astro",
         "framework",
         "site tech"
@@ -1068,7 +1072,9 @@
         "track",
         "logs",
         "secure",
-        "data privacy"
+        "data privacy",
+        "my data",
+        "to a server"
       ],
       "a": "<b>100% private.</b> Messages never leave your browser. No API calls, no tracking, no analytics on agent page. Saved only in this browser; /forget --confirm deletes them."
     },
@@ -1115,9 +1121,25 @@
         "source code site",
         "repo this website",
         "website code",
-        "site open source"
+        "site open source",
+        "show me the code",
+        "is the code public",
+        "is the source code public",
+        "is the source public",
+        "is the code private",
+        "is the source private",
+        "source code of this",
+        "how many tests does it have",
+        "how many tests do you have",
+        "how many tests does this",
+        "is it tested",
+        "is this tested",
+        "is this site tested",
+        "is the site tested",
+        "does this site have tests"
       ],
-      "a": "Yes! <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>github.com/emingenc/emingenc.github.io</a>"
+      "cites": "how",
+      "a": "<b>The source repository is private.</b> The built site is public: <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>github.com/emingenc/emingenc.github.io</a>. More than 400 automated tests cover the router, the loop, the answers and the pages. The <a href='/static#how'>profile page</a> has the diagram and the measured numbers."
     },
     {
       "q": "Why this site?",
@@ -1143,9 +1165,12 @@
         "slow",
         "performance",
         "tokens per second",
-        "inference speed"
+        "inference speed",
+        "how fast is it",
+        "how fast is this",
+        "how fast are you"
       ],
-      "a": "WebGPU: <b>15-30 tok/s</b>. First token: 2-5s. WASM: ~3x slower. FAQ/tool system: <b>instant</b> (bypasses LLM)."
+      "a": "WebGPU: <b>15-30 tok/s</b>. First token: 2-5s. WASM: ~3x slower. FAQ and tools: <b>instant</b>, they bypass the chat model. Reading a notes file takes about 1 ms (measured 2026-10-17 in Chromium on a laptop)."
     },
     "══════ CRESTA AI ══════",
     {

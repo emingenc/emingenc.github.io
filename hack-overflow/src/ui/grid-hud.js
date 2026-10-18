@@ -53,6 +53,15 @@ text:'MAP',
 attrs:{ type:'button','data-action':'map-open','data-focus-key':'map-open','aria-label':'Map' },
 });
 }
+function uiGridMapDock(app) {
+const dock = uiEl('button',{
+className:'btn btn-ghost grid-map-dock',
+text:'MAP',
+attrs:{ type:'button','data-action':'map-open','data-focus-key':'map-open-dock','aria-label':'Map' },
+});
+dock.addEventListener('click',function () { app.game.hudOpenAt = null; });
+return dock;
+}
 function uiTextNode(tag,className,text) {
 return text ? uiEl(tag,{ className,text }) :null;
 }
@@ -137,4 +146,4 @@ toggle.addEventListener('click',function () { uiOnHudToggle(app,header,toggle); 
 return header;
 }
 
-export { uiGridHud, uiHudOutlived };
+export { uiGridHud, uiGridMapDock, uiHudOutlived };

@@ -5,7 +5,7 @@ import { uiRenderApp,uiRenderKeepingFocus } from './app.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiSectorAt } from './grid-draw-tiles.js';
 import { uiLinkStyles } from './lazy-style.js';
-import { uiDrawMap } from './map-draw.js';
+import { uiDrawLegendInto,uiDrawMap,uiSizeMapCanvas } from './map-draw.js';
 import { uiOpenEnding } from './screen-ending.js';
 import { uiStoryClosed,uiStoryFinal } from './story-dialogue.js';
 
@@ -29,16 +29,6 @@ const region = uiSectorAt(world,cell);
 if (region) uiHaltGroupAdd(groups,region,{ cell,distance:Math.abs(cell.col - world.kernel.col) + Math.abs(cell.row - world.kernel.row) });
 }
 return [...groups.values()].sort((first,second) => first.distance - second.distance);
-}
-function uiSizeCanvas(canvas) {
-const dpr = window.devicePixelRatio || 1;
-const width = canvas.clientWidth;
-const height = canvas.clientHeight;
-canvas.width = Math.round(width * dpr);
-canvas.height = Math.round(height * dpr);
-const ctx = canvas.getContext('2d');
-ctx.setTransform(dpr,0,0,dpr,0,0);
-return { ctx,width,height };
 }
 function uiReadPalette(canvas) {
 const style = window.getComputedStyle(canvas);
@@ -65,7 +55,7 @@ if (index % UNSEAL_GROUPS < count) view.ctx.fillRect(...uiCellRect(layout,entry)
 });
 }
 function uiPaintHalt(canvas,scene) {
-const sized = uiSizeCanvas(canvas);
+const sized = uiSizeMapCanvas(canvas);
 if (!sized.width || !sized.height) return;
 const base = uiReadPalette(canvas);
 const view = { ...sized,world:scene.world,progress:scene.progress,save:scene.save,avatar:scene.avatar };
@@ -80,11 +70,15 @@ if (!layout) return;
 scene.groups.slice(0,scene.flipped).forEach((group) => uiFlipGroup(green,layout,group));
 uiUnsealCells(green,layout,scene.unsealed);
 }
-function uiDrawHaltedMap(canvas,state) {
-const sized = uiSizeCanvas(canvas);
+function uiDrawHaltedMap(canvas,state,legend) {
+if (legend) {
+const base = uiReadPalette(legend);
+uiDrawLegendInto(legend,{ world:state.world,palette:uiTinted(base,base.primary) });
+}
+const sized = uiSizeMapCanvas(canvas);
 if (!sized.width || !sized.height) return;
 const base = uiReadPalette(canvas);
-uiDrawMap({ ...sized,palette:uiTinted(base,base.primary),world:state.world,progress:state.progress,save:state.save,avatar:state.avatar });
+uiDrawMap({ ...sized,palette:uiTinted(base,base.primary),world:state.world,progress:state.progress,save:state.save,avatar:state.avatar,legend:state.legend });
 }
 
 function uiUnsealed(app) {

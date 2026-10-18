@@ -59,7 +59,10 @@ return uiGridFireNode(app);
 }
 function uiFireShot(app,dmg) {
 if (app.game.aimFire && app.game.aimFire(app,dmg)) return;
-const foe = nearestAwakeFoe(uiLiveFoes(app.game),app.game.avatar.pos);
+const foes = uiLiveFoes(app.game);
+const aid = app.game.touchAid;
+const foe = aid?.pick(app,foes) || nearestAwakeFoe(foes,app.game.avatar.pos);
+if (foe && aid?.queue(app,dmg,foe)) return;
 if (!foe) {
 uiShowToast(app,{ text:NO_FOE_TEXT,kind:'info' });
 uiRenderKeepingFocus(app);
@@ -119,4 +122,4 @@ if (Date.now() >= (app.game.fireGhostUntil || 0) && uiCanFire(app)) uiFireShot(a
 return true;
 }
 
-export { FIRE_CHARGE_MS,uiGridFire,uiFireDown,uiFireUp,uiFireCancel,uiFireKey,uiFireKeyUp,uiFireTouchDown,uiFireTouchUp,uiFireClick };
+export { FIRE_CHARGE_MS,uiFireButton,uiGridFire,uiFireDown,uiFireUp,uiFireCancel,uiFireKey,uiFireKeyUp,uiFireTouchDown,uiFireTouchUp,uiFireClick };

@@ -6,7 +6,7 @@ id:'mirror-sign',
 start:'TWINS: First pair that differs ends it.',
 done:'TWINS: You moved both pointers. Take a pin.',
 });
-const EVENTS = { match:{ kind:'slip' },mismatch:{ kind:'progress' } };
+const EVENTS = { match:{ kind:'slip' },wrong:{ kind:'slip' },mismatch:{ kind:'progress' } };
 
 function mirrorQuestEvent(kind) {
 return Object.hasOwn(EVENTS,kind) ? { ...EVENTS[kind] } :null;
@@ -22,7 +22,7 @@ const found = status === 'found' && seen > 0;
 const focus = found ? seen - 1 :seen;
 const tiles = [...word].map((ch,index) => ({ index,ch,hidden:false,role:'mid',pointer:null }));
 pairs.forEach(function (pair,at) {
-const hidden = at >= seen;
+const hidden = at > focus;
 const role = at < focus ? 'done' :at === focus ? (found ? 'bad' :'next') :'end';
 pair.forEach(function (index,side) {
 tiles[index] = { index,ch:hidden ? '?' :word[index],hidden,role,pointer:at === focus ? (side === 0 ? 'L' :'R') :null };

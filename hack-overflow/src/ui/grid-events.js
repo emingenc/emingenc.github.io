@@ -204,9 +204,9 @@ return true;
 }
 const DANGER_BUZZ_MS = 40;
 const ZAP_DAMAGE = 1;
-function uiOnDanger(app) {
+function uiOnDanger(app,info) {
 if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') navigator.vibrate(DANGER_BUZZ_MS);
-if (app.game.sentry) app.game.sentry.danger(app);
+if (app.game.sentry && !info.event.hold) app.game.sentry.danger(app);
 return false;
 }
 const UI_TICKING_EVENTS = new Set(['step','bump']);

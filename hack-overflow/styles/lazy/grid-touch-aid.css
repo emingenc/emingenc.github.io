@@ -1,0 +1,110 @@
+.grid-aim-reticle {
+  position:absolute;
+  top:0;
+  left:0;
+  box-sizing:border-box;
+  border:2px solid var(--amber);
+  border-radius:4px;
+  box-shadow:0 0 8px var(--amber);
+  opacity:0;
+  pointer-events:none;
+}
+
+.grid-aim-reticle.is-on {
+  opacity:1;
+}
+
+.grid-aim-reticle.is-far {
+  opacity:0.5;
+  border-style:dashed;
+}
+
+.grid-aim-pips {
+  position:absolute;
+  top:100%;
+  left:50%;
+  display:flex;
+  gap:3px;
+  margin-top:3px;
+  transform:translateX(-50%);
+}
+
+.grid-aim-pip {
+  display:none;
+  width:8px;
+  height:8px;
+  border:1px solid var(--red);
+  background:transparent;
+}
+
+.grid-aim-pip.is-shown {
+  display:block;
+}
+
+.grid-aim-pip.is-on {
+  background:var(--red);
+}
+
+@property --aid-arc {
+  syntax:'<angle>';
+  inherits:false;
+  initial-value:0deg;
+}
+
+.grid-fire-charging,
+.grid-fire-queued {
+  position:relative;
+}
+
+.grid-fire-charging::after,
+.grid-fire-queued::after,
+.grid-fire-lit::after {
+  content:'';
+  position:absolute;
+  inset:-7px;
+  border-radius:50%;
+  background:conic-gradient(var(--cyan) var(--aid-arc),transparent 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));
+  pointer-events:none;
+}
+
+.grid-fire-lit::after {
+  --aid-arc:360deg;
+}
+
+.grid-fire-queued::after {
+  --aid-arc:0deg;
+  background:conic-gradient(var(--amber) var(--aid-arc),transparent 0);
+}
+
+.grid-fire-queued {
+  color:var(--amber);
+  border-color:var(--amber);
+}
+
+.grid-fire-bump {
+  transform:scale(1.08);
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .grid-fire-charging::after {
+    animation:grid-aid-arc 450ms linear forwards;
+  }
+  .grid-fire-queued::after {
+    animation:grid-aid-arc 450ms linear forwards;
+    animation-delay:var(--aid-recharge-delay,0ms);
+  }
+  .grid-fire-bump {
+    transition:transform 110ms ease-out;
+  }
+}
+
+@keyframes grid-aid-arc {
+  from {
+    --aid-arc:0deg;
+  }
+  to {
+    --aid-arc:360deg;
+  }
+}

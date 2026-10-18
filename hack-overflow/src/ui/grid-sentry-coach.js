@@ -10,10 +10,11 @@ keys:'◆ or Enter waits. F zaps a mite up close.',
 },
 };
 const DANGER_HINT = 'A mite steps there next. Wait for a gap, or press again to go anyway.';
+const DANGER_STOP = 'Mite ahead. Walk stopped.';
 const WAIT_TEXT = 'You wait. The mites move.';
 
 function sentryCoachLine(told,coarse) {
 return COACH_LINES[told ? 'short' :'full'][coarse ? 'touch' :'keys'];
 }
 
-export { COACH_MAX_CHARS,DANGER_HINT,WAIT_TEXT,sentryCoachLine };
+export { COACH_MAX_CHARS,DANGER_HINT,DANGER_STOP,WAIT_TEXT,sentryCoachLine };

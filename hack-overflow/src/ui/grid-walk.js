@@ -8,18 +8,20 @@ import { uiSentryWait } from './grid-actors.js';
 
 function uiGuardedStep(app,dir,auto) {
 const game = app.game;
-const guarded = (game.castGuard && game.castGuard(app,dir)) || (game.sentry ? game.sentry.guardStep(app,dir,auto) :null);
+const guarded = (game.castGuard && game.castGuard(app,dir)) || (auto && game.route?.guard(app,dir)) || (game.sentry ? game.sentry.guardStep(app,dir,auto) :null);
 return guarded || stepAvatar(game.world,game.progress,{ pos:game.avatar.pos,facing:game.avatar.facing,dir });
 }
 function uiWalkAdvance(app,now) {
 const game = app.game;
-const deliberate = uiWalkIsDeliberate(game.walk);
+const before = game.walk;
+const deliberate = uiWalkIsDeliberate(before);
 const turn = advanceWalk(game.walk,{
 now,from:game.avatar.pos,reducedMotion:uiPrefersReducedMotion(),
 move:function (dir,auto) { return uiGuardedStep(app,dir,auto); },
 });
 game.walk = turn.step ? { ...turn.walk,deliberate:false } :turn.walk;
 if (turn.step) uiApplyStepEvent(app,{ ...turn.step,deliberate });
+game.route?.after(app,before,game.walk,turn.step);
 }
 function uiWalkIsDeliberate(walk) {
 return walk.deliberate === true || Boolean(walk.plan && walk.plan.dirs.length > 0);
@@ -46,6 +48,7 @@ Object.assign(app.game.walk,{ held:[],queued:null,stalled:null,deliberate:false 
 }
 function uiWalkPath(app,plan) {
 uiNoteMoved(app);
+app.game.route?.begin(app,plan);
 Object.assign(app.game.walk,{ plan:{ dirs:[...plan.dirs] },held:[],queued:null,stalled:null });
 }
 function uiIsSolidThing(game,cell) {
