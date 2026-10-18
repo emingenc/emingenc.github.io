@@ -1,0 +1,29 @@
+.grid-travel:has(> .grid-route-chip) {
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--sp-2);
+}
+
+.grid-travel > .grid-route-chip {
+  flex:1 1 auto;
+  min-width:44px;
+  max-width:100%;
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 var(--sp-4);
+}
+
+.grid-route-label {
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.grid-route-resume,
+.grid-route-around {
+  border-color:var(--amber);
+  color:var(--amber);
+}

@@ -1,4 +1,4 @@
-.grid-power-chip.is-lane {
+.grid-power .grid-power-chip.is-lane {
   min-width:64px;
   min-height:44px;
   padding:0 var(--sp-2);
@@ -6,10 +6,19 @@
   color:var(--cyan);
 }
 
-.grid-power-chip.is-lane-catch {
+.grid-power .grid-power-chip.is-lane-catch {
   min-width:64px;
   min-height:44px;
   padding:0 var(--sp-2);
   border-color:var(--amber);
   color:var(--amber);
+}
+
+.grid-power .grid-power-chip.is-lane-first {
+  min-width:64px;
+  min-height:44px;
+  padding:0 var(--sp-2);
+  border-color:var(--cyan);
+  background:var(--cyan);
+  color:var(--bg);
 }

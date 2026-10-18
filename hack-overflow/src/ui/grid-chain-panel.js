@@ -70,7 +70,7 @@ overlay.addEventListener('click',function (event) { if (event.target === overlay
 return overlay;
 }
 function uiPuzzleBox(panel,view,buttons) {
-const cells = uiEl('div',{ className:'grid-chain-cells',attrs:{ role:'group','aria-label':'Puzzle cells' },children:buttons });
+const cells = uiEl('div',{ className:'grid-chain-cells' + (view.columns ? ' is-cols-' + view.columns :''),attrs:{ role:'group','aria-label':'Puzzle cells' },children:buttons });
 const said = panel.said ? [uiEl('p',{ className:'grid-chain-said',text:panel.said })] :[];
 const next = panel.done && panel.next ? [uiNextButton(panel)] :[];
 return uiEl('div',{

@@ -12,6 +12,7 @@ const TEXT = Object.freeze({
 taken:'TALLY: You carry all six. Bump the right bin.',
 waiting:'TALLY: Bump the bin that fits the top crate.',
 wrong:'Not this bin. Count the letters again.',
+misfile:(word) => 'Not this bin. ' + word + ' goes to the back.',
 full:'That bin is full.',
 done:'TALLY: Same counts, same key. The key finds the bin.',
 crate:(word) => 'Crate ' + word + '. Count its letters.',
@@ -45,6 +46,9 @@ const top = topOf(state);
 if (!top) return null;
 return state.hand.length > 1 ? top.word + ' +' + (state.hand.length - 1) :top.word;
 }
+function handTray(state) {
+return state.hand.map((id,index) => ({ word:crateOf(id).word,top:index === 0 }));
+}
 function solidsOf() {
 return BINS.map(({ id,col,row }) => ({ id,col,row }));
 }
@@ -62,4 +66,4 @@ if (count >= BIN_SIZE) return { kind:'full',state,count };
 return { kind:'ok',state:{ hand:rest,placed:{ ...state.placed,[crate.id]:binId } },count:count + 1 };
 }
 
-export { QUEST_ID,BIN_SIZE,CRATES,BINS,TEXT,TALLY_JOB,keyOf,newState,crateOf,binOf,topOf,handTag,solidsOf,binCount,dropInto };
+export { QUEST_ID,BIN_SIZE,CRATES,BINS,TEXT,TALLY_JOB,keyOf,newState,crateOf,binOf,topOf,handTag,handTray,solidsOf,binCount,dropInto };

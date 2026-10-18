@@ -1,6 +1,7 @@
 import { coreState } from '../game/progress.js';
 import { isOpen } from '../game/world.js';
 import { uiAccentOf, uiRigAccent, uiRigCleared, uiRigPlates, uiRigState, uiSectorAt } from './grid-draw-tiles.js';
+import { uiDrawMapObjective, uiDrawRingSwatch, uiMapLayoutRemember } from './map-marks.js';
 
 const UI_MAP_PALETTE_NAMES = ['bg','panel','border','primary','bright','text','dim','cyan','magenta','amber','red'];
 const UI_MAP_GROUND_KINDS = new Set(['floor','cache']);
@@ -27,6 +28,7 @@ const UI_MAP_LEGEND_ROWS = [[
 { rig:'new',label:'NEW MACHINE' },
 { rig:'met',label:'MET' },
 { rig:'done',label:'ALL CLEARED' },
+{ ring:true,label:'NEXT' },
 ]];
 
 function uiMapPalette(node) {
@@ -75,7 +77,7 @@ function uiMapLegendRowHeight(legendFont) {
 return Math.max(Math.round(legendFont.size * UI_MAP_LEGEND.rowRatio),UI_MAP_LEGEND.rigSwatch + UI_MAP_LEGEND.pad / 2);
 }
 function uiMapLayout(view,legendFont) {
-const strip = uiMapLegendRowHeight(legendFont) * UI_MAP_LEGEND_ROWS.length + UI_MAP_LEGEND.pad;
+const strip = view.legend === false ? 0 :uiMapLegendRowHeight(legendFont) * UI_MAP_LEGEND_ROWS.length + UI_MAP_LEGEND.pad;
 const mapHeight = Math.max(0,view.height - strip);
 const tile = Math.max(1,Math.floor(Math.min(view.width / view.world.cols,mapHeight / view.world.rows)));
 return {
@@ -324,6 +326,7 @@ return entry;
 }
 
 function uiFillLegendSwatch(ctx,entry,palette) {
+if (entry.ring) return uiDrawRingSwatch(ctx,entry,palette);
 if (entry.rig) return uiDrawRigMark(ctx,{ rect:entry,color:palette[UI_MAP_LEGEND.rigAccent],look:entry.rig,palette });
 const color = uiMapStateColor(palette,entry.state);
 if (!entry.inset) return uiFillRect(ctx,entry,color);
@@ -353,9 +356,12 @@ const legendFont = uiMapLegendFont(view);
 const framed = { ...view,legendFont,layout:uiMapLayout(view,legendFont) };
 uiDrawMapCells(framed);
 uiDrawMapLabels(framed);
-uiDrawMapLegend(framed);
+if (view.legend !== false) uiDrawMapLegend(framed);
+uiDrawMapObjective(framed,UI_MAP_AVATAR.centre);
 uiDrawMapAvatar(framed);
-return { tile:framed.layout.tile,left:framed.layout.left,top:framed.layout.top };
+const painted = { tile:framed.layout.tile,left:framed.layout.left,top:framed.layout.top };
+uiMapLayoutRemember(view.ctx.canvas,painted);
+return painted;
 }
 
 function uiSizeMapCanvas(canvas) {
@@ -369,10 +375,19 @@ ctx.setTransform(dpr,0,0,dpr,0,0);
 return { ctx,width,height };
 }
 
+
+function uiDrawLegendInto(canvas,state) {
+const sized = uiSizeMapCanvas(canvas);
+if (!sized.width || !sized.height) return;
+const view = { ...sized,palette:state.palette || uiMapPalette(canvas),world:state.world,layout:{ stripTop:0 } };
+view.ctx.fillStyle = view.palette.bg;
+view.ctx.fillRect(0,0,view.width,view.height);
+uiDrawMapLegend({ ...view,legendFont:uiMapLegendFont(view) });
+}
 function uiDrawMapInto(canvas,state) {
 const sized = uiSizeMapCanvas(canvas);
 if (!sized.width || !sized.height) return;
-uiDrawMap({ ...sized,palette:uiMapPalette(canvas),world:state.world,progress:state.progress,save:state.save,avatar:state.avatar });
+uiDrawMap({ ...sized,palette:uiMapPalette(canvas),world:state.world,progress:state.progress,save:state.save,avatar:state.avatar,objective:state.objective,legend:state.legend });
 }
 
-export { uiDrawMap, uiDrawMapInto };
+export { uiDrawMap, uiDrawMapInto, uiDrawLegendInto, uiSizeMapCanvas };

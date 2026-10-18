@@ -109,6 +109,37 @@
   }
 }
 
+.grid-map-dock {
+  display:none;
+}
+
+.grid-screen[data-screen='grid'][data-fit='stack'] > .grid-map-dock {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  grid-area:dpad;
+  align-self:end;
+  justify-self:start;
+  z-index:2;
+  min-width:48px;
+  min-height:48px;
+  padding:0 var(--sp-3);
+  font-size:var(--fs-lg);
+  background:var(--panel);
+  touch-action:manipulation;
+}
+
+.grid-screen[data-screen='grid'][data-fit='stack'] .grid-hud-map {
+  display:none;
+}
+
+@media (max-height:640px) {
+  .grid-screen[data-screen='grid'][data-fit='stack'] > .grid-map-dock {
+    min-width:44px;
+    min-height:44px;
+  }
+}
+
 .grid-fire {
   grid-area:dpad;
   align-self:center;
@@ -187,6 +218,12 @@
   .grid-screen[data-screen='grid'][data-input='keys'] .grid-fire {
     display:none;
   }
+  .grid-screen[data-screen='grid'][data-fit='stack'][data-input='keys'] > .grid-map-dock {
+    display:none;
+  }
+  .grid-screen[data-screen='grid'][data-fit='stack'][data-input='keys'] .grid-hud-map {
+    display:inline-block;
+  }
 }
 
 @media (pointer:coarse) and (orientation:landscape) and (max-height:480px) {
@@ -197,6 +234,9 @@
     column-gap:var(--sp-4);
   }
   .grid-screen[data-screen='grid'][data-fit='stack'] > .grid-travel {
+    align-self:start;
+  }
+  .grid-screen[data-screen='grid'][data-fit='stack'] > .grid-map-dock {
     align-self:start;
   }
   .grid-screen[data-screen='grid'][data-fit='stack'] .grid-hud-more {

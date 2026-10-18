@@ -13,6 +13,13 @@ const INSET_TILES = 0.1;
 const BORDER_TILES = 0.06;
 const FRAME_EDGE_TILES = 0.08;
 const LIGHT_ALPHA = 0.3;
+const BAND_INK = 'cyan';
+const BAND_ALPHA = 0.14;
+const BAND_EDGE_TILES = 0.05;
+const WASH_ALPHA = 0.22;
+const CAPTION = 'FRAME';
+const CAPTION_TILES = 0.4;
+const CAPTION_LIFT_TILES = 0.12;
 const HALF = 0.5;
 const FONT = 'px VT323, monospace';
 const POCKET_ROWS = LANE_POCKET.maxRow - LANE_POCKET.minRow + 1;
@@ -26,6 +33,18 @@ ctx.fillStyle = frame.palette[SILL_INKS[glyph]];
 ctx.fillRect(spot.left + col * pixel,spot.top + row * pixel,pixel,pixel);
 });
 });
+}
+function uiDrawBand(ctx,frame) {
+const first = uiSpotOf(LANE_SHOTS[0],frame);
+if (!first) return;
+const width = frame.tile * LANE_SHOTS.length;
+const edge = frame.tile * BAND_EDGE_TILES;
+ctx.fillStyle = frame.palette[BAND_INK];
+ctx.globalAlpha = BAND_ALPHA;
+ctx.fillRect(first.left,first.top,width,frame.tile);
+ctx.globalAlpha = 1;
+ctx.fillRect(first.left,first.top,width,edge);
+ctx.fillRect(first.left,first.top + frame.tile - edge,width,edge);
 }
 function uiDrawShot(ctx,frame,{ shot,spot }) {
 const edge = frame.tile * INSET_TILES;
@@ -53,7 +72,15 @@ const first = uiSpotOf(LANE_SHOTS[state.l],frame);
 if (!first) return;
 const edge = frame.tile * FRAME_EDGE_TILES;
 const width = frame.tile * laneFrame(state).length;
+ctx.fillStyle = frame.palette[BAND_INK];
+ctx.globalAlpha = WASH_ALPHA;
+ctx.fillRect(first.left,first.top,width,frame.tile);
+ctx.globalAlpha = 1;
+ctx.font = Math.round(frame.tile * CAPTION_TILES) + FONT;
+ctx.textAlign = 'center';
+ctx.textBaseline = 'bottom';
 ctx.fillStyle = frame.palette[FRAME_INK];
+ctx.fillText(CAPTION,first.left + width / 2,first.top - frame.tile * CAPTION_LIFT_TILES);
 ctx.fillRect(first.left,first.top,width,edge);
 ctx.fillRect(first.left,first.top + frame.tile - edge,width,edge);
 ctx.fillRect(first.left,first.top,edge,frame.tile);
@@ -76,6 +103,7 @@ function uiPaintLane(ctx,frame,scene) {
 const sill = uiSpotOf(SILL_CELL,frame);
 if (sill) uiPaintSill(ctx,frame,sill);
 if (!scene) return;
+uiDrawBand(ctx,frame);
 uiDrawShots(ctx,frame);
 uiDrawFrame(ctx,frame,scene);
 uiDrawLight(ctx,frame,scene.light);

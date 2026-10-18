@@ -1,5 +1,5 @@
 import { uiEl } from './dom.js';
-import { uiGridHud } from './grid-hud.js';
+import { uiGridHud, uiGridMapDock } from './grid-hud.js';
 import { uiGridObjective, uiObjectiveText } from './grid-objective.js';
 import { uiGridStage, uiSyncGridLoop } from './grid-canvas.js';
 import { uiGridToast, uiShowToast } from './grid-toast.js';
@@ -63,6 +63,8 @@ import('./grid-fork.js').then(function (fork) { fork.uiInstallFork(app); }).catc
 import('./grid-oracle.js').then(function (oracle) { oracle.uiInstallOracle(app); }).catch(function () {});
 import('./grid-brute.js').then(function (brute) { brute.uiInstallBrute(app); }).catch(function () {});
 import('./grid-power.js').then(function (power) { power.uiInstallPower(app); }).catch(function () {});
+import('./grid-route.js').then(function (route) { route.uiInstallRoute(app); }).catch(function () {});
+import('./grid-touch-aid.js').then(function (aid) { aid.uiInstallTouchAid(app); }).catch(function () {});
 }
 function uiEnterPlan(app) {
 const plan = uiEntryPlan(app);
@@ -81,7 +83,7 @@ else import('./jack-in-card.js').then(function (card) { card.uiJackInEnter(app,u
 }
 function uiRenderGrid(app) {
 const children = [
-uiGridHud(app),uiGridObjective(app),uiGridStage(app),uiGridToast(app),uiGridTouchLayer(app),app.game.drawPower ? app.game.drawPower(app) :null,uiGridDpad(app),uiGridFire(app),uiGridTravel(app),app.game.drawRank ? app.game.drawRank(app) :null,
+uiGridHud(app),uiGridObjective(app),uiGridStage(app),uiGridToast(app),uiGridTouchLayer(app),app.game.drawPower ? app.game.drawPower(app) :null,uiGridMapDock(app),uiGridDpad(app),uiGridFire(app),uiGridTravel(app),app.game.drawRank ? app.game.drawRank(app) :null,
 ];
 return uiEl('section',{ className:'screen grid-screen',attrs:{ 'data-screen':'grid','data-fit':uiGridFitMode() },children:children.filter(Boolean) });
 }
