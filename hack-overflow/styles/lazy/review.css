@@ -185,16 +185,49 @@
   touch-action:manipulation;
 }
 
-.review-hold.is-holding::after {
-  content:'';
-  position:absolute;
-  top:0;
-  bottom:0;
-  left:0;
-  width:100%;
-  background:var(--bright);
-  opacity:0.4;
+.review-hold {
+  display:inline-grid;
+  grid-template-columns:auto auto;
+  grid-template-areas:"ring label" "ring tag";
+  align-items:center;
+  justify-items:start;
+  column-gap:var(--sp-2);
+  padding:var(--sp-2) var(--sp-4);
+}
+
+.review-ring {
+  flex:0 0 auto;
+  grid-area:ring;
+  width:36px;
+  height:36px;
+  box-sizing:border-box;
+  border:2px solid currentColor;
+  border-radius:50%;
+  background:transparent;
   pointer-events:none;
+}
+
+.review-hold-label,.review-hold-tag {
+  pointer-events:none;
+}
+
+.review-hold-label {
+  grid-area:label;
+}
+
+.review-hold-tag {
+  grid-area:tag;
+  font-size:var(--fs-sm);
+  opacity:0.8;
+}
+
+.review-hold.is-holding .review-ring {
+  background:var(--bright);
+}
+
+.review-line.is-locked {
+  opacity:0.5;
+  cursor:not-allowed;
 }
 
 .review-log {
@@ -213,24 +246,32 @@
   color:var(--magenta);
 }
 
+@property --hold {
+  syntax:'<angle>';
+  inherits:false;
+  initial-value:0deg;
+}
+
 @keyframes review-hold {
   from {
-    width:0;
+    --hold:0deg;
   }
 
   to {
-    width:100%;
+    --hold:360deg;
   }
 }
 
 @media (prefers-reduced-motion:no-preference) {
-  .review-hold.is-holding::after {
+  .review-hold.is-holding .review-ring {
+    background:conic-gradient(var(--bright) var(--hold),transparent 0);
     animation:review-hold 600ms linear forwards;
   }
 }
 
 @media (prefers-reduced-motion:reduce) {
-  .review-hold.is-holding::after {
+  .review-hold.is-holding .review-ring {
+    background:var(--bright);
     animation:none;
   }
 

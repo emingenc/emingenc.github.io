@@ -102,8 +102,9 @@ uiMapProgressList(app),
 ],
 });
 }
+const UI_MAP_CLOSE_KEYS = new Set(['Escape','m','M','o','O']);
 function uiMapKeyAction(event) {
-if (event.key !== 'Escape' && event.key !== 'o' && event.key !== 'O') return null;
+if (!UI_MAP_CLOSE_KEYS.has(event.key)) return null;
 event.preventDefault();
 if (event.repeat) return { type:'handled' };
 return { type:'action',id:'map-close' };

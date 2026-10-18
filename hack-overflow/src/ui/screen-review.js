@@ -21,6 +21,7 @@ const LOG_SHOWN = 4;
 const LINE_ACTION = /^review-line-(\d+)$/;
 const DRAFT_ACTION = /^review-draft-([A-Z])$/;
 const HELD_ACTIONS = new Set(['review-approve','review-merge']);
+const LOCKED_ANNOUNCE = 'REVIEW. Hold MERGE to merge the patch.';
 const KERNEL_REVIVE_NOTICE = 'Rebooted at the kernel door. Your reading is kept.';
 const BENCH_REVIVE_NOTICE = 'Rebooted at the bench. Your reading is kept.';
 const FULL_HEART = '♥';
@@ -73,7 +74,7 @@ game.walk.plan = null;
 uiHoldEnd(review.hold);
 review.guard = sheetGuardShow(performance.now());
 app.screen = REVIEW_ID;
-app.lastFocusKey = FIRST_KEY;
+app.lastFocusKey = uiReviewFocusKey(app);
 if (review.mode === 'read' && review.spec.resume && review.spec.resume(app)) return;
 uiTypeDrafts(app,review);
 uiRenderApp(app);
@@ -179,6 +180,7 @@ function uiReviewReading(app,review,actionId) {
 const line = LINE_ACTION.exec(actionId);
 const draft = DRAFT_ACTION.exec(actionId);
 if (!line && !draft) return false;
+if (line && review.spec.lockLines) return true;
 if (!uiReviewArmed(app,review)) return true;
 const step = line ? tapLine(review.state,review.spec,Number(line[1]),review.clockMs !== null) :pickDraft(review.state,review.spec,draft[1]);
 uiReviewStep(app,review,step);
@@ -289,11 +291,13 @@ uiEl('p',{ className:'review-hearts',text:uiHeartsText(app.game),attrs:{ 'aria-l
 function uiLineRow(row,review) {
 const { state } = review;
 const names = ['review-line'];
+const locked = review.spec.lockLines === true;
+if (locked) names.push('is-locked');
 if (state.selected === row.n) names.push('is-selected');
 if (state.stamp && row.n === review.spec.answer) names.push('is-stamped');
 const button = uiEl('button',{
 className:names.join(' '),
-attrs:{ type:'button','data-action':'review-line-' + row.n,'data-focus-key':'review-line-' + row.n,'aria-pressed':String(state.selected === row.n) },
+attrs:{ type:'button','data-action':'review-line-' + row.n,'data-focus-key':'review-line-' + row.n,'aria-pressed':String(state.selected === row.n),...(locked ? { disabled:'disabled' } :{}) },
 children:[uiEl('span',{ className:'review-num',text:String(row.n) }),uiEl('span',{ className:'review-code',text:row.text })],
 });
 return uiEl('li',{ className:'review-row',children:[button] });
@@ -326,8 +330,15 @@ uiEl('p',{ className:'review-hint',attrs:{ role:'status' },text:toast || '' }),
 });
 }
 function uiHoldButton(id,label,enabled) {
-const attrs = { type:'button','data-action':id,'data-focus-key':id,...(enabled ? {} :{ disabled:'disabled' }) };
-return uiEl('button',{ className:'btn review-act review-hold ' + (id === 'review-merge' ? 'btn-warn' :'btn-primary'),text:label,attrs });
+const attrs = { type:'button','data-action':id,'data-focus-key':id,'aria-label':label + ', hold to confirm',...(enabled ? {} :{ disabled:'disabled' }) };
+return uiEl('button',{
+className:'btn review-act review-hold ' + (id === 'review-merge' ? 'btn-warn' :'btn-primary'),attrs,
+children:[
+uiEl('span',{ className:'review-ring',attrs:{ 'aria-hidden':'true' } }),
+uiEl('span',{ className:'review-hold-label',text:label }),
+uiEl('span',{ className:'review-hold-tag',text:'HOLD',attrs:{ 'aria-hidden':'true' } }),
+],
+});
 }
 function uiReviewActions(review) {
 const { state,spec } = review;
@@ -338,7 +349,7 @@ children:[
 drafting && review.sheet ? uiHoldButton('review-approve','APPROVE',Boolean(state.picked)) :null,
 spec.merge && state.stage === 'read' ? uiHoldButton('review-merge','MERGE',true) :null,
 drafting && !review.sheet ? uiButton('review-drafts','DRAFTS','btn-ghost') :null,
-uiButton('review-back','BACK','btn-ghost'),
+spec.canLeave !== false ? uiButton('review-back','BACK','btn-ghost') :null,
 ],
 });
 }
@@ -358,7 +369,12 @@ children:[uiReviewHead(review.spec,review.state),uiReviewWatch(app,review),uiRev
 }
 function uiReviewAnnounce(app) {
 const review = app.game.review;
+if (review && review.spec.lockLines) return LOCKED_ANNOUNCE;
 return 'REVIEW. ' + (review && review.spec.prompts ? review.spec.prompts.read : 'Read the code.') + ' Tap a line, then tap it again to stamp it.';
+}
+function uiReviewFocusKey(app) {
+const review = app.game.review;
+return review && review.spec.lockLines ? 'review-merge' :FIRST_KEY;
 }
 function uiSyncReview(app,active,root) {
 if (!active) uiReviewRelease(app);
@@ -366,7 +382,7 @@ uiSyncHalt(app,active,root);
 }
 function uiReviewScreen() {
 return {
-id:REVIEW_ID,render:uiRenderReview,focusKey:() => FIRST_KEY,announce:uiReviewAnnounce,keyAction:uiReviewKey,keyUp:uiReviewKeyUp,
+id:REVIEW_ID,render:uiRenderReview,focusKey:uiReviewFocusKey,announce:uiReviewAnnounce,keyAction:uiReviewKey,keyUp:uiReviewKeyUp,
 applyAction:uiReviewApply,pointerDown:uiReviewPointerDown,pointerUp:uiReviewPointerUp,pointerCancel:uiReviewPointerUp,
 release:uiReviewRelease,sync:uiSyncReview,
 };

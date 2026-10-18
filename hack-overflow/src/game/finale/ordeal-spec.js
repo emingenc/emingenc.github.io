@@ -1,4 +1,4 @@
-import { ANSWER,ORDEAL_LISTING,ORDEAL_PROMPT_TEXT,ordealPick } from './ordeal.js';
+import { ANSWER,ORDEAL_LISTING,ordealPick,ordealPrompts } from './ordeal.js';
 
 const ORDEAL_SETTLE_MS = 900;
 const ORDEAL_PRESSURE = Object.freeze({ tiles:8,hero:7,start:2 });
@@ -12,10 +12,10 @@ const tile = 'flood tile ' + (state.flood + 1) + ' of ' + ORDEAL_PRESSURE.tiles;
 return view && Number.isFinite(view.hearts) ? tile + ' \u00b7 integrity ' + view.hearts :tile;
 }
 
-function ordealSpec(onConfirm) {
+function ordealSpec(onConfirm,stance = 'open') {
 return {
 kind:'ordeal',listing:ORDEAL_LISTING,answer:ANSWER,onPick:ordealPick,onConfirm,
-merge:true,title:ORDEAL_TITLE,prompts:ORDEAL_PROMPT_TEXT,canLeave:false,pressure:ORDEAL_PRESSURE,settleMs:ORDEAL_SETTLE_MS,watch:ordealWatch,
+merge:stance === 'merge',lockLines:stance === 'merge',title:ORDEAL_TITLE,prompts:ordealPrompts(stance),canLeave:false,pressure:ORDEAL_PRESSURE,settleMs:ORDEAL_SETTLE_MS,watch:ordealWatch,
 clockMs:ORDEAL_CLOCK_MS,chip:ORDEAL_CHIP,floor:ORDEAL_FLOOR,
 };
 }

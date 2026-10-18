@@ -1,9 +1,10 @@
 import { trailAt } from '../game/cast/patch.js';
 import { tapCellFor,tapIntent } from '../game/tap.js';
 import { BEATS,withBeats } from '../game/finale/contract.js';
+import { scanLabel } from '../game/finale/roadback-scan.js';
 import {
   CHASE_REPEAT_MS,KERNEL_FRONT,REPLY_TOASTS,ROAD_TOASTS,TICK_MS,bruteGate,catcherOf,chaseIdle,chaseStep,createChase,createLookup,ghostTap,ghostToast,inRing,
-  lookupStep,repeatDue,reunionSheet,
+  repeatDue,reunionSheet,
 } from '../game/finale/roadback.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiGridHook } from './bus.js';
@@ -13,6 +14,7 @@ import { uiCastSync } from './grid-cast-sync.js';
 import { uiKernelHurt,uiSetRevive } from './grid-kernel-hurt.js';
 import { uiDropKernel } from './grid-kernel-chips.js';
 import { uiCarryToFront,uiSay,uiSeams } from './grid-kernel-common.js';
+import { uiScanHold,uiScanPainter } from './grid-roadback-scan.js';
 import { uiStoryChoice } from './story-dialogue.js';
 
 const SHEET_KIND = 'info';
@@ -116,27 +118,29 @@ uiRunClock(app).catch(console.error);
 function uiLookupView(chip) {
 return { n:0,head:'ROAD BACK',count:'ROOT 0' + SEPARATOR + 'YOU 0',ask:'FIND patch-0',tele:'',note:'',fiction:'',chips:[chip] };
 }
-function uiLookupChip(lookup) {
-const label = lookup.tagged ? 'RECALL patch-0' : 'SCAN ' + (lookup.step + 1) + '/' + lookup.steps;
+function uiLookupChip(scan) {
+const label = scanLabel(scan);
 return { id:'patch-0',label,aria:label };
 }
-function uiTap(app,ui,chip) {
-return new Promise(function (resolve) {
-ui.view = () => uiLookupView({ ...chip,run:() => { if (!uiParked(app)) resolve(); } });
-uiRenderKeepingFocus(app);
-});
+function uiTap(app,ui,lookup,shown) {
+const show = (scan,run) => {
+shown.scan = scan;
+ui.view = () => uiLookupView({ ...uiLookupChip(scan),run });
+};
+return uiScanHold(app,{ lookup,show,parked:() => uiParked(app) });
+}
+function uiHangFront(app,ui,shown) {
+const base = ui.paint;
+const paint = uiScanPainter(app,shown);
+ui.paint = (ctx,frame) => { base(ctx,frame); paint(ctx,frame); };
 }
 async function uiFindPatch(app) {
 const ui = uiSeams(app);
-let lookup = createLookup(app.game.ext);
+const shown = { scan:null };
+uiHangFront(app,ui,shown);
 uiSay(app,ROAD_TOASTS.door,'info');
-for (let found = false; !found;) {
-await uiTap(app,ui,uiLookupChip(lookup));
-const step = lookupStep(lookup);
-lookup = step.lookup;
-found = step.found;
-uiSay(app,step.text,found ? 'reward' :'info');
-}
+const found = await uiTap(app,ui,createLookup(app.game.ext),shown);
+uiSay(app,found.text,'reward');
 uiDropKernel(app);
 }
 function uiPatchOnline(app) {

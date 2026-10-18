@@ -30,7 +30,7 @@ const flag = FLAG_OF_STAMP[pick.stamp] || null;
 return { ...step,state:{ ...state,stage:'done' },result:{ stamp:pick.stamp,pick:null,flag } };
 }
 function tapLine(state,spec,line,clocked = false) {
-if (state.stage !== 'read' || !spec.listing.some((row) => row.n === line)) return still(state);
+if (state.stage !== 'read' || spec.lockLines === true || !spec.listing.some((row) => row.n === line)) return still(state);
 const pick = spec.onPick(line);
 const step = clocked ? still(state) :ticked(state,spec);
 if (pick.stamp && state.selected === line) return stampedReview(step,spec,pick);

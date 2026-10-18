@@ -4,8 +4,6 @@ import { uiEl } from './dom.js';
 import { uiBreachInert } from './render-submit-panel.js';
 
 const UI_MENU_RIG_PREFIX = 'menu-rig-';
-const UI_RESET_CONFIRM_TEXT = 'Reset all progress? This clears your XP, levels, breached locks and position.';
-const UI_RESET_CONFIRM_ID = 'menu-confirm-text';
 const UI_ROVE_ARROWS = { ArrowUp:-1,ArrowDown:1 };
 function uiRoveDelta(event) {
 if (event.key === 'Tab') return event.shiftKey ? -1 :1;
@@ -47,22 +45,12 @@ function uiMenuFace(app) {
 const stops = [
 uiMenuButton('menu-close','RESUME'),
 uiMenuButton('toggle-sound',app.soundOn ? 'SOUND: ON' :'SOUND: OFF'),
+uiMenuButton('menu-controls','CONTROLS'),
 ...uiReplayButtons(app),
 uiDisconnectButton(app),
 uiMenuButton('reset-progress','RESET PROGRESS'),
 ].filter(Boolean);
 return { title:'MENU',label:'Menu',question:null,stops };
-}
-function uiConfirmButton(action,label,kind) {
-const attrs = { type:'button','data-action':action,'data-focus-key':action,'aria-describedby':UI_RESET_CONFIRM_ID };
-return { key:action,node:uiEl('button',{ className:'btn ' + kind + ' menu-item',text:label,attrs }) };
-}
-function uiResetFace() {
-return {
-title:'RESET PROGRESS',label:'Reset progress',
-question:uiEl('p',{ className:'menu-confirm-text',text:UI_RESET_CONFIRM_TEXT,attrs:{ id:UI_RESET_CONFIRM_ID } }),
-stops:[uiConfirmButton('reset-confirm','RESET','btn-warn'),uiConfirmButton('reset-cancel','CANCEL','btn-ghost')],
-};
 }
 function uiKeepFocusInMenu(app,overlay,stops) {
 overlay.addEventListener('keydown',uiRoveKeyDown(app,stops));
@@ -70,8 +58,11 @@ overlay.addEventListener('mousedown',function (event) {
 if (!stops.some((stop) => stop.node === event.target)) event.preventDefault();
 });
 }
+function uiMenuFaceFor(app) {
+return app.menuFace ? app.menuFace(app) :uiMenuFace(app);
+}
 function uiMenuPanel(app) {
-const face = app.confirmReset ? uiResetFace() :uiMenuFace(app);
+const face = uiMenuFaceFor(app);
 const heading = uiEl('h2',{ className:'menu-title',text:face.title });
 const panel = uiEl('div',{ className:'menu-panel',children:[heading,face.question,...face.stops.map((stop) => stop.node)] });
 const overlay = uiEl('div',{
@@ -86,4 +77,4 @@ function uiMenuIfOpen(app) {
 return app.menuOpen ? uiMenuPanel(app) :null;
 }
 
-export { UI_MENU_RIG_PREFIX, uiMenuIfOpen, uiRigReplayable, uiRoveKeyDown };
+export { UI_MENU_RIG_PREFIX, uiMenuButton, uiMenuIfOpen, uiRigReplayable, uiRoveKeyDown };

@@ -29,10 +29,12 @@ children:[uiEl('span',{ className:'kernel-phase',text:view.head }),uiEl('span',{
 }
 function uiKernelStrip(view) {
 STYLES.forEach(uiLinkStyle);
-const lines = [uiNote('kernel-ask',view.ask),uiNote('kernel-tele',view.tele),uiNote('kernel-note',view.note),uiNote('kernel-fiction',view.fiction)];
+const lines = [
+uiNote('kernel-ask',view.ask),uiNote('kernel-tele',view.tele),uiNote('kernel-hint',view.hint),uiNote('kernel-note',view.note),uiNote('kernel-fiction',view.fiction),
+];
 const notes = uiEl('div',{ className:'kernel-notes',children:lines.filter(Boolean) });
 const list = uiEl('div',{ className:'grid-power-chips',attrs:{ role:'group','aria-label':'Kernel controls' },children:view.chips.map(uiChipNode) });
-return uiEl('div',{ className:'grid-power kernel-strip',children:[uiHead(view),notes,list] });
+return uiEl('div',{ className:'grid-power kernel-strip',children:[uiHead(view),notes,list,view.auto].filter(Boolean) });
 }
 function uiOverlay(game,name,overlay) {
 let inner = game[name];

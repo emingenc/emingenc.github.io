@@ -1,52 +1,61 @@
 import { LETTER_CELLS } from '../game/fusion/window-map-cells.js';
 import { WINDOW_MAP } from '../game/fusion/window-map.js';
-import { uiSpotOf } from './grid-spot.js';
+import { uiPaintTag } from './grid-fusion-floor.js';
+import { INSET_TILES,uiPaintLabel,uiPaintRow,uiUnder } from './grid-fusion-tiles.js';
 
-const EDGES = Object.freeze({ window:'#00e5ff',best:'#7dff7a',idle:'#3a4a55' });
-const FILLS = Object.freeze({ window:'#0d1f2b',best:'#10261a',idle:'#10171c' });
-const TEXT = '#e8f1f5';
-const INSET_TILES = 0.1;
-const EDGE_TILES = 0.08;
-const FONT_TILES = 0.42;
-const MARK_TILES = 0.26;
-const FONT_FACE = 'px VT323, monospace';
-const MIDDLE = 0.5;
-const MARK_AT = 0.2;
+const LOOKS = Object.freeze({
+window:Object.freeze({ edge:'#00e5ff',fill:'#0d1f2b' }),best:Object.freeze({ edge:'#7dff7a',fill:'#10261a' }),idle:Object.freeze({ edge:'#3a4a55',fill:'#10171c' }),
+});
+const TAG_COLOR = '#00e5ff';
+const BEST_COLOR = '#7dff7a';
+const BEST_FONT_TILES = 0.22;
+const BEST_TEXT_AT = 0.8;
+const BEST_LINE_AT = 0.93;
+const BEST_LINE_TILES = 0.05;
 
 function uiInSpan(span,at) {
 return Boolean(span) && at >= span.from && at < span.to;
 }
-function uiRoleOf(run,at) {
+function uiLookOf(run,at) {
 const window = { from:run.tail,to:run.head };
 const open = at === window.from ? '[' :'';
 const close = at === window.to - 1 ? ']' :'';
-if (uiInSpan(window,at)) return { role:'window',mark:open + close };
-return { role:uiInSpan(run.best,at) ? 'best' :'idle',mark:'' };
+if (uiInSpan(window,at)) return { ...LOOKS.window,mark:open + close };
+return { ...LOOKS[uiInSpan(run.best,at) ? 'best' :'idle'],mark:'' };
 }
-function uiPaintLetter(ctx,frame,place) {
-const { spot,letter,look } = place;
+function uiEndsOf(run) {
+if (run.head <= run.tail) return [{ at:run.tail,text:'TAIL' }];
+if (run.head - run.tail === 1) return [{ at:run.tail,text:'T/H' }];
+return [{ at:run.tail,text:'TAIL' },{ at:run.head - 1,text:'HEAD' }];
+}
+function uiPaintBestLine(ctx,frame,best) {
+const thick = Math.max(1,Math.round(frame.tile * BEST_LINE_TILES));
 const inset = frame.tile * INSET_TILES;
-const size = frame.tile - 2 * inset;
-const edge = Math.max(1,Math.round(frame.tile * EDGE_TILES));
-ctx.fillStyle = EDGES[look.role];
-ctx.fillRect(spot.left + inset,spot.top + inset,size,size);
-ctx.fillStyle = FILLS[look.role];
-ctx.fillRect(spot.left + inset + edge,spot.top + inset + edge,size - 2 * edge,size - 2 * edge);
-ctx.fillStyle = TEXT;
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.font = Math.round(frame.tile * FONT_TILES) + FONT_FACE;
-ctx.fillText(letter,spot.left + frame.tile * MIDDLE,spot.top + frame.tile * MIDDLE);
-if (!look.mark) return;
-ctx.font = Math.round(frame.tile * MARK_TILES) + FONT_FACE;
-ctx.fillText(look.mark,spot.left + frame.tile * MIDDLE,spot.top + frame.tile * MARK_AT);
+ctx.fillStyle = BEST_COLOR;
+for (let at = best.from;at < best.to;at += 1) {
+const spot = uiUnder(LETTER_CELLS,at,frame);
+if (spot) ctx.fillRect(spot.left + (at === best.from ? inset :0),spot.top + frame.tile * BEST_LINE_AT,frame.tile - (at === best.from ? inset :0) - (at === best.to - 1 ? inset :0),thick);
+}
+}
+function uiPaintBestText(ctx,frame,best) {
+const middle = Math.floor((best.from + best.to - 1) / 2);
+const spot = uiUnder(LETTER_CELLS,middle,frame);
+if (!spot) return;
+uiPaintLabel(ctx,frame,{ spot,text:'BEST',color:BEST_COLOR,size:BEST_FONT_TILES,at:BEST_TEXT_AT });
+}
+function uiPaintUnder(ctx,frame,run) {
+uiEndsOf(run).forEach(function (end) {
+const spot = uiUnder(LETTER_CELLS,end.at,frame);
+if (spot) uiPaintTag(ctx,frame,{ spot,text:end.text,color:TAG_COLOR,bob:true });
+});
+if (!run.best) return;
+uiPaintBestLine(ctx,frame,run.best);
+uiPaintBestText(ctx,frame,run.best);
 }
 
 function uiPaintWindowMap(ctx,frame,run) {
-[...WINDOW_MAP.text].forEach(function (letter,at) {
-const spot = uiSpotOf(LETTER_CELLS[at],frame);
-if (spot) uiPaintLetter(ctx,frame,{ spot,letter,look:uiRoleOf(run,at) });
-});
+uiPaintRow(ctx,frame,{ values:[...WINDOW_MAP.text],cells:LETTER_CELLS,lookOf:(at) => uiLookOf(run,at) });
+if (frame.floor === true) uiPaintUnder(ctx,frame,run);
 }
 
 export { uiPaintWindowMap };

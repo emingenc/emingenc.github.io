@@ -63,6 +63,7 @@
 
 .kernel-ask,
 .kernel-tele,
+.kernel-hint,
 .kernel-note,
 .kernel-fiction {
   flex:0 1 auto;
@@ -82,8 +83,13 @@
   color:var(--cyan);
 }
 
-.kernel-tele {
+.kernel-tele,
+.kernel-hint {
   color:var(--amber);
+}
+
+.kernel-strip .auto-run {
+  grid-column:1 / -1;
 }
 
 .kernel-fiction {

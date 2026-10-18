@@ -8,7 +8,7 @@ const STYLE_HREF = 'styles/lazy/rank-stats.css';
 const OPEN_KEY = 'rank-open';
 const CLOSE_KEY = 'rank-close';
 const PERCENT = 100;
-const STOPPED_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D','f','F',' ','Enter']);
+const STOPPED_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D','f','F',' ','Enter','m','M','o','O','?']);
 
 function uiPointsText(stats) {
 return stats.next === null ? 'R ' + stats.r + ' · MAX' :'R ' + stats.r + ' / ' + stats.next;

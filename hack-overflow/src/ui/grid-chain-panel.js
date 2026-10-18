@@ -5,7 +5,7 @@ import { CONTINUE_KEY,uiChainCard,uiLineText } from './grid-chain-card.js';
 const CELL_KEY = 'chain-cell-';
 const BACK_KEY = 'chain-back';
 const NEXT_KEY = 'chain-next';
-const WALK_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D','f','F',' ','Enter']);
+const WALK_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D','f','F',' ','Enter','m','M','o','O','?']);
 
 function uiSolved(panel) {
 panel.said = uiLineText(panel.step.found);

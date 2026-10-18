@@ -6,7 +6,13 @@ import { uiKeysSeen } from './grid-input-mode.js';
 
 
 const UI_HINT_TOUCH = 'Tap the map to walk. Follow the pulsing arrow.';
-const UI_HINT_KEYS = 'Click the map or press arrow keys to walk. Follow the pulsing arrow.';
+const UI_HINT_KEYS = 'Click the map or press arrow keys to walk. Follow the pulsing arrow. ? lists every key.';
+const UI_STAGE_LABEL_TOUCH = 'The Grid. Tap a tile to walk. The diamond button interacts.';
+const UI_STAGE_LABEL_KEYS = 'The Grid. Arrow keys walk, Enter interacts, T opens travel, ? lists the controls.';
+
+function uiStageLabel() {
+return uiPointerIsCoarse() ? UI_STAGE_LABEL_TOUCH :UI_STAGE_LABEL_KEYS;
+}
 
 function uiCreateHint() {
 const base = uiPointerIsCoarse() ? UI_HINT_TOUCH :UI_HINT_KEYS;
@@ -81,4 +87,4 @@ uiSetData(near.node,'rig',plate.rigId);
 uiSetData(near.node,'place',plate.place);
 }
 
-export { uiCreateHint, uiHintWanted, uiSyncHint, uiCreateNearPlate, uiNearPlateFor, uiSyncNearPlate };
+export { uiStageLabel, uiCreateHint, uiHintWanted, uiSyncHint, uiCreateNearPlate, uiNearPlateFor, uiSyncNearPlate };

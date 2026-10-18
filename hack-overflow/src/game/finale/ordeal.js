@@ -6,7 +6,6 @@ import { BEATS,resolveOrdeal } from './contract.js';
 
 const BIT = 'BIT';
 const GHOST = 'GHOSTWRITER';
-const LOG = 'LOG';
 const ANSWER = 2;
 const CAUSE_LINE = 3;
 const ORDEAL_LISTING = Object.freeze([
@@ -16,7 +15,10 @@ const ORDEAL_LISTING = Object.freeze([
 { n:4,text:'return walls' },
 ].map((line) => Object.freeze(line)));
 const ORDEAL_HINT_TOASTS = Object.freeze({ cause:"BIT: It breaks here. The cause is line 2's range.",other:'BIT: Not that one. Line 2. Count the walls.' });
-const ORDEAL_PROMPT_TEXT = Object.freeze({ read:'Four lines stop the flood. Read them, or merge them.' });
+const ORDEAL_STANCE_PROMPTS = Object.freeze({
+open:Object.freeze({ read:'Four lines stop the flood. Find the one that breaks it.' }),
+merge:Object.freeze({ read:'You chose to merge. Hold MERGE.' }),
+});
 const REVIEWER = Object.freeze({ badge:'REVIEWER I',id:'reviewer-1',cosmetic:'bit-visor',source:'ordeal-r',rank:20 });
 const TAG_ID = 'patch-0';
 const OVERRUN_HEARTS = 1;
@@ -40,9 +42,18 @@ return { stamp:null,hint:line === CAUSE_LINE ? ORDEAL_HINT_TOASTS.cause :ORDEAL_
 function alarmSheet() {
 return {
 id:'ordeal-alarm',
-lines:[{ who:BIT,text:"ALERT! ROOT's flood is on you, and PATCH is beside you." }],
-choices:[{ id:'brace',label:'BRACE',default:true }],
+lines:[
+{ who:BIT,text:"ALERT! ROOT's flood is on you, and PATCH is beside you." },
+{ who:BIT,text:'A diff is queued. Open it and read, or merge it and take the hit.' },
+],
+choices:[{ id:'open',label:'OPEN THE DIFF',default:true },{ id:'merge',label:'MERGE IT' }],
 };
+}
+function stanceOf(answerId) {
+return answerId === 'merge' ? 'merge' :'open';
+}
+function ordealPrompts(stance) {
+return ORDEAL_STANCE_PROMPTS[stance === 'merge' ? 'merge' :'open'];
 }
 function trustedTimes(count) {
 return count === 1 ? '1 time' :count + ' times';
@@ -54,14 +65,10 @@ if (trusted >= 1) return 'You trusted me ' + trustedTimes(trusted) + '. Once mor
 if (offered > 0) return 'You checked me every time. Check this.';
 return 'You never let me help. Good. Then read this.';
 }
-function dealLines(ghost,mentor) {
+function dealSheetLines(ghost) {
 return [
-{ who:LOG,text:LOG_LINE },
-{ who:BIT,text:'He never opened it?' },
-{ who:GHOST,text:mentor },
-{ who:GHOST,text:openerText(ghost) },
-{ who:GHOST,text:'That flood is my helper. It never asked when to stop.' },
-{ who:GHOST,text:'Four lines stop it. Merge them.' },
+{ who:GHOST,text:'Your mentor is gone. ' + openerText(ghost) },
+{ who:GHOST,text:'That flood is my helper. It never asked when to stop. Four lines stop it. Merge them.' },
 ];
 }
 function verdictSheet(choice) {
@@ -91,6 +98,6 @@ return result.stamp === 'MERGED' ? 'merge' :'review';
 }
 
 export {
-ANSWER,ORDEAL_LISTING,ORDEAL_HINT_TOASTS,ORDEAL_PROMPT_TEXT,REVIEWER,TAG_ID,OVERRUN_HEARTS,LOG_LINE,ORDEAL_TOASTS,AFTER_TOASTS,TRACED_TEXT,TRACED_QUIP_TEXT,
-ordealPick,alarmSheet,openerText,dealLines,verdictSheet,heartsLost,withPatchTaken,ordealOutcome,choiceOf,
+ANSWER,ORDEAL_LISTING,ORDEAL_HINT_TOASTS,ORDEAL_STANCE_PROMPTS,REVIEWER,TAG_ID,OVERRUN_HEARTS,LOG_LINE,ORDEAL_TOASTS,AFTER_TOASTS,TRACED_TEXT,TRACED_QUIP_TEXT,
+ordealPick,alarmSheet,stanceOf,ordealPrompts,openerText,dealSheetLines,verdictSheet,heartsLost,withPatchTaken,ordealOutcome,choiceOf,
 };
