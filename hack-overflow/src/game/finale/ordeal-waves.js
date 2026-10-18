@@ -1,5 +1,5 @@
 import { WORLD_MAP } from '../world-data.js';
-import { dealLines,heartsLost } from './ordeal.js';
+import { LOG_LINE,dealSheetLines,heartsLost } from './ordeal.js';
 
 const REGION = Object.freeze({ cols:13,rows:11 });
 const WORLD = Object.freeze({ cols:WORLD_MAP[0].length,rows:WORLD_MAP.length });
@@ -11,6 +11,8 @@ const WAVES = Object.freeze([
 ].map((wave) => Object.freeze(wave)));
 const PATCH_WAVE = 2;
 const PATCH = 'PATCH';
+const LOG = 'LOG';
+const BIT = 'BIT';
 const WAVE_ONE_TEXT = 'Hold the line. Measure twice.';
 const PATCH_CUT_TEXT = 'Keep BIT fed. He likes the—';
 
@@ -54,14 +56,15 @@ function dragsPatch(wave) {
 return wave === PATCH_WAVE;
 }
 function waveSheets(ghost) {
-return [
-{ id:'ordeal-wave-1',lines:[{ who:PATCH,text:WAVE_ONE_TEXT }],choices:[{ id:'ok',label:'OK',default:true }] },
-{
-id:'ordeal-deal',
-lines:[{ who:PATCH,text:PATCH_CUT_TEXT },...dealLines(ghost,'Your mentor is gone.')],
-choices:[{ id:'read',label:'SHOW ME',default:true }],
-},
-];
+return {
+hold:{ who:PATCH,text:WAVE_ONE_TEXT },
+bubbles:[
+{ who:PATCH,text:PATCH_CUT_TEXT,at:'patch' },
+{ who:LOG,text:LOG_LINE,at:'hero' },
+{ who:BIT,text:'He never opened it?',at:'hero' },
+],
+deal:{ id:'ordeal-deal',lines:dealSheetLines(ghost),choices:[{ id:'read',label:'SHOW ME',default:true }] },
+};
 }
 
 export { REGION,WAVES,WAVE_COUNT,PATCH_WAVE,region,waveColumns,waveSteps,waveFront,waveTouches,waveHearts,dragsPatch,waveSheets };

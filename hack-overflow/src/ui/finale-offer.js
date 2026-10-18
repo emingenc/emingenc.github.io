@@ -18,13 +18,18 @@ uiShowToast(app,{ text:effect.toast,kind:effect.hearts ? 'warn' :'info' });
 if (effect.source) return uiPayRank(app,effect.source,effect.rank);
 return null;
 }
+function uiOfferSheet(ext,spec) {
+const sheet = offerSheet(ext,spec);
+if (!spec.defaultPick) return sheet;
+return { ...sheet,choices:sheet.choices.map((choice) => (choice.id === spec.defaultPick ? { ...choice,default:true } : choice)) };
+}
 async function uiGhostOffer(app,spec) {
 const game = app.game;
 if (app.story || game.offering || (spec.once && hasBeat(game.ext,spec.once))) return null;
 game.offering = true;
 try {
 const effect = (pick) => offerEffect(game.ext,pick);
-const pick = await uiStoryChoice(app,offerSheet(game.ext,spec));
+const pick = await uiStoryChoice(app,uiOfferSheet(game.ext,spec));
 if (!pick || app.game !== game) return null;
 const result = effect(pick);
 const counted = answerOffer(game.ext,pick);

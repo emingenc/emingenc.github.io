@@ -66,8 +66,11 @@ if (apart >= FOLLOW_SHOWN_TILES) uiDrawArtAt(ctx,frame,{ cell,name:'patch' });
 }
 function uiDrawCast(ctx,app,frame) {
 const role = app.game.cast.role;
-if (role !== 'none') uiDrawBench(ctx,frame);
-if (role === 'busy' || role === 'talk') uiDrawArtAt(ctx,frame,{ cell:PATCH_CELL,name:'patch' });
+const flood = app.game.ordealFlood;
+const seat = flood && flood.bench ? flood.bench :PATCH_CELL;
+const benched = role === 'busy' || role === 'talk' || Boolean(flood && flood.patchAt === 'bench');
+if (role !== 'none' || benched) uiDrawBench(ctx,frame);
+if (benched && !app.game.cast.dragged) uiDrawArtAt(ctx,frame,{ cell:seat,name:'patch' });
 if (role === 'follow' || role === 'walk') uiDrawFollower(ctx,app,frame);
 }
 

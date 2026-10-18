@@ -10,9 +10,8 @@ import { uiDrawTiles } from './grid-draw-tiles.js';
 import { uiDrawAvatar } from './grid-draw-avatar.js';
 import { uiDrawFx } from './grid-draw-fx.js';
 import { uiDrawWayfinding } from './grid-draw-wayfinding.js';
-import { uiCreateHint, uiCreateNearPlate, uiSyncHint, uiSyncNearPlate } from './grid-hint.js';
+import { uiStageLabel, uiCreateHint, uiCreateNearPlate, uiSyncHint, uiSyncNearPlate } from './grid-hint.js';
 
-const UI_STAGE_LABEL = 'The Grid. Arrow keys walk, Enter interacts, T opens travel.';
 const UI_PALETTE_NAMES = ['bg','panel','border','primary','bright','cyan','magenta','amber','red','violet','text','dim'];
 function uiReadPalette(node) {
 const style = window.getComputedStyle(node);
@@ -67,7 +66,7 @@ const hint = uiCreateHint();
 const near = uiCreateNearPlate();
 const node = uiEl('div',{
 className:'grid-stage',
-attrs:{ tabindex:'0',role:'application','aria-label':UI_STAGE_LABEL,'data-focus-key':'grid-stage' },
+attrs:{ tabindex:'0',role:'application','aria-label':uiStageLabel(),'data-focus-key':'grid-stage' },
 children:[canvas,hint,near.node],
 });
 const stage = { node,canvas,hint,near,ctx:canvas.getContext('2d'),raf:0,width:0,height:0,tile:0,dpr:1,palette:null,follow:null };

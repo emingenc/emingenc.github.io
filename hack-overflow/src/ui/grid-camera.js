@@ -9,6 +9,10 @@ function uiSnapCamera(stage,camera) {
 const scale = stage.tile * stage.dpr;
 return { col:Math.round(camera.col * scale) / scale,row:Math.round(camera.row * scale) / scale };
 }
+function uiHeldFocus(hold,cols) {
+const whole = hold.to - hold.from + 2 <= cols;
+return { col:whole ? (hold.from + hold.to) / 2 :hold.col,row:hold.row };
+}
 function uiCameraTick(app,now) {
 const stage = app.game.stage;
 if (app.story && stage.follow) {
@@ -17,7 +21,9 @@ return uiSnapCamera(stage,stage.follow.camera);
 }
 const pose = uiAvatarPose(app,now);
 const world = app.game.world;
-const view = { focus:{ col:pose.col,row:pose.row },cols:stage.width / stage.tile,rows:stage.height / stage.tile,inset:uiBarsInset(stage.tile) };
+const hold = app.game.camHold;
+const cols = stage.width / stage.tile;
+const view = { focus:hold ? uiHeldFocus(hold,cols) :{ col:pose.col,row:pose.row },cols,rows:stage.height / stage.tile,inset:uiBarsInset(stage.tile) };
 const target = framedCamera(world,view,targetCell(world,app.game.objectiveTarget));
 const follow = stage.follow;
 const glide = follow && !uiPrefersReducedMotion();

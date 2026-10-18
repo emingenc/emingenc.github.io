@@ -1,5 +1,6 @@
 import { BOLT_RANGE,nearestAwakeFoe } from '../actors.js';
 import { LIMITS } from '../ext/index.js';
+import { padName } from './pads.js';
 
 const TAG_CAP = LIMITS.tags;
 const FIXED_NAMES = ['s1','d1','d2'];
@@ -28,10 +29,10 @@ return initial + number;
 function tagNames(tagged,actors) {
 const names = {};
 const isGeneric = (id) => !FIXED_NAMES.includes(id) && actors.some((actor) => actor.id === id);
-const taken = new Set(tagged.filter((id) => !isGeneric(id)).map((id) => id.toUpperCase()));
+const taken = new Set(tagged.filter((id) => !isGeneric(id)).map(padName));
 for (const id of tagged) {
 const actor = actors.find((one) => one.id === id);
-names[id] = isGeneric(id) ? numbered((actor.kind ?? 'drone')[0].toUpperCase(),taken) :id.toUpperCase();
+names[id] = isGeneric(id) ? numbered((actor.kind ?? 'drone')[0].toUpperCase(),taken) :padName(id);
 taken.add(names[id]);
 }
 return names;

@@ -1,13 +1,14 @@
 import { drawerReady,refactorDue,refactorLit,openDrawer,DRAWER_LINES,DRAWER_RANK,DRAWER_SOURCE,LIT_BEAT,LIT_LINES,WAIT_LINE } from '../game/finale/refactor.js';
 import { TRIM_CELLS } from '../game/finale/reward-cells.js';
-import { createReward,openingSheet,restoreSheet,rewardDue,rewardOutcome,rewardStep,rewardView,withReward } from '../game/finale/reward.js';
+import { GC_GRACE_MS,GC_TICK_MS,createReward,createTimedReward,openingSheet,rewardAct,rewardCard,rewardDue,rewardOutcome,rewardStep,rewardSweep,rewardTimedView,rewardView,withReward } from '../game/finale/reward.js';
 import { withBeat } from '../game/ext/ops.js';
 import { uiRenderKeepingFocus } from './app.js';
+import { uiPrefersReducedMotion } from './dom.js';
 import { uiCommitExt } from './ext-storage.js';
 import { uiCastSay } from './grid-cast-act.js';
 import { uiHangKernel } from './grid-kernel-chips.js';
 import { uiSay } from './grid-kernel-common.js';
-import { LET_GO_ID,uiAwaitChip,uiBenchBumped,uiExclusive,uiHookBench,uiLetGo,uiLiveState,uiReleaseStrip,uiSceneState,uiTellInBackground } from './grid-scene-strip.js';
+import { LET_GO_ID,uiAwaitChip,uiParked,uiBenchBumped,uiExclusive,uiHookBench,uiLetGo,uiLiveState,uiReleaseStrip,uiSceneState,uiTellInBackground } from './grid-scene-strip.js';
 import { uiStoryChoice } from './story-dialogue.js';
 
 
@@ -25,6 +26,11 @@ function uiCovered(app) {
 return Boolean(app.story || app.menuOpen || app.game.travelOpen);
 }
 const LET_GO = { id:LET_GO_ID,label:'LET GO',aria:'Let go of the sweep. Nothing is lost, you can come back',tone:'warn' };
+const GC_ID = 'gc';
+const PARKED_RETRY_MS = 300;
+function uiPaced(app) {
+return app.game.ext.assist === true || Boolean(uiPrefersReducedMotion());
+}
 async function uiTurn(app,state) {
 const view = rewardView(state.run);
 const pick = await uiAwaitChip(app,state,{ ...view,chips:[...view.chips,LET_GO] });
@@ -33,6 +39,55 @@ const step = rewardStep(state.run);
 state.run = step.reward;
 uiSay(app,step.texts.join(' '),'info');
 return step;
+}
+function uiArmGc(app,state,finish) {
+const wait = Math.max(0,state.clock.at - performance.now());
+state.gc = window.setTimeout(function () {
+if (!uiParked(app) && !app.menuOpen && !document.hidden) return finish(GC_ID);
+state.clock.at = performance.now() + PARKED_RETRY_MS;
+uiArmGc(app,state,finish);
+},wait);
+}
+function uiTimedView(app,state) {
+const view = rewardTimedView(state.run,{ scanning:state.scanning });
+const pick = (id) => () => { if (app.game.gen === state.gen && !uiParked(app) && !state.scanning) state.take(id); };
+return { ...view,chips:[...view.chips.map((chip) => ({ ...chip,run:pick(chip.id) })),{ ...LET_GO,run:() => state.take(LET_GO_ID) }] };
+}
+function uiAwaitTimed(app,state) {
+return new Promise(function (resolve) {
+const finish = (id) => { window.clearTimeout(state.gc); state.gc = 0; resolve(id); };
+state.take = finish;
+state.cancel = () => finish(LET_GO_ID);
+state.ui.view = () => uiTimedView(app,state);
+uiArmGc(app,state,finish);
+uiRenderKeepingFocus(app);
+});
+}
+function uiCoolScan(app,state) {
+state.scanning = true;
+window.setTimeout(function () {
+state.scanning = false;
+if (state.ui) uiRenderKeepingFocus(app);
+},GC_TICK_MS);
+}
+function uiTimedStep(app,state,pick) {
+const step = pick === GC_ID ? rewardSweep(state.run) : rewardAct(state.run);
+state.run = step.reward;
+if (pick === GC_ID) state.clock.at = performance.now() + GC_TICK_MS;
+else if (!state.run.tagged && !step.done) uiCoolScan(app,state);
+if (step.texts.length > 0) uiSay(app,step.texts.join(' '),pick === GC_ID ? 'warn' :'info');
+return step;
+}
+async function uiTimedTurns(app,state) {
+const gen = app.game.gen;
+state.clock = { at:performance.now() + GC_GRACE_MS,every:GC_TICK_MS };
+state.scanning = false;
+for (let step = { done:false }; !step.done;) {
+const pick = await uiAwaitTimed(app,state);
+if (app.game.gen !== gen || pick === LET_GO_ID) return null;
+step = uiTimedStep(app,state,pick);
+}
+return state.run;
 }
 async function uiTurns(app,state) {
 const gen = app.game.gen;
@@ -48,8 +103,11 @@ const ui = uiHangKernel(app);
 state.ui = ui;
 state.run = first;
 try {
-return await uiTurns(app,state);
+return await (first.timed ? uiTimedTurns(app,state) :uiTurns(app,state));
 } finally {
+window.clearTimeout(state.gc);
+state.gc = 0;
+state.clock = null;
 uiReleaseStrip(app,state,ui);
 }
 }
@@ -59,8 +117,8 @@ uiCommitExt(app,withBeat(game.ext,LIT_BEAT));
 for (const text of LIT_LINES) await uiCastSay(app,{ text,kind:'reward' });
 }
 async function uiRestore(app,outcome) {
-const gen = app.game.gen;
-for (let again = true; again && app.game.gen === gen;) again = (await uiStoryChoice(app,restoreSheet(outcome))) === 'again';
+const card = await import('./grid-result-card.js');
+await card.uiShowResultCard(app,rewardCard(outcome));
 }
 async function uiSettle(app,done) {
 const gen = app.game.gen;
@@ -79,7 +137,7 @@ function uiRewardScene(app) {
 const state = uiRewardOf(app.game);
 const gen = app.game.gen;
 return uiExclusive(state,async function () {
-const first = createReward(app.game.ext);
+const first = uiPaced(app) ? createReward(app.game.ext) :createTimedReward(app.game.ext);
 const pick = await uiStoryChoice(app,openingSheet(first.tagged));
 if (app.game.gen !== gen) return;
 if (pick !== 'go') state.declined = true;

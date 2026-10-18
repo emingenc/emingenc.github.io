@@ -6,6 +6,7 @@ const UI_WALK_KEYS = {
 ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',
 w:'up',W:'up',s:'down',S:'down',a:'left',A:'left',d:'right',D:'right',
 };
+const UI_MAP_KEYS = new Set(['m','M','o','O']);
 const UI_INTERACT_KEYS = { Enter:1,' ':1 };
 const UI_HANDLED = { type:'handled' };
 function uiInteractFocus() {
@@ -36,7 +37,7 @@ return UI_HANDLED;
 }
 function uiPanelKeyResult(event,app) {
 if (event.key === 't' || event.key === 'T') return { type:'action',id:'travel-toggle' };
-if (event.key === 'o' || event.key === 'O') return event.repeat ? UI_HANDLED :{ type:'action',id:'map-open' };
+if (UI_MAP_KEYS.has(event.key)) return event.repeat ? UI_HANDLED :{ type:'action',id:'map-open' };
 if (event.key !== 'Escape') return null;
 return app.game.travelOpen ? { type:'action',id:'travel-toggle' } :{ type:'toggle-menu' };
 }

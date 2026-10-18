@@ -1,4 +1,4 @@
-import { HALVE } from '../game/finale/halve.js';
+import { HALVE,halveMiddle } from '../game/finale/halve.js';
 import { askLine } from '../game/finale/kernel.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiEntryAim } from './grid-kernel-halve-draw.js';
@@ -49,9 +49,13 @@ return 'MID ' + uiLowerMiddle(halve) + SEPARATOR + count + skips;
 function uiMoveChip(app,move) {
 return { id:move.id,label:move.label,aria:move.aria,run:() => uiHalveMove(app,move.delta) };
 }
+function uiFireWords(cursor,halve) {
+return cursor === halveMiddle(halve) ? { label:'MID ',aria:'Shoot the middle, entry ' } :{ label:'FIRE ',aria:'Fire at entry ' };
+}
 function uiFireChip(app,fire) {
 const cursor = uiHalveCursor(app.game.kernel);
-return { id:'halve-fire',label:'FIRE ' + cursor,aria:'Fire at entry ' + cursor,run:() => fire(uiHalveCursor(app.game.kernel)) };
+const words = uiFireWords(cursor,app.game.kernel.phase.halve);
+return { id:'halve-fire',label:words.label + cursor,aria:words.aria + cursor,run:() => fire(uiHalveCursor(app.game.kernel)) };
 }
 function uiHalveView(app,fire) {
 const phase = app.game.kernel.phase;

@@ -1,17 +1,15 @@
-import { applyWindowMap,createWindowMap,windowMapMistake } from '../game/fusion/window-map.js';
+import { applyWindowMap,bruteWindows,createWindowMap,windowMapMistake,windowMapPar } from '../game/fusion/window-map.js';
 import * as trial from '../game/fusion/window-map-trial.js';
-import { uiFusionBusy,uiFusionEnter,uiInstallFusion } from './grid-fusion-scene.js';
-import { LOOP_PINCH } from './grid-loop-pinch.js';
+import { uiFusionEnter,uiInstallFusion } from './grid-fusion-scene.js';
 import { uiPaintWindowMap } from './grid-window-map-draw.js';
 
 
 const WINDOW_MAP = {
 key:'windowMap',
 hook:'window-map',
-rules:{ create:createWindowMap,apply:applyWindowMap,mistake:windowMapMistake },
+rules:{ create:createWindowMap,apply:applyWindowMap,mistake:windowMapMistake,par:windowMapPar,brute:bruteWindows },
 trial:{ ...trial,due:trial.windowMapDue },
 paint:uiPaintWindowMap,
-others:(game) => uiFusionBusy(LOOP_PINCH,game),
 };
 
 function uiInstallWindowMap(app) {
@@ -21,4 +19,4 @@ function uiWindowMapEnter(app) {
 uiFusionEnter(WINDOW_MAP,app);
 }
 
-export { uiInstallWindowMap,uiWindowMapEnter };
+export { WINDOW_MAP,uiInstallWindowMap,uiWindowMapEnter };

@@ -16,6 +16,7 @@ import { uiHistoryPush } from './history.js';
 const UI_MAP_FAIL_TEXT = 'MAP could not load. Try again.';
 const UI_CASE_FAIL_TEXT = 'The case could not load. Try again.';
 const UI_RANK_FAIL_TEXT = 'RANK could not load. Try again.';
+const UI_FACE_FAIL_TEXT = 'The menu page could not load. Try again.';
 
 function uiStartGame(app) {
 uiHistoryPush(app);
@@ -27,22 +28,24 @@ app.game.notice = null;
 function uiResetAsked(app) {
 return app.menuOpen && Boolean(app.confirmReset);
 }
-function uiHandleToggleSound(app) {
+function uiSwitchSound(app) {
 app.soundOn = uiToggleSound();
 import('./jack-in-card.js').then(function (card) { card.uiMirrorSound(app); }).catch(function () {});
-if (uiResetAsked(app) || app.story) return;
+}
+function uiHandleToggleSound(app) {
+uiSwitchSound(app);
+if (uiResetAsked(app) || (app.menuOpen && app.menuFace) || app.story) return;
 if (app.menuOpen || !app.game.travelOpen) app.lastFocusKey = 'toggle-sound';
 }
-function uiAskResetProgress(app) {
-uiWalkReleaseAll(app);
-app.confirmReset = app.menuOpen ? 'menu' :'screen';
-app.menuOpen = true;
-app.lastFocusKey = 'reset-cancel';
+function uiHandleSoundKey(app) {
+uiSwitchSound(app);
+if (app.screen === 'grid' && !app.story && !app.menuOpen) uiShowToast(app,{ text:'SOUND ' + (app.soundOn ? 'ON' :'OFF') + '. X flips it.',kind:'info' });
 }
 function uiCancelReset(app) {
 if (!uiResetAsked(app)) return;
 app.menuOpen = app.confirmReset === 'menu';
 app.confirmReset = null;
+app.menuFace = null;
 app.lastFocusKey = 'reset-progress';
 }
 function uiConfirmReset(app) {
@@ -50,12 +53,14 @@ if (!uiResetAsked(app)) return;
 if (app.game.breach) uiLeaveBreach(app);
 uiResetGameState(app,uiResetGame(app.game.world));
 import('./audio-wire.js').then(function (wire) { wire.uiSyncHeroAudio(app); }).catch(function () {});
-Object.assign(app,{ lab:null,story:null,forge:null,rig:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,screen:'title',lastFocusKey:'title-start' });
+import('./grid-result-card.js').then(function (card) { card.uiCloseResultCard(app,null); }).catch(function () {});
+Object.assign(app,{ lab:null,story:null,forge:null,rig:null,run:null,pendingAnnounce:null,menuOpen:false,confirmReset:null,menuFace:null,screen:'title',lastFocusKey:'title-start' });
 }
 function uiOpenMenu(app) {
 uiWalkReleaseAll(app);
 app.menuOpen = true;
 app.confirmReset = null;
+app.menuFace = null;
 app.lastFocusKey = 'menu-close';
 }
 function uiMenuOpenerKey(app) {
@@ -67,6 +72,14 @@ function uiCloseMenu(app) {
 app.lastFocusKey = uiMenuOpenerKey(app);
 app.menuOpen = false;
 app.confirmReset = null;
+app.menuFace = null;
+}
+async function uiMenuFaceAct(app,verb) {
+try {
+await (await import('./menu-faces.js')).uiMenuFaceAct(app,verb);
+} catch (error) {
+uiShowToast(app,{ text:UI_FACE_FAIL_TEXT,kind:'info' });
+}
 }
 function uiMenuDisconnect(app) {
 if (app.screen !== 'breach' || uiBreachInert(app)) return;
@@ -116,10 +129,14 @@ await uiOpenFromMenu(app,{ open:(target) => uiOpenRigHost(target,rig),failText:r
 const UI_NAV_HANDLERS = {
 'title-start':uiStartGame,
 'toggle-sound':uiHandleToggleSound,
-'reset-progress':uiAskResetProgress,
+'reset-progress':(app) => uiMenuFaceAct(app,'reset'),
 'reset-confirm':uiConfirmReset,
 'reset-cancel':uiCancelReset,
+'toggle-sound-key':uiHandleSoundKey,
 'open-menu':uiOpenMenu,
+'menu-controls':(app) => uiMenuFaceAct(app,'controls'),
+'controls-back':(app) => uiMenuFaceAct(app,'back'),
+'controls-toggle':(app) => uiMenuFaceAct(app,'toggle'),
 'menu-close':uiCloseMenu,
 'menu-disconnect':uiMenuDisconnect,
 'map-open':uiHandleMapOpen,
@@ -138,4 +155,4 @@ if (Object.hasOwn(UI_NAV_HANDLERS,actionId)) await UI_NAV_HANDLERS[actionId](app
 else if (actionId.startsWith(UI_MENU_RIG_PREFIX)) await uiHandleRigReplay(app,actionId);
 }
 
-export { uiIsNavActionId, uiApplyNavAction };
+export { uiCloseMenu, uiIsNavActionId, uiApplyNavAction };

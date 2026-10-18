@@ -12,6 +12,13 @@ const FONT_TILES = 0.42;
 const FONT_FACE = 'px VT323, monospace';
 const MIDDLE = 0.5;
 const TRIM_TILES = 0.06;
+const TIMER = '#ff4d6d';
+const TIMER_TRACK = '#3a1a22';
+const TIMER_TILES = 0.16;
+const TIMER_AT = 0.76;
+const TIMER_FONT_TILES = 0.22;
+const TIMER_TEXT_AT = 0.2;
+const PINNED = 1;
 
 function uiPaintBlock(ctx,frame,place) {
 const { spot,block } = place;
@@ -34,6 +41,33 @@ const spot = uiSpotOf(BLOCK_CELLS[at],frame);
 if (spot) uiPaintBlock(ctx,frame,{ spot,block });
 });
 }
+function uiNextSweep(reward) {
+return reward.blocks.findLastIndex((block) => block.state === 'live' && block.n > PINNED);
+}
+function uiTimerShare(frame,clock) {
+if (frame.reducedMotion || !(clock.every > 0)) return 1;
+return Math.min(1,Math.max(0,(clock.at - frame.now) / clock.every));
+}
+function uiPaintTimer(ctx,frame,place) {
+const { spot,share } = place;
+const inset = frame.tile * INSET_TILES;
+const size = frame.tile - 2 * inset;
+const high = Math.max(2,Math.round(frame.tile * TIMER_TILES));
+ctx.fillStyle = TIMER_TRACK;
+ctx.fillRect(spot.left + inset,spot.top + frame.tile * TIMER_AT,size,high);
+ctx.fillStyle = TIMER;
+ctx.fillRect(spot.left + inset,spot.top + frame.tile * TIMER_AT,size * share,high);
+ctx.fillStyle = TEXT;
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.font = Math.round(frame.tile * TIMER_FONT_TILES) + FONT_FACE;
+ctx.fillText('GC',spot.left + frame.tile * MIDDLE,spot.top + frame.tile * TIMER_TEXT_AT);
+}
+function uiPaintSweepClock(ctx,frame,state) {
+const at = uiNextSweep(state.run);
+const spot = at >= 0 ? uiSpotOf(BLOCK_CELLS[at],frame) :null;
+if (spot) uiPaintTimer(ctx,frame,{ spot,share:uiTimerShare(frame,state.clock) });
+}
 function uiPaintTrim(ctx,frame) {
 const edge = Math.max(2,Math.round(frame.tile * TRIM_TILES));
 ctx.strokeStyle = TRIM;
@@ -48,6 +82,7 @@ const game = app.game;
 const state = game.reward && game.reward.gen === game.gen ? game.reward : null;
 if (!state) return;
 if (state.run) uiPaintBlocks(ctx,frame,state.run);
+if (state.run && state.clock) uiPaintSweepClock(ctx,frame,state);
 if (!state.run && drawerReady(game.progress.won,game.ext,game.save)) uiPaintTrim(ctx,frame);
 }
 

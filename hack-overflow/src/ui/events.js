@@ -25,8 +25,9 @@ app.clickByPointer = event.detail > 0;
 return uiHandleAction(app,el.getAttribute('data-action'));
 }
 function uiGlobalKeyAction(event,app) {
-if (event.key === 'm' || event.key === 'M') return 'toggle-sound';
+if (event.key === 'x' || event.key === 'X') return event.repeat ? null :'toggle-sound-key';
 if (app.story) return event.key === 'Escape' ? 'story-skip' :null;
+if (event.key === '?') return event.repeat ? null :'controls-toggle';
 return app.menuOpen && event.key === 'Escape' ? 'menu-close' :null;
 }
 function uiHandleKeyResult(app,result) {

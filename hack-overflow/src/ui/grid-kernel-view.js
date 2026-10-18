@@ -47,9 +47,18 @@ ask:parts.ask,tele:field ? uiFieldTele(phase) :parts.tele,note:uiTrialsText(app)
 chips:field ? uiFieldChips(phase,op) :uiFusionChips(parts,op),
 };
 }
+function uiAutoParts(kernel) {
+const auto = kernel.auto;
+if (!auto) return {};
+const hint = auto.hint();
+return { auto:auto.node,hint:hint ? 'YOUR CALL: ' + hint : '' };
+}
 function uiKernelView(app,op) {
 const kernel = app.game.kernel;
-return { n:kernel.n,head:'K' + kernel.n + ' ' + kernel.phase.name,count:'ROOT ' + kernel.root.n + SEPARATOR + 'YOU ' + kernel.root.you,...uiPartsOf(app,op) };
+return {
+n:kernel.n,head:'K' + kernel.n + ' ' + kernel.phase.name,count:'ROOT ' + kernel.root.n + SEPARATOR + 'YOU ' + kernel.root.you,
+...uiPartsOf(app,op),...uiAutoParts(kernel),
+};
 }
 
 export { uiFieldTele,uiKernelView };
