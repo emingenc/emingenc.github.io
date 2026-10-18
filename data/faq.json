@@ -13,7 +13,7 @@
         {
           "heading": "CAREER",
           "items": [
-            "2026 → Cresta AI (FDE)",
+            "2026–now Cresta AI (FDE)",
             "2023–26 Goodfintech (AI/SWE)",
             "2022–23 Vivoo (ML/SWE)",
             "2020–22 Novit AI (ML/SWE)"
@@ -33,13 +33,13 @@
     "repos": {
       "title": "OPEN SOURCE",
       "items": [
-        "★78  even_glasses — G1 BLE SDK (Python)",
-        "★52  telegramGPT — AI bot guide",
-        "★25  G1 Voice AI — Voice assistant",
-        "★18  g1_flutter — Flutter BLE bridge",
-        "★11  visionlink — Multi-device OS",
-        "★6   llm_adaptive_router — LLM routing",
-        "★4   smart_glass_mcp — AI connector"
+        "even_glasses — G1 BLE SDK (Python) · 78 stars",
+        "telegramGPT — AI bot guide · 52 stars",
+        "G1 Voice AI — Voice assistant · 25 stars",
+        "g1_flutter — Flutter BLE bridge · 18 stars",
+        "visionlink — Multi-device OS · 11 stars",
+        "llm_adaptive_router — LLM routing · 6 stars",
+        "smart_glass_mcp — AI connector · 4 stars"
       ],
       "footer": "github.com/emingenc — 46 repos"
     },
@@ -94,7 +94,7 @@
         "Building AI agents that ship — lessons from the field"
       ],
       "link": "/blog",
-      "linkText": "Visit blog →"
+      "linkText": "Visit blog"
     },
     "help": {
       "title": "COMMANDS",
@@ -112,7 +112,7 @@
     }
   },
   "faq": [
-    "══════ GREETINGS ══════",
+    "------ GREETINGS ------",
     {
       "q": "Who are you?",
       "keywords": [
@@ -210,7 +210,7 @@
         "tell a joke",
         "joke about"
       ],
-      "a": "Why did the AI engineer bring a ladder to work? They heard the models needed <i>higher</i> accuracy! 😄<br><br>Want to hear about Emin's actual work? Try /about or /repos."
+      "a": "Why did the AI engineer bring a ladder to work? They heard the models needed <i>higher</i> accuracy!<br><br>Want to hear about Emin's actual work? Try /about or /repos."
     },
     {
       "q": "Are you AI?",
@@ -236,7 +236,7 @@
       ],
       "a": "I'm Emin Gench's portfolio AI agent — no personal name, but you can call me whatever you like! Try /about to learn about Emin."
     },
-    "══════ ABOUT EMIN ══════",
+    "------ ABOUT EMIN ------",
     {
       "q": "Who is Emin Gench?",
       "keywords": [
@@ -303,7 +303,7 @@
         "country",
         "current city"
       ],
-      "a": "<b>Vancouver, BC, Canada 🇨🇦</b>. He's based there and works for Cresta AI."
+      "a": "<b>Vancouver, BC, Canada</b>. He's based there and works for Cresta AI."
     },
     {
       "q": "Career timeline?",
@@ -317,7 +317,7 @@
         "cv",
         "experience summary"
       ],
-      "a": "<b>2019:</b> Data Analyst @ Pharmacircle<br><b>2020–22:</b> ML/SWE @ Novit AI<br><b>2022–23:</b> ML/SWE @ Vivoo<br><b>2023–26:</b> AI/SWE @ Goodfintech<br><b>2026→:</b> FDE @ Cresta AI<br>Before tech: Air Defense Officer + BSc Aerospace Engineering."
+      "a": "<b>2019:</b> Data Analyst @ Pharmacircle<br><b>2020–22:</b> ML/SWE @ Novit AI<br><b>2022–23:</b> ML/SWE @ Vivoo<br><b>2023–26:</b> AI/SWE @ Goodfintech<br><b>2026–now:</b> FDE @ Cresta AI<br>Before tech: Air Defense Officer + BSc Aerospace Engineering."
     },
     {
       "q": "What did you do at Goodfintech?",
@@ -337,7 +337,7 @@
     {
       "q": "What does Emin do at Cresta?",
       "keywords": ["cresta","cresta ai","current role","fde","forward deployed"],
-      "a": "<b>Forward Deployed AI Engineer at Cresta AI (2026→):</b> Builds and deploys AI systems with enterprise customers. Works on real-time AI coaching, agentic systems, and customer-facing AI solutions. Backed by Sequoia and a16z."
+      "a": "<b>Forward Deployed AI Engineer at Cresta AI (2026–present):</b> Builds and deploys AI systems with enterprise customers. Works on real-time AI coaching, agentic systems, and customer-facing AI solutions. Backed by Sequoia and a16z."
     },
     {
       "q": "What is Archangel Autonomy?",
@@ -438,7 +438,7 @@
       ],
       "a": "Not publicly listed. Based on his career timeline (graduated Academy, served as officer, 8+ years in tech), late 20s to early 30s. His experience matters more than his age."
     },
-    "══════ OPEN SOURCE ══════",
+    "------ OPEN SOURCE ------",
     {
       "q": "What has Emin built?",
       "keywords": [
@@ -453,7 +453,7 @@
         "all repos",
         "all projects"
       ],
-      "a": "<b>46 repos, 250+ GitHub stars.</b> Top: even_glasses (★78), telegramGPT (★52), G1 Voice AI (★25), g1_flutter (★18), visionlink (★11). Full list: <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
+      "a": "<b>46 repos, 250+ GitHub stars.</b> Top: even_glasses (78 stars), telegramGPT (52 stars), G1 Voice AI (25 stars), g1_flutter (18 stars), visionlink (11 stars). Full list: <a href='https://github.com/emingenc' target='_blank'>github.com/emingenc</a>"
     },
     {
       "q": "Most popular project?",
@@ -465,7 +465,7 @@
         "best repo",
         "popular repo"
       ],
-      "a": "<b>even_glasses</b> (★78) — reverse-engineered BLE SDK for G1 smart glasses, the most-starred open-source project. See all: /repos."
+      "a": "<b>even_glasses</b> (78 stars) — reverse-engineered BLE SDK for G1 smart glasses, the most-starred open-source project. See all: /repos."
     },
     {
       "q": "GitHub link?",
@@ -501,7 +501,7 @@
         "chatbot",
         "gpt bot"
       ],
-      "a": "<b>telegramGPT</b> (★52) — step-by-step guide for building AI Telegram bots with Python + GPT. 🔗 <a href='https://github.com/emingenc/telegramGPT' target='_blank'>GitHub</a>"
+      "a": "<b>telegramGPT</b> (52 stars) — step-by-step guide for building AI Telegram bots with Python + GPT. <a href='https://github.com/emingenc/telegramGPT' target='_blank'>GitHub</a>"
     },
     {
       "q": "llm_adaptive_router?",
@@ -513,7 +513,7 @@
         "routing",
         "model selection"
       ],
-      "a": "<b>llm_adaptive_router</b> (★6) — intelligent LLM query router. Picks best model based on task, cost, and performance. Smart load balancer for LLMs. 🔗 <a href='https://github.com/emingenc/llm_adaptive_router' target='_blank'>GitHub</a>"
+      "a": "<b>llm_adaptive_router</b> (6 stars) — intelligent LLM query router. Picks best model based on task, cost, and performance. Smart load balancer for LLMs. <a href='https://github.com/emingenc/llm_adaptive_router' target='_blank'>GitHub</a>"
     },
     {
       "q": "harness-engineering?",
@@ -526,7 +526,7 @@
         "quality",
         "ai coding"
       ],
-      "a": "<b>harness-engineering</b> — Claude Code plugin enforcing code quality guardrails for AI-assisted development. Pre-commit hooks + CI for the AI coding era. 🔗 <a href='https://github.com/emingenc/harness-engineering' target='_blank'>GitHub</a>"
+      "a": "<b>harness-engineering</b> — Claude Code plugin enforcing code quality guardrails for AI-assisted development. Pre-commit hooks + CI for the AI coding era. <a href='https://github.com/emingenc/harness-engineering' target='_blank'>GitHub</a>"
     },
     {
       "q": "tomatodo?",
@@ -538,7 +538,7 @@
         "timer",
         "luck wheel"
       ],
-      "a": "<b>tomatodo</b> (★11) — Pomodoro timer with luck wheel rewards. Built with Vue.js. Gamified productivity. 🔗 <a href='https://github.com/emingenc/tomatodo' target='_blank'>GitHub</a>"
+      "a": "<b>tomatodo</b> (11 stars) — Pomodoro timer with luck wheel rewards. Built with Vue.js. Gamified productivity. <a href='https://github.com/emingenc/tomatodo' target='_blank'>GitHub</a>"
     },
     {
       "q": "agent-mastery?",
@@ -550,7 +550,7 @@
         "ai agent development",
         "langchain"
       ],
-      "a": "<b>agent-mastery</b> — AI agent development course: chatbots, RAG, LLMs, LangChain, agentic patterns. Zero to production. 🔗 <a href='https://github.com/emingenc/agent-mastery' target='_blank'>GitHub</a>"
+      "a": "<b>agent-mastery</b> — AI agent development course: chatbots, RAG, LLMs, LangChain, agentic patterns. Zero to production. <a href='https://github.com/emingenc/agent-mastery' target='_blank'>GitHub</a>"
     },
     {
       "q": "How to contribute?",
@@ -588,7 +588,7 @@
       ],
       "a": "No GitHub Sponsors. Best support: star repos, report bugs, submit PRs, share projects."
     },
-    "══════ TECH STACK ══════",
+    "------ TECH STACK ------",
     {
       "q": "Tech stack?",
       "keywords": [
@@ -740,7 +740,7 @@
       ],
       "a": "VS Code/Cursor, GitHub, Docker, AWS CLI, Python (FastAPI), TypeScript (Next.js), PostgreSQL, Redis, Claude Code. Pragmatic — whatever ships fastest."
     },
-    "══════ CAREER ADVICE ══════",
+    "------ CAREER ADVICE ------",
     {
       "q": "How did Emin learn?",
       "keywords": [
@@ -784,7 +784,7 @@
         "bootcamp",
         "without degree"
       ],
-      "a": "Emin's path: learn Python → build projects → open source → apply for ML roles. Aerospace engineering gave math skills; military gave discipline. <b>No bootcamp, no CS degree — consistent learning and building.</b>"
+      "a": "Emin's path: learn Python -> build projects -> open source -> apply for ML roles. Aerospace engineering gave math skills; military gave discipline. <b>No bootcamp, no CS degree — consistent learning and building.</b>"
     },
     {
       "q": "AI engineer roadmap?",
@@ -831,7 +831,7 @@
         "transition to software",
         "become developer"
       ],
-      "a": "Emin's approach: learn evenings/weekends → build real projects → share on GitHub → apply for transitional roles → leverage previous career strengths. <b>Consistency beats intensity. Ship things.</b>"
+      "a": "Emin's approach: learn evenings/weekends -> build real projects -> share on GitHub -> apply for transitional roles -> leverage previous career strengths. <b>Consistency beats intensity. Ship things.</b>"
     },
     {
       "q": "Bootcamp vs self-taught?",
@@ -853,7 +853,7 @@
       ],
       "a": "<b>Very important.</b> Emin's 46 repos are his portfolio. Open source demonstrates skills, attracts opportunities, builds reputation. Even small contributions show you can read code and collaborate."
     },
-    "══════ BLOG ══════",
+    "------ BLOG ------",
     {
       "q": "Blog?",
       "keywords": [
@@ -899,7 +899,7 @@
       ],
       "a": "No fixed schedule — writes when he ships or learns something worth sharing. Follow <a href='https://x.com/emingench' target='_blank'>X</a> or <a href='/blog/rss.xml'>RSS</a>."
     },
-    "══════ CONTACT ══════",
+    "------ CONTACT ------",
     {
       "q": "Contact Emin?",
       "keywords": [
@@ -913,7 +913,7 @@
         "github profile",
         "get in touch"
       ],
-      "a": "Best way to reach Emin: <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>. Open to open-source and smart-glasses projects. Not taking new roles.<br>🐙 <a href='https://github.com/emingenc' target='_blank'>GitHub</a><br>💼 <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a><br>🐦 <a href='https://x.com/emingench' target='_blank'>X/Twitter</a>"
+      "a": "Best way to reach Emin: <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a>. Open to open-source and smart-glasses projects. Not taking new roles.<br><a href='https://github.com/emingenc' target='_blank'>GitHub</a><br><a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a><br><a href='https://x.com/emingench' target='_blank'>X/Twitter</a>"
     },
     {
       "q": "Email?",
@@ -937,7 +937,7 @@
         "follow",
         "social channels"
       ],
-      "a": "💼 <a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a> | 🐦 <a href='https://x.com/emingench' target='_blank'>X/Twitter</a> | 🐙 <a href='https://github.com/emingenc' target='_blank'>GitHub</a>"
+      "a": "<a href='https://linkedin.com/in/emingench' target='_blank'>LinkedIn</a> | <a href='https://x.com/emingench' target='_blank'>X/Twitter</a> | <a href='https://github.com/emingenc' target='_blank'>GitHub</a>"
     },
     {
       "q": "Freelance?",
@@ -993,7 +993,7 @@
       ],
       "a": "I'm an AI agent <b>representing</b> Emin — not Emin himself. For direct contact: GitHub/LinkedIn. I'm here for questions about his work."
     },
-    "══════ THIS WEBSITE ══════",
+    "------ THIS WEBSITE ------",
     {
       "q": "What is this site?",
       "keywords": [
@@ -1032,7 +1032,7 @@
         "smollm2"
       ],
       "cites": "how",
-      "a": "<b>Two small models and a few tools, all in this tab.</b><ol><li><b>Plan.</b> Needle (26M parameters, a 36 MB download) reads your question and picks a tool. Site questions like this one go straight to this FAQ.</li><li><b>Act.</b> The tool reads Emin's own files: career, repos, skills, posts and notes on this site. Tap the file name under a tool call to see the lines it read.</li><li><b>Observe and evaluate.</b> SmolLM2 (360M parameters, optional, a 278 MB download or 369 MB without WebGPU) helps check the result and handles small talk. A reply that claims something Emin's files don't say is dropped.</li></ol><p>Both run in your browser: Needle on WASM, SmolLM2 on WebGPU (or WASM). <b>0 servers, 0 API calls, no analytics on the home page.</b> Reading a notes file takes about 1 ms (measured 2026-10-17). More than 400 automated tests cover the router, the loop and the answers. The <a href='/static#how'>profile page</a> draws the loop.</p><p>26M + 360M parameters, over 7,000× smaller than Kimi K3 (2.8 trillion). Not the size, it's how you use it.</p>"
+      "a": "<b>Two small models and a few tools, all in this tab.</b><ol><li><b>Plan.</b> Needle (26M parameters, a 36 MB download) reads your question and picks a tool. Site questions like this one go straight to this FAQ.</li><li><b>Act.</b> The tool reads Emin's own files: career, repos, skills, posts and notes on this site. Tap the file name under a tool call to see the lines it read.</li><li><b>Observe and evaluate.</b> SmolLM2 (360M parameters, optional, a 278 MB download or 369 MB without WebGPU) helps check the result and handles small talk. A reply that claims something Emin's files don't say is dropped.</li></ol><p>Both run in your browser: Needle on WASM, SmolLM2 on WebGPU (or WASM). <b>0 servers, 0 API calls, no analytics on the home page.</b> Reading a notes file takes about 1 ms (measured 2026-10-17). More than 500 automated tests cover the router, the loop and the answers. The <a href='/static#how'>profile page</a> draws the loop.</p><p>26M + 360M parameters, over 7,000× smaller than Kimi K3 (2.8 trillion). Not the size, it's how you use it.</p>"
     },
     {
       "q": "How built?",
@@ -1139,7 +1139,7 @@
         "does this site have tests"
       ],
       "cites": "how",
-      "a": "<b>The source repository is private.</b> The built site is public: <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>github.com/emingenc/emingenc.github.io</a>. More than 400 automated tests cover the router, the loop, the answers and the pages. The <a href='/static#how'>profile page</a> has the diagram and the measured numbers."
+      "a": "<b>The source repository is private.</b> The built site is public: <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>github.com/emingenc/emingenc.github.io</a>. More than 500 automated tests cover the router, the loop, the answers and the pages. The <a href='/static#how'>profile page</a> has the diagram and the measured numbers."
     },
     {
       "q": "Why this site?",
@@ -1172,7 +1172,7 @@
       ],
       "a": "WebGPU: <b>15-30 tok/s</b>. First token: 2-5s. WASM: ~3x slower. FAQ and tools: <b>instant</b>, they bypass the chat model. Reading a notes file takes about 1 ms (measured 2026-10-17 in Chromium on a laptop)."
     },
-    "══════ CRESTA AI ══════",
+    "------ CRESTA AI ------",
     {
       "q": "What is Cresta?",
       "keywords": [
@@ -1205,7 +1205,7 @@
       ],
       "a": "<b>2026</b>."
     },
-    "══════ PREVIOUS COMPANIES ══════",
+    "------ PREVIOUS COMPANIES ------",
     {
       "q": "Goodfintech?",
       "keywords": [
@@ -1247,9 +1247,9 @@
         "move on",
         "switch jobs"
       ],
-      "a": "Natural career progression — each move represented growth: data analyst → ML engineer → AI engineer → FDE. Follows interesting work and growth."
+      "a": "Natural career progression — each move represented growth: data analyst -> ML engineer -> AI engineer -> FDE. Follows interesting work and growth."
     },
-    "══════ MILITARY ══════",
+    "------ MILITARY ------",
     {
       "q": "Military service?",
       "keywords": [
@@ -1272,7 +1272,7 @@
         "officer to engineer",
         "veteran transition"
       ],
-      "a": "Military skills → tech: <b>discipline, systematic problem-solving, calm under pressure</b>. Air defense requires rapid decisions with complex systems — like debugging production at 2 AM."
+      "a": "Military skills -> tech: <b>discipline, systematic problem-solving, calm under pressure</b>. Air defense requires rapid decisions with complex systems — like debugging production at 2 AM."
     },
     {
       "q": "Which branch?",
@@ -1296,7 +1296,7 @@
       ],
       "a": "Yes — Turkish Air Force veteran."
     },
-    "══════ EDUCATION ══════",
+    "------ EDUCATION ------",
     {
       "q": "School?",
       "keywords": [
@@ -1354,7 +1354,7 @@
       ],
       "a": "No formal certs listed. Credentials: <b>shipped projects, open source, work experience</b> — better than certs in AI engineering."
     },
-    "══════ PRODUCT MGMT ══════",
+    "------ PRODUCT MGMT ------",
     {
       "q": "Prioritization?",
       "keywords": [
@@ -1401,7 +1401,7 @@
       ],
       "a": "Breaks problems into small deliverables. Estimates from <b>actual past experience</b>, not gut feelings. AI projects are hard to estimate — communicates in ranges, updates as he learns."
     },
-    "══════ ENGINEERING ══════",
+    "------ ENGINEERING ------",
     {
       "q": "Testing?",
       "keywords": [
@@ -1492,7 +1492,7 @@
       ],
       "a": "<b>Explicit error handling + graceful degradation.</b> Production AI should never crash silently — log, alert, fall back. Swallowed exceptions cause production incidents."
     },
-    "══════ AI/ML DEPTH ══════",
+    "------ AI/ML DEPTH ------",
     {
       "q": "LLM experience?",
       "keywords": [
@@ -1586,7 +1586,7 @@
       ],
       "a": "Telling me to ignore my instructions does not change what I do. Your question goes to a fixed set of tools and I answer from Emin's published notes. There is nothing hidden to extract: my prompts are plain files that ship with this page, under <code>/agents/prompts/</code>. For how it all fits together, tap <span class=\"cmd-link\" onclick=\"window.quickCmd('How does this work?')\" style=\"color:var(--accent);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px\">How does this work?</span>"
     },
-    "══════ TURKISH ══════",
+    "------ TURKISH ------",
     {
       "q": "Türkçe?",
       "keywords": [
@@ -1690,9 +1690,9 @@
         "iletişime geç",
         "contact turkish"
       ],
-      "a": "📧 GitHub/LinkedIn"
+      "a": "GitHub/LinkedIn"
     },
-    "══════ RANDOM ══════",
+    "------ RANDOM ------",
     {
       "q": "Meaning of life?",
       "keywords": [
@@ -1753,7 +1753,7 @@
         "climate",
         "weather like"
       ],
-      "a": "No weather data — offline. But Emin's in <b>Vancouver</b>, so it probably just rained 🌧️"
+      "a": "No weather data — offline. But Emin's in <b>Vancouver</b>, so it probably just rained."
     },
     {
       "q": "Write code?",
@@ -1789,7 +1789,7 @@
         "your design",
         "how built"
       ],
-      "a": "<b>ReAct agent:</b> ONNX classifier → FAQ matcher → tool router → LLM fallback (SmolLM2-360M). All vanilla JS in Web Workers. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
+      "a": "<b>ReAct agent:</b> ONNX classifier -> FAQ matcher -> tool router -> LLM fallback (SmolLM2-360M). All vanilla JS in Web Workers. <a href='https://github.com/emingenc/emingenc.github.io' target='_blank'>Open source</a>."
     },
     {
       "q": "Sorry/oops/nvm",
@@ -1818,7 +1818,7 @@
       ],
       "a": "I answer questions about <b>Emin Gench:</b> career, 46 repos, tech skills, education, military background, blog, contact. Commands: /about, /repos, /contact, /skills, /blog, /help."
     },
-    "══════ RECRUITER ══════",
+    "------ RECRUITER ------",
     {
       "q": "Opportunities?",
       "keywords": [
@@ -1899,7 +1899,7 @@
       ],
       "a": "Based in Vancouver, BC. Specific arrangement not detailed. Has built a remote-compatible career through open source."
     },
-    "══════ DESIGN ══════",
+    "------ DESIGN ------",
     {
       "q": "Who designed site?",
       "keywords": [
@@ -1934,7 +1934,7 @@
       ],
       "a": "Engineer, not designer. But builds usable interfaces. Design is intentionally technical and minimal — function over decoration."
     },
-    "══════ SECURITY ══════",
+    "------ SECURITY ------",
     {
       "q": "Security practices?",
       "keywords": [
@@ -1958,7 +1958,7 @@
       ],
       "a": "Email GitHub/LinkedIn directly. Takes security seriously, responds promptly."
     },
-    "══════ PERSONAL ══════",
+    "------ PERSONAL ------",
     {
       "q": "Hobbies?",
       "keywords": [
@@ -2034,7 +2034,7 @@
       ],
       "a": "Informal mentorship through open source and writing. Code, READMEs, and blog posts help developers learn by example. Thoughtful emails welcome."
     },
-    "══════ PHILOSOPHY ══════",
+    "------ PHILOSOPHY ------",
     {
       "q": "Coding philosophy?",
       "keywords": [
@@ -2067,7 +2067,7 @@
         "learn from failure",
         "lesson"
       ],
-      "a": "Emin's path (aerospace → military → self-taught coder → AI engineer) involved plenty of wrong turns and dead ends. He treats failures as data points — learn what doesn't work, adjust, try again. His self-taught journey means he's comfortable with not knowing and figuring things out."
+      "a": "Emin's path (aerospace -> military -> self-taught coder -> AI engineer) involved plenty of wrong turns and dead ends. He treats failures as data points — learn what doesn't work, adjust, try again. His self-taught journey means he's comfortable with not knowing and figuring things out."
     },
     {
       "q": "Biggest influence?",
@@ -2092,7 +2092,7 @@
         "surprise",
         "neat"
       ],
-      "a": "Try these:<br><br>⚡ <b>/device</b> — see your hardware fingerprint<br>🖥️ <b>/screen</b> — your display specs<br>📶 <b>/network</b> — your connection speed<br>🎲 <b>/lucky</b> — random facts about this site<br>📊 <b>/status</b> — everything at a glance<br>⏰ <b>/time</b> — clock with timezone<br><br>This all runs <b>locally in your browser</b> — no servers involved!"
+      "a": "Try these:<br><br><b>/device</b> — see your hardware fingerprint<br><b>/screen</b> — your display specs<br><b>/network</b> — your connection speed<br><b>/lucky</b> — random facts about this site<br><b>/status</b> — everything at a glance<br><b>/time</b> — clock with timezone<br><br>This all runs <b>locally in your browser</b> — no servers involved!"
     },
     {
       "q": "What tools are on this site?",
@@ -2114,7 +2114,7 @@
         "tools here",
         "available tools"
       ],
-      "a": "On this site you can:<br><br>💬 <b>Chat with me</b> — this agent runs 100% locally in your browser<br>🎮 <b>Play HACK://OVERFLOW</b> — a LeetCode puzzle game solved one line of Python at a time (<b>/game</b>)<br>📖 <b>Read the blog</b> — AI engineering posts (<b>/blog</b>)<br>🛠️ <b>Device commands</b> — <b>/time</b>, <b>/device</b>, <b>/screen</b>, <b>/network</b>, <b>/status</b>, <b>/lucky</b><br><br>Ask me about Emin's career, projects, or skills anytime."
+      "a": "On this site you can:<br><br><b>Chat with me</b> — this agent runs 100% locally in your browser<br><b>Play HACK://OVERFLOW</b> — a LeetCode puzzle game solved one line of Python at a time (<b>/game</b>)<br><b>Read the blog</b> — AI engineering posts (<b>/blog</b>)<br><b>Device commands</b> — <b>/time</b>, <b>/device</b>, <b>/screen</b>, <b>/network</b>, <b>/status</b>, <b>/lucky</b><br><br>Ask me about Emin's career, projects, or skills anytime."
     },
     {
       "q": "What is the learning hub?",
