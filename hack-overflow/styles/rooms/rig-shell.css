@@ -7,6 +7,7 @@
   gap:var(--sp-3);
   min-width:0;
   padding:calc(var(--sp-3) + env(safe-area-inset-top,0px)) var(--sp-5) 0;
+  background:transparent;
 }
 
 .rig-screen button {

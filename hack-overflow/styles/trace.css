@@ -45,7 +45,7 @@
 .breach-trace-seg-filled {
   border-color:var(--red);
   background:var(--red);
-  box-shadow:0 0 6px rgba(255,77,94,0.65);
+  box-shadow:0 0 6px rgba(255,77,61,0.65);
 }
 
 .breach-trace-seg-fresh {
@@ -60,7 +60,7 @@
   }
   40% {
     transform:scale(1.8);
-    box-shadow:0 0 16px rgba(255,77,94,0.95);
+    box-shadow:0 0 16px rgba(255,77,61,0.95);
   }
 }
 
@@ -77,7 +77,7 @@
   }
   40% {
     transform:scale(1.8);
-    box-shadow:0 0 16px rgba(255,77,94,0.95);
+    box-shadow:0 0 16px rgba(255,77,61,0.95);
   }
 }
 

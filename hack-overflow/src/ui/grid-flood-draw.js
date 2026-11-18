@@ -1,5 +1,7 @@
 import { floodSpec } from '../game/power/flood.js';
+import { uiDrawArt } from './art-hook.js';
 import { uiRegisterActorPainter } from './grid-draw-actors.js';
+import { uiBobAt,uiEyedInk,uiFillCentred } from './grid-glyph-art.js';
 import { uiSpotOf } from './grid-spot.js';
 
 const BIT_ART = ['.x.x.','xxxxx','xexex','xxxxx','.x.x.'];
@@ -27,20 +29,13 @@ const RING_MS = 220;
 const FULL_TURN = Math.PI * 2;
 
 function uiBobOf(frame) {
-return frame.reducedMotion ? 0 :Math.sin(frame.now / BOB_MS) * BOB_TILES * frame.tile;
+return uiBobAt(frame,BOB_MS,BOB_TILES);
 }
 function uiDrawBit(ctx,frame,spot) {
 const actor = spot.actor;
-const pixel = (frame.tile * BIT_TILES) / BIT_ART[0].length;
-const left = (actor.col - frame.camera.col) * frame.tile + (frame.tile - pixel * BIT_ART[0].length) * HALF;
-const top = (actor.row - frame.camera.row) * frame.tile + uiBobOf(frame) + (frame.tile - pixel * BIT_ART.length) * HALF;
-BIT_ART.forEach(function (line,row) {
-[...line].forEach(function (glyph,col) {
-if (glyph === '.') return;
-ctx.fillStyle = glyph === 'e' ? frame.palette.bg :frame.palette.red;
-ctx.fillRect(left + col * pixel,top + row * pixel,pixel,pixel);
-});
-});
+const cell = { left:(actor.col - frame.camera.col) * frame.tile,top:(actor.row - frame.camera.row) * frame.tile + uiBobOf(frame) };
+if (uiDrawArt(ctx,'flood-bit',{ ...cell,size:frame.tile,dpr:frame.dpr,accent:'red' })) return;
+uiFillCentred(ctx,BIT_ART,{ ...cell,tile:frame.tile,share:BIT_TILES,ink:uiEyedInk(frame.palette.bg,frame.palette.red) });
 }
 function uiRegisterFloodPainter() {
 uiRegisterActorPainter('flood',uiDrawBit);

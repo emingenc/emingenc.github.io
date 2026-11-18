@@ -1,4 +1,6 @@
 import { VOLLEY } from '../game/power/volley.js';
+import { uiDrawArt } from './art-hook.js';
+import { uiFillGlyphs } from './grid-glyph-art.js';
 import { uiSpotOf } from './grid-spot.js';
 
 const PIXELS = 8;
@@ -22,14 +24,9 @@ const ROUND_INK = 'cyan';
 const SQUARE_INK = 'magenta';
 
 function uiPaintBrace(ctx,frame,spot) {
+if (uiDrawArt(ctx,'brace',{ left:spot.left,top:spot.top,size:frame.tile,dpr:frame.dpr,palette:frame.palette,accent:'cyan' })) return;
 const pixel = frame.tile / PIXELS;
-BRACE_ART.forEach(function (line,row) {
-[...line].forEach(function (glyph,col) {
-if (glyph === '.') return;
-ctx.fillStyle = frame.palette[BRACE_INKS[glyph]];
-ctx.fillRect(spot.left + col * pixel,spot.top + row * pixel,pixel,pixel);
-});
-});
+uiFillGlyphs(ctx,BRACE_ART,{ left:spot.left,top:spot.top,pixel,ink:(glyph) => frame.palette[BRACE_INKS[glyph]] });
 }
 function uiText(ctx,frame,place) {
 ctx.font = Math.round(frame.tile * place.size) + FONT;

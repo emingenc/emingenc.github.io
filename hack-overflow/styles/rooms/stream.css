@@ -4,6 +4,7 @@
   flex-direction:column;
   gap:var(--sp-4);
   min-width:0;
+  background:transparent;
 }
 
 .stream-head {
@@ -82,7 +83,7 @@
   padding:var(--sp-4);
   border:1px solid var(--border);
   border-radius:var(--radius-md);
-  background:var(--panel);
+  background:color-mix(in srgb,var(--panel) 48%,transparent);
 }
 
 .stream-card-title {
@@ -163,7 +164,7 @@
   padding:var(--sp-3);
   border:2px solid var(--border);
   border-radius:var(--radius-md);
-  background:var(--bg);
+  background:color-mix(in srgb,var(--bg) 48%,transparent);
 }
 
 .stream-readout-title {
@@ -364,16 +365,16 @@ body:has(.stream-play) {
 
 .stream-lane.is-bad {
   border-color:var(--red);
-  background:rgba(255,77,94,0.16);
+  background:rgba(255,77,61,0.16);
 }
 
 .stream-lane.is-good {
-  background:rgba(0,230,128,0.16);
+  background:rgba(25,240,200,0.16);
 }
 
 .stream-lane.is-flick {
   border-color:var(--cyan);
-  background:rgba(45,226,255,0.16);
+  background:rgba(76,201,255,0.16);
 }
 
 .stream-lane-key {
@@ -455,7 +456,7 @@ body:has(.stream-play) {
 .stream-chunk.is-key {
   border-color:var(--primary);
   color:var(--primary);
-  background:rgba(0,230,128,0.14);
+  background:rgba(25,240,200,0.14);
 }
 
 .stream-chunk.is-noise {
@@ -517,13 +518,13 @@ body:has(.stream-play) {
 }
 
 .stream-window.is-good {
-  background:rgba(0,230,128,0.16);
+  background:rgba(25,240,200,0.16);
 }
 
 .stream-window.is-bad,
 .stream-window.is-cut {
   border-color:var(--red);
-  background:rgba(255,77,94,0.16);
+  background:rgba(255,77,61,0.16);
 }
 
 .stream-window-head {

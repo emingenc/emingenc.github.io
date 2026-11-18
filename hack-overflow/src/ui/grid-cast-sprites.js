@@ -1,3 +1,5 @@
+import { uiDrawArt } from './art-hook.js';
+
 const UI_CAST_ART = {
 patch:{ rows:['..kkkk..','.kkkkkk.','.kssvsk.','.ksssssk','..ssss..','.jjjjjj.','jjjjjjjj','.jjjjjj.','.jj..jj.','.dd..dd.'],
 ink:{ k:'dim',s:'text',v:'cyan',j:'amber',d:'dim' } },
@@ -7,10 +9,12 @@ ink:{ c:'dim',b:'cyan',p:'primary' } },
 keys:{ rows:['........','........','........','........','........','..tttt..','pppppppp','p......p'],ink:{ t:'text',p:'primary' } },
 sentinel:{ rows:['..mmmm..','.mmmmmm.','mmmeemmm','mmmeemmm','mmmmmmmm','.m.mm.m.','.m....m.'],ink:{ m:'magenta',e:'red' } },
 };
+const PAINTED = { screen:'bench-screen',keys:'bench-keys' };
 const ART_TILES = 0.86;
 const HALF = 0.5;
 
 function uiPaintCastArt(ctx,frame,spot) {
+if (uiDrawArt(ctx,PAINTED[spot.name] || spot.name,{ left:spot.left,top:spot.top,size:frame.tile,dpr:frame.dpr,palette:frame.palette,accent:'magenta' })) return;
 const art = UI_CAST_ART[spot.name];
 const width = art.rows[0].length;
 const pixel = (frame.tile * ART_TILES) / Math.max(width,art.rows.length);

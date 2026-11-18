@@ -2,6 +2,7 @@
   margin:0;
   padding:var(--sp-2) var(--sp-3);
   border-left:3px solid var(--magenta, #ff3fa4);
+  background:color-mix(in srgb,var(--bg) 90%,transparent);
   color:var(--text);
   font-size:var(--fs-sm);
   line-height:1.35;

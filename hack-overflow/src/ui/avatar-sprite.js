@@ -1,4 +1,6 @@
 
+import { uiDrawArt } from './art-hook.js';
+
 const UI_AVATAR_PX = 16;
 const UI_CLEAR = '.';
 const UI_AVATAR_INKS = {
@@ -139,6 +141,11 @@ layer.runs.forEach(function (run) { ctx.fillRect(spot.x + run.col * spot.unit,sp
 });
 }
 function uiPaintAvatar(ctx,place,look) {
+const box = { left:place.x,top:place.y,size:place.unit * UI_AVATAR_PX,dpr:ctx.getTransform?.().a || 1 };
+if (uiDrawArt(ctx,'hero-shadow',box)) {
+box.top -= look.bob * place.unit;
+if (uiDrawArt(ctx,`hero${look.rootRank ? '-root' :''}-${look.facing}-${look.frame}`,box)) return;
+}
 const inks = uiAvatarInks(look.palette,look.rootRank);
 uiPaintLayers(ctx,UI_SHADOW_LAYERS,{ ...place,inks });
 uiPaintLayers(ctx,UI_AVATAR_LAYERS[look.facing][look.frame],{ ...place,y:place.y - look.bob * place.unit,inks });

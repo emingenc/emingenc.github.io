@@ -1,6 +1,7 @@
 import { uiChainCellsOf,uiChainOwed } from './grid-chain.js';
 import { uiCosmeticWatch } from './cosmetic-pay.js';
 import { uiPaintBit,uiPaintRows } from './grid-chain-bit.js';
+import { uiDrawArt } from './art-hook.js';
 
 const MARK = ['.ccc.','c...c','....c','...c.','..c..','.....','..c..'];
 const MARK_ART = { rows:MARK,ink:{ c:'amber' } };
@@ -14,6 +15,8 @@ const pixel = Math.max(1,Math.round((frame.tile * MARK_TILES) / MARK[0].length))
 const left = (cell.col - frame.camera.col) * frame.tile + frame.tile * MARK_LEFT_TILES;
 const top = (cell.row - frame.camera.row) * frame.tile + frame.tile * MARK_TOP_TILES;
 if (left + pixel * MARK[0].length < 0 || top + pixel * MARK.length < 0 || left > frame.width || top > frame.height) return;
+const art = { left:left - pixel,top,size:pixel * MARK.length,dpr:frame.dpr,palette:frame.palette,accent:'amber' };
+if (uiDrawArt(ctx,'quest-mark',art)) return;
 uiPaintRows(ctx,MARK_SHADOW,{ palette:frame.palette,pixel,left:left + pixel,top:top + pixel });
 uiPaintRows(ctx,MARK_ART,{ palette:frame.palette,pixel,left,top });
 }

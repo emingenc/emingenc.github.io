@@ -5,6 +5,15 @@
   flex-direction:column;
   gap:var(--sp-3);
   min-width:0;
+  background:transparent;
+}
+
+html:has(.screen.forge-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-forge.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.screen.forge-screen) {
+  background:transparent;
 }
 
 .forge-head {
@@ -121,7 +130,7 @@
   padding:var(--sp-2) var(--sp-3);
   border:1px solid var(--border);
   border-radius:var(--radius-sm);
-  background:var(--panel);
+  background:color-mix(in srgb,var(--panel) 48%,transparent);
   font-family:var(--font-display);
   font-size:var(--fs-lg);
   white-space:nowrap;
@@ -153,7 +162,7 @@
   aspect-ratio:var(--cols,10) / var(--rows,7);
   border:1px solid var(--border);
   border-radius:var(--radius-sm);
-  background:var(--bg);
+  background:transparent;
   touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
 }
@@ -337,7 +346,7 @@
   padding:var(--sp-4);
   border:1px solid var(--border);
   border-radius:var(--radius-md);
-  background:var(--panel);
+  background:color-mix(in srgb,var(--panel) 48%,transparent);
 }
 
 .forge-summary.is-won {

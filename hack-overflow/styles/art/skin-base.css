@@ -1,0 +1,208 @@
+:root {
+  --neon-violet:#7a5cff;
+  --glow-sm:0 0 6px color-mix(in srgb,var(--primary) 40%,transparent);
+  --glow-md:0 0 14px color-mix(in srgb,var(--primary) 38%,transparent),0 0 2px color-mix(in srgb,var(--primary) 70%,transparent);
+  --bloom:0 0 28px color-mix(in srgb,var(--neon-violet) 38%,transparent),0 0 64px color-mix(in srgb,var(--neon-violet) 14%,transparent);
+  --rim:inset 0 1px 0 color-mix(in srgb,var(--text) 20%,transparent);
+  --bevel:inset 0 -2px 0 color-mix(in srgb,var(--bg) 60%,transparent);
+  --sheen:linear-gradient(180deg,color-mix(in srgb,var(--text) 14%,transparent),transparent 55%);
+  --halo:var(--glow-md),var(--rim);
+}
+
+body::before {
+  opacity:0.2;
+}
+
+.btn,.btn-icon,.btn-icon-lg,.chip {
+  border-color:color-mix(in srgb,var(--primary) 30%,var(--border));
+  background-image:var(--sheen);
+  box-shadow:var(--rim),var(--bevel);
+}
+
+.btn-ghost {
+  background-image:none;
+  box-shadow:none;
+}
+
+.btn-primary {
+  border-color:var(--bright);
+  box-shadow:var(--rim),var(--bevel),0 0 14px color-mix(in srgb,var(--primary) 45%,transparent);
+}
+
+.btn-warn {
+  box-shadow:var(--rim),var(--bevel),0 0 10px color-mix(in srgb,var(--amber) 30%,transparent);
+}
+
+.chip {
+  text-shadow:0 0 6px color-mix(in srgb,var(--bright) 45%,transparent);
+}
+
+.chip-error {
+  box-shadow:var(--rim),var(--bevel),0 0 10px color-mix(in srgb,var(--red) 40%,transparent);
+  text-shadow:0 0 6px color-mix(in srgb,var(--red) 45%,transparent);
+}
+
+.btn:active:not(:disabled),.btn-icon:active:not(:disabled),.btn-icon-lg:active:not(:disabled),.chip:active {
+  box-shadow:inset 0 2px 6px color-mix(in srgb,var(--bg) 70%,transparent);
+}
+
+.btn:disabled,.btn-icon:disabled,.btn-icon-lg:disabled {
+  box-shadow:none;
+}
+
+.btn-link:hover {
+  text-shadow:0 0 8px color-mix(in srgb,var(--primary) 50%,transparent);
+}
+
+.test-panel {
+  border-color:color-mix(in srgb,var(--primary) 28%,var(--border));
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--primary) 5%,transparent),transparent 70%);
+  box-shadow:var(--rim),0 0 18px color-mix(in srgb,var(--neon-violet) 16%,transparent);
+}
+
+.panel-header {
+  text-shadow:0 0 8px color-mix(in srgb,var(--bright) 40%,transparent);
+}
+
+.example-result.pass {
+  text-shadow:0 0 6px color-mix(in srgb,var(--primary) 45%,transparent);
+}
+
+.example-result.fail {
+  text-shadow:0 0 6px color-mix(in srgb,var(--red) 45%,transparent);
+}
+
+.hud {
+  border-bottom-color:color-mix(in srgb,var(--primary) 30%,var(--border));
+  box-shadow:0 1px 10px color-mix(in srgb,var(--primary) 12%,transparent);
+}
+
+.hud-family {
+  text-shadow:0 0 8px color-mix(in srgb,var(--bright) 40%,transparent);
+}
+
+.hud-pill-open,.hud-pill-won {
+  box-shadow:var(--glow-sm);
+}
+
+@media (max-width:767px) {
+  .action-row-primary {
+    border-top-color:color-mix(in srgb,var(--primary) 30%,var(--border));
+    box-shadow:0 -6px 18px color-mix(in srgb,var(--bg) 80%,transparent),0 -1px 10px color-mix(in srgb,var(--primary) 12%,transparent);
+  }
+}
+
+.shield-screen .shield-now {
+  font-family:var(--font-body);
+  font-weight:700;
+  text-shadow:0 0 6px currentColor,0 0 18px color-mix(in srgb,currentColor 55%,transparent);
+}
+
+.shield-breach,.turret-tag {
+  background-color:color-mix(in srgb,var(--panel) 60%,var(--bg));
+  background-image:none;
+}
+
+html:has(.screen.lab-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-lab.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.screen.lab-screen) {
+  background:transparent;
+}
+
+html:has(.screen.stream-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-stream.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.screen.stream-screen) {
+  background:transparent;
+}
+
+html:has(.screen.lg-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-ledger.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.screen.lg-screen) {
+  background:transparent;
+}
+
+html:has(.rig-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-shell.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.rig-screen) {
+  background:transparent;
+}
+
+html:has(.screen.beam-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-beam.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.screen.beam-screen) {
+  background:transparent;
+}
+
+html:has(.screen.net-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-net.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.screen.net-screen) {
+  background:transparent;
+}
+
+html:has(.screen.pincer-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-pincer.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.screen.pincer-screen) {
+  background:transparent;
+}
+
+@media (max-width:700px) {
+  html:root:has(.screen.lab-screen) {
+    background-position:0 0,0% 50%,0 0;
+  }
+
+  html:root:has(.screen.stream-screen) {
+    background-position:0 0,100% 50%,0 0;
+  }
+
+  html:root:has(.screen.lg-screen) {
+    background-position:0 0,0% 50%,0 0;
+  }
+
+  html:root:has(.screen.beam-screen) {
+    background-position:0 0,5% 50%,0 0;
+  }
+
+  html:root:has(.screen.net-screen) {
+    background-position:0 0,0% 50%,0 0;
+  }
+
+  html:root:has(.screen.pincer-screen) {
+    background-position:0 0,5% 50%,0 0;
+  }
+
+  html:root:has(.screen.shield-screen) {
+    background-position:0 0,100% 50%,0 0;
+  }
+
+  html:root:has(.screen.turret-screen) {
+    background-position:0 0,100% 50%,0 0;
+  }
+
+  html:root:has(.screen.forge-screen) {
+    background-position:0 0,5% 50%,0 0;
+  }
+
+  html:root:has(.rig-screen) {
+    background-position:0 0,95% 50%,0 0;
+  }
+}
+
+html .arena-coach,
+html .stream-intro {
+  color:color-mix(in srgb,var(--dim) 55%,var(--text));
+  text-shadow:0 0 4px var(--bg),0 0 9px var(--bg),0 1px 1px var(--bg);
+}

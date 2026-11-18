@@ -1,0 +1,175 @@
+
+.breach-screen {
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(180deg,color-mix(in srgb,var(--bg) 62%,transparent),color-mix(in srgb,var(--bg) 78%,transparent)),
+    url('../../assets/art/ui/breach-tall.webp');
+  background-repeat:no-repeat;
+  background-size:cover;
+}
+
+@media (orientation:landscape) {
+  .breach-screen {
+    background-image:
+      linear-gradient(180deg,color-mix(in srgb,var(--bg) 62%,transparent),color-mix(in srgb,var(--bg) 78%,transparent)),
+      url('../../assets/art/ui/breach-wide.webp');
+  }
+}
+
+.breach-status {
+  background-color:color-mix(in srgb,var(--panel) 90%,var(--bg));
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--primary) 7%,transparent),transparent 60%);
+  border-color:color-mix(in srgb,var(--primary) 34%,var(--border));
+  box-shadow:var(--rim),0 8px 16px -8px rgba(7,11,20,0.95),0 0 18px color-mix(in srgb,var(--neon-violet) 18%,transparent);
+}
+
+.breach-lock-case {
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--primary) 9%,var(--panel)),color-mix(in srgb,var(--bg) 92%,var(--panel)));
+  border-color:color-mix(in srgb,var(--primary) 42%,var(--border));
+  box-shadow:var(--rim),inset 0 0 14px color-mix(in srgb,var(--bg) 70%,transparent),0 0 10px color-mix(in srgb,var(--primary) 16%,transparent);
+}
+
+.breach-lock-shackle {
+  border-color:var(--amber);
+  box-shadow:0 0 10px color-mix(in srgb,var(--amber) 45%,transparent),inset 0 0 4px color-mix(in srgb,var(--amber) 35%,transparent);
+}
+
+.breach-lock-keyhole {
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--amber) 70%,transparent));
+}
+
+.breach-lock-pins::after {
+  border-top-color:color-mix(in srgb,var(--amber) 55%,transparent);
+}
+
+.breach-pin {
+  --pin-edge:color-mix(in srgb,var(--border) 90%,var(--primary));
+  background-color:color-mix(in srgb,var(--bg) 70%,var(--panel));
+  box-shadow:inset 0 0 0 1px var(--pin-edge),inset 0 2px 4px color-mix(in srgb,var(--bg) 85%,transparent);
+}
+
+.breach-pin::before {
+  background-image:linear-gradient(90deg,color-mix(in srgb,var(--text) 22%,transparent),transparent 45%,color-mix(in srgb,var(--bg) 45%,transparent));
+}
+
+.breach-pin-example::after {
+  background:var(--cyan);
+  box-shadow:0 0 6px var(--cyan),0 0 2px var(--text);
+}
+
+.breach-pin-max {
+  --pin-edge:color-mix(in srgb,var(--amber) 75%,var(--border));
+  background-color:color-mix(in srgb,var(--amber) 9%,var(--bg));
+}
+
+.breach-pin-set {
+  background-color:color-mix(in srgb,var(--bright) 14%,var(--bg));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bright) 80%,var(--primary)),0 0 8px color-mix(in srgb,var(--bright) 45%,transparent);
+}
+
+.breach-pin-set::before {
+  background-image:linear-gradient(90deg,color-mix(in srgb,var(--text) 55%,transparent),transparent 55%,color-mix(in srgb,var(--bg) 35%,transparent));
+  box-shadow:0 0 8px var(--bright),0 0 2px var(--text);
+}
+
+.breach-pin-pass {
+  background-color:color-mix(in srgb,var(--primary) 16%,var(--bg));
+  box-shadow:inset 0 0 0 1px var(--primary),0 0 0 1px color-mix(in srgb,var(--cyan) 55%,transparent),0 0 8px color-mix(in srgb,var(--cyan) 40%,transparent);
+}
+
+.breach-pin-pass::before {
+  background-image:linear-gradient(90deg,color-mix(in srgb,var(--text) 30%,transparent),transparent 50%);
+  box-shadow:0 0 6px var(--primary);
+}
+
+.breach-pin-fail {
+  background-color:color-mix(in srgb,var(--red) 20%,var(--bg));
+  box-shadow:inset 0 0 0 1px var(--red),0 0 8px color-mix(in srgb,var(--red) 55%,transparent);
+}
+
+.breach-pin-fail::before {
+  background-image:linear-gradient(90deg,color-mix(in srgb,var(--text) 28%,transparent),transparent 50%);
+  box-shadow:0 0 6px var(--red);
+}
+
+.breach-pin-jam {
+  background-color:color-mix(in srgb,var(--red) 24%,var(--bg));
+  box-shadow:inset 0 0 0 1px var(--red),0 0 14px color-mix(in srgb,var(--red) 75%,transparent),0 0 2px var(--text);
+}
+
+.breach-pin-jam::before {
+  background-image:linear-gradient(90deg,color-mix(in srgb,var(--text) 35%,transparent),transparent 50%);
+  box-shadow:0 0 8px var(--red),0 0 2px var(--text);
+}
+
+.breach-packet {
+  background-image:linear-gradient(180deg,var(--text),transparent);
+}
+
+.breach-pins {
+  color:var(--bright);
+  text-shadow:0 0 8px color-mix(in srgb,var(--bright) 40%,transparent);
+}
+
+.breach-lock-word {
+  text-shadow:0 0 8px color-mix(in srgb,var(--amber) 55%,transparent);
+}
+
+.breach-trace-seg:not(.breach-trace-seg-filled) {
+  border-color:color-mix(in srgb,var(--amber) 48%,var(--border));
+  background-color:color-mix(in srgb,var(--bg) 80%,var(--panel));
+  box-shadow:inset 0 1px 3px color-mix(in srgb,var(--bg) 85%,transparent);
+}
+
+.breach-trace-seg-filled {
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--text) 38%,transparent),transparent 65%);
+  box-shadow:0 0 10px color-mix(in srgb,var(--red) 80%,transparent),0 0 2px var(--text);
+}
+
+.breach-trace-label {
+  text-shadow:0 0 8px color-mix(in srgb,var(--primary) 45%,transparent);
+}
+
+.breach-trace-hot .breach-trace-label {
+  text-shadow:0 0 8px color-mix(in srgb,var(--red) 55%,transparent);
+}
+
+.breach-trace-warn {
+  text-shadow:0 0 6px color-mix(in srgb,var(--amber) 50%,transparent);
+}
+
+.traced-title {
+  text-shadow:0 0 14px color-mix(in srgb,var(--red) 60%,transparent);
+}
+
+.exploit-btn {
+  border-style:dashed;
+  border-color:color-mix(in srgb,var(--cyan) 55%,var(--border));
+  background-color:color-mix(in srgb,var(--panel) 85%,var(--bg));
+  box-shadow:var(--rim),var(--bevel),0 0 10px color-mix(in srgb,var(--cyan) 18%,transparent);
+}
+
+.exploit-key {
+  text-shadow:0 0 8px color-mix(in srgb,var(--cyan) 60%,transparent);
+}
+
+.exploit-status {
+  text-shadow:0 0 6px color-mix(in srgb,var(--amber) 50%,transparent);
+}
+
+.exploit-btn:disabled {
+  border-color:var(--border);
+  box-shadow:none;
+}
+
+.exploit-note-capped {
+  text-shadow:0 0 6px color-mix(in srgb,var(--amber) 40%,transparent);
+}
+
+.tray-chip.chip-struck::after {
+  box-shadow:0 0 6px var(--red);
+}
+
+.decrypt-noise {
+  text-shadow:0 0 6px color-mix(in srgb,var(--cyan) 55%,transparent);
+}

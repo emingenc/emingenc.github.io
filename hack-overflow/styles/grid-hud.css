@@ -312,7 +312,7 @@
   border:2px solid var(--amber);
   border-radius:var(--radius-sm);
   background:var(--panel);
-  box-shadow:0 0 18px rgba(255,176,32,0.55),inset 0 0 12px rgba(255,176,32,0.2);
+  box-shadow:0 0 18px rgba(255,200,87,0.55),inset 0 0 12px rgba(255,200,87,0.2);
   color:var(--amber);
 }
 

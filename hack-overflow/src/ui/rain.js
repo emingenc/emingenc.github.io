@@ -3,7 +3,7 @@ import { uiPrefersReducedMotion } from './dom.js';
 const UI_RAIN_FONT_PX = 16;
 const UI_RAIN_DROP_STEP = 0.5;
 const UI_RAIN_RESET_CHANCE = 0.02;
-const UI_RAIN_COLOR = '#00e680';
+const UI_RAIN_COLOR = '#19f0c8';
 const UI_RAIN_GLYPHS = '01{}[]<>/\\$#@+-';
 function uiRainResize(canvas) {
 const ratio = window.devicePixelRatio || 1;
@@ -26,7 +26,7 @@ function uiRainGlyph() {
 return UI_RAIN_GLYPHS.charAt(Math.floor(Math.random() * UI_RAIN_GLYPHS.length));
 }
 function uiRainFade(state) {
-state.ctx.fillStyle = 'rgba(3, 8, 5, 0.15)';
+state.ctx.fillStyle = 'rgba(7, 11, 20, 0.15)';
 state.ctx.fillRect(0,0,state.size.width,state.size.height);
 }
 function uiRainDrawColumn(state,drop,index) {

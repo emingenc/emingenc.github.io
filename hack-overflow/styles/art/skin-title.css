@@ -1,0 +1,74 @@
+
+.title-screen {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb,var(--bg) 52%,transparent) 0%,
+      color-mix(in srgb,var(--bg) 62%,transparent) 45%,
+      color-mix(in srgb,var(--bg) 74%,transparent) 70%,
+      color-mix(in srgb,var(--bg) 60%,transparent) 100%),
+    url('../../assets/art/ui/title-tall.webp') center / cover no-repeat,
+    var(--bg);
+  animation:title-art-in 700ms ease-out both;
+}
+
+@media (orientation:landscape) {
+  .title-screen {
+    background:
+      radial-gradient(ellipse 34% 56% at 50% 56%,
+        color-mix(in srgb,var(--bg) 78%,transparent) 0%,
+        color-mix(in srgb,var(--bg) 62%,transparent) 60%,
+        transparent 100%),
+      linear-gradient(180deg,
+        color-mix(in srgb,var(--bg) 46%,transparent) 0%,
+        color-mix(in srgb,var(--bg) 20%,transparent) 40%,
+        color-mix(in srgb,var(--bg) 38%,transparent) 100%),
+      url('../../assets/art/ui/title-wide.webp') center / cover no-repeat,
+      var(--bg);
+  }
+}
+
+@keyframes title-art-in {
+  from { opacity:0.6; }
+  to { opacity:1; }
+}
+
+.rain-canvas {
+  opacity:0.28;
+}
+
+.title-screen::after {
+  opacity:0.4;
+}
+
+.title-kicker,.tagline,.title-footer .btn-link {
+  text-shadow:0 1px 3px var(--bg),0 0 10px var(--bg),0 0 22px color-mix(in srgb,var(--bg) 80%,transparent);
+}
+
+.title-kicker,.tagline {
+  color:var(--text);
+}
+
+.wordmark {
+  text-shadow:0 2px 0 var(--bg),0 0 16px color-mix(in srgb,var(--primary) 60%,transparent),0 0 48px color-mix(in srgb,var(--neon-violet) 40%,transparent);
+}
+
+.title-actions .btn-ghost {
+  background-color:color-mix(in srgb,var(--bg) 78%,transparent);
+  border-color:color-mix(in srgb,var(--primary) 45%,var(--border));
+  box-shadow:var(--rim),0 4px 12px -4px var(--bg);
+}
+
+.ending-screen {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb,var(--bg) 70%,transparent),
+      color-mix(in srgb,var(--bg) 82%,transparent)),
+    url('../../assets/art/ui/ending-wide.webp') center / cover no-repeat,
+    var(--bg);
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .title-screen {
+    animation:none;
+  }
+}

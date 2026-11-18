@@ -1,5 +1,6 @@
 import { TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
 import { swarmReady, swarmWindowMs } from '../game/rooms/turret.js';
+import { uiDrawArt } from './art-hook.js';
 import { uiEl } from './dom.js';
 import { uiTurretBayBand, uiTurretBoardClass, uiTurretLaneMark, uiTurretSlotView } from './turret-board.js';
 import { TRAVEL_MS, uiTurretFrozen, uiTurretNoping } from './turret-flow.js';
@@ -7,8 +8,8 @@ import { uiRaceStrip } from './turret-race.js';
 
 
 const PALETTE = {
-  bg: '#030805', grid: '#0a1a10', lane: '#1d3a27', rush: '#ff4d5e', cyan: '#2de2ff', magenta: '#ff3ea5', amber: '#ffb020',
-  red: '#ff4d5e', gold: '#ffd24a', text: '#e3f5e8', dim: '#86a38f', dockOff: '#3a1630', flash: '#ffffff', fuseBack: '#2a1a08', paired: '#86a38f',
+  bg: '#070b14', grid: '#0a1a10', lane: '#1f4a5a', rush: '#ff4d3d', cyan: '#4cc9ff', magenta: '#ff5c8a', amber: '#ffc857',
+  red: '#ff4d3d', gold: '#ffd24a', text: '#e8f1ff', dim: '#8296b0', dockOff: '#3a1630', flash: '#ffffff', fuseBack: '#2a1a08', paired: '#8296b0',
 };
 const SCENE_FALLBACK = { width: 360, height: 200 };
 const LOG_BAND = 26;
@@ -29,6 +30,13 @@ const LANE_DY_MAX = 14;
 const LANE_DY_SHARE = 0.18;
 const LANES = 3;
 const DRONE_ART = ['x.....x', 'xx...xx', '.xxxxx.', '.xx.xx.', '..xxx..'];
+const DRONE_ART_SCALE = 1.5;
+const DRONE_EDGE = 3;
+const GLOW_BLUR = 9;
+const HALO_GROW = 2.6;
+const HALO_ALPHA = 0.22;
+const GROUND_ALPHA = 0.7;
+const GROUND_REACH = 8;
 const PX_BAY = 4;
 const PX_LANE = 2;
 const FONT_BAY = 22;
@@ -44,6 +52,7 @@ const ARROW_STEP = 10;
 const ARROW_SIZE = 5;
 const ARROW_GAP = 12;
 const ARROW_HEAD = 16;
+const ARROW_DROP = 4;
 const MS_PER_S = 1000;
 const RAM_MS = 300;
 const SHAKE = { dock: 4, hit: 7 };
@@ -64,6 +73,10 @@ const TURRET_AT = { x: 26, lift: 16 };
 const BARREL_DOTS = 4;
 const BARREL_STEP = 6;
 const BARREL_SIZE = 5;
+const BARREL_CORE = 1.6;
+const HUB_R = 5;
+const MUZZLE_R = 3.2;
+const BASE_RIM = 1.5;
 const TURRET_BASE = { w: 22, h: 12 };
 const CORNER = 10;
 const CORNER_W = 3;
@@ -124,10 +137,23 @@ function uiSceneText(ctx, text, at) {
   ctx.font = 'bold ' + (at.size || FONT_SMALL) + 'px VT323, monospace';
   ctx.textAlign = at.align || 'center';
   ctx.textBaseline = 'middle';
+  if (at.edge) {
+    ctx.lineWidth = DRONE_EDGE;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = at.edge;
+    ctx.strokeText(text, at.x, at.y);
+  }
   ctx.fillStyle = at.color || PALETTE.text;
   ctx.fillText(text, at.x, at.y);
 }
-function uiSceneDrone(ctx, at, look) {
+function uiSceneGlow(ctx, color) {
+  ctx.shadowColor = color;
+  ctx.shadowBlur = GLOW_BLUR;
+}
+function uiSceneUnglow(ctx) {
+  ctx.shadowBlur = 0;
+}
+function uiSceneDroneBody(ctx, at, look) {
   const px = look.px;
   const left = at.x - (DRONE_ART[0].length * px) / 2;
   const top = at.y - (DRONE_ART.length * px) / 2;
@@ -137,21 +163,31 @@ function uiSceneDrone(ctx, at, look) {
       if (cell === 'x') ctx.fillRect(left + col * px, top + rowIndex * px, px, px);
     });
   });
-  uiSceneText(ctx, String(look.v), { x: at.x, y: at.y, size: look.font, color: PALETTE.text });
+}
+function uiSceneDrone(ctx, at, look) {
+  const size = DRONE_ART[0].length * look.px * DRONE_ART_SCALE;
+  const box = { left: at.x - size / 2, top: at.y - size / 2, size, dpr: look.dpr, accent: look.accent };
+  const painted = uiDrawArt(ctx, 'drone', box);
+  if (!painted) uiSceneDroneBody(ctx, at, look);
+  uiSceneText(ctx, String(look.v), { x: at.x, y: at.y, size: look.font, color: PALETTE.text, edge: painted ? PALETTE.bg : '' });
 }
 function uiSceneDots(ctx, segment, upto) {
   const length = Math.hypot(segment.to.x - segment.from.x, segment.to.y - segment.from.y);
   const count = Math.max(1, Math.ceil(length / BEAM_DOT));
+  const size = segment.size || BEAM_SIZE;
   for (let i = 0; i <= count * upto; i += 1) {
     const point = uiSceneLerp(segment.from, segment.to, i / count);
-    ctx.fillRect(point.x - BEAM_SIZE / 2, point.y - BEAM_SIZE / 2, BEAM_SIZE, BEAM_SIZE);
+    ctx.fillRect(point.x - size / 2, point.y - size / 2, size, size);
   }
 }
 
 
 function uiSceneBackdrop(ctx, geo, frame) {
+  ctx.clearRect(-GROUND_REACH, -GROUND_REACH, geo.width + GROUND_REACH * 2, geo.height + GROUND_REACH * 2);
+  ctx.globalAlpha = GROUND_ALPHA;
   ctx.fillStyle = PALETTE.bg;
-  ctx.fillRect(0, 0, geo.width, geo.height);
+  ctx.fillRect(-GROUND_REACH, -GROUND_REACH, geo.width + GROUND_REACH * 2, geo.height + GROUND_REACH * 2);
+  ctx.globalAlpha = 1;
   ctx.fillStyle = PALETTE.grid;
   const drift = frame.reduced ? 0 : (frame.now / GRID_DRIFT_MS) % GRID_STEP;
   for (let left = 0; left < geo.width; left += GRID_STEP) ctx.fillRect(left, 0, 1, geo.height);
@@ -177,14 +213,16 @@ function uiSceneQueue(ctx, geo, view) {
   const shift = frame.reduced ? 1 : Math.min(1, (frame.now - arena.fx.shiftAt) / TRAVEL_MS);
   const rush = state.next >= TURRET_W1.rushFrom;
   ctx.fillStyle = rush ? PALETTE.rush : PALETTE.lane;
+  uiSceneGlow(ctx, ctx.fillStyle);
   for (let j = 0; j < LANES; j += 1) {
     const lane = uiSceneLane(geo, j);
     ctx.fillRect(lane.x - CORNER, lane.y + CORNER, CORNER * 2, 1);
   }
+  uiSceneUnglow(ctx);
   ahead.forEach(function (value, j) {
     const at = uiSceneLane(geo, j + (1 - uiSceneEase(shift)) * arena.fx.shifted);
     const gold = uiSceneGoldNext(state, j);
-    uiSceneDrone(ctx, at, { px: PX_LANE, color: gold ? PALETTE.gold : PALETTE.magenta, v: uiTurretLaneMark(state, j, value), font: FONT_SMALL });
+    uiSceneDrone(ctx, at, { px: PX_LANE, color: gold ? PALETTE.gold : PALETTE.magenta, v: uiTurretLaneMark(state, j, value), font: FONT_SMALL, dpr: geo.ratio, accent: gold ? 'amber' : 'magenta' });
   });
   return ahead.length;
 }
@@ -206,12 +244,14 @@ function uiSceneDock(ctx, geo, dock) {
   const size = geo.dock + dock.bump * CORNER;
   const half = size / 2;
   ctx.fillStyle = dock.color;
+  uiSceneGlow(ctx, dock.color);
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function ([sx, sy]) {
     const cornerX = dock.at.x + sx * half;
     const cornerY = dock.at.y + sy * half;
     ctx.fillRect(Math.min(cornerX, cornerX - sx * CORNER), cornerY - CORNER_W / 2, CORNER, CORNER_W);
     ctx.fillRect(cornerX - CORNER_W / 2, Math.min(cornerY, cornerY - sy * CORNER), CORNER_W, CORNER);
   });
+  uiSceneUnglow(ctx);
 }
 function uiSceneDocks(ctx, geo, view) {
   const { arena, frame } = view;
@@ -271,16 +311,18 @@ function uiSceneAnswerArrow(ctx, geo, view) {
   const { arena, dock } = view;
   const right = uiSceneBoardSide(arena, geo) === 'right';
   const step = right ? { x: ARROW_STEP, y: 0 } : { x: 0, y: ARROW_STEP };
-  const from = { x: dock.x + (right ? geo.dock / 2 + ARROW_GAP : 0), y: dock.y + geo.dock / 2 + FUSE_GAP * 4 };
+  const from = { x: dock.x + (right ? geo.dock / 2 + ARROW_GAP : 0), y: dock.y + geo.dock / 2 + FUSE_GAP * ARROW_DROP };
   const count = Math.max(0, Math.floor(((right ? geo.width - from.x : geo.height - from.y) - ARROW_HEAD) / ARROW_STEP));
   ctx.fillStyle = PALETTE.cyan;
+  uiSceneGlow(ctx, PALETTE.cyan);
   for (let i = 0; i < count; i += 1) ctx.fillRect(from.x + step.x * i - ARROW_SIZE / 2, from.y + step.y * i - ARROW_SIZE / 2, ARROW_SIZE, ARROW_SIZE);
+  uiSceneUnglow(ctx);
   uiSceneText(ctx, right ? '▶' : '▼', { x: from.x + step.x * count, y: from.y + step.y * count, size: FONT_BAY, color: PALETTE.cyan });
 }
 function uiSceneDockedDrone(ctx, at, view) {
-  const { arena, drone, index, landed } = view;
+  const { arena, drone, index, landed, dpr } = view;
   ctx.globalAlpha = uiSceneDragged(arena, index) ? DRAG_DIM_ALPHA : 1;
-  uiSceneDrone(ctx, at, { px: landed ? PX_BAY : PX_LANE + 1, color: drone.gold ? PALETTE.gold : PALETTE.magenta, v: drone.v, font: FONT_BAY });
+  uiSceneDrone(ctx, at, { px: landed ? PX_BAY : PX_LANE + 1, color: drone.gold ? PALETTE.gold : PALETTE.magenta, v: drone.v, font: FONT_BAY, dpr, accent: drone.gold ? 'amber' : 'magenta' });
   ctx.globalAlpha = 1;
 }
 function uiSceneBayDrone(ctx, geo, view) {
@@ -289,7 +331,7 @@ function uiSceneBayDrone(ctx, geo, view) {
   const dock = uiSceneBay(geo, index);
   const at = uiSceneLerp(uiSceneLane(geo, 0), dock, uiSceneEase(travel));
   const landed = travel >= 1;
-  uiSceneDockedDrone(ctx, at, { arena, drone, index, landed });
+  uiSceneDockedDrone(ctx, at, { arena, drone, index, landed, dpr: geo.ratio });
   const burning = drone.fuseMs !== null && !arena.state.assist && landed;
   const fuse = burning ? uiSceneFuse(ctx, geo, { drone, at: dock, arena, frame }) : null;
   if (landed) uiScenePicked(ctx, geo, { arena, index, dock, now: frame.now });
@@ -299,17 +341,48 @@ function uiSceneAim(geo, arena) {
   if (arena.drag && arena.drag.on) return { x: arena.drag.x, y: arena.drag.y };
   return uiSceneBay(geo, arena.picked);
 }
+function uiSceneStroke(ctx, line, look) {
+  const { from, to } = line;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = look.width;
+  ctx.strokeStyle = look.color;
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.lineTo(to.x, to.y);
+  ctx.stroke();
+}
+function uiSceneDisc(ctx, at, look) {
+  ctx.fillStyle = look.color;
+  ctx.beginPath();
+  ctx.arc(at.x, at.y, look.r, 0, Math.PI * 2);
+  ctx.fill();
+}
+function uiSceneBase(ctx, pivot) {
+  const reach = TURRET_BASE.w / 2 - TURRET_BASE.h / 2;
+  const row = pivot.y + TURRET_BASE.h / 2;
+  const ends = { from: { x: pivot.x - reach, y: row }, to: { x: pivot.x + reach, y: row } };
+  uiSceneStroke(ctx, ends, { width: TURRET_BASE.h, color: PALETTE.dim });
+  uiSceneStroke(ctx, ends, { width: TURRET_BASE.h - BASE_RIM * 2, color: PALETTE.bg });
+}
+function uiSceneBarrel(ctx, pivot, tip) {
+  uiSceneGlow(ctx, PALETTE.cyan);
+  uiSceneStroke(ctx, { from: pivot, to: tip }, { width: BARREL_SIZE, color: PALETTE.cyan });
+  uiSceneDisc(ctx, pivot, { r: HUB_R, color: PALETTE.cyan });
+  uiSceneUnglow(ctx);
+  uiSceneStroke(ctx, { from: pivot, to: tip }, { width: BARREL_CORE, color: PALETTE.text });
+  uiSceneGlow(ctx, PALETTE.text);
+  uiSceneDisc(ctx, tip, { r: MUZZLE_R, color: PALETTE.text });
+  uiSceneUnglow(ctx);
+}
 function uiSceneTurret(ctx, geo, arena) {
   const pivot = uiScenePivot(geo);
   const aim = uiSceneAim(geo, arena);
   const angle = Math.atan2(aim.y - pivot.y, aim.x - pivot.x);
-  ctx.fillStyle = PALETTE.cyan;
-  for (let i = 1; i <= BARREL_DOTS; i += 1) {
-    ctx.fillRect(pivot.x + Math.cos(angle) * i * BARREL_STEP - BARREL_SIZE / 2, pivot.y + Math.sin(angle) * i * BARREL_STEP - BARREL_SIZE / 2, BARREL_SIZE, BARREL_SIZE);
-  }
-  ctx.fillStyle = PALETTE.dim;
-  ctx.fillRect(pivot.x - TURRET_BASE.w / 2, pivot.y, TURRET_BASE.w, TURRET_BASE.h);
-  return { x: pivot.x + Math.cos(angle) * BARREL_DOTS * BARREL_STEP, y: pivot.y + Math.sin(angle) * BARREL_DOTS * BARREL_STEP };
+  const length = BARREL_DOTS * BARREL_STEP;
+  const tip = { x: pivot.x + Math.cos(angle) * length, y: pivot.y + Math.sin(angle) * length };
+  uiSceneBase(ctx, pivot);
+  uiSceneBarrel(ctx, pivot, tip);
+  return tip;
 }
 function uiSceneBeam(ctx, geo, view) {
   const { beam, tip, frame } = view;
@@ -317,10 +390,13 @@ function uiSceneBeam(ctx, geo, view) {
   if (age < 0 || age >= BEAM_MS + BEAM_FADE_MS) return false;
   const progress = frame.reduced ? 1 : Math.min(1, age / BEAM_MS);
   const bay = uiSceneBay(geo, beam.bayIndex);
-  ctx.globalAlpha = age > BEAM_MS ? 1 - (age - BEAM_MS) / BEAM_FADE_MS : 1;
+  const fade = age > BEAM_MS ? 1 - (age - BEAM_MS) / BEAM_FADE_MS : 1;
+  const legs = [{ from: tip, to: bay, upto: Math.min(1, progress * 2) }, { from: bay, to: uiSceneSlotPoint(geo, beam.slot), upto: Math.max(0, progress * 2 - 1) }];
   ctx.fillStyle = PALETTE.cyan;
-  uiSceneDots(ctx, { from: tip, to: bay }, Math.min(1, progress * 2));
-  uiSceneDots(ctx, { from: bay, to: uiSceneSlotPoint(geo, beam.slot) }, Math.max(0, progress * 2 - 1));
+  [{ size: BEAM_SIZE * HALO_GROW, alpha: fade * HALO_ALPHA }, { size: BEAM_SIZE, alpha: fade }].forEach(function (pass) {
+    ctx.globalAlpha = pass.alpha;
+    legs.forEach((leg) => uiSceneDots(ctx, { from: leg.from, to: leg.to, size: pass.size }, leg.upto));
+  });
   ctx.globalAlpha = 1;
   return true;
 }
@@ -371,7 +447,7 @@ function uiPaintTurretScene(canvas, arena, frame) {
   const surface = uiSceneContext(canvas, size);
   if (!surface) return null;
   const { ctx, ratio } = surface;
-  const geo = uiSceneGeo(size, arena.state);
+  const geo = { ...uiSceneGeo(size, arena.state), ratio };
   const shake = uiSceneShake(frame, arena.fx);
   ctx.setTransform(ratio, 0, 0, ratio, shake.x * ratio, shake.y * ratio);
   uiSceneBackdrop(ctx, geo, frame);

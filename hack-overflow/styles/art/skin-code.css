@@ -1,0 +1,156 @@
+:root {
+  --nv:var(--neon-violet,#7a5cff);
+  --steel:color-mix(in srgb,var(--text) 40%,var(--border));
+  --steel-hi:color-mix(in srgb,var(--text) 34%,transparent);
+  --steel-lo:color-mix(in srgb,var(--bg) 70%,transparent);
+  --bracket:color-mix(in srgb,var(--primary) 82%,var(--text));
+}
+
+.code-panel {
+  border-color:color-mix(in srgb,var(--primary) 72%,var(--border));
+  background:
+    linear-gradient(var(--bracket),var(--bracket)) 4px 4px / 18px 2px no-repeat,
+    linear-gradient(var(--bracket),var(--bracket)) 4px 4px / 2px 18px no-repeat,
+    linear-gradient(var(--bracket),var(--bracket)) calc(100% - 4px) 4px / 18px 2px no-repeat,
+    linear-gradient(var(--bracket),var(--bracket)) calc(100% - 4px) 4px / 2px 18px no-repeat,
+    linear-gradient(var(--bracket),var(--bracket)) 4px calc(100% - 4px) / 18px 2px no-repeat,
+    linear-gradient(var(--bracket),var(--bracket)) 4px calc(100% - 4px) / 2px 18px no-repeat,
+    linear-gradient(var(--bracket),var(--bracket)) calc(100% - 4px) calc(100% - 4px) / 18px 2px no-repeat,
+    linear-gradient(var(--bracket),var(--bracket)) calc(100% - 4px) calc(100% - 4px) / 2px 18px no-repeat,
+    linear-gradient(180deg,color-mix(in srgb,var(--primary) 7%,transparent),transparent 45%),
+    color-mix(in srgb,var(--bg) 38%,var(--panel));
+  box-shadow:
+    inset 0 0 22px color-mix(in srgb,var(--bg) 70%,transparent),
+    0 0 0 2px var(--bg),
+    0 0 0 3px color-mix(in srgb,var(--nv) 88%,var(--text)),
+    0 0 14px color-mix(in srgb,var(--nv) 60%,transparent),
+    0 0 40px color-mix(in srgb,var(--nv) 22%,transparent);
+}
+
+.code-line-num {
+  color:color-mix(in srgb,var(--dim) 80%,var(--primary));
+}
+
+.editor-content {
+  background:color-mix(in srgb,var(--bg) 62%,transparent) content-box;
+  box-shadow:0 1px 0 color-mix(in srgb,var(--nv) 55%,transparent);
+}
+
+.caret {
+  box-shadow:0 0 6px var(--primary),0 0 2px var(--primary);
+}
+
+.tray-chip {
+  --edge:var(--steel);
+  --socket:5px;
+  background-origin:border-box;
+  mask:radial-gradient(circle at 20px 50%,transparent calc(var(--socket) - 0.5px),#000 var(--socket)) -20px -20px / calc(100% + 40px) calc(100% + 40px) no-repeat border-box no-clip;
+}
+
+.tray-chip:not(.chip-struck)::after {
+  content:'';
+  float:right;
+  box-shadow:var(--knob-x) var(--knob-y) 0 8px var(--edge);
+  clip-path:circle(var(--knob-r) at var(--knob-x) var(--knob-y));
+}
+
+.tray-chip {
+  --knob-r:4px;
+  --knob-x:calc(var(--sp-4) + 3px);
+  --knob-y:0.6em;
+  --knob-y:0.5lh;
+  --inner:color-mix(in srgb,var(--primary) 45%,transparent);
+  border-color:var(--edge);
+  background-image:
+    radial-gradient(circle at 0 50%,transparent calc(var(--socket) - 0.5px),var(--edge) var(--socket),var(--edge) calc(var(--socket) + 1.5px),transparent calc(var(--socket) + 2px)),
+    linear-gradient(180deg,color-mix(in srgb,var(--text) 15%,transparent),transparent 46%,color-mix(in srgb,var(--bg) 40%,transparent));
+  box-shadow:inset 0 0 0 1px var(--steel-lo),inset 0 0 0 2px var(--inner),inset 0 3px 0 -1px var(--steel-hi),0 1px 0 var(--bg),0 2px 5px color-mix(in srgb,var(--bg) 80%,transparent);
+  color:color-mix(in srgb,var(--primary) 55%,var(--text));
+  text-shadow:0 0 6px color-mix(in srgb,var(--primary) 40%,transparent);
+}
+
+.tray-chip:focus-visible,.tray-chip:active {
+  --edge:var(--magenta);
+  --inner:color-mix(in srgb,var(--magenta) 60%,transparent);
+  background-color:color-mix(in srgb,var(--magenta) 14%,var(--panel));
+  box-shadow:inset 0 0 0 1px var(--steel-lo),inset 0 0 0 2px var(--inner),0 0 12px color-mix(in srgb,var(--magenta) 60%,transparent),0 0 2px var(--magenta);
+  color:var(--text);
+  text-shadow:0 0 6px color-mix(in srgb,var(--magenta) 60%,transparent);
+}
+
+@media (hover:hover) {
+  .tray-chip:hover {
+    --edge:var(--magenta);
+    --inner:color-mix(in srgb,var(--magenta) 60%,transparent);
+    background-color:color-mix(in srgb,var(--magenta) 14%,var(--panel));
+    box-shadow:inset 0 0 0 1px var(--steel-lo),inset 0 0 0 2px var(--inner),0 0 12px color-mix(in srgb,var(--magenta) 60%,transparent),0 0 2px var(--magenta);
+    color:var(--text);
+    text-shadow:0 0 6px color-mix(in srgb,var(--magenta) 60%,transparent);
+  }
+}
+
+.tray-chip.chip-struck {
+  --edge:var(--red);
+  --inner:color-mix(in srgb,var(--red) 35%,transparent);
+  box-shadow:inset 0 0 0 1px var(--steel-lo),inset 0 0 0 2px var(--inner);
+  color:var(--dim);
+  text-shadow:none;
+}
+
+.line-chip,.line-chip-drop {
+  --edge:color-mix(in srgb,var(--nv) 80%,var(--text));
+  background-color:color-mix(in srgb,var(--nv) 30%,var(--panel));
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--text) 12%,transparent),transparent 55%);
+  box-shadow:inset 0 0 0 1px var(--edge),0 0 8px color-mix(in srgb,var(--nv) 70%,transparent),0 0 2px var(--nv);
+  text-shadow:0 0 5px color-mix(in srgb,var(--bright) 35%,transparent);
+}
+
+.line-chip-error {
+  --edge:var(--red);
+  background-color:color-mix(in srgb,var(--red) 14%,var(--panel));
+  box-shadow:inset 0 0 0 1px var(--edge),0 0 8px color-mix(in srgb,var(--red) 60%,transparent),0 0 2px var(--red);
+  text-shadow:0 0 5px color-mix(in srgb,var(--red) 40%,transparent);
+}
+
+@media (hover:hover) {
+  .line-chip[data-action]:hover {
+    --edge:var(--red);
+    box-shadow:inset 0 0 0 1px var(--edge),0 0 8px color-mix(in srgb,var(--red) 60%,transparent);
+  }
+}
+
+.chip-tray {
+  background-color:color-mix(in srgb,var(--bg) 70%,var(--panel));
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--bg) 70%,var(--panel)),0 0 0 5px color-mix(in srgb,var(--primary) 22%,var(--border));
+}
+
+.onboarding-hint {
+  border-color:color-mix(in srgb,var(--nv) 78%,var(--text));
+  background:color-mix(in srgb,var(--bg) 72%,var(--nv));
+  box-shadow:inset 0 0 14px color-mix(in srgb,var(--nv) 16%,transparent),0 0 12px color-mix(in srgb,var(--nv) 34%,transparent);
+  text-shadow:0 0 6px color-mix(in srgb,var(--bright) 30%,transparent);
+}
+
+.action-row-primary .btn {
+  border-color:var(--steel);
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--text) 13%,transparent),transparent 48%,color-mix(in srgb,var(--bg) 45%,transparent));
+  box-shadow:inset 0 0 0 1px var(--steel-lo),inset 0 0 0 2px color-mix(in srgb,var(--primary) 60%,transparent),inset 0 0 10px color-mix(in srgb,var(--primary) 16%,transparent),0 -1px 0 var(--steel-hi),0 2px 0 var(--bg),0 3px 8px color-mix(in srgb,var(--bg) 85%,transparent);
+  color:var(--primary);
+  text-shadow:0 0 8px color-mix(in srgb,var(--primary) 55%,transparent);
+}
+
+.action-row-primary .btn-primary {
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--text) 42%,transparent),transparent 42%,color-mix(in srgb,var(--bg) 22%,transparent));
+  box-shadow:inset 0 0 0 1px var(--steel-lo),inset 0 0 0 2px color-mix(in srgb,var(--text) 55%,var(--primary)),0 -1px 0 var(--steel-hi),0 2px 0 var(--bg),0 0 16px color-mix(in srgb,var(--primary) 60%,transparent),0 0 36px color-mix(in srgb,var(--primary) 22%,transparent);
+  color:var(--bg);
+  text-shadow:0 1px 0 color-mix(in srgb,var(--text) 45%,transparent);
+}
+
+.action-row-primary .btn:active:not(:disabled) {
+  box-shadow:inset 0 0 0 1px var(--steel-lo),inset 0 3px 8px color-mix(in srgb,var(--bg) 80%,transparent);
+}
+
+.action-row-primary .btn:disabled {
+  box-shadow:inset 0 0 0 1px var(--steel-lo);
+  text-shadow:none;
+}

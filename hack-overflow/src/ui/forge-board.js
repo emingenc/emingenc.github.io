@@ -5,8 +5,8 @@ import { uiCellCentre, uiDrawBoardFrame, uiFxTtl, uiGeometry } from './forge-boa
 const UI_BOARD_LABEL = 'Forge board. Arrow keys move the cursor, 1 to 5 pick a piece, Enter places.';
 const UI_PALETTE_NAMES = ['bg','panel','border','primary','bright','cyan','magenta','amber','red','text','dim'];
 const UI_FALLBACK_PALETTE = {
-bg:'#030805',panel:'#08120c',border:'#1d3a27',primary:'#00e680',bright:'#7dffb8',text:'#e3f5e8',
-dim:'#86a38f',cyan:'#2de2ff',magenta:'#ff3ea5',amber:'#ffb020',red:'#ff4d5e',
+bg:'#070b14',panel:'#0e2a33',border:'#1f4a5a',primary:'#19f0c8',bright:'#8cffa6',text:'#e8f1ff',
+dim:'#8296b0',cyan:'#4cc9ff',magenta:'#ff5c8a',amber:'#ffc857',red:'#ff4d3d',
 };
 const UI_TAP_SLOP = 10;
 const UI_MAX_FX = 90;

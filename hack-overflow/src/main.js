@@ -7,3 +7,4 @@ const audit = createAudit(content);
 window.HO_AUDIT = audit;
 setUiContext(content,audit);
 uiBoot();
+import('./ui/art-loader.js').then(function (art) { art.uiLoadArt(); }).catch(function () {});

@@ -1,4 +1,6 @@
 import { actorIntent } from '../game/actors.js';
+import { uiDrawArt } from './art-hook.js';
+import { uiBobAt,uiEyedInk,uiFillCentred } from './grid-glyph-art.js';
 import { pulseAt } from '../game/wayfinding.js';
 import { uiWatchCombat } from './grid-combat-fx.js';
 import { uiCrashDrop,uiDrawBurst,uiDrawDust,uiDrawHitFlash,uiDroneClock,uiNoteHit,uiShakeStage } from './grid-drone-fx.js';
@@ -23,19 +25,12 @@ const CALM_LABEL = 'HOVERS';
 const uiPlaced = new WeakMap();
 
 function uiBobOf(frame) {
-return frame.reducedMotion ? 0 :Math.sin(frame.now / BOB_MS) * BOB_TILES * frame.tile;
+return uiBobAt(frame,BOB_MS,BOB_TILES);
 }
-function uiDrawArt(ctx,frame,spot) {
-const pixel = (frame.tile * ART_TILES) / DRONE_ART[0].length;
-const left = spot.left + (frame.tile - pixel * DRONE_ART[0].length) * HALF;
-const top = spot.top + spot.drop + uiBobOf(frame) + (frame.tile - pixel * DRONE_ART.length) * HALF;
-DRONE_ART.forEach(function (line,row) {
-[...line].forEach(function (glyph,col) {
-if (glyph === '.') return;
-ctx.fillStyle = glyph === 'e' ? frame.palette.bg :spot.colour;
-ctx.fillRect(left + col * pixel,top + row * pixel,pixel,pixel);
-});
-});
+function uiDrawDroneArt(ctx,frame,spot) {
+const painted = { left:spot.left,top:spot.top + spot.drop + uiBobOf(frame),size:frame.tile,dpr:frame.dpr,accent:spot.accent };
+if (uiDrawArt(ctx,'drone',painted)) return;
+uiFillCentred(ctx,DRONE_ART,{ left:painted.left,top:painted.top,tile:frame.tile,share:ART_TILES,ink:uiEyedInk(frame.palette.bg,spot.colour) });
 }
 function uiIntentOf(spot) {
 return spot.calm ? null :actorIntent(spot.actor);
@@ -102,7 +97,8 @@ function uiDrawDrone(ctx,frame,spot) {
 const actor = spot.actor;
 const cell = { actor,calm:spot.calm,ring:true,left:(actor.col - frame.camera.col) * frame.tile,top:(actor.row - frame.camera.row) * frame.tile };
 const drop = uiCrashDrop(frame,{ top:cell.top,age:spot.age });
-uiDrawArt(ctx,frame,{ ...cell,drop,colour:actor.arm <= ALERT_ARM ? frame.palette.red :frame.palette.cyan });
+const urgent = actor.arm <= ALERT_ARM;
+uiDrawDroneArt(ctx,frame,{ ...cell,drop,accent:urgent ? 'red' :'cyan',colour:urgent ? frame.palette.red :frame.palette.cyan });
 uiDrawActorTag(ctx,frame,cell);
 uiDrawDust(ctx,frame,spot);
 }

@@ -1,3 +1,5 @@
+import { uiArtCanvas, uiArtRevision } from './art-hook.js';
+
 const UI_SPRITE_SIZE = 16;
 const UI_TRANSPARENT = '.';
 const UI_SPRITE_PALETTE = {
@@ -378,9 +380,9 @@ const ctx = canvas.getContext('2d');
 uiSpriteRuns(rows).forEach(function (run) { uiFillRun(ctx,run,look); });
 return canvas;
 }
-let uiCanvasCache = { palette:null,bySize:new Map() };
+let uiCanvasCache = { palette:null,revision:0,bySize:new Map() };
 function uiCachedCanvases(paint) {
-if (uiCanvasCache.palette !== paint.palette) uiCanvasCache = { palette:paint.palette,bySize:new Map() };
+if (uiCanvasCache.palette !== paint.palette || uiCanvasCache.revision !== uiArtRevision()) uiCanvasCache = { palette:paint.palette,revision:uiArtRevision(),bySize:new Map() };
 if (!uiCanvasCache.bySize.has(paint.pixel)) uiCanvasCache.bySize.set(paint.pixel,new Map());
 return uiCanvasCache.bySize.get(paint.pixel);
 }
@@ -388,7 +390,7 @@ function uiSpriteCanvas(name,accent,paint) {
 const byName = uiCachedCanvases(paint);
 if (!byName.has(name)) byName.set(name,new Map());
 const byAccent = byName.get(name);
-if (!byAccent.has(accent)) byAccent.set(accent,uiRenderSprite(uiSpriteRows(name),{ ...paint,accent }));
+if (!byAccent.has(accent)) byAccent.set(accent,uiArtCanvas(name,{ accent,devicePx:UI_SPRITE_SIZE * paint.pixel,palette:paint.palette }) || uiRenderSprite(uiSpriteRows(name),{ ...paint,accent }));
 return byAccent.get(accent);
 }
 
