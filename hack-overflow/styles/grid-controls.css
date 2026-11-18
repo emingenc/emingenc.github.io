@@ -169,7 +169,7 @@
 }
 
 .grid-fire-pulse {
-  box-shadow:0 0 0 4px rgba(255,77,94,0.35),0 0 14px var(--red);
+  box-shadow:0 0 0 4px rgba(255,77,61,0.35),0 0 14px var(--red);
 }
 
 .grid-fire-charging {
@@ -196,10 +196,10 @@
 
 @keyframes grid-fire-pulse {
   0%,100% {
-    box-shadow:0 0 0 0 rgba(255,77,94,0),0 0 6px var(--red);
+    box-shadow:0 0 0 0 rgba(255,77,61,0),0 0 6px var(--red);
   }
   50% {
-    box-shadow:0 0 0 8px rgba(255,77,94,0.35),0 0 20px var(--red);
+    box-shadow:0 0 0 8px rgba(255,77,61,0.35),0 0 20px var(--red);
   }
 }
 

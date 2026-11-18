@@ -1,4 +1,6 @@
 import { mitesView } from '../game/mites.js';
+import { uiDrawArt } from './art-hook.js';
+import { uiEyedInk,uiFillCentred } from './grid-glyph-art.js';
 import { pulseAt } from '../game/wayfinding.js';
 
 const SPIDER_ART = ['.x.x.x.','x.xxx.x','..xex..','x.xxx.x','.x...x.'];
@@ -65,17 +67,10 @@ return frame.reducedMotion ? 0 :Math.sin(frame.now / BOB_MS) * BOB_TILES * frame
 }
 function uiDrawSpider(ctx,frame,mite) {
 const spot = uiSpotOf(mite,frame);
-const pixel = (frame.tile * ART_TILES) / SPIDER_ART[0].length;
-const left = spot.left + (frame.tile - pixel * SPIDER_ART[0].length) * HALF;
-const top = spot.top + uiBobOf(frame) + (frame.tile - pixel * SPIDER_ART.length) * HALF;
-const colour = mite.maxHp > 1 ? frame.palette.cyan :frame.palette.amber;
-SPIDER_ART.forEach(function (line,row) {
-[...line].forEach(function (glyph,col) {
-if (glyph === '.') return;
-ctx.fillStyle = glyph === 'e' ? frame.palette.bg :colour;
-ctx.fillRect(left + col * pixel,top + row * pixel,pixel,pixel);
-});
-});
+const armoured = mite.maxHp > 1;
+if (uiDrawArt(ctx,'mite',{ left:spot.left,top:spot.top + uiBobOf(frame),size:frame.tile,dpr:frame.dpr,accent:armoured ? 'cyan' :'amber' })) return;
+const colour = armoured ? frame.palette.cyan :frame.palette.amber;
+uiFillCentred(ctx,SPIDER_ART,{ left:spot.left,top:spot.top + uiBobOf(frame),tile:frame.tile,share:ART_TILES,ink:uiEyedInk(frame.palette.bg,colour) });
 }
 function uiDrawPips(ctx,frame,mite) {
 if (mite.maxHp < 2) return;

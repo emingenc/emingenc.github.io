@@ -17,7 +17,7 @@
   border:1px solid var(--border);
   border-radius:var(--radius-sm);
   background:var(--bg);
-  box-shadow:0 0 0 3px var(--panel),0 0 0 4px var(--border),0 0 24px rgba(0,230,128,0.12);
+  box-shadow:0 0 0 3px var(--panel),0 0 0 4px var(--border),0 0 24px rgba(25,240,200,0.12);
 }
 
 .grid-canvas {
@@ -26,7 +26,6 @@
   display:block;
   width:100%;
   height:100%;
-  image-rendering:pixelated;
 }
 
 .grid-hint {
@@ -118,7 +117,7 @@
 
 .grid-stage::after {
   background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,0.5) 100%);
-  box-shadow:inset 0 0 0 1px rgba(125,255,184,0.08),inset 0 0 32px rgba(0,0,0,0.6);
+  box-shadow:inset 0 0 0 1px rgba(140,255,166,0.08),inset 0 0 32px rgba(0,0,0,0.6);
 }
 
 @media (max-width:767px) {
@@ -128,7 +127,7 @@
   }
 
   .grid-stage::after {
-    box-shadow:inset 0 0 0 1px rgba(125,255,184,0.08),inset 0 0 16px rgba(0,0,0,0.6);
+    box-shadow:inset 0 0 0 1px rgba(140,255,166,0.08),inset 0 0 16px rgba(0,0,0,0.6);
   }
 }
 

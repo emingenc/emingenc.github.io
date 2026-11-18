@@ -1,6 +1,6 @@
 .grid-screen[data-screen='grid'][data-fit='fill'] {
   --fill-bar:var(--bg);
-  --fill-key:rgba(8,18,12,0.88);
+  --fill-key:rgba(14,42,51,0.88);
   --fill-btn:44px;
   --fit-top:96px;
   --fit-bottom:0px;

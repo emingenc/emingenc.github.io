@@ -1,5 +1,6 @@
 import { PIPS,lvPips } from '../game/cosmetics.js';
 import { hasCosmetic } from '../game/ext/badge-ops.js';
+import { uiDrawArt } from './art-hook.js';
 
 const BODY = { rows:['.bbbbb.','bbbbbbb','bkbbbkb','bbbbbbb','.b...b.'],ink:{ b:'cyan',k:'bg' } };
 const BIT_MARKS = Object.freeze({
@@ -46,7 +47,8 @@ palette:frame.palette,pixel,
 left:(frame.avatar.col - frame.camera.col + SIDE_TILES) * frame.tile,
 top:(frame.avatar.row - frame.camera.row) * frame.tile - LIFT_TILES * frame.tile + bob,
 };
-uiPaintRows(ctx,BODY,spot);
+const art = { left:spot.left,top:spot.top - pixel,size:pixel * BODY.rows[0].length,dpr:frame.dpr,palette:frame.palette,accent:'cyan' };
+if (!uiDrawArt(ctx,'bit',art)) uiPaintRows(ctx,BODY,spot);
 uiPaintPips(ctx,level,spot);
 wears.forEach((id) => uiPaintRows(ctx,BIT_MARKS[id],spot));
 }

@@ -81,7 +81,7 @@
   overflow:hidden;
   border:1px solid var(--border);
   border-radius:var(--radius-md);
-  background:var(--bg);
+  background:color-mix(in srgb,var(--bg) 48%,transparent);
   user-select:none;
   -webkit-user-select:none;
   -webkit-touch-callout:none;

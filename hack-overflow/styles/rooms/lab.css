@@ -5,6 +5,7 @@
   gap:var(--sp-4);
   min-width:0;
   padding-bottom:0;
+  background:transparent;
 }
 
 .lab-screen button {
@@ -97,7 +98,7 @@
   padding:var(--sp-4);
   border:1px solid var(--border);
   border-radius:var(--radius-md);
-  background:var(--panel);
+  background:color-mix(in srgb,var(--panel) 48%,transparent);
 }
 
 .lab-card-title {
@@ -434,7 +435,7 @@
   margin:0 calc(var(--sp-5) * -1);
   padding:var(--sp-3) var(--sp-5) calc(var(--sp-3) + env(safe-area-inset-bottom,0px));
   border-top:1px solid var(--border);
-  background:var(--bg);
+  background:color-mix(in srgb,var(--bg) 48%,transparent);
 }
 
 .lab-bar .lab-btn {

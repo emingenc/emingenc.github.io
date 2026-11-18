@@ -12,6 +12,15 @@
   padding:env(safe-area-inset-top,0px) max(var(--sp-5),env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(var(--sp-5),env(safe-area-inset-left,0px));
   gap:var(--turret-gap);
   overflow:hidden;
+  background:transparent;
+}
+
+html:has(.screen.turret-screen) {
+  background:linear-gradient(rgba(7,11,20,0.18),rgba(7,11,20,0.18)),url('../../assets/art/rooms/room-turret.webp') center / cover no-repeat fixed,var(--bg);
+}
+
+body:has(.screen.turret-screen) {
+  background:transparent;
 }
 
 .turret-screen > .arena-toast {
@@ -38,7 +47,7 @@
   min-height:var(--turret-scene-min);
   border:1px solid var(--border);
   border-radius:var(--radius-md);
-  background:var(--bg);
+  background:transparent;
   touch-action:none;
   user-select:none;
   -webkit-user-select:none;
@@ -149,7 +158,7 @@
   height:52px;
   border:2px solid var(--cyan);
   border-radius:var(--radius-md);
-  background:rgba(45,226,255,0.18);
+  background:rgba(76,201,255,0.18);
   color:var(--bright);
   font-size:var(--fs-2xl);
   transform:translate(var(--beam-x,0px),var(--beam-y,0px)) translate(-50%,calc(-50% - var(--turret-ghost-lift)));

@@ -22,6 +22,9 @@ leakText:0.4,streak:0.12,rangeLine:1.5,
 const UI_ALPHA = {
 path:0.28,dot:0.45,pathLine:0.5,range:0.1,rangeLine:0.6,hiddenStill:0.3,flickerBase:0.12,flickerSwing:0.22,vignette:0.55,
 };
+const UI_GLOW = 9;
+const UI_GROUND_ALPHA = 0.72;
+const UI_TILE_ALPHA = 0.85;
 const UI_FLICKER = { period:90,spread:1.7 };
 const UI_MOTION = { rise:0.5,killRise:0.6,popLift:0.4,killLift:0.3,leakLift:0.7,popFade:0.25,vignetteInner:0.5 };
 const UI_LINE = { thin:1.5,normal:2,thick:2.5,counter:3.5,leak:3 };
@@ -43,6 +46,10 @@ return { x:frame.ox + at.x * frame.tile,y:frame.oy + at.y * frame.tile };
 }
 function uiPaint(ctx,style) {
 ctx.globalAlpha = Math.max(0,Math.min(1,style.alpha === undefined ? 1 :style.alpha));
+if (style.glow) {
+ctx.shadowColor = style.stroke || style.fill;
+ctx.shadowBlur = style.glow;
+}
 if (style.fill) {
 ctx.fillStyle = style.fill;
 ctx.fill();
@@ -52,6 +59,7 @@ ctx.strokeStyle = style.stroke;
 ctx.lineWidth = style.width;
 ctx.stroke();
 }
+ctx.shadowBlur = 0;
 ctx.globalAlpha = 1;
 }
 function uiFillRect(ctx,rect,style) {
@@ -111,7 +119,7 @@ uiFillRect(frame.ctx,dot,{ color:frame.pal.dim,alpha:UI_ALPHA.dot });
 }
 function uiDrawTile(frame,col,row) {
 const rect = uiTileRect(frame,col,row);
-uiFillRect(frame.ctx,rect,{ color:frame.pal.panel });
+uiFillRect(frame.ctx,rect,{ color:frame.pal.panel,alpha:UI_TILE_ALPHA });
 if (frame.path.has(col + ',' + row)) uiFillRect(frame.ctx,rect,{ color:frame.pal.primary,alpha:UI_ALPHA.path });
 else uiBuildDot(frame,rect);
 }
@@ -123,18 +131,19 @@ const at = uiPx(frame,uiCellCentre(point[0],point[1]));
 if (index === 0) ctx.moveTo(at.x,at.y);
 else ctx.lineTo(at.x,at.y);
 });
-uiPaint(ctx,{ stroke:frame.pal.primary,width:Math.max(1,frame.tile * UI_SIZE.pathLine),alpha:UI_ALPHA.pathLine });
+uiPaint(ctx,{ stroke:frame.pal.primary,width:Math.max(1,frame.tile * UI_SIZE.pathLine),alpha:UI_ALPHA.pathLine,glow:UI_GLOW });
 }
 function uiDrawCheckpoint(frame,index,length) {
 const last = UI_CHECK_MARKS.length - 1;
 const at = uiPx(frame,positionAt(frame.level,length * index / last));
 uiCircle(frame.ctx,at,frame.tile * UI_SIZE.check);
-uiPaint(frame.ctx,{ fill:frame.pal.bg,stroke:index === last ? frame.pal.bright :frame.pal.primary,width:UI_LINE.normal });
+uiPaint(frame.ctx,{ fill:frame.pal.bg,stroke:index === last ? frame.pal.bright :frame.pal.primary,width:UI_LINE.normal,glow:UI_GLOW });
 uiText(frame,UI_CHECK_MARKS[index],{ x:at.x,y:at.y,size:frame.tile * UI_SIZE.checkMark,color:frame.pal.bright });
 }
 function uiDrawTiles(frame) {
 const full = { x:0,y:0,width:frame.width,height:frame.height };
-uiFillRect(frame.ctx,full,{ color:frame.pal.bg });
+frame.ctx.clearRect(0,0,frame.width,frame.height);
+uiFillRect(frame.ctx,full,{ color:frame.pal.bg,alpha:UI_GROUND_ALPHA });
 for (let row = 0; row < frame.level.rows; row += 1) {
 for (let col = 0; col < frame.level.cols; col += 1) uiDrawTile(frame,col,row);
 }
@@ -155,14 +164,14 @@ const color = uiPieceColor(frame,spec.id);
 uiCircle(frame.ctx,at,spec.range * frame.tile);
 uiPaint(frame.ctx,{ fill:color,alpha:UI_ALPHA.range });
 uiCircle(frame.ctx,at,spec.range * frame.tile);
-uiPaint(frame.ctx,{ stroke:color,width:UI_SIZE.rangeLine,alpha:UI_ALPHA.rangeLine });
+uiPaint(frame.ctx,{ stroke:color,width:UI_SIZE.rangeLine,alpha:UI_ALPHA.rangeLine,glow:UI_GLOW });
 }
 function uiDrawPiece(frame,piece) {
 const at = uiPx(frame,uiCellCentre(piece.col,piece.row));
 const color = uiPieceColor(frame,piece.type);
 const mark = UI_PIECE_MARK[piece.type] || piece.type.charAt(0).toUpperCase();
 uiPieceShape(frame,piece.type,at);
-uiPaint(frame.ctx,{ fill:frame.pal.bg,stroke:color,width:UI_LINE.thick });
+uiPaint(frame.ctx,{ fill:frame.pal.bg,stroke:color,width:UI_LINE.thick,glow:UI_GLOW });
 const size = mark.length > 1 ? UI_SIZE.pieceMarkWide :UI_SIZE.pieceMark;
 uiText(frame,mark,{ x:at.x,y:at.y,size:frame.tile * size,color });
 }
@@ -206,10 +215,10 @@ frame.game.enemies.forEach(function (enemy) { uiDrawEnemy(frame,enemy); });
 function uiDrawHit(frame,fx,phase) {
 const color = fx.counter ? frame.pal.bright :uiPieceColor(frame,fx.type);
 uiLine(frame.ctx,uiPx(frame,fx.from),uiPx(frame,fx.to));
-uiPaint(frame.ctx,{ stroke:color,width:fx.counter ? UI_LINE.counter :UI_LINE.thin,alpha:1 - phase.move });
+uiPaint(frame.ctx,{ stroke:color,width:fx.counter ? UI_LINE.counter :UI_LINE.thin,alpha:1 - phase.move,glow:UI_GLOW });
 if (!fx.streak) return;
 uiLine(frame.ctx,uiPx(frame,fx.streak.from),uiPx(frame,fx.streak.to));
-uiPaint(frame.ctx,{ stroke:frame.pal.amber,width:Math.max(2,frame.tile * UI_SIZE.streak),alpha:1 - phase.move });
+uiPaint(frame.ctx,{ stroke:frame.pal.amber,width:Math.max(2,frame.tile * UI_SIZE.streak),alpha:1 - phase.move,glow:UI_GLOW });
 }
 function uiDrawPop(frame,fx,phase) {
 const label = '-' + fx.damage + (fx.counter ? ' x' + HARNESS_FORGE.counterMultiplier :'');
@@ -271,7 +280,10 @@ if (!cursor) return;
 const rect = uiTileRect(frame,cursor.col,cursor.row);
 frame.ctx.strokeStyle = frame.pal.bright;
 frame.ctx.lineWidth = UI_LINE.normal;
+frame.ctx.shadowColor = frame.pal.bright;
+frame.ctx.shadowBlur = UI_GLOW;
 frame.ctx.strokeRect(rect.x + 1,rect.y + 1,rect.width - 2,rect.height - 2);
+frame.ctx.shadowBlur = 0;
 }
 function uiDrawBoardFrame(frame) {
 uiDrawTiles(frame);

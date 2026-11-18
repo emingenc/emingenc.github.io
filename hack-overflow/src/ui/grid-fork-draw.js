@@ -2,6 +2,8 @@ import { actorIntent,intentLabel } from '../game/actors.js';
 import { FIND,SIGN,holdsReceipt,isForkActor } from '../game/cast/fork.js';
 import { TALLY_CELL,tallyPlan } from '../game/cast/tally.js';
 import { pulseAt } from '../game/wayfinding.js';
+import { uiDrawArt } from './art-hook.js';
+import { uiEyedInk,uiFillCentred } from './grid-glyph-art.js';
 import { uiDrawBurst,uiDroneClock,uiNoteHit } from './grid-drone-fx.js';
 
 const HALF = 0.5;
@@ -60,6 +62,10 @@ const tile = frame.tile;
 const size = tile * PLATE_TILES;
 const wing = tile * WING_TILES;
 const top = spot.top + (tile - size) * HALF + uiBob(frame);
+if (uiDrawArt(ctx,'fork-drone',{ left:spot.left,top:spot.top + uiBob(frame),size:tile,dpr:frame.dpr,palette:frame.palette,accent:'cyan' })) {
+uiText(ctx,frame,{ text:String(spot.num),tiles:NUMBER_TILES,x:spot.left + tile * HALF,y:top + size * HALF,colour:spot.colour });
+return;
+}
 ctx.fillStyle = spot.colour;
 ctx.fillRect(spot.left + (tile - size) * HALF,top,size,size);
 ctx.fillRect(spot.left + (tile - size) * HALF - wing,top + size * HALF * HALF,wing,size * HALF);
@@ -140,20 +146,14 @@ if (!uiInView(spot,frame)) return;
 const tile = frame.tile;
 ctx.fillStyle = frame.palette.panel;
 ctx.fillRect(spot.left,spot.top,tile,tile);
-const pixel = (tile * TALLY_TILES) / TALLY_ART[0].length;
-const left = spot.left + (tile - pixel * TALLY_ART[0].length) * HALF;
-const top = spot.top + (tile - pixel * TALLY_ART.length) * HALF;
-TALLY_ART.forEach(function (line,row) {
-[...line].forEach(function (glyph,col) {
-if (glyph === '.') return;
-ctx.fillStyle = glyph === 'e' ? frame.palette.bg :frame.palette.amber;
-ctx.fillRect(left + col * pixel,top + row * pixel,pixel,pixel);
-});
-});
+if (!uiDrawArt(ctx,'tally',{ left:spot.left,top:spot.top,size:tile,dpr:frame.dpr,palette:frame.palette,accent:'amber' })) uiPaintTallyPixels(ctx,frame,spot);
 uiText(ctx,frame,{
 text:uiMarkOf(app.game),tiles:MARK_TILES,x:spot.left + tile * MARK_AT.across,y:spot.top + tile * MARK_AT.down,
 baseline:'top',colour:frame.palette.bright,outline:true,
 });
+}
+function uiPaintTallyPixels(ctx,frame,spot) {
+uiFillCentred(ctx,TALLY_ART,{ left:spot.left,top:spot.top,tile:frame.tile,share:TALLY_TILES,ink:uiEyedInk(frame.palette.bg,frame.palette.amber) });
 }
 function uiDrawReceipt(ctx,app,frame) {
 const spot = uiSpotOf(FIND,frame);

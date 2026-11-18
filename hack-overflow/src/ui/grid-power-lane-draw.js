@@ -1,6 +1,8 @@
 import { LIGHT_STEPS,LANE,laneFrame } from '../game/power/lane.js';
 import { LANE_POCKET,LANE_SHOTS,SILL_CELL } from '../game/power/lane-map.js';
 import { uiSpotOf } from './grid-spot.js';
+import { uiDrawArt } from './art-hook.js';
+import { uiFillGlyphs } from './grid-glyph-art.js';
 
 const PIXELS = 8;
 const SILL_ART = ['..xxx...','..xex.cc','..xxx.c.','.xxxxxc.','.xxxxxc.','..x.x.c.','..x.x.cc','.xx.xx..'];
@@ -25,14 +27,9 @@ const FONT = 'px VT323, monospace';
 const POCKET_ROWS = LANE_POCKET.maxRow - LANE_POCKET.minRow + 1;
 
 function uiPaintSill(ctx,frame,spot) {
+if (uiDrawArt(ctx,'sill',{ left:spot.left,top:spot.top,size:frame.tile,dpr:frame.dpr,palette:frame.palette,accent:'cyan' })) return;
 const pixel = frame.tile / PIXELS;
-SILL_ART.forEach(function (line,row) {
-[...line].forEach(function (glyph,col) {
-if (glyph === '.') return;
-ctx.fillStyle = frame.palette[SILL_INKS[glyph]];
-ctx.fillRect(spot.left + col * pixel,spot.top + row * pixel,pixel,pixel);
-});
-});
+uiFillGlyphs(ctx,SILL_ART,{ left:spot.left,top:spot.top,pixel,ink:(glyph) => frame.palette[SILL_INKS[glyph]] });
 }
 function uiDrawBand(ctx,frame) {
 const first = uiSpotOf(LANE_SHOTS[0],frame);

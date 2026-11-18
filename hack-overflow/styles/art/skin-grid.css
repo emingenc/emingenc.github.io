@@ -1,0 +1,133 @@
+
+.grid-stage {
+  border-color:color-mix(in srgb,var(--primary) 35%,var(--border));
+  box-shadow:0 0 0 3px var(--panel),0 0 0 4px color-mix(in srgb,var(--neon-violet) 55%,var(--border)),0 0 24px color-mix(in srgb,var(--neon-violet) 30%,transparent),0 0 56px color-mix(in srgb,var(--primary) 10%,transparent);
+}
+
+.grid-stage::before {
+  background:repeating-linear-gradient(0deg,color-mix(in srgb,var(--bg) 16%,transparent) 0px,color-mix(in srgb,var(--bg) 16%,transparent) 1px,transparent 2px,transparent 4px);
+}
+
+.grid-stage::after {
+  background:radial-gradient(ellipse at center,transparent 52%,color-mix(in srgb,var(--neon-violet) 8%,var(--bg)) 100%);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--neon-violet) 28%,transparent),inset 0 0 36px color-mix(in srgb,var(--bg) 75%,transparent);
+}
+
+@media (max-width:767px) {
+  .grid-stage::after {
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--neon-violet) 28%,transparent),inset 0 0 18px color-mix(in srgb,var(--bg) 75%,transparent);
+  }
+}
+
+.grid-hint {
+  box-shadow:var(--rim),0 0 12px color-mix(in srgb,var(--amber) 35%,transparent);
+  text-shadow:0 0 6px color-mix(in srgb,var(--amber) 35%,transparent);
+}
+
+.grid-near {
+  box-shadow:var(--rim),0 0 12px color-mix(in srgb,var(--near-accent) 38%,transparent),0 0 30px color-mix(in srgb,var(--near-accent) 16%,transparent);
+}
+
+.grid-near-title,.grid-near-act {
+  text-shadow:0 0 8px color-mix(in srgb,var(--near-accent) 55%,transparent);
+}
+
+.tap-marker {
+  box-shadow:0 0 10px var(--cyan),inset 0 0 6px color-mix(in srgb,var(--cyan) 40%,transparent);
+}
+
+.grid-hud {
+  border-bottom-color:color-mix(in srgb,var(--primary) 32%,var(--border));
+  box-shadow:0 1px 10px color-mix(in srgb,var(--primary) 12%,transparent);
+}
+
+.grid-hud-toggle {
+  border-color:color-mix(in srgb,var(--primary) 30%,var(--border));
+  background-image:var(--sheen);
+  box-shadow:var(--rim),var(--bevel);
+}
+
+.grid-hud[data-open='1'] .grid-hud-toggle {
+  box-shadow:var(--rim),var(--glow-md);
+}
+
+.grid-hud-more {
+  border-color:color-mix(in srgb,var(--primary) 60%,var(--border));
+  background-image:linear-gradient(180deg,color-mix(in srgb,var(--primary) 6%,transparent),transparent 70%);
+  box-shadow:var(--rim),0 8px 24px color-mix(in srgb,var(--bg) 85%,transparent),0 0 20px color-mix(in srgb,var(--neon-violet) 26%,transparent);
+}
+
+.grid-hud-family,.grid-hud-level {
+  text-shadow:0 0 8px color-mix(in srgb,var(--bright) 40%,transparent);
+}
+
+.grid-hud-bar {
+  border-color:color-mix(in srgb,var(--primary) 30%,var(--border));
+  box-shadow:inset 0 1px 3px color-mix(in srgb,var(--bg) 80%,transparent);
+}
+
+.grid-hud-fill {
+  background-image:linear-gradient(90deg,var(--primary),var(--bright));
+  box-shadow:var(--glow-sm);
+}
+
+.grid-verb {
+  box-shadow:var(--rim),0 0 10px color-mix(in srgb,var(--amber) 45%,transparent);
+}
+
+.grid-objective {
+  text-shadow:0 0 6px color-mix(in srgb,var(--amber) 35%,transparent);
+}
+
+.grid-hearts {
+  text-shadow:0 0 8px color-mix(in srgb,var(--red) 55%,transparent);
+}
+
+.grid-ammo {
+  text-shadow:0 0 6px color-mix(in srgb,var(--cyan) 50%,transparent);
+}
+
+.grid-toast {
+  box-shadow:var(--rim),0 4px 16px color-mix(in srgb,var(--bg) 70%,transparent);
+}
+
+.grid-toast-warn {
+  box-shadow:var(--rim),0 0 12px color-mix(in srgb,var(--amber) 40%,transparent);
+}
+
+.grid-toast-reward {
+  box-shadow:var(--rim),var(--glow-md);
+}
+
+.grid-toast-sector {
+  box-shadow:none;
+}
+
+.grid-toast-banner {
+  box-shadow:var(--rim),0 0 18px color-mix(in srgb,var(--amber) 55%,transparent),0 0 48px color-mix(in srgb,var(--neon-violet) 30%,transparent),inset 0 0 12px color-mix(in srgb,var(--amber) 20%,transparent);
+  text-shadow:0 0 12px color-mix(in srgb,var(--amber) 55%,transparent);
+}
+
+.grid-dpad-btn,.grid-map-dock {
+  border-color:color-mix(in srgb,var(--primary) 30%,var(--border));
+  background-image:var(--sheen);
+  box-shadow:var(--rim),var(--bevel),0 0 8px color-mix(in srgb,var(--neon-violet) 22%,transparent);
+}
+
+.grid-dpad-btn:active,.grid-map-dock:active {
+  box-shadow:inset 0 2px 6px color-mix(in srgb,var(--bg) 60%,transparent),var(--glow-md);
+  text-shadow:0 0 8px color-mix(in srgb,var(--bright) 60%,transparent);
+}
+
+.grid-dpad-act {
+  box-shadow:var(--rim),var(--bevel),var(--glow-md);
+  text-shadow:0 0 8px color-mix(in srgb,var(--primary) 60%,transparent);
+}
+
+.grid-fire:not(.grid-fire-pulse) {
+  box-shadow:var(--rim),0 0 12px color-mix(in srgb,var(--red) 40%,transparent);
+}
+
+.grid-fire {
+  text-shadow:0 0 8px color-mix(in srgb,var(--red) 55%,transparent);
+}

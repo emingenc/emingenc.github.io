@@ -1,3 +1,5 @@
+import { uiDrawArt } from './art-hook.js';
+
 const MITE_ART = ['..sss..','.sssss.','sbebebs','.sssss.','x.x.x.x'];
 const ART_TILES = 0.8;
 const MARK_TILES = 0.2;
@@ -8,6 +10,7 @@ const COLOURS = { s:'primary',b:'cyan',e:'bg',x:'dim' };
 const SHELL = MITE_ART.flatMap((line,row) => [...line].map((glyph,col) => ({ glyph,col,row }))).filter((one) => one.glyph !== '.');
 
 function uiDrawShell(ctx,frame,spot) {
+if (uiDrawArt(ctx,'mite-armored',{ left:spot.left,top:spot.top,size:frame.tile,dpr:frame.dpr,accent:'primary' })) return;
 const pixel = (frame.tile * ART_TILES) / MITE_ART[0].length;
 const left = spot.left + (frame.tile - pixel * MITE_ART[0].length) * HALF;
 const top = spot.top + (frame.tile - pixel * MITE_ART.length) * HALF;
