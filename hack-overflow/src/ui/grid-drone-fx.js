@@ -1,21 +1,27 @@
+import { easeOutCubic } from '../game/ease.js';
+import { edgeWeights,flashAlpha } from '../game/foe-motion.js';
+import { uiKickStage,uiStageShake } from './grid-stage-shake.js';
+
 const CRASH_MS = 350;
 const DUST_MS = 450;
-const BURST_MS = 900;
-const FLASH_MS = 300;
-const SHAKE_MS = 250;
-const SHAKE_PX = 5;
-const SHAKE_RATE = 0.09;
-const FLASH_ALPHA = 0.3;
+const BURST_MS = 650;
 const DUST = { count:7,reach:0.9,size:0.2 };
 const BURST_RINGS = [
-{ colour:'amber',count:10,reach:1.3,size:0.22 },
-{ colour:'text',count:6,reach:0.7,size:0.16 },
+{ colour:'amber',count:10,reach:1.3,size:0.22,out:true },
+{ colour:'text',count:6,reach:0.7,size:0.16,out:true },
 ];
+const EDGE_BAND_OUTER = 0.18;
+const EDGE_BAND_MID = 0.11;
+const EDGE_BAND_INNER = 0.05;
+const EDGE_BANDS = [EDGE_BAND_OUTER,EDGE_BAND_MID,EDGE_BAND_INNER];
+const EDGE_SHARE = 0.4;
 const STILL_PROGRESS = 0.5;
 const HALF = 0.5;
 const FULL_TURN = Math.PI * 2;
+const HEAVY_HIT = 1;
 
 const uiFightNotes = new WeakMap();
+let uiHitEdges = edgeWeights(null);
 
 function uiNotesOf(fight) {
 if (!uiFightNotes.has(fight)) uiFightNotes.set(fight,{ hearts:fight.hp.hearts,revives:fight.revives || 0,hitAt:null,drones:new Map() });
@@ -24,13 +30,20 @@ return uiFightNotes.get(fight);
 function uiNoteHit(fight,now) {
 const notes = uiNotesOf(fight);
 const revives = fight.revives || 0;
-if (fight.hp.hearts < notes.hearts || revives > notes.revives) notes.hitAt = now;
+const lost = notes.hearts - fight.hp.hearts;
+if (lost > 0 || revives > notes.revives) {
+notes.hitAt = now;
+uiKickStage(lost > HEAVY_HIT || revives > notes.revives ? 'hitHard' :'hit',now);
+}
 notes.hearts = fight.hp.hearts;
 notes.revives = revives;
 return notes;
 }
+function uiNoteStrike(from) {
+uiHitEdges = edgeWeights(from);
+}
 function uiDroneClock(notes,actor,now) {
-if (!notes.drones.has(actor.id)) notes.drones.set(actor.id,{ born:now,died:null });
+if (!notes.drones.has(actor.id)) notes.drones.set(actor.id,{ born:now,died:null,hurtAt:null,impactAt:null,struckAt:null,urgentAt:null });
 const clock = notes.drones.get(actor.id);
 if (actor.hp <= 0 && clock.died === null) clock.died = now;
 return clock;
@@ -50,7 +63,7 @@ ctx.globalAlpha = 1 - progress;
 ctx.fillStyle = frame.palette[spark.colour];
 for (let index = 0; index < spark.count; index += 1) {
 const angle = (index / spark.count) * FULL_TURN;
-const reach = frame.tile * spark.reach * progress;
+const reach = frame.tile * spark.reach * (spark.out ? easeOutCubic(progress) :progress);
 ctx.fillRect(spark.x + Math.cos(angle) * reach - size * HALF,spark.y + Math.sin(angle) * reach - size * HALF,size,size);
 }
 ctx.globalAlpha = 1;
@@ -68,24 +81,27 @@ if (spot.age >= BURST_MS) return;
 const centre = uiCentreOf(frame,spot.actor);
 BURST_RINGS.forEach(function (ring) { uiDrawSparks(ctx,frame,{ ...ring,...centre,age:spot.age,span:BURST_MS }); });
 }
+function uiDrawEdges(ctx,frame,weights) {
+const short = Math.min(frame.width,frame.height);
+EDGE_BANDS.forEach(function (share) {
+const depth = short * share;
+ctx.fillRect(0,0,frame.width,depth * weights.top);
+ctx.fillRect(0,frame.height - depth * weights.bottom,frame.width,depth * weights.bottom);
+ctx.fillRect(0,0,depth * weights.left,frame.height);
+ctx.fillRect(frame.width - depth * weights.right,0,depth * weights.right,frame.height);
+});
+}
 function uiDrawHitFlash(ctx,frame,hitAt) {
-const age = hitAt === null ? FLASH_MS :frame.now - hitAt;
-if (age < 0 || age >= FLASH_MS) return;
-ctx.globalAlpha = FLASH_ALPHA * (frame.reducedMotion ? 1 :1 - age / FLASH_MS);
+if (hitAt === null) return;
+const alpha = flashAlpha(frame.now - hitAt,frame.reducedMotion);
+if (alpha <= 0) return;
+ctx.globalAlpha = alpha * EDGE_SHARE;
 ctx.fillStyle = frame.palette.red;
-ctx.fillRect(0,0,frame.width,frame.height);
+uiDrawEdges(ctx,frame,uiHitEdges);
 ctx.globalAlpha = 1;
 }
-function uiShakeStage(app,frame,hitAt) {
-const canvas = app.game.stage && app.game.stage.canvas;
-if (!canvas || !canvas.style) return;
-const age = hitAt === null || frame.reducedMotion ? SHAKE_MS :frame.now - hitAt;
-if (age >= SHAKE_MS) {
-if (canvas.style.transform) canvas.style.removeProperty('transform');
-return;
-}
-const offset = Math.round(Math.sin(age * SHAKE_RATE) * SHAKE_PX * (1 - age / SHAKE_MS));
-canvas.style.setProperty('transform','translateX(' + offset + 'px)');
+function uiShakeStage(app,frame) {
+uiStageShake(app.game.stage && app.game.stage.canvas,frame);
 }
 
-export { uiNoteHit,uiDroneClock,uiCrashDrop,uiDrawDust,uiDrawBurst,uiDrawHitFlash,uiShakeStage,CRASH_MS,BURST_MS };
+export { uiNotesOf,uiNoteHit,uiNoteStrike,uiDroneClock,uiCrashDrop,uiDrawDust,uiDrawBurst,uiDrawHitFlash,uiShakeStage,CRASH_MS,BURST_MS };

@@ -1,5 +1,7 @@
 import { LIGHT_STEPS,LANE,laneFrame } from '../game/power/lane.js';
 import { LANE_POCKET,LANE_SHOTS,SILL_CELL } from '../game/power/lane-map.js';
+import { createTrack } from '../game/power-feel.js';
+import { uiGlideIndex } from './grid-power-feel.js';
 import { uiSpotOf } from './grid-spot.js';
 import { uiDrawArt } from './art-hook.js';
 import { uiFillGlyphs } from './grid-glyph-art.js';
@@ -24,7 +26,10 @@ const CAPTION_TILES = 0.4;
 const CAPTION_LIFT_TILES = 0.12;
 const HALF = 0.5;
 const FONT = 'px VT323, monospace';
+const GLIDE_MS = 150;
 const POCKET_ROWS = LANE_POCKET.maxRow - LANE_POCKET.minRow + 1;
+
+const uiGlide = createTrack(GLIDE_MS);
 
 function uiPaintSill(ctx,frame,spot) {
 if (uiDrawArt(ctx,'sill',{ left:spot.left,top:spot.top,size:frame.tile,dpr:frame.dpr,palette:frame.palette,accent:'cyan' })) return;
@@ -64,20 +69,25 @@ const spot = uiSpotOf(LANE_SHOTS[index],frame);
 if (spot) uiDrawShot(ctx,frame,{ shot,spot });
 });
 }
-function uiDrawFrame(ctx,frame,state) {
-const first = uiSpotOf(LANE_SHOTS[state.l],frame);
-if (!first) return;
-const edge = frame.tile * FRAME_EDGE_TILES;
-const width = frame.tile * laneFrame(state).length;
-ctx.fillStyle = frame.palette[BAND_INK];
-ctx.globalAlpha = WASH_ALPHA;
-ctx.fillRect(first.left,first.top,width,frame.tile);
-ctx.globalAlpha = 1;
+function uiDrawCaption(ctx,frame,at) {
 ctx.font = Math.round(frame.tile * CAPTION_TILES) + FONT;
 ctx.textAlign = 'center';
 ctx.textBaseline = 'bottom';
 ctx.fillStyle = frame.palette[FRAME_INK];
-ctx.fillText(CAPTION,first.left + width / 2,first.top - frame.tile * CAPTION_LIFT_TILES);
+ctx.fillText(CAPTION,at.x,at.y);
+}
+function uiDrawFrame(ctx,frame,state) {
+const from = uiGlideIndex(uiGlide,'from',{ index:state.l,frame });
+const length = uiGlideIndex(uiGlide,'length',{ index:laneFrame(state).length,frame });
+const first = uiSpotOf({ col:LANE_SHOTS[0].col + from,row:LANE_SHOTS[0].row },frame);
+if (!first) return;
+const edge = frame.tile * FRAME_EDGE_TILES;
+const width = frame.tile * length;
+ctx.fillStyle = frame.palette[BAND_INK];
+ctx.globalAlpha = WASH_ALPHA;
+ctx.fillRect(first.left,first.top,width,frame.tile);
+ctx.globalAlpha = 1;
+uiDrawCaption(ctx,frame,{ x:first.left + width / 2,y:first.top - frame.tile * CAPTION_LIFT_TILES });
 ctx.fillRect(first.left,first.top,width,edge);
 ctx.fillRect(first.left,first.top + frame.tile - edge,width,edge);
 ctx.fillRect(first.left,first.top,edge,frame.tile);
@@ -87,7 +97,7 @@ function uiLightColumn(light) {
 return Math.floor(light * LANE_SHOTS.length / LIGHT_STEPS);
 }
 function uiDrawLight(ctx,frame,light) {
-const column = uiLightColumn(light);
+const column = uiGlideIndex(uiGlide,'light',{ index:uiLightColumn(light),frame });
 if (light === 0 || column >= LANE_SHOTS.length) return;
 const spot = uiSpotOf({ col:LANE_POCKET.minCol + column,row:LANE_POCKET.minRow },frame);
 if (!spot) return;

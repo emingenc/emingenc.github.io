@@ -1,6 +1,7 @@
 import { GAME_EVENT } from '../game/game-events.js';
-import { REVIVE_ARM, createDrone, knockbackCell, tickActors, rearmActors, hitActor, nearestAwakeFoe } from '../game/actors.js';
+import { REVIVE_ARM, createDrone, knockbackCell, tickActors, rearmActors, DRONE_ARM, hitActor, nearestAwakeFoe } from '../game/actors.js';
 import { createHp, hurtHp, maxHeartsOf, passDoorway, reviveHp } from '../game/hp.js';
+import { heartChange, heartChangeLive, heartSlots } from '../game/heart-fx.js';
 import { WALK_FEEL } from '../game/tween.js';
 import { cellAt, thingAt } from '../game/world.js';
 import { withPosition } from '../game/save.js';
@@ -19,6 +20,7 @@ const HURT_LINES = { drone:'Drone hit.',mite:'OUCH! A mite stung you.' };
 const HURT_LINE = 'OUCH! You were hit.';
 const REVIVE_TOAST = 'Rebooted at the last doorway.';
 const MITE_ID_PREFIX = 'mite';
+const PUSH_BLOCK_MS = 90;
 const MITE_SHOT_TOASTS = {
 kill:{ text:'MITE DOWN',kind:'reward' },
 dent:{ text:'ZAP! Armour cracked',kind:'info' },
@@ -31,6 +33,13 @@ const FIZZLES = new Set(['far','cool']);
 
 function uiRegisterShotToasts(kind,toasts) {
 SHOT_TOASTS.set(kind,toasts);
+}
+function uiLoadHeroHurt(game) {
+import('./grid-hero-hurt.js').then((module) => { game.heroHurt = module; }).catch(console.error);
+}
+function uiHeroHurtFx(app,hook,detail) {
+const hurt = app.game.heroHurt;
+return hurt ? hurt[hook]({ ...detail,now:performance.now() }) :false;
 }
 function uiActors(game) {
 return game.fight ? game.fight.actors :[];
@@ -45,7 +54,10 @@ function uiDroneAlive(app) {
 return uiActors(app.game).some(uiIsLiveDrone);
 }
 function ensureFight(game) {
-if (!game.fight) game.fight = { hp:createHp(game.doorway || game.world.spawn || game.avatar.pos,maxHeartsOf(game.ext)),actors:[] };
+if (!game.fight) {
+game.fight = { hp:createHp(game.doorway || game.world.spawn || game.avatar.pos,maxHeartsOf(game.ext)),actors:[] };
+uiLoadHeroHurt(game);
+}
 return game.fight;
 }
 function uiLiveFoes(game) {
@@ -80,9 +92,10 @@ if (game.sentry) game.sentry.reset(app);
 const doorway = game.reviveAt || game.doorway || game.fight.hp.doorway;
 const revived = reviveHp({ ...game.fight.hp,doorway });
 uiReviveFight(game.fight,revived.hp);
+const beat = uiHeroHurtFx(app,'uiHeroDown',{ game,pose:game.view?.avatar || game.avatar.pos,doorway:revived.pos });
 game.avatar = { pos:revived.pos,facing:game.avatar.facing };
 Object.assign(game.walk,{ held:[],queued:null,plan:null,tween:null,stalled:null });
-if (game.stage) game.stage.follow = null;
+if (game.stage && !beat) game.stage.follow = null;
 uiCommitSave(app,withPosition(game.save,game.avatar));
 uiShowToast(app,{ text:REVIVE_TOAST,kind:'warn' });
 }
@@ -95,6 +108,7 @@ const result = hurtHp(fight.hp,hits);
 fight.hp = result.hp;
 uiEmit(GAME_EVENT.RIG_BAD,{ rigId:GRID_RIG_ID,reason:'hit' });
 if (result.down) { analytics.track('hearts_zero'); uiRevive(app); return false; }
+uiHeroHurtFx(app,'uiHeroHit',{ cell:app.game.avatar.pos });
 uiShowToast(app,{ text:uiHurtText(result.hp,kind),kind:'warn' });
 return true;
 }
@@ -109,9 +123,10 @@ const entry = cellAt(game.world,cell);
 const held = uiLiveFoes(game).some((foe) => foe.col === cell.col && foe.row === cell.row);
 return Boolean(entry) && entry.kind === 'floor' && thingAt(game.world,cell) === null && !held;
 }
-function uiPushTween(from,to) {
+function uiPushTween(from,to,drawn) {
 const now = performance.now();
-return { from,to,start:now,until:now + WALK_FEEL.stepMs,glideMs:uiPrefersReducedMotion() ? 0 :WALK_FEEL.stepMs,curve:'ease',stride:0 };
+const still = uiPrefersReducedMotion();
+return { from,to,start:now,until:now + (drawn && !still ? PUSH_BLOCK_MS :WALK_FEEL.stepMs),glideMs:drawn || still ? 0 :WALK_FEEL.stepMs,curve:'ease',stride:0 };
 }
 function uiKnockBack(app,attacker) {
 const game = app.game;
@@ -119,7 +134,8 @@ const from = game.avatar.pos;
 const to = knockbackCell((cell) => uiIsFreeFloor(game,cell),from,attacker);
 if (to.col === from.col && to.row === from.row) return;
 game.avatar = { pos:to,facing:game.avatar.facing };
-Object.assign(game.walk,{ tween:uiPushTween(from,to),plan:null });
+uiHeroHurtFx(app,'uiHeroPush',{ from,to,attacker });
+Object.assign(game.walk,{ tween:uiPushTween(from,to,Boolean(game.heroHurt)),plan:null });
 uiCommitSave(app,withPosition(game.save,game.avatar));
 }
 function uiMiteStrikers(game,miteHits) {
@@ -189,16 +205,41 @@ uiActorsTick(app);
 uiRenderKeepingFocus(app);
 return true;
 }
+function uiHeartsChange(game,hp,now) {
+const change = heartChange(game.heartsSeen,hp,now);
+game.heartsSeen = { hearts:hp.hearts,max:hp.max };
+if (change) game.heartsChange = change;
+return !uiPrefersReducedMotion() && heartChangeLive(game.heartsChange,now) ? game.heartsChange :null;
+}
+function uiHeartSlot(slot) {
+const node = uiEl('span',{
+className:'grid-heart' + (slot.fx ? ' grid-heart-' + slot.fx :''),text:slot.full ? FULL_HEART :EMPTY_HEART,attrs:{ 'aria-hidden':'true' },
+});
+if (slot.fx) node.style.animationDelay = Math.round(slot.delayMs) + 'ms';
+return node;
+}
+function uiHeartsHidden(app,fight) {
+if (!fight || (fight.actors.length === 0 && !fight.engaged)) return true;
+return !app.game.sentry && !uiDroneAlive(app) && fight.hp.hearts === fight.hp.max;
+}
+function uiSafeTick(app,droneId) {
+const fight = app.game.fight;
+fight.actors = fight.actors.map((actor) => (actor.id === droneId ? { ...actor,arm:DRONE_ARM } :actor));
+uiActorsTick(app);
+}
 function uiGridHearts(app) {
 const fight = app.game.fight;
-if (!fight || (fight.actors.length === 0 && !fight.engaged)) return null;
+if (uiHeartsHidden(app,fight)) return null;
 const { hearts,max } = fight.hp;
-if (!app.game.sentry && !uiDroneAlive(app) && hearts === max) return null;
-return uiEl('span',{
-className:'grid-hearts',
-text:FULL_HEART.repeat(hearts) + EMPTY_HEART.repeat(max - hearts),
+const now = performance.now();
+const change = uiHeartsChange(app.game,fight.hp,now);
+const row = uiEl('span',{
+className:'grid-hearts' + (change && change.kind === 'lost' ? ' grid-hearts-lost' :''),
+children:heartSlots(fight.hp,change,now).map(uiHeartSlot),
 attrs:{ role:'img','aria-label':'Hearts ' + hearts + ' of ' + max },
 });
+if (change && change.kind === 'lost') row.style.animationDelay = Math.round(change.at - now) + 'ms';
+return row;
 }
 
-export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiGridShot,uiSentryWait,uiGridHearts,uiHurt };
+export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiGridShot,uiSentryWait,uiGridHearts,uiHurt,uiSafeTick };

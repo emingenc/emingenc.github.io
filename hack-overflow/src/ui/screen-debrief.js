@@ -20,12 +20,13 @@ const XP_COUNT_MS = 900;
 const DEBRIEF_TICK_MS = 60;
 const PERCENT = 100;
 const XP_FLASH_MS = 500;
+const DEBRIEF_LEAD_MS = 120;
 
 function uiTitleTiming(text,reducedMotion) {
 return reducedMotion ? 0 :Math.min(text.length * TYPE_CHAR_MS,TYPE_MAX_MS);
 }
-function uiStarAtMs(titleMs,starStep) {
-return Array.from({ length:MAX_STARS_PER_LOCK },function (_,index) { return titleMs + index * starStep; });
+function uiStarAtMs(startMs,starStep) {
+return Array.from({ length:MAX_STARS_PER_LOCK },function (_,index) { return startMs + index * starStep; });
 }
 function uiStarEvents(outcome,starAtMs) {
 return starAtMs.slice(0,outcome.stars).map(function (atMs,index) {
@@ -48,12 +49,13 @@ function uiDebriefPlan(outcome,reducedMotion) {
 const titleText = outcome.number + '. ' + outcome.name;
 const titleMs = uiTitleTiming(titleText,reducedMotion);
 const starStep = reducedMotion ? 0 :STAR_STEP_MS;
-const starAtMs = uiStarAtMs(titleMs,starStep);
-const starsEndMs = titleMs + MAX_STARS_PER_LOCK * starStep;
+const leadMs = reducedMotion ? 0 :DEBRIEF_LEAD_MS;
+const starAtMs = uiStarAtMs(leadMs + titleMs,starStep);
+const starsEndMs = leadMs + titleMs + MAX_STARS_PER_LOCK * starStep;
 const xpDurationMs = reducedMotion || outcome.gained === 0 ? 0 :XP_COUNT_MS;
 const totalMs = starsEndMs + xpDurationMs;
 const events = [...uiStarEvents(outcome,starAtMs),uiXpEvent(outcome,starsEndMs,xpDurationMs),...uiLevelUpEvents(outcome,totalMs)];
-return { titleText,titleMs,starAtMs,xpAtMs:starsEndMs,xpDurationMs,events,totalMs };
+return { titleText,titleMs,leadMs,starAtMs,xpAtMs:starsEndMs,xpDurationMs,events,totalMs };
 }
 function uiScheduleDebriefEvent(debrief,event) {
 const fire = event.type === GAME_EVENT.LEVEL_UP ? function () { uiFlushLevelUp(debrief); } :function () { uiEmit(event.type,event.payload); };
@@ -109,7 +111,7 @@ uiStopDebrief(debrief);
 app.game.debrief = null;
 }
 function uiTitleShown(plan,elapsed) {
-const progress = plan.titleMs > 0 ? elapsed / plan.titleMs :1;
+const progress = plan.titleMs > 0 ? (elapsed - plan.leadMs) / plan.titleMs :1;
 return plan.titleText.slice(0,Math.round(clamp01(progress) * plan.titleText.length));
 }
 function uiStarNode(filled,delayMs) {

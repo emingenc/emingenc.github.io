@@ -380,17 +380,30 @@ const ctx = canvas.getContext('2d');
 uiSpriteRuns(rows).forEach(function (run) { uiFillRun(ctx,run,look); });
 return canvas;
 }
-let uiCanvasCache = { palette:null,revision:0,bySize:new Map() };
+const UI_KEEP_SIZES = 2;
+let uiCanvasCache = { palette:null,revision:0,bySize:new Map(),latest:0 };
+function uiPaintSize(paint) {
+return paint.box || UI_SPRITE_SIZE * paint.pixel;
+}
+function uiSizeSet(cache,size) {
+if (cache.latest !== size) {
+const set = cache.bySize.get(size) || new Map();
+cache.bySize.delete(size);
+cache.bySize.set(size,set);
+cache.latest = size;
+while (cache.bySize.size > UI_KEEP_SIZES) cache.bySize.delete(cache.bySize.keys().next().value);
+}
+return cache.bySize.get(size);
+}
 function uiCachedCanvases(paint) {
-if (uiCanvasCache.palette !== paint.palette || uiCanvasCache.revision !== uiArtRevision()) uiCanvasCache = { palette:paint.palette,revision:uiArtRevision(),bySize:new Map() };
-if (!uiCanvasCache.bySize.has(paint.pixel)) uiCanvasCache.bySize.set(paint.pixel,new Map());
-return uiCanvasCache.bySize.get(paint.pixel);
+if (uiCanvasCache.palette !== paint.palette || uiCanvasCache.revision !== uiArtRevision()) uiCanvasCache = { palette:paint.palette,revision:uiArtRevision(),bySize:new Map(),latest:0 };
+return uiSizeSet(uiCanvasCache,uiPaintSize(paint));
 }
 function uiSpriteCanvas(name,accent,paint) {
 const byName = uiCachedCanvases(paint);
 if (!byName.has(name)) byName.set(name,new Map());
 const byAccent = byName.get(name);
-if (!byAccent.has(accent)) byAccent.set(accent,uiArtCanvas(name,{ accent,devicePx:UI_SPRITE_SIZE * paint.pixel,palette:paint.palette }) || uiRenderSprite(uiSpriteRows(name),{ ...paint,accent }));
+if (!byAccent.has(accent)) byAccent.set(accent,uiArtCanvas(name,{ accent,devicePx:uiPaintSize(paint),palette:paint.palette }) || uiRenderSprite(uiSpriteRows(name),{ ...paint,accent }));
 return byAccent.get(accent);
 }
 

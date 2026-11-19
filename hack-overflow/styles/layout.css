@@ -39,3 +39,26 @@
 .test-panel {
   scroll-margin-bottom:var(--bar-h);
 }
+
+.screen-scrim {
+  position:fixed;
+  inset:0;
+  z-index:40;
+  pointer-events:none;
+  opacity:0;
+  background:var(--bg);
+}
+
+.screen-scrim.is-room {
+  background:radial-gradient(circle at 50% 50%,transparent 18%,color-mix(in srgb,var(--primary) 14%,var(--bg)) 46%,var(--bg) 78%);
+}
+
+.screen-scrim.is-exit {
+  background:color-mix(in srgb,var(--primary) 8%,var(--bg));
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .screen-scrim {
+    display:none;
+  }
+}

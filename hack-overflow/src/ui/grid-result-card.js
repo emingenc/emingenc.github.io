@@ -22,18 +22,24 @@ uiEl('dt',{ className:'rc-fact-label',text:fact.label }),
 uiEl('dd',{ className:'rc-fact-value',text:String(fact.value) }),
 ] });
 }
-function uiBar(bar) {
+function uiBar(bar,index) {
 const fill = uiEl('div',{ className:'rc-bar-fill is-' + bar.tone + ' ' + uiBarClass(bar.value,bar.max) });
-return uiEl('div',{ className:'rc-bar',children:[
+const node = uiEl('div',{ className:'rc-bar',children:[
 uiEl('span',{ className:'rc-bar-label',text:bar.label }),
 uiEl('div',{ className:'rc-bar-track',attrs:{ role:'img','aria-label':bar.label + ' ' + bar.value + ' of ' + bar.max },children:[fill] }),
 uiEl('span',{ className:'rc-bar-value',text:String(bar.value) }),
 ] });
+node.style.setProperty('--rc-i',String(index));
+return node;
 }
 function uiListPart(model) {
 if (!model.list.length) return [];
 const title = model.listTitle ? [uiEl('p',{ className:'rc-list-title',text:model.listTitle })] :[];
-const rows = model.list.map((row) => uiEl('li',{ className:'rc-row is-' + row.tone,text:row.text }));
+const rows = model.list.map(function (row,index) {
+const node = uiEl('li',{ className:'rc-row is-' + row.tone,text:row.text });
+node.style.setProperty('--rc-i',String(index));
+return node;
+});
 return [...title,uiEl('ul',{ className:'rc-list',children:rows })];
 }
 function uiPrimaryOf(model) {
@@ -60,7 +66,7 @@ overlay.addEventListener('keyup',function (event) { event.stopPropagation(); });
 }
 function uiBuildCard(model,choose) {
 const buttons = model.actions.map((action) => uiActionButton(action,choose));
-const bars = model.bars.length ? [uiEl('div',{ className:'rc-bars',children:model.bars.map(uiBar) })] :[];
+const bars = model.bars.length ? [uiEl('div',{ className:'rc-bars',children:model.bars.map((bar,index) => uiBar(bar,index)) })] :[];
 const note = model.note ? [uiEl('p',{ className:'rc-note',text:model.note })] :[];
 const head = uiEl('div',{ className:'rc-head',children:[
 uiEl('h2',{ className:'rc-title',text:model.title }),
@@ -93,7 +99,10 @@ const before = Object.getOwnPropertyDescriptor(game,'drawPower');
 let plain = before && !before.get ? before.value :null;
 const under = () => (before && before.get ? before.get.call(game) :plain);
 const draw = function (app) {
-if (card.open) return card.overlay;
+if (card.open) {
+card.overlay.style.setProperty('--rc-elapsed',(card.openedAt - performance.now()) + 'ms');
+return card.overlay;
+}
 const inner = under();
 return inner ? inner(app) :null;
 };
@@ -126,7 +135,7 @@ async function uiShowResultCard(app,model) {
 await uiLinkStyle(STYLE_HREF);
 uiCloseResultCard(app,null);
 return new Promise(function (resolve) {
-const card = { open:true,overlay:null,resolve,undo:null };
+const card = { open:true,overlay:null,resolve,undo:null,openedAt:performance.now() };
 card.overlay = uiBuildCard(model,(id) => uiChoose(app,id));
 card.undo = uiHangCard(app.game,card);
 CARDS.set(app,card);

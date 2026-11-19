@@ -1,12 +1,12 @@
+import { bubbleLook,typedLines } from '../game/cast/speech-fx.js';
 import { uiGridPainter } from './grid-draw-fx.js';
-import { uiNotchedBox,uiOutlinedText,uiTextWidth,uiWorldFont } from './grid-world-text.js';
+import { uiNotched,uiOutlinedText,uiTextWidth,uiWorldFont } from './grid-world-text.js';
 
 const SPEECH_LINE = /^([A-Z][A-Z0-9-]*): (.+)$/;
 const BASE_MS = 1100;
 const CHAR_MS = 55;
 const MIN_MS = 2400;
 const MAX_MS = 6500;
-const FADE_MS = 160;
 const PENDING_MAX = 2;
 const FONT_PX = 12;
 const HEAD_PX = 11;
@@ -20,6 +20,7 @@ const TAIL_MID = 4;
 const TAIL_TIP = 2;
 const TAIL_STEPS = [TAIL_RIM,TAIL_MID,TAIL_TIP];
 const TAIL_STEP_PX = 2;
+const RIM_PX = 2;
 const EDGE_PX = 4;
 const ELLIPSIS = '…';
 const HALF = 0.5;
@@ -76,11 +77,6 @@ lines.push(line);
 if (lines.length <= LINES_MAX) return lines;
 return [...lines.slice(0,LINES_MAX - 1),lines.slice(LINES_MAX - 1).join(' ').slice(0,WIDTH_MAX / (FONT_PX * HALF)) + ELLIPSIS];
 }
-function uiAlphaOf(talk,now,still) {
-if (still) return 1;
-const age = now - talk.bubble.atMs;
-return Math.min(Math.min(age / FADE_MS,1),Math.min((talk.bubble.ms - age) / FADE_MS,1));
-}
 function uiBoxFor(ctx,frame,spec) {
 const widest = Math.max(...spec.lines.map(function (line) { return uiTextWidth(ctx,line,uiWorldFont(FONT_PX)); }),uiTextWidth(ctx,spec.name,uiWorldFont(HEAD_PX)));
 const width = Math.min(widest,WIDTH_MAX) + 2 * PAD_PX;
@@ -102,26 +98,50 @@ const top = box.below ? box.top + EDGE_PX - out - TAIL_STEP_PX :box.top + box.he
 ctx.fillRect(centre - width * HALF,top,width,TAIL_STEP_PX);
 });
 }
+function uiBubbleBox(ctx,frame,box) {
+ctx.fillStyle = frame.palette.cyan;
+uiNotched(ctx,box,0);
+ctx.fillStyle = frame.palette.panel;
+uiNotched(ctx,box,RIM_PX);
+}
+function uiPopFrom(ctx,box,look) {
+const tipX = Math.min(Math.max(box.centre,box.left + PAD_PX),box.left + box.width - PAD_PX);
+const tipY = box.below ? box.top :box.top + box.height;
+ctx.translate(tipX,tipY - look.lift);
+ctx.scale(look.scale,look.scale);
+ctx.translate(-tipX,-tipY);
+}
+function uiDrawWords(ctx,frame,spec) {
+const left = spec.box.left + PAD_PX;
+uiOutlinedText(ctx,frame,{ text:spec.name,x:left,y:spec.box.top + PAD_PX + HEAD_PX * HALF,font:uiWorldFont(HEAD_PX),ink:HEAD_INK,align:'left' });
+spec.lines.forEach(function (line,index) {
+uiOutlinedText(ctx,frame,{ text:line,x:left,y:spec.box.top + PAD_PX + LINE_PX * (index + 1) + FONT_PX * HALF - (LINE_PX - HEAD_PX),font:uiWorldFont(FONT_PX),ink:'text',align:'left' });
+});
+}
 function uiDrawBubble(ctx,frame,talk) {
 const cell = uiSpeakers.get(talk.name)(talk.app);
 if (!cell) return;
 const lines = uiWrap(ctx,talk.bubble.text);
 const box = uiBoxFor(ctx,frame,{ cell,lines,name:talk.name });
-ctx.globalAlpha = uiAlphaOf(talk,frame.now,frame.reducedMotion);
-uiNotchedBox(ctx,frame,{ ...box,edge:'cyan',fill:'panel' });
+const age = frame.now - talk.bubble.atMs;
+const look = bubbleLook({ age,ms:talk.bubble.ms,still:frame.reducedMotion });
+ctx.save();
+ctx.globalAlpha = look.alpha;
+uiPopFrom(ctx,box,look);
+uiBubbleBox(ctx,frame,box);
 uiDrawTail(ctx,frame,box);
-const left = box.left + PAD_PX;
-uiOutlinedText(ctx,frame,{ text:talk.name,x:left,y:box.top + PAD_PX + HEAD_PX * HALF,font:uiWorldFont(HEAD_PX),ink:HEAD_INK,align:'left' });
-lines.forEach(function (line,index) {
-uiOutlinedText(ctx,frame,{ text:line,x:left,y:box.top + PAD_PX + LINE_PX * (index + 1) + FONT_PX * HALF - (LINE_PX - HEAD_PX),font:uiWorldFont(FONT_PX),ink:'text',align:'left' });
-});
-ctx.globalAlpha = 1;
+uiDrawWords(ctx,frame,{ box,name:talk.name,lines:typedLines(lines,{ age,still:frame.reducedMotion }) });
+ctx.restore();
 }
 function uiDrawSpeech(frame) {
 uiTalking.forEach(function (talk) {
 uiAdvance(talk,frame.now);
 if (talk.bubble) uiDrawBubble(frame.ctx,frame,talk);
 });
+}
+function uiSpeechAge(name,now) {
+const talk = uiTalking.get(name);
+return talk && talk.bubble && talk.bubble.atMs !== null ? now - talk.bubble.atMs :Infinity;
 }
 function uiSpeechTexts() {
 return [...uiTalking.values()].flatMap(function (talk) { return [talk.bubble,...talk.queue].filter(Boolean).map(function (line) { return talk.name + ': ' + line.text; }); });
@@ -133,4 +153,4 @@ function uiSpeechClear() {
 uiTalking.clear();
 }
 
-export { uiRegisterSpeaker,uiSpeechTap,uiSpeaking,uiSpeechTexts,uiSpeechClear };
+export { uiRegisterSpeaker,uiSpeechAge,uiSpeechTap,uiSpeaking,uiSpeechTexts,uiSpeechClear };

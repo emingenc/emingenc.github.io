@@ -140,15 +140,74 @@ ctx.fillStyle = spot.inks[layer.ink];
 layer.runs.forEach(function (run) { ctx.fillRect(spot.x + run.col * spot.unit,spot.y + run.row * spot.unit,run.width * spot.unit,spot.unit); });
 });
 }
+const UI_BODY = { feet:0.92,shadow:0.9,height:0.8 };
+const UI_SHADOW_LIFT = { shrink:0.08,fade:0.1,floor:0.5 };
+const EYE_ROW_DOWN = 0.285;
+const EYE_ROW_SIDE = 0.32;
+const EYE_COL = { downLeft:0.439,downRight:0.544,left:0.344,right:0.656 };
+const UI_EYES = { down:[[EYE_COL.downLeft,EYE_ROW_DOWN],[EYE_COL.downRight,EYE_ROW_DOWN]],left:[[EYE_COL.left,EYE_ROW_SIDE]],right:[[EYE_COL.right,EYE_ROW_SIDE]] };
+const UI_LID = { width:0.06,height:0.065 };
+const UI_NO_PUSH = { x:0,y:0 };
+const UI_NO_SCALE = { x:1,y:1 };
+
+function uiPivotTransform(ctx,pivot,shape) {
+ctx.translate(pivot.x,pivot.y);
+ctx.transform(shape.scale.x,0,shape.shear,shape.scale.y,0,0);
+ctx.translate(-pivot.x,-pivot.y);
+}
+function uiPaintShadow(ctx,box,lift) {
+const shrink = Math.max(UI_SHADOW_LIFT.floor,1 - UI_SHADOW_LIFT.shrink * lift);
+if (shrink === 1) return uiDrawArt(ctx,'hero-shadow',box);
+const alpha = ctx.globalAlpha;
+const centre = { x:box.left + box.size / 2,y:box.top + box.size * UI_BODY.shadow };
+ctx.save();
+ctx.globalAlpha = alpha * (1 - UI_SHADOW_LIFT.fade * lift);
+uiPivotTransform(ctx,centre,{ scale:{ x:shrink,y:shrink },shear:0 });
+const drawn = uiDrawArt(ctx,'hero-shadow',box);
+ctx.restore();
+return drawn;
+}
+function uiPaintLids(ctx,box,look) {
+ctx.fillStyle = look.palette.bg;
+(UI_EYES[look.facing] || []).forEach(function ([across,down]) {
+ctx.fillRect(box.left + box.size * (across - UI_LID.width / 2),box.top + box.size * (down - UI_LID.height / 2),box.size * UI_LID.width,box.size * UI_LID.height);
+});
+}
+function uiFigureShear(look,box) {
+return look.lean ? -look.lean * box.unit / (UI_BODY.height * box.size) :0;
+}
+function uiIsShaped(shear,scale) {
+return shear !== 0 || scale.x !== 1 || scale.y !== 1;
+}
+function uiPaintFigure(ctx,box,look) {
+const name = `hero${look.rootRank ? '-root' :''}-${look.facing}-${look.frame}`;
+const shear = uiFigureShear(look,box);
+const scale = look.scale || UI_NO_SCALE;
+const shaped = uiIsShaped(shear,scale);
+if (!shaped && !look.blink) return uiDrawArt(ctx,name,box);
+ctx.save();
+if (shaped) uiPivotTransform(ctx,{ x:box.left + box.size / 2,y:box.ground },{ scale,shear });
+const drawn = uiDrawArt(ctx,name,box);
+if (drawn && look.blink) uiPaintLids(ctx,box,look);
+ctx.restore();
+return drawn;
+}
+function uiLiftPx(look,place,dpr) {
+return Math.round((look.bob || 0) * place.unit * dpr) / dpr;
+}
 function uiPaintAvatar(ctx,place,look) {
-const box = { left:place.x,top:place.y,size:place.unit * UI_AVATAR_PX,dpr:ctx.getTransform?.().a || 1 };
-if (uiDrawArt(ctx,'hero-shadow',box)) {
-box.top -= look.bob * place.unit;
-if (uiDrawArt(ctx,`hero${look.rootRank ? '-root' :''}-${look.facing}-${look.frame}`,box)) return;
+const dpr = ctx.getTransform?.().a || 1;
+const lift = uiLiftPx(look,place,dpr);
+const push = look.push || UI_NO_PUSH;
+const size = place.unit * UI_AVATAR_PX;
+const box = { left:place.x,top:place.y,size,dpr };
+if (uiPaintShadow(ctx,box,look.bob || 0)) {
+const figure = { ...box,left:place.x + push.x,top:place.y + push.y - lift,unit:place.unit,ground:place.y + push.y + size * UI_BODY.feet };
+if (uiPaintFigure(ctx,figure,look)) return;
 }
 const inks = uiAvatarInks(look.palette,look.rootRank);
 uiPaintLayers(ctx,UI_SHADOW_LAYERS,{ ...place,inks });
-uiPaintLayers(ctx,UI_AVATAR_LAYERS[look.facing][look.frame],{ ...place,y:place.y - look.bob * place.unit,inks });
+uiPaintLayers(ctx,UI_AVATAR_LAYERS[look.facing][look.frame],{ ...place,x:place.x + push.x,y:place.y + push.y - lift,inks });
 }
 
 export { UI_AVATAR_PX, uiPaintAvatar };

@@ -11,6 +11,10 @@ import { uiGridBurst, uiDrawParticles } from './grid-draw-fx.js';
 const UI_SHAKES = {
 grid:{ selector:'.grid-stage .grid-canvas',px:4,ms:180,beats:5 },
 jam:{ selector:'.breach-status',px:7,ms:340,beats:7 },
+hit:{ selector:'.grid-stage .grid-canvas',px:8,ms:280,beats:6 },
+hitHard:{ selector:'.grid-stage .grid-canvas',px:11,ms:320,beats:7 },
+kill:{ selector:'.grid-stage .grid-canvas',px:2,ms:120,beats:3 },
+killBig:{ selector:'.grid-stage .grid-canvas',px:4,ms:220,beats:4 },
 };
 const UI_SHAKE_KICK = 0.5;
 const UI_EFFECTS = {
@@ -304,4 +308,4 @@ uiFxDebug();
 return bus.on('*',uiFxOnEvent);
 }
 
-export { UI_BURSTS, uiWireFx };
+export { UI_BURSTS, UI_SHAKES, uiShakeOffsets, uiWireFx };

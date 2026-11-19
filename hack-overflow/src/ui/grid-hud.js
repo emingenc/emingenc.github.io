@@ -1,7 +1,7 @@
 import { levelBand } from '../game/progress.js';
 import { nextUnlock } from '../game/objective.js';
 import { nextUnlockText } from '../game/messages.js';
-import { countUpValue } from '../game/ease.js';
+import { xpBarAt } from '../game/reward-motion.js';
 import { uiEl, uiPrefersReducedMotion } from './dom.js';
 import { uiGoalRow } from './grid-objective.js';
 import { uiHudSoundButton, uiHudMenuButton } from './render-lock-left.js';
@@ -18,31 +18,37 @@ function uiSetBarPercent(bar,fill,percent) {
 fill.style.width = percent + '%';
 bar.setAttribute('aria-valuenow',String(percent));
 }
+function uiSetXpLabel(state,at) {
+if (state.label && state.label.isConnected) state.label.textContent = uiXpText(at.band,Math.round(at.xp));
+}
 function uiTickXpTween(ctx) {
 if (!ctx.fill.isConnected) return;
-const progress = (performance.now() - ctx.startedAt) / UI_XP_TWEEN_MS;
-ctx.state.shown = countUpValue(ctx.from,ctx.target,progress);
-uiSetBarPercent(ctx.bar,ctx.fill,uiPercentAt(ctx.band,ctx.state.shown));
-if (progress < 1) window.requestAnimationFrame(function () { uiTickXpTween(ctx); });
+const at = xpBarAt({ from:ctx.from,to:ctx.target },performance.now() - ctx.startedAt);
+ctx.state.shown = at.done ? ctx.target :at.xp;
+uiSetBarPercent(ctx.bar,ctx.fill,uiPercentAt(at.band,at.xp));
+uiSetXpLabel(ctx.state,at);
+if (!at.done) window.requestAnimationFrame(function () { uiTickXpTween(ctx); });
 }
 function uiHudXpState(game) {
-if (!game.hudXp) game.hudXp = { shown:game.progress.xp };
+if (!game.hudXp) game.hudXp = { shown:game.progress.xp,label:null };
 return game.hudXp;
 }
-function uiXpBar(game,band) {
+function uiXpBar(game) {
 const state = uiHudXpState(game);
 const target = game.progress.xp;
-if (uiPrefersReducedMotion() || target < state.shown || levelBand(state.shown).level !== band.level) state.shown = target;
+if (uiPrefersReducedMotion() || target < state.shown) state.shown = target;
+const band = levelBand(state.shown);
 const percent = uiPercentAt(band,state.shown);
-const fill = uiEl('span',{ className:'grid-hud-fill' });
+const gaining = state.shown !== target;
+const fill = uiEl('span',{ className:'grid-hud-fill' + (gaining ? ' is-gain' :'') });
 fill.style.width = percent + '%';
 const bar = uiEl('span',{
 className:'grid-hud-bar',
 attrs:{ role:'progressbar','aria-label':'XP to next level','aria-valuemin':'0','aria-valuemax':'100','aria-valuenow':String(percent) },
 children:[fill],
 });
-if (state.shown !== target) {
-window.requestAnimationFrame(function () { uiTickXpTween({ bar,fill,band,state,from:state.shown,target,startedAt:performance.now() }); });
+if (gaining && typeof window.requestAnimationFrame === 'function') {
+window.requestAnimationFrame(function () { uiTickXpTween({ bar,fill,state,from:state.shown,target,startedAt:performance.now() }); });
 }
 return bar;
 }
@@ -65,24 +71,26 @@ return dock;
 function uiTextNode(tag,className,text) {
 return text ? uiEl(tag,{ className,text }) :null;
 }
-function uiRankButton(text) {
-return text ? uiEl('button',{ className:'grid-hud-rank',text,attrs:{ type:'button','data-action':'rank-open','data-focus-key':'rank-open','aria-label':text + ', details' } }) :null;
+function uiRankButton(text,fresh) {
+return text ? uiEl('button',{ className:'grid-hud-rank' + (fresh ? ' is-pop' :''),text,attrs:{ type:'button','data-action':'rank-open','data-focus-key':'rank-open','aria-label':text + ', details' } }) :null;
 }
 function uiHudPill(game) {
 if (!game.hudLead || !game.hudPill) return uiTextNode('p','grid-hud-pill',game.hudPill);
 return uiEl('button',{ className:'grid-hud-pill grid-hud-pill-go',text:game.hudPill,attrs:{ type:'button','data-action':'case-go','data-focus-key':'case-go','aria-label':'Go to ' + game.hudLead } });
 }
+function uiRankIsFresh(game) {
+const fresh = Boolean(game.hudRankSeen) && Boolean(game.hudRank) && game.hudRank !== game.hudRankSeen;
+game.hudRankSeen = game.hudRank;
+return fresh;
+}
 function uiHudTop(game) {
 const level = uiEl('span',{ className:'grid-hud-level',text:'LV ' + game.progress.level + ' · ' + game.progress.rank });
-return uiEl('div',{ className:'grid-hud-top',children:[level,uiRankButton(game.hudRank)].filter(Boolean) });
+return uiEl('div',{ className:'grid-hud-top',children:[level,uiRankButton(game.hudRank,uiRankIsFresh(game))].filter(Boolean) });
 }
 function uiHudStats(game) {
-const progress = game.progress;
-const band = levelBand(progress.xp);
-return uiEl('div',{
-className:'grid-hud-stats',
-children:[uiHudTop(game),uiEl('span',{ className:'grid-hud-xp',text:uiXpText(band,progress.xp) })],
-});
+const state = uiHudXpState(game);
+state.label = uiEl('span',{ className:'grid-hud-xp',text:uiXpText(levelBand(state.shown),Math.round(state.shown)) });
+return uiEl('div',{ className:'grid-hud-stats',children:[uiHudTop(game),state.label] });
 }
 function uiHudHint(game) {
 const text = nextUnlockText(game.world,nextUnlock(game.progress));
@@ -140,7 +148,7 @@ const toggle = uiHudToggle(app,open);
 const header = uiEl('header',{
 className:'hud grid-hud',
 attrs:{ 'data-open':open ? UI_OPEN :UI_CLOSED },
-children:[toggle,uiXpBar(game,levelBand(game.progress.xp)),uiGoalRow(app),uiHudMore(app),uiHudMenuButton()],
+children:[toggle,uiXpBar(game),uiGoalRow(app),uiHudMore(app),uiHudMenuButton()],
 });
 toggle.addEventListener('click',function () { uiOnHudToggle(app,header,toggle); });
 return header;

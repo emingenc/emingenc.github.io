@@ -2,13 +2,16 @@ import { GAME_EVENT } from '../game/game-events.js';
 import { isOpen } from '../game/world.js';
 import { markSeen } from '../game/save.js';
 import { drawnOpenness, isRevealing, newlyOpened, revealDone, revealText, revealableOnCamera, startBatch, wholeCellsOnCamera } from '../game/doors.js';
+import { doorFeel,DOOR_SHAKE } from '../game/screen-transition.js';
 import { uiAnnounce, uiPrefersReducedMotion } from './dom.js';
 import { uiEmit } from './bus.js';
 import { uiCommitSave } from './game-state.js';
 import { uiShowToast } from './grid-toast.js';
+import { uiShakeGrid } from './screen-transition.js';
 
 function uiEmitOpened(app,item) {
 uiEmit(GAME_EVENT.GATE_OPEN,{ id:item.id,kind:item.kind,cells:item.cells });
+if (item.kind === 'barrier') uiShakeGrid(DOOR_SHAKE);
 if (item.kind === 'barrier') uiShowToast(app,{ text:revealText(item),kind:'reward',announced:true });
 if (item.kind === 'kernel-door') uiEmit(GAME_EVENT.KERNEL_OPEN,{});
 }
@@ -51,7 +54,7 @@ const now = performance.now();
 if (game.doorReveal && revealDone(game.doorReveal,now)) game.doorReveal = null;
 const open = isOpen(game.world,game.progress,id);
 if (open && !game.save.seenOpen.includes(id) && !isRevealing(game.doorReveal,id)) uiRevealOnCamera(app,now);
-return drawnOpenness({ open,seen:game.save.seenOpen.includes(id),reveal:game.doorReveal,now },id);
+return doorFeel(drawnOpenness({ open,seen:game.save.seenOpen.includes(id),reveal:game.doorReveal,now },id));
 }
 
 export { uiDoorOpenness };

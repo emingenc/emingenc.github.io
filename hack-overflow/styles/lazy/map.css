@@ -176,3 +176,20 @@ details[open] > .map-encrypted-summary::before {
     border-radius:0;
   }
 }
+
+.map-screen {
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(180deg,color-mix(in srgb,var(--bg) 70%,transparent),color-mix(in srgb,var(--bg) 84%,transparent)),
+    url('../../assets/art/ui/breach-tall.webp');
+  background-repeat:no-repeat;
+  background-size:cover;
+}
+
+@media (orientation:landscape) {
+  .map-screen {
+    background-image:
+      linear-gradient(180deg,color-mix(in srgb,var(--bg) 70%,transparent),color-mix(in srgb,var(--bg) 84%,transparent)),
+      url('../../assets/art/ui/breach-wide.webp');
+  }
+}

@@ -2,7 +2,8 @@ import { GAME_EVENT } from '../game/game-events.js';
 import { rankFor, traceCapacity } from '../game/progress.js';
 import { EXPLOITS } from '../game/exploits.js';
 import { unlockText } from '../game/messages.js';
-import { uiEl, uiPointerIsCoarse } from './dom.js';
+import { elapsedFromVar,levelLandMs,levelShownAt } from '../game/reward-motion.js';
+import { uiEl, uiPointerIsCoarse, uiPrefersReducedMotion } from './dom.js';
 import { uiLinkStyles } from './lazy-style.js';
 import { uiEmit } from './bus.js';
 import { uiEnterGrid } from './screen-grid.js';
@@ -60,10 +61,31 @@ return groups.map(function (group) {
 return uiEl('div',{ className:'levelup-group',children:[labelled ? uiLevelLabel(group.level,unlocks.indexOf(group.unlocks[0])) :null,uiUnlockGroup(world,group,unlocks)] });
 });
 }
+const UI_LEVEL_WAIT_FRAMES = 30;
+function uiTickLevelTitle(ctx) {
+const node = ctx.node;
+if (!node.isConnected) {
+ctx.waited += 1;
+if (ctx.waited < UI_LEVEL_WAIT_FRAMES) window.requestAnimationFrame(function () { uiTickLevelTitle(ctx); });
+return;
+}
+if (ctx.startedAt === null) ctx.startedAt = performance.now() - elapsedFromVar(getComputedStyle(node).getPropertyValue('--levelup-elapsed'));
+const elapsed = performance.now() - ctx.startedAt;
+node.textContent = 'LV ' + levelShownAt(ctx.range,elapsed);
+if (elapsed < levelLandMs(ctx.range)) window.requestAnimationFrame(function () { uiTickLevelTitle(ctx); });
+}
+function uiLevelTitle(levelUp) {
+const node = uiEl('h1',{ className:'levelup-title',text:'LV ' + levelUp.after });
+node.setAttribute('aria-label','LV ' + levelUp.after);
+node.style.setProperty('--levelup-land',levelLandMs(levelUp) + 'ms');
+if (uiPrefersReducedMotion() || levelUp.after <= levelUp.before || typeof window.requestAnimationFrame !== 'function') return node;
+window.requestAnimationFrame(function () { uiTickLevelTitle({ node,range:levelUp,startedAt:null,waited:0 }); });
+return node;
+}
 function uiLevelUpBody(world,levelUp) {
 return [
 uiEl('p',{ className:'levelup-kicker',text:'LEVEL UP' }),
-uiEl('h1',{ className:'levelup-title',text:'LV ' + levelUp.after }),
+uiLevelTitle(levelUp),
 uiEl('p',{ className:'levelup-rank',text:'CALLSIGN: ' + rankFor(levelUp.after) }),
 uiEl('div',{ className:'levelup-unlocks',attrs:{ role:'group','aria-label':'Unlocked' },children:uiUnlockGroups(world,levelUp) }),
 ];

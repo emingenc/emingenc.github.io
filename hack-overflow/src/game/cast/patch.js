@@ -18,6 +18,7 @@ const ARRIVE_CELLS = 8;
 const ARRIVE_STEP_MS = 140;
 const FOLLOW_REACH = 2;
 const TRAIL_MS = 130;
+const STRIDE_GRACE = 1.5;
 const YOU = 'ENGINEER';
 const PATCH = 'PATCH';
 const BUSY_TOAST = 'Keys clacking. Busy.';
@@ -83,14 +84,31 @@ function crateText(crateId) {
 return 'crate ' + crateId.slice('crate-'.length) + '/' + CRATE_CELLS.length + ': DEPRECATED';
 }
 function trailAt(cell) {
-return { col:cell.col,row:cell.row,from:{ col:cell.col,row:cell.row },at:-Infinity };
+return { col:cell.col,row:cell.row,from:{ col:cell.col,row:cell.row },at:-Infinity,stride:0,curve:'ease' };
 }
 function trailStep(trail,left,now) {
-return { col:left.col,row:left.row,from:{ col:trail.col,row:trail.row },at:now };
+const continues = typeof trail.at === 'number' && now - trail.at < TRAIL_MS * STRIDE_GRACE;
+return {
+col:left.col,row:left.row,from:{ col:trail.col,row:trail.row },at:now,
+stride:continues ? 1 - (trail.stride || 0) :0,curve:continues ? 'cruise' :'ease',
+};
 }
 function trailPose(trail,clock) {
 const along = clock.still ? 1 :Math.min(1,Math.max(0,(clock.now - trail.at) / TRAIL_MS));
 return { col:trail.from.col + (trail.col - trail.from.col) * along,row:trail.from.row + (trail.row - trail.from.row) * along };
+}
+function facingOf(from,to) {
+const dc = to.col - from.col;
+const dr = to.row - from.row;
+if (dc === 0 && dr === 0) return 'down';
+if (Math.abs(dc) > Math.abs(dr)) return dc > 0 ? 'right' :'left';
+return dr > 0 ? 'down' :'up';
+}
+function followerPose(trail,clock) {
+const cell = trailPose(trail,clock);
+const progress = clock.still ? 1 :Math.min(1,Math.max(0,(clock.now - trail.at) / TRAIL_MS));
+const moving = progress < 1;
+return { ...cell,facing:facingOf(trail.from,trail),moving,phase:moving ? (trail.stride || 0) + progress :0 };
 }
 function trailLost(trail,hero) {
 return Math.max(Math.abs(trail.col - hero.col),Math.abs(trail.row - hero.row)) > FOLLOW_REACH;
@@ -103,5 +121,5 @@ return isLine(ext) ? LINE_CRATE_CELLS :CRATE_CELLS;
 export {
 BOLT_BEAT,EAST_BEAT,QUEST_ID,PATCH_CELL,WARP_CELL,BENCH_CELLS,CRATE_CELLS,LINE_CRATE_CELLS,LINE_CRATE_HP,ARRIVE_CELLS,ARRIVE_STEP_MS,FOLLOW_REACH,
 BUSY_TOAST,OFFLINE_TOAST,TALK_LINES,TALK_LINES_LINE,boltToast,TELL_TOAST,CRATES_TOAST,CRATES_TOAST_LINE,DONE_TOAST,DONE_TOAST_LINE,EAST_TOAST,CRATE_TOASTS,crateCellsOf,
-patchRole,hasBolt,boltOwed,commitActive,eastWingDue,solidProps,crateActors,propAt,crateText,trailAt,trailStep,trailPose,trailLost,
+patchRole,hasBolt,boltOwed,commitActive,eastWingDue,solidProps,crateActors,propAt,crateText,trailAt,trailStep,trailPose,trailLost,facingOf,followerPose,TRAIL_MS,
 };

@@ -1,4 +1,6 @@
-import { uiEl, uiAnnounce } from './dom.js';
+import { toastCountRunning, toastCountText } from '../game/toast-fx.js';
+import { uiSetVar } from './css-var.js';
+import { uiEl, uiAnnounce, uiPrefersReducedMotion } from './dom.js';
 import { uiRenderKeepingFocus } from './app.js';
 
 const UI_TOAST_MS = { line:2500,sector:3500 };
@@ -14,7 +16,7 @@ return game.toastQueue;
 function uiStartToast(app,toast) {
 const game = app.game;
 const ms = UI_TOAST_MS[toast.kind] || UI_TOAST_MS.line;
-game.toast = { ...toast,until:Date.now() + ms,shownAt:performance.now() };
+game.toast = { ...toast,ms,until:Date.now() + ms,shownAt:performance.now() };
 game.toastTimer = window.setTimeout(function () { uiAdvanceToast(app); },ms);
 }
 function uiLastToastText(game) {
@@ -43,21 +45,39 @@ while (queue.length > UI_TOAST_PENDING_MAX) queue.shift();
 function uiLiveToast(game) {
 return game.toast?.until > Date.now() ? game.toast :null;
 }
+function uiToastCountUp(node,toast) {
+function step() {
+const elapsed = performance.now() - toast.shownAt;
+node.textContent = toastCountText(toast.detail,elapsed);
+if (toastCountRunning(elapsed)) window.requestAnimationFrame(function () { if (node.isConnected) step(); });
+}
+step();
+}
+function uiToastDetail(toast) {
+const node = uiEl('span',{ className:'grid-toast-detail',text:toast.detail });
+if (!uiPrefersReducedMotion()) uiToastCountUp(node,toast);
+return node;
+}
 function uiToastBanner(toast) {
 const line = uiEl('div',{
 className:'grid-toast-line',
-children:[uiEl('span',{ className:'grid-toast-name',text:toast.text }),uiEl('span',{ className:'grid-toast-detail',text:toast.detail })],
+children:[uiEl('span',{ className:'grid-toast-name',text:toast.text }),uiToastDetail(toast)],
 });
 const banner = uiEl('div',{ className:'grid-toast-banner',children:[uiEl('span',{ className:'grid-toast-head',text:toast.head }),line] });
-banner.style.setProperty('--toast-elapsed',(toast.shownAt - performance.now()) + 'ms');
-return banner;
+return uiToastTiming(banner,toast);
+}
+function uiToastTiming(node,toast) {
+uiSetVar(node,'--toast-elapsed',(toast.shownAt - performance.now()) + 'ms');
+uiSetVar(node,'--toast-ms',toast.ms + 'ms');
+return node;
 }
 function uiGridToast(app) {
 const toast = uiLiveToast(app.game);
 const attrs = { 'aria-hidden':'true' };
 if (!toast) return uiEl('div',{ className:'grid-toast grid-toast-empty',attrs });
 const body = toast.head ? { children:[uiToastBanner(toast)] } :{ text:toast.text };
-return uiEl('div',{ className:'grid-toast grid-toast-' + toast.kind,attrs,...body });
+const node = uiEl('div',{ className:'grid-toast grid-toast-' + toast.kind,attrs,...body });
+return toast.head ? node :uiToastTiming(node,toast);
 }
 
 export { uiShowToast, uiGridToast };
