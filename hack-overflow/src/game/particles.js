@@ -1,4 +1,4 @@
-import { lerp } from './ease.js';
+import { easeOutCubic,lerp } from './ease.js';
 
 
 const PARTICLE_CAP = 200;
@@ -41,6 +41,22 @@ pop:{
 count:1,spread:0,speedMin:0,speedMax:0,heading:0,arc:1,drag:0,gravity:0,lifeMin:320,lifeMax:380,
 sizeMin:0.35,sizeMax:0.4,sizeEnd:3.2,shape:'ring',twinkle:false,colors:['bright'],
 },
+'spark-hit':{
+count:7,spread:0.05,speedMin:2.4,speedMax:5,heading:0,arc:0.4,drag:5,gravity:0,lifeMin:180,lifeMax:300,
+sizeMin:0.1,sizeMax:0.16,sizeEnd:0.2,shape:'square',twinkle:false,colors:['bright','text','amber'],
+},
+ember:{
+count:3,spread:0.08,speedMin:1.6,speedMax:3.2,heading:0,arc:0.6,drag:2.5,gravity:7,lifeMin:380,lifeMax:620,
+sizeMin:0.08,sizeMax:0.12,sizeEnd:0.3,shape:'square',twinkle:false,colors:['amber','bright'],
+},
+'kill-burst':{
+count:18,spread:0.12,speedMin:2.2,speedMax:5.4,heading:0,arc:1,drag:3.2,gravity:3,lifeMin:350,lifeMax:600,
+sizeMin:0.1,sizeMax:0.2,sizeEnd:0.25,shape:'square',twinkle:false,colors:['amber','bright'],
+},
+'kill-ring':{
+count:1,spread:0,speedMin:0,speedMax:0,heading:0,arc:1,drag:0,gravity:0,lifeMin:300,lifeMax:340,
+sizeMin:0.45,sizeMax:0.5,sizeEnd:3.4,sizeEase:'out',shape:'ring',twinkle:false,colors:['bright'],
+},
 };
 
 function seededRandom(seed) {
@@ -59,10 +75,13 @@ return PARTICLE_KINDS[kind];
 function between(random,min,max) {
 return min + (max - min) * random();
 }
-function launch(recipe,origin,random) {
+function launch(recipe,emission,random) {
+const origin = emission.origin;
 const col0 = origin.col + (random() * 2 - 1) * recipe.spread;
 const row0 = origin.row + (random() * 2 - 1) * recipe.spread;
-const angle = (recipe.heading + (random() - HALF) * recipe.arc) * FULL_TURN;
+const heading = emission.heading === undefined ? recipe.heading :emission.heading;
+const arc = emission.arc === undefined ? recipe.arc :emission.arc;
+const angle = (heading + (random() - HALF) * arc) * FULL_TURN;
 const speed = between(random,recipe.speedMin,recipe.speedMax);
 return { col0,row0,vcol:Math.cos(angle) * speed,vrow:Math.sin(angle) * speed };
 }
@@ -75,10 +94,10 @@ twinkleRate:recipe.twinkle ? between(random,TWINKLE.minRate,TWINKLE.maxRate) :0,
 };
 }
 function newParticle(emission,recipe,random) {
-const start = launch(recipe,emission.origin,random);
+const start = launch(recipe,emission,random);
 const look = looks(recipe,emission.colors || recipe.colors,random);
 return {
-kind:emission.kind,shape:recipe.shape,bornMs:emission.atMs,drag:recipe.drag,gravity:recipe.gravity,sizeEnd:recipe.sizeEnd,
+kind:emission.kind,shape:recipe.shape,bornMs:emission.atMs,drag:recipe.drag,gravity:recipe.gravity,sizeEnd:recipe.sizeEnd,sizeEase:recipe.sizeEase === 'out',
 ...start,...look,col:start.col0,row:start.row0,alpha:1,size:look.size0,
 };
 }
@@ -111,7 +130,7 @@ return {
 col:particle.col0 + particle.vcol * glide,
 row:particle.row0 + particle.vrow * glide + particle.gravity * seconds * seconds / 2,
 alpha:alphaOf(particle,progress,seconds),
-size:particle.size0 * lerp(1,particle.sizeEnd,progress),
+size:particle.size0 * lerp(1,particle.sizeEnd,particle.sizeEase ? easeOutCubic(progress) :progress),
 };
 }
 function updateParticles(pool,nowMs) {

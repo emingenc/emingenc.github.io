@@ -7,7 +7,8 @@ import { ensureFight,uiActorsTick } from './grid-actors.js';
 import { uiAddChips,uiHooksOnce,uiModeOff,uiPowerOf,uiPowerRefresh,uiPowerSay as uiSay } from './grid-power.js';
 import { uiLend,uiSpendTrial } from './grid-power-lend.js';
 import { uiBreachClick,uiWireBreach } from './grid-power-plate.js';
-import { uiPaintPlate } from './grid-power-plate-draw.js';
+import { uiPressBurst,uiPressPulse } from './grid-power-feel.js';
+import { PULSE_KEY,uiGlyphCell,uiPaintPlate } from './grid-power-plate-draw.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiPayRank } from './rank-pay.js';
 
@@ -138,11 +139,19 @@ return;
 uiTickWith(app,SHOT_ARM);
 if (uiLiveOf(app) === live) uiSay(app,{ text:text.wrong(result.right) });
 }
+function uiPressFeel(at,kind) {
+if (kind === 'idle') return;
+const wrong = kind === 'wrong';
+uiPressPulse(PULSE_KEY + at,{ wrong });
+uiPressBurst(uiGlyphCell(at),wrong ? 'fizz' :'spark');
+}
 function uiPlay(app,verb) {
 const live = uiLiveOf(app);
 if (!live || app.story || app.game.travelOpen) return;
+const at = runView(live.run).at;
 const result = playVolley(live.run,verb);
 live.run = result.run;
+uiPressFeel(at,result.kind);
 if (result.kind === 'wrong') uiWrong(app,live,result);
 else if (result.kind !== 'idle') uiRight(app,live,result);
 uiPowerRefresh(app);

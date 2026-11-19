@@ -1,5 +1,6 @@
 import { findPath } from '../game/path.js';
 import { travelTargets } from '../game/travel.js';
+import { uiSetVar } from './css-var.js';
 import { uiEl } from './dom.js';
 import { uiWalkPath, uiWalkReleaseAll } from './grid-walk.js';
 import { uiShowToast } from './grid-toast.js';
@@ -11,6 +12,7 @@ const UI_TRAVEL_PREFIX = 'travel-';
 const UI_TRAVEL_PANEL_ID = 'grid-travel-panel';
 const UI_TRAVEL_CLOSE_KEY = 'travel-close';
 const UI_TRAVEL_LIST_STYLE = 'styles/lazy/grid-travel-list.css';
+const UI_TRAVEL_STAGGER_ROWS = 6;
 const UI_ROUTE_CHIPS = ['go','resume','around'];
 let uiTravelListScroll = 0;
 function uiRouteTo(app,id) {
@@ -56,6 +58,16 @@ type:'button','data-action':'travel-toggle','data-focus-key':'travel-toggle','ar
 },
 });
 }
+function uiStaggerTravelRows(panel) {
+const rows = panel.querySelectorAll('.travel-go');
+for (let index = 0; index < Math.min(rows.length,UI_TRAVEL_STAGGER_ROWS); index += 1) uiSetVar(rows[index],'--i',index);
+const next = panel.querySelector('.travel-next .travel-go');
+if (next) uiSetVar(next,'--i',UI_TRAVEL_STAGGER_ROWS);
+}
+function uiTimeTravelEntry(panel,game) {
+uiSetVar(panel,'--travel-elapsed',((game.travelOpenedAt || 0) - performance.now()) + 'ms');
+uiStaggerTravelRows(panel);
+}
 function uiRestoreTravelScroll(panel) {
 const list = panel.querySelector('.grid-travel-list');
 queueMicrotask(function () { list.scrollTop = uiTravelListScroll; });
@@ -72,8 +84,10 @@ function uiGridTravel(app) {
 uiLoadTravelView(app);
 const targets = travelTargets(app.game.world,app.game.progress,app.game.avatar.pos,app.game.save);
 const panel = uiTravelPanel(app,targets);
-if (app.game.travelOpen) uiRestoreTravelScroll(panel);
-else panel.setAttribute('hidden','');
+if (app.game.travelOpen) {
+uiRestoreTravelScroll(panel);
+uiTimeTravelEntry(panel,app.game);
+} else panel.setAttribute('hidden','');
 const chips = app.game.route?.bar(app,targets) || [];
 return uiEl('nav',{ className:'grid-travel',attrs:{ 'aria-label':'Travel' },children:[uiTravelToggle(app,targets.length),...chips,panel] });
 }
@@ -81,6 +95,7 @@ function uiToggleTravel(app) {
 const game = app.game;
 game.travelOpen = !game.travelOpen;
 if (game.travelOpen) {
+game.travelOpenedAt = performance.now();
 uiTravelListScroll = 0;
 uiWalkReleaseAll(app);
 game.walk.plan = null;

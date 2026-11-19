@@ -1,9 +1,12 @@
 import { CHARGED_DMG, nearestAwakeFoe } from '../game/actors.js';
+import { uiSetVar } from './css-var.js';
 import { uiEl } from './dom.js';
 import { uiRenderKeepingFocus } from './app.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiFoeAlive, uiLiveFoes, uiGridShot } from './grid-actors.js';
 import { isOpen } from '../game/world.js';
+import { stateSince } from '../game/state-clock.js';
+import { uiChargeCancel,uiChargeRelease,uiChargeStart } from './grid-fire-charge.js';
 
 const FIRE_CHARGE_MS = 450;
 const FIRE_GHOST_MS = 500;
@@ -12,6 +15,9 @@ const FIRE_BASE_CLASS = 'grid-fire grid-fire-pulse';
 const FIRE_CHARGING_CLASS = 'grid-fire-charging';
 const FIRE_LIT_CLASS = 'grid-fire-lit';
 const FIRE_IDLE_CLASS = 'grid-fire-idle';
+const FIRE_LEAVING_CLASS = 'grid-fire-leaving';
+const FIRE_LEAVE_MS = 160;
+const FIRE_ELAPSED_CAP_MS = 1000;
 const NO_FOE_TEXT = 'Nothing in range.';
 
 function uiHasBolt(game) {
@@ -46,12 +52,20 @@ const game = app.game;
 const barrier = game.world.barriers.sentry;
 return Boolean(game.fight) || Boolean(game.aimLabel) || (Boolean(barrier) && !isOpen(game.world,game.progress,barrier.id));
 }
+function uiFireSince(app) {
+const game = app.game;
+if (!game.entryClock) game.entryClock = {};
+return stateSince(game.entryClock,{ key:'fire',on:uiCanFire(app),now:performance.now() });
+}
 function uiGridFireNode(app) {
 const aim = app.game.aimLabel;
-return uiEl('button',{
-className:uiFireNodeClass(app) + (aim ? ' grid-fire-aim' :''),text:aim ? aim.text :'A',
+const since = uiFireSince(app);
+const leaving = !uiCanFire(app) && since < FIRE_LEAVE_MS ? ' ' + FIRE_LEAVING_CLASS :'';
+const node = uiEl('button',{
+className:uiFireNodeClass(app) + leaving + (aim ? ' grid-fire-aim' :''),text:aim ? aim.text :'A',
 attrs:{ type:'button','data-fire':'1','data-focus-key':'grid-fire','aria-label':aim ? aim.aria :'Fire' },
 });
+return uiSetVar(node,'--fire-elapsed',-Math.min(since,FIRE_ELAPSED_CAP_MS) + 'ms');
 }
 function uiGridFire(app) {
 if (!(uiCanFire(app) || uiFireSlot(app))) return null;
@@ -75,12 +89,14 @@ const first = !uiIsFirePressed(app);
 app.game.fireDownAt = app.game.fireDownAt ?? now;
 const bolt = uiHasBolt(app.game);
 if (first && bolt) app.game.fireLitTimer = window.setTimeout(function () { uiFireLit(app); },FIRE_CHARGE_MS);
+if (first && bolt) uiChargeStart(now,FIRE_CHARGE_MS);
 uiFireCharging(bolt);
 }
 function uiFireUp(app,now) {
 const downAt = app.game.fireDownAt;
 app.game.fireDownAt = null;
 window.clearTimeout(app.game.fireLitTimer);
+uiChargeRelease(now);
 if (downAt === null || downAt === undefined) return false;
 uiFireCharging(false);
 uiFireShot(app,now - downAt >= FIRE_CHARGE_MS && uiHasBolt(app.game) ? CHARGED_DMG :1);
@@ -92,6 +108,7 @@ if (!waiting) return false;
 app.game.fireDownAt = null;
 window.clearTimeout(app.game.fireLitTimer);
 uiFireCharging(false);
+uiChargeCancel();
 return true;
 }
 function uiFireKey(app,event) {

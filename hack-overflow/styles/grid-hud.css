@@ -163,6 +163,35 @@
   background:var(--primary);
 }
 
+.grid-hud-fill.is-gain {
+  animation:grid-hud-fill-flash 240ms ease-out;
+}
+
+.grid-hud-rank.is-pop {
+  animation:grid-hud-rank-pop 420ms cubic-bezier(0.2,1.5,0.4,1);
+}
+
+@keyframes grid-hud-fill-flash {
+  from {
+    background:var(--bright);
+    box-shadow:0 0 6px var(--bright);
+  }
+}
+
+@keyframes grid-hud-rank-pop {
+  from {
+    transform:scale(1.3);
+    color:var(--bright);
+    text-shadow:0 0 10px var(--bright);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .grid-hud-fill.is-gain,.grid-hud-rank.is-pop {
+    animation:none;
+  }
+}
+
 .grid-hud-hint {
   flex-basis:100%;
   min-width:0;
@@ -339,19 +368,75 @@
 }
 
 @media (prefers-reduced-motion:no-preference) {
+  .grid-toast:not(.grid-toast-sector):not(.grid-toast-empty) {
+    animation:
+      grid-toast-in 160ms ease-out var(--toast-elapsed,0ms) both,
+      grid-toast-out 200ms ease-in calc(var(--toast-ms,2500ms) - 200ms + var(--toast-elapsed,0ms)) forwards;
+  }
   .grid-toast-banner {
-    animation:grid-toast-banner-in 240ms ease-out var(--toast-elapsed,0ms) both;
+    animation:
+      grid-toast-banner-in 300ms cubic-bezier(0.2,1.35,0.4,1) var(--toast-elapsed,0ms) both,
+      grid-toast-out 250ms ease-in calc(var(--toast-ms,3500ms) - 250ms + var(--toast-elapsed,0ms)) forwards;
+  }
+  .grid-toast-head,.grid-toast-name,.grid-toast-detail {
+    display:inline-block;
+    animation:grid-toast-part-in 220ms cubic-bezier(0.2,1.35,0.4,1) calc(var(--part,0) * 60ms + var(--toast-elapsed,0ms)) both;
+  }
+  .grid-toast-head {
+    display:block;
+  }
+  .grid-toast-name {
+    --part:1;
+  }
+  .grid-toast-detail {
+    --part:2;
+  }
+}
+
+@keyframes grid-toast-in {
+  from {
+    opacity:0;
+    transform:translateY(8px) scale(0.96);
+  }
+  60% {
+    opacity:1;
+    transform:translateY(-1px) scale(1.01);
+  }
+  to {
+    opacity:1;
+    transform:none;
+  }
+}
+
+@keyframes grid-toast-out {
+  from {
+    opacity:1;
+  }
+  to {
+    opacity:0;
+    transform:translateY(-4px);
   }
 }
 
 @keyframes grid-toast-banner-in {
   from {
     opacity:0;
-    transform:scale(0.85);
+    transform:translateY(10px) scale(0.85);
   }
   to {
     opacity:1;
-    transform:scale(1);
+    transform:none;
+  }
+}
+
+@keyframes grid-toast-part-in {
+  from {
+    opacity:0;
+    transform:translateY(8px) scale(0.92);
+  }
+  to {
+    opacity:1;
+    transform:none;
   }
 }
 
@@ -417,6 +502,65 @@
   letter-spacing:0.05em;
   color:var(--red);
   white-space:nowrap;
+}
+
+.grid-heart {
+  position:relative;
+  display:inline-block;
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .grid-hearts-lost {
+    animation:grid-hearts-shake 360ms linear backwards;
+  }
+
+  .grid-heart-lost {
+    animation:grid-heart-lost 520ms cubic-bezier(0.2,0.8,0.3,1) backwards;
+  }
+
+  .grid-heart-lost::after {
+    content:'\2665';
+    position:absolute;
+    left:0;
+    top:0;
+    color:var(--red);
+    pointer-events:none;
+    animation:grid-heart-ghost 520ms ease-in both;
+    animation-delay:inherit;
+  }
+
+  .grid-heart-gain {
+    animation:grid-heart-gain 460ms cubic-bezier(0.2,1.4,0.4,1) backwards;
+  }
+}
+
+@keyframes grid-hearts-shake {
+  0%   { transform:translateX(0); }
+  15%  { transform:translateX(-4px); }
+  30%  { transform:translateX(3px); }
+  45%  { transform:translateX(-2px); }
+  60%  { transform:translateX(1.5px); }
+  80%  { transform:translateX(-0.5px); }
+  100% { transform:translateX(0); }
+}
+
+@keyframes grid-heart-lost {
+  0%   { transform:scale(1.7); color:var(--bright); }
+  30%  { transform:scale(0.8); color:var(--bright); }
+  60%  { transform:scale(1.1); }
+  100% { transform:scale(1); }
+}
+
+@keyframes grid-heart-ghost {
+  0%   { opacity:1; transform:translateY(0) scale(1); filter:brightness(2); }
+  25%  { opacity:1; transform:translateY(-2px) scale(1); filter:brightness(1.4); }
+  100% { opacity:0; transform:translateY(14px) rotate(14deg) scale(0.7); filter:brightness(1); }
+}
+
+@keyframes grid-heart-gain {
+  0%   { transform:scale(0.3); color:var(--bright); opacity:0; }
+  55%  { transform:scale(1.45); color:var(--bright); opacity:1; }
+  100% { transform:scale(1); opacity:1; }
 }
 
 @media (max-height:640px) {

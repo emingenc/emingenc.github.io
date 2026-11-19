@@ -104,6 +104,12 @@ if (!uiOpenDueLevelUp(app)) return false;
 app.game.walk.plan = { dirs:[app.game.avatar.facing] };
 return true;
 }
+const UI_CACHE_FLOAT_TONE = 'amber';
+function uiFloatCacheXp(cell,gained) {
+import('./grid-floaters.js').then(function (floaters) {
+floaters.uiFloat(cell,{ text:'+' + gained + ' XP',tone:UI_CACHE_FLOAT_TONE,atMs:performance.now() });
+}).catch(console.error);
+}
 function uiOnCache(app,info) {
 const game = app.game;
 const levelBefore = game.progress.level;
@@ -112,6 +118,7 @@ uiCommitSave(app,claim.save);
 uiEmitStep(game,info.from);
 uiEmit(GAME_EVENT.CACHE,{ id:info.event.id,cell:game.avatar.pos,xp:claim.gained });
 uiShowToast(app,{ text:'DATA CACHE +' + claim.gained + ' XP',kind:'reward',announced:true });
+uiFloatCacheXp(game.avatar.pos,claim.gained);
 uiLevelUpAfter(app,{ gained:claim.gained,levelBefore,source:'cache' });
 return true;
 }

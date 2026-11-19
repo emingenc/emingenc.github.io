@@ -1,9 +1,11 @@
 import { RIG_CATALOG } from '../game/rig-catalog.js';
 import { rigMet } from '../game/rig-reward.js';
-import { uiEl } from './dom.js';
+import { uiEl, uiPrefersReducedMotion } from './dom.js';
+import { uiSoundLamp } from './sound-lamp.js';
 import { uiBreachInert } from './render-submit-panel.js';
 
 const UI_MENU_RIG_PREFIX = 'menu-rig-';
+const UI_MENU_LEAVE_MS = 150;
 const UI_ROVE_ARROWS = { ArrowUp:-1,ArrowDown:1 };
 function uiRoveDelta(event) {
 if (event.key === 'Tab') return event.shiftKey ? -1 :1;
@@ -41,10 +43,15 @@ if (app.screen !== 'grid') return [];
 return Object.values(RIG_CATALOG).filter((rig) => uiRigReplayable(app,rig))
 .map((rig) => uiMenuButton(UI_MENU_RIG_PREFIX + rig.id,'REPLAY: ' + rig.title));
 }
+function uiMenuSoundButton(app) {
+const stop = uiMenuButton('toggle-sound',app.soundOn ? 'SOUND: ON' :'SOUND: OFF');
+uiSoundLamp(stop.node,Boolean(app.soundOn));
+return stop;
+}
 function uiMenuFace(app) {
 const stops = [
 uiMenuButton('menu-close','RESUME'),
-uiMenuButton('toggle-sound',app.soundOn ? 'SOUND: ON' :'SOUND: OFF'),
+uiMenuSoundButton(app),
 uiMenuButton('menu-controls','CONTROLS'),
 ...uiReplayButtons(app),
 uiDisconnectButton(app),
@@ -61,20 +68,40 @@ if (!stops.some((stop) => stop.node === event.target)) event.preventDefault();
 function uiMenuFaceFor(app) {
 return app.menuFace ? app.menuFace(app) :uiMenuFace(app);
 }
-function uiMenuPanel(app) {
+function uiMenuPanel(app,entering) {
 const face = uiMenuFaceFor(app);
 const heading = uiEl('h2',{ className:'menu-title',text:face.title });
 const panel = uiEl('div',{ className:'menu-panel',children:[heading,face.question,...face.stops.map((stop) => stop.node)] });
 const overlay = uiEl('div',{
 className:'menu-overlay',
-attrs:{ role:'dialog','aria-modal':'true','aria-label':face.label },
+attrs:{ role:'dialog','aria-modal':'true','aria-label':face.label,...(entering ? { 'data-entering':'' } :{}) },
 children:[panel],
 });
 uiKeepFocusInMenu(app,overlay,face.stops.filter((stop) => !stop.node.disabled));
 return overlay;
 }
+function uiMenuLeaving(app) {
+const last = app.menuLast;
+app.menuLast = null;
+app.menuEntered = false;
+if (!last || uiPrefersReducedMotion()) return null;
+const ghost = last.cloneNode?.(true);
+if (!ghost) return null;
+ghost.className = 'menu-overlay is-leaving';
+ghost.removeAttribute('data-entering');
+ghost.setAttribute('aria-hidden','true');
+ghost.setAttribute('inert','');
+const remove = () => ghost.remove();
+ghost.addEventListener('animationend',remove);
+window.setTimeout(remove,UI_MENU_LEAVE_MS);
+return ghost;
+}
 function uiMenuIfOpen(app) {
-return app.menuOpen ? uiMenuPanel(app) :null;
+if (!app.menuOpen) return uiMenuLeaving(app);
+const overlay = uiMenuPanel(app,!app.menuEntered);
+app.menuEntered = true;
+app.menuLast = overlay;
+return overlay;
 }
 
 export { UI_MENU_RIG_PREFIX, uiMenuButton, uiMenuIfOpen, uiRigReplayable, uiRoveKeyDown };

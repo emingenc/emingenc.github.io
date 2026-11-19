@@ -1,5 +1,6 @@
 import { uiRamp,uiTintPixels } from './art-tint.js';
 
+const KEEP_SIZES = 2;
 
 function uiFrameTable(json,image) {
 return new Map(Object.entries(json.frames || {}).map(function ([name,frame]) { return [name,{ image,frame,px:json.px }]; }));
@@ -11,10 +12,7 @@ if (sizes[sizes.length - 1] !== to) sizes.push(to);
 return sizes;
 }
 function uiNewCanvas(width,height) {
-const canvas = document.createElement('canvas');
-canvas.width = width;
-canvas.height = height;
-return canvas;
+return Object.assign(document.createElement('canvas'),{ width,height });
 }
 function uiStepDown(source,from,to) {
 return uiStepSizes(from,to).reduce(function (canvas,size) {
@@ -29,7 +27,7 @@ return next;
 function uiPaintFrame(entry,ramp) {
 const { image,frame } = entry;
 const canvas = uiNewCanvas(frame.w,frame.h);
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d',ramp ? { willReadFrequently:true } :undefined);
 ctx.drawImage(image,frame.x,frame.y,frame.w,frame.h,0,0,frame.w,frame.h);
 if (ramp) {
 const pixels = ctx.getImageData(0,0,frame.w,frame.h);
@@ -39,35 +37,62 @@ ctx.putImageData(pixels,0,0);
 return canvas;
 }
 function uiCacheKey(name,entry,spec) {
-const { accent,devicePx,palette } = spec;
-return entry.frame.tint ? [name,accent,devicePx,palette.bg,palette[accent],palette.text].join('|') :[name,devicePx].join('|');
+const { accent,palette } = spec;
+return entry.frame.tint ? [name,accent,palette.bg,palette[accent],palette.text].join('|') :name + '|';
 }
 function uiBuildFrame(entry,spec) {
 const painted = uiPaintFrame(entry,entry.frame.tint ? uiRamp(spec.palette,spec.accent) :null);
 return uiStepDown(painted,entry.frame.w,Math.round(spec.devicePx * entry.frame.w / entry.px));
 }
-function uiCreateAtlas(fallbackPalette) {
-const frames = new Map();
-const cache = new Map();
-let palette = null;
-function uiPalette(spec) {
+function uiDropName(bySize,name) {
+bySize.forEach(function (cache) { [...cache.keys()].filter(function (key) { return key.startsWith(name + '|'); }).forEach(function (key) { cache.delete(key); }); });
+}
+function uiTouchSize(bySize,devicePx) {
+const cache = bySize.get(devicePx) || new Map();
+bySize.delete(devicePx);
+bySize.set(devicePx,cache);
+while (bySize.size > KEEP_SIZES) bySize.delete(bySize.keys().next().value);
+return cache;
+}
+function uiPaletteOf(store,spec) {
 if (spec.palette && spec.palette.bg) return spec.palette;
-palette = palette || fallbackPalette();
-return palette;
+store.palette = store.palette || store.fallbackPalette();
+return store.palette;
 }
-function uiAdd(json,image) {
-uiFrameTable(json,image).forEach(function (entry,name) { frames.set(name,entry); });
-cache.clear();
+function uiAdd(store,json,image) {
+uiFrameTable(json,image).forEach(function (entry,name) {
+store.frames.set(name,entry);
+uiDropName(store.bySize,name);
+});
 }
-function uiCanvas(name,spec) {
-const entry = frames.get(name);
+function uiList(store) {
+return [...store.frames.entries()].map(function ([name,entry]) { return { name,tint:Boolean(entry.frame.tint) }; });
+}
+function uiSizeCache(store,devicePx) {
+if (store.latest !== devicePx) {
+uiTouchSize(store.bySize,devicePx);
+store.latest = devicePx;
+}
+return store.bySize.get(devicePx);
+}
+function uiCanvas(store,name,spec) {
+const entry = store.frames.get(name);
 if (!entry || !(spec.devicePx > 0)) return null;
-const paint = entry.frame.tint ? { ...spec,palette:uiPalette(spec) } :spec;
+const paint = entry.frame.tint ? { ...spec,palette:uiPaletteOf(store,spec) } :spec;
+const cache = uiSizeCache(store,spec.devicePx);
 const key = uiCacheKey(name,entry,paint);
 if (!cache.has(key)) cache.set(key,uiBuildFrame(entry,paint));
 return cache.get(key);
 }
-return { add:uiAdd,has:function (name) { return frames.has(name); },canvas:uiCanvas };
+function uiCreateAtlas(fallbackPalette) {
+const store = { frames:new Map(),bySize:new Map(),latest:0,palette:null,fallbackPalette };
+return {
+add(json,image) { uiAdd(store,json,image); },
+has(name) { return store.frames.has(name); },
+canvas(name,spec) { return uiCanvas(store,name,spec); },
+list() { return uiList(store); },
+sizes() { return [...store.bySize.keys()]; },
+};
 }
 
 export { uiFrameTable,uiStepSizes,uiCreateAtlas };

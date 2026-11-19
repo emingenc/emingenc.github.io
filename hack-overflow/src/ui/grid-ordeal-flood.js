@@ -7,7 +7,8 @@ import { uiAnnounce,uiPrefersReducedMotion } from './dom.js';
 import { ensureFight,uiHurt } from './grid-actors.js';
 import { uiCastSleep } from './grid-cast-act.js';
 import { uiOnGrid } from './grid-ordeal-sheet.js';
-import { uiPaintCastArt } from './grid-cast-sprites.js';
+import { PUFF_GAP_MS,dragAlong,dragAlpha,dustPuff } from '../game/cast/follower-motion.js';
+import { uiPaintFollower } from './grid-cast-follower.js';
 
 const FLOOD_ALPHA = 0.28;
 const FRONT_ALPHA = 0.7;
@@ -25,6 +26,9 @@ const SPECK_SPAN = 100;
 const SPECK_COL_SHIFT = 3;
 const SPECK_ROW_SHIFT = 11;
 const HALF = 0.5;
+const FEET_TILES = 0.86;
+const DUST_ALPHA = 0.55;
+const DUST_INK = 'text';
 const SPECK_TILES = 0.18;
 const RISE_TILES = 0.6;
 const TEXT_TILES = 0.3;
@@ -197,18 +201,38 @@ function uiTrailCols(drag,area,along) {
 const reach = Math.round(drag.from.col + (drag.to.col - drag.from.col) * along);
 return { from:Math.max(area.fromCol,Math.min(drag.from.col,reach)),to:Math.min(area.toCol,Math.max(drag.from.col,reach)) };
 }
+function uiPaintDust(ctx,frame,drag) {
+const age = frame.now - drag.at;
+const way = Math.sign(drag.to.col - drag.from.col) || 1;
+ctx.fillStyle = frame.palette[DUST_INK];
+for (let index = 0; index * PUFF_GAP_MS <= age; index += 1) {
+const puff = dustPuff(index,age);
+if (!puff) continue;
+const along = dragAlong(puff.emitAge,drag.ms);
+const spot = uiSpotOf(uiSlide(drag,along),frame);
+const size = puff.size * frame.tile;
+ctx.globalAlpha = puff.alpha * DUST_ALPHA * dragAlpha(age,drag.ms);
+ctx.fillRect(spot.left + frame.tile * HALF - way * puff.back * frame.tile - size * HALF,spot.top + frame.tile * FEET_TILES - puff.up * frame.tile - size,size,size);
+}
+ctx.globalAlpha = 1;
+}
+function uiSlide(drag,along) {
+return { col:drag.from.col + (drag.to.col - drag.from.col) * along,row:drag.from.row + (drag.to.row - drag.from.row) * along };
+}
 function uiPaintDrag(ctx,frame,flood) {
 const drag = flood.drag;
-const along = drag.ms > 0 ? Math.min(1,Math.max(0,(frame.now - drag.at) / drag.ms)) :1;
-if (along >= 1) return;
+const age = frame.now - drag.at;
+if (drag.ms <= 0 || age >= drag.ms) return;
+const along = dragAlong(age,drag.ms);
 const cols = uiTrailCols(drag,flood.area,along);
 ctx.save();
 ctx.fillStyle = frame.palette.red;
 ctx.globalAlpha = FRONT_ALPHA;
 for (let col = cols.from; col <= cols.to; col += 1) uiPaintTile(ctx,frame,{ col,row:drag.from.row });
-const cell = { col:drag.from.col + (drag.to.col - drag.from.col) * along,row:drag.from.row + (drag.to.row - drag.from.row) * along };
-ctx.globalAlpha = 1 - along;
-uiPaintCastArt(ctx,frame,{ name:'patch',...uiSpotOf(cell,frame) });
+ctx.globalAlpha = 1;
+uiPaintDust(ctx,frame,drag);
+const way = Math.sign(drag.to.col - drag.from.col) || 1;
+uiPaintFollower(ctx,frame,{ spot:uiSpotOf(uiSlide(drag,along),frame),pose:{ facing:'down',moving:false,phase:0,drag:{ along,dir:way,age },alpha:dragAlpha(age,drag.ms) } });
 ctx.restore();
 }
 function uiDrawOrdeal(ctx,app,frame) {

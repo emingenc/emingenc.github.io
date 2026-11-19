@@ -5,6 +5,7 @@ const STORY_NEXT_KEY = 'story-next';
 const STORY_SKIP_KEY = 'story-skip';
 const STORY_CHOICES_CLASS = 'story-choices';
 const STORY_WAITING_CLASS = ' is-waiting';
+const STORY_ARRIVING_CLASS = ' is-arriving';
 const STORY_SPEAKER_CLASS = { GHOSTWRITER:'story-who-ghost',SYSTEM:'story-who-system' };
 
 let uiStoryTimer = 0;
@@ -70,7 +71,7 @@ if (!uiStoryLineDone(story)) return;
 uiStoryStopTimer();
 parts.button.lastChild.textContent = uiStoryPromptText(story);
 if (!parts.choices) return;
-parts.choices.node.className = STORY_CHOICES_CLASS;
+parts.choices.node.className = STORY_CHOICES_CLASS + STORY_ARRIVING_CLASS;
 story.choice.ask();
 }
 function uiStoryStartTyping(story,parts) {

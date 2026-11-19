@@ -10,6 +10,7 @@ import { warmJudgeWorker } from './judge-client.js';
 import { uiWireHistory } from './history.js';
 import { uiHasGame } from './game-storage.js';
 import { uiFitGrid } from './grid-fit.js';
+import { uiPrefetchGridFrame } from './grid-canvas.js';
 
 async function uiHandleAction(app,actionId) {
 await uiApplyAction(app,actionId);
@@ -106,6 +107,7 @@ const app = uiCreateApp();
 uiExposeDebug(app);
 uiWireEvents(app);
 uiRenderApp(app);
+uiPrefetchGridFrame().catch(function () {});
 uiStartAnalytics(app,returning);
 }
 

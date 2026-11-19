@@ -181,7 +181,7 @@ body::before {
 }
 
 .btn:active:not(:disabled),.btn-icon:active:not(:disabled),.btn-icon-lg:active:not(:disabled),.chip:active {
-  transform:translateY(1px);
+  transform:translateY(1px) scale(0.97);
   background:var(--border);
 }
 
@@ -191,6 +191,7 @@ body::before {
 }
 
 .btn:disabled,.btn-icon:disabled,.btn-icon-lg:disabled {
+  border-style:dashed;
   opacity:0.35;
   cursor:not-allowed;
 }
@@ -210,6 +211,33 @@ body::before {
 
 @media (prefers-reduced-motion:no-preference) {
   .btn,.btn-icon,.btn-icon-lg,.btn-link,.chip {
-    transition:border-color var(--ui-ease),background-color var(--ui-ease),color var(--ui-ease),box-shadow var(--ui-ease),transform 80ms ease-out;
+    transition:border-color var(--ui-ease),background-color var(--ui-ease),color var(--ui-ease),box-shadow var(--ui-ease),transform 140ms cubic-bezier(0.3,1.7,0.5,1);
+  }
+  .btn:active:not(:disabled),.btn-icon:active:not(:disabled),.btn-icon-lg:active:not(:disabled),.chip:active {
+    transition:border-color var(--ui-ease),background-color var(--ui-ease),color var(--ui-ease),box-shadow var(--ui-ease),transform 60ms ease-out;
+  }
+}
+
+.btn[data-lamp]::before {
+  content:'';
+  display:inline-block;
+  width:0.5em;
+  height:0.5em;
+  margin-right:0.6em;
+  border-radius:50%;
+  border:1px solid var(--dim);
+  background:transparent;
+  vertical-align:0.05em;
+}
+
+.btn[data-lamp='on']::before {
+  border-color:var(--primary);
+  background:var(--primary);
+  box-shadow:0 0 6px var(--primary);
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .btn[data-lamp]::before {
+    transition:background-color 120ms ease-out,border-color 120ms ease-out,box-shadow 120ms ease-out;
   }
 }

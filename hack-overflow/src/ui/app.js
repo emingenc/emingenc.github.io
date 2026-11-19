@@ -7,6 +7,7 @@ import { uiScreenFor, uiSyncScreens } from './screens.js';
 import { uiCreateGame } from './game-state.js';
 import { checkMaxTestData } from './judge-client.js';
 import { uiVerdictHeld } from './render-submit-panel.js';
+import { uiPlayScreenChange } from './screen-transition.js';
 
 const ui = { content:null,audit:null };
 function setUiContext(content,audit) {
@@ -78,12 +79,14 @@ app.pendingAnnounce = null;
 }
 function uiRenderApp(app) {
 const screen = uiScreenFor(app);
-const changed = screen.id !== app.lastAnnouncedScreen;
+const from = app.lastAnnouncedScreen;
+const changed = screen.id !== from;
 app.lastAnnouncedScreen = screen.id;
 if (changed && !app.story) app.lastFocusKey = screen.focusKey(app);
 const scrollTop = changed ? 0 :uiScrollTopOf(uiQs(UI_ROOT_ID).firstChild);
 const root = uiMount(UI_ROOT_ID,[screen.render(app),uiMenuIfOpen(app),uiStoryIfOpen(app)].filter(Boolean));
 uiKeepScreenScroll(root,scrollTop);
+uiPlayScreenChange(root.firstChild,{ from,to:screen.id });
 uiSyncScreens(app,root);
 uiAnnounceRender(app,changed ? screen.announce(app) :null);
 uiRestoreFocus(uiFocusScope(root),app.lastFocusKey,uiFindByFocusKey(root,screen.focusKey(app)));

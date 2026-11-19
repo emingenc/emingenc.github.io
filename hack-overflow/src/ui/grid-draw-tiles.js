@@ -1,14 +1,15 @@
 import { DIRS, cellToward } from '../game/move.js';
 import { coreState } from '../game/progress.js';
+import { cacheVanishLook } from '../game/reward-motion.js';
 import { visibleRange } from '../game/viewport.js';
 import { cellAt } from '../game/world.js';
 import { UI_BEAM_FRAMES, UI_SPRITE_SIZE, uiBadgeSprite, uiRingSprite, uiSpriteCanvas, uiSpriteRows } from './grid-sprites.js';
 import { UI_GROUND, UI_LABEL, UI_RIG_ACCENTS, UI_SAFEHOUSE_ACCENT, UI_SECTOR_ACCENTS, uiAccentOf, uiIsGround, uiLabelWidth, uiPulse, uiRigAccent } from './grid-draw-common.js';
+import { uiCellOf,uiIndexAt,uiRegionsOf } from './grid-regions.js';
+import { uiBakedMap,uiBlitBaked } from './grid-bake.js';
+import { uiBlitLabel } from './grid-world-text.js';
 import { uiRigCleared, uiRigLayers, uiRigOverlays, uiRigPlan, uiRigPlates, uiRigState } from './grid-draw-rigs.js';
-
 const UI_ENCRYPTED_ACCENT = 'dim';
-const UI_WALKABLE = new Set(['floor','cache']);
-const UI_FAMILY_SEEDS = new Set(['terminal','door','core','gate','barrier','rig']);
 const UI_NEAR_KINDS = new Set(['terminal','core','kernel','rig']);
 const UI_WALL_EDGES = [
 { dir:'down',sprite:'wall-face' },{ dir:'up',sprite:'rim-up' },{ dir:'left',sprite:'rim-left' },{ dir:'right',sprite:'rim-right' },
@@ -23,93 +24,11 @@ const UI_SENTRY = { closed:'red',open:'primary' };
 const UI_NO_LAYERS = Object.freeze([]);
 const UI_HALF = UI_SPRITE_SIZE / 2;
 const UI_FULL_STARS = 3;
+const UI_DOOR_OPEN = -1;
 const UI_TILE_MOTION = { beamMs:90,blinkMs:530,sparkleMs:1900,sparkleOn:260 };
 const UI_FLOOR_HASH = { colMul:0x27d4eb2d,rowMul:0x165667b1,mix:0x85ebca6b,shift:15,buckets:16,trace:11,vent:14 };
 const UI_COUNT_OVERLAP = 3;
 
-function uiIndexAt(world,cell) {
-const inside = cell.col >= 0 && cell.col < world.cols && cell.row >= 0 && cell.row < world.rows;
-return inside ? cell.row * world.cols + cell.col :-1;
-}
-function uiCellOf(world,index) {
-return { col:index % world.cols,row:Math.floor(index / world.cols) };
-}
-function uiNeighbours(world,index) {
-const cell = uiCellOf(world,index);
-return Object.keys(DIRS).map(function (dir) { return uiIndexAt(world,cellToward(cell,dir)); }).filter(function (next) { return next >= 0; });
-}
-function uiIsWalkableAt(world,index) {
-return index >= 0 && UI_WALKABLE.has(world.cells[index].kind);
-}
-function uiIsRockAt(world,index) {
-return index < 0 || !UI_GROUND.has(world.cells[index].kind);
-}
-function uiIsDoorway(world,index) {
-const cell = uiCellOf(world,index);
-const rock = function (dir) { return uiIsRockAt(world,uiIndexAt(world,cellToward(cell,dir))); };
-return (rock('up') && rock('down')) || (rock('left') && rock('right'));
-}
-function uiFill(world,fill) {
-const cells = [fill.start];
-fill.group[fill.start] = true;
-for (let head = 0; head < cells.length; head += 1) {
-uiNeighbours(world,cells[head]).forEach(function (next) {
-if (fill.group[next] || !fill.member(next)) return;
-fill.group[next] = true;
-cells.push(next);
-});
-}
-return cells;
-}
-function uiGroups(world,member) {
-const group = new Array(world.cells.length).fill(false);
-return world.cells.flatMap(function (entry,index) {
-return group[index] || !member(index) ? [] :[uiFill(world,{ start:index,member,group })];
-});
-}
-function uiOwnFamily(world,index) {
-const entry = world.cells[index];
-const thing = UI_FAMILY_SEEDS.has(entry.kind) ? world.things[entry.id] :null;
-return thing && thing.family ? thing.family :null;
-}
-function uiMostCommon(families) {
-const counts = new Map();
-families.forEach(function (family) { counts.set(family,(counts.get(family) || 0) + 1); });
-return [...counts.keys()].reduce(function (best,family) { return best === null || counts.get(family) > counts.get(best) ? family :best; },null);
-}
-function uiTouching(world,cells) {
-const inside = new Set(cells);
-return [...new Set(cells.flatMap(function (index) { return uiNeighbours(world,index); }))].filter(function (next) { return !inside.has(next); });
-}
-function uiGroupPlan(world,cells) {
-const touching = uiTouching(world,cells);
-const spawn = cells.includes(uiIndexAt(world,world.spawn));
-const family = spawn ? null :uiMostCommon(touching.map(function (index) { return uiOwnFamily(world,index); }).filter(Boolean));
-return { cells,family,settled:spawn || family !== null,walks:touching.filter(function (index) { return uiIsWalkableAt(world,index); }) };
-}
-function uiSettleGroups(groups,regions) {
-let changed = true;
-while (changed) {
-changed = false;
-groups.filter(function (group) { return !group.settled; }).forEach(function (group) {
-const family = group.walks.map(function (index) { return regions[index]; }).find(Boolean);
-if (!family) return;
-Object.assign(group,{ family,settled:true });
-group.cells.forEach(function (index) { regions[index] = family; });
-changed = true;
-});
-}
-}
-function uiRegionsOf(world) {
-const regions = world.cells.map(function (entry,index) { return uiOwnFamily(world,index); });
-const doorway = world.cells.map(function (entry,index) { return uiIsWalkableAt(world,index) && uiIsDoorway(world,index); });
-const rooms = uiGroups(world,function (index) { return uiIsWalkableAt(world,index) && !doorway[index]; });
-const ways = uiGroups(world,function (index) { return doorway[index]; });
-const groups = [...rooms,...ways].map(function (cells) { return uiGroupPlan(world,cells); });
-groups.forEach(function (group) { group.cells.forEach(function (index) { regions[index] = group.family; }); });
-uiSettleGroups(groups,regions);
-return regions;
-}
 
 function uiCellHash(cell) {
 const seed = Math.imul(cell.col,UI_FLOOR_HASH.colMul) ^ Math.imul(cell.row,UI_FLOOR_HASH.rowMul);
@@ -182,12 +101,13 @@ return { ...label,accent:uiAccentOf(sector ? sector.key :null) };
 }
 function uiMakePlan(world) {
 const regions = uiRegionsOf(world);
+const refs = world.cells.map(function (entry,index) { return uiCellOf(world,index); });
 const cells = world.cells.map(function (entry,index) {
-const cell = uiCellOf(world,index);
-return uiCellPlan(world,{ entry,cell,regions,hash:uiCellHash(cell),accent:uiAccentOf(regions[index]) });
+return uiCellPlan(world,{ entry,cell:refs[index],regions,hash:uiCellHash(refs[index]),accent:uiAccentOf(regions[index]) });
 });
 const labels = world.labels.map(function (label) { return uiLabelPlan(world,label); });
-return { regions,cells,labels:[...labels,...uiRigPlates(world)] };
+const live = world.cells.map(function (entry) { return UI_STATE_LAYERS.has(entry.kind); });
+return { regions,cells,refs,live,labels:[...labels,...uiRigPlates(world)] };
 }
 const uiPlans = new WeakMap();
 function uiPlanOf(world) {
@@ -202,33 +122,71 @@ return index < 0 ? null :uiPlanOf(world).regions[index];
 function uiBlinkOn(frame) {
 return frame.reducedMotion || Math.floor(frame.now / UI_TILE_MOTION.blinkMs) % 2 === 0;
 }
+function uiRecall(spot,look) {
+return spot.looks ? spot.looks.get(look) :undefined;
+}
+function uiRemember(spot,look,layers) {
+if (!spot.looks) spot.looks = new Map();
+spot.looks.set(look,layers);
+return layers;
+}
+function uiBuildTerminal(spot,look) {
+const layers = [...spot.floor,{ sprite:'terminal-' + look.state,accent:spot.accent }];
+for (let pip = 1; pip <= look.stars; pip += 1) layers.push({ sprite:'pip-' + pip,accent:spot.accent });
+if (look.led) layers.push({ sprite:'led',accent:spot.accent });
+return layers;
+}
 function uiTerminalLayers(frame,spot) {
 const key = frame.world.things[spot.id].key;
 const breached = frame.progress.breached.has(key);
 const stars = breached ? Math.min(frame.progress.best[key] || 0,UI_FULL_STARS) :0;
 const state = breached ? (stars === UI_FULL_STARS ? 'breached' :'replay') :'idle';
-const layers = [...spot.floor,{ sprite:'terminal-' + state,accent:spot.accent }];
-for (let pip = 1; pip <= stars; pip += 1) layers.push({ sprite:'pip-' + pip,accent:spot.accent });
-if (!breached && uiBlinkOn(frame)) layers.push({ sprite:'led',accent:spot.accent });
-return layers;
+const led = !breached && uiBlinkOn(frame);
+const look = state + stars + led;
+return uiRecall(spot,look) || uiRemember(spot,look,uiBuildTerminal(spot,{ state,stars,led }));
 }
 function uiCoreLayers(frame,spot) {
 const state = coreState(frame.world,frame.progress,frame.world.things[spot.id].family);
 const layers = [...spot.floor,{ sprite:'core-' + state,accent:spot.accent }];
 return state === 'ready' ? [...layers,{ sprite:'core-glow',accent:spot.accent,alpha:uiPulse(frame) }] :layers;
 }
-function uiCacheLayers(frame,spot) {
-if (frame.progress.caches.has(spot.id)) return [...spot.floor,{ sprite:'cache-empty',accent:spot.accent }];
+const uiCacheTaken = new Map();
+function uiCacheTakenAt(frame,spot) {
+if (!frame.progress.caches.has(spot.id)) {
+uiCacheTaken.set(spot.id,null);
+return null;
+}
+const seen = uiCacheTaken.get(spot.id);
+if (seen === undefined) uiCacheTaken.set(spot.id,-Infinity);
+else if (seen === null) uiCacheTaken.set(spot.id,frame.now);
+return uiCacheTaken.get(spot.id);
+}
+function uiCacheVanishLayers(frame,spot) {
+const look = frame.reducedMotion ? null :cacheVanishLook(frame.now - uiCacheTakenAt(frame,spot));
+const empty = [...spot.floor,{ sprite:'cache-empty',accent:spot.accent }];
+if (!look) return empty;
+const lift = { lift:look.lift,alpha:look.alpha };
+const flash = look.flash ? [{ sprite:'cache',accent:spot.accent,blend:'lighter',...lift }] :[];
+return [...empty,{ sprite:'cache',accent:spot.accent,...lift },...flash];
+}
+function uiBuildCache(spot,twinkle) {
 const layers = [...spot.floor,{ sprite:'cache',accent:spot.accent }];
-const twinkle = !frame.reducedMotion && (frame.now + spot.hash) % UI_TILE_MOTION.sparkleMs < UI_TILE_MOTION.sparkleOn;
 return twinkle ? [...layers,{ sprite:'sparkle',accent:spot.accent }] :layers;
+}
+function uiCacheLayers(frame,spot) {
+if (uiCacheTakenAt(frame,spot) !== null) return uiCacheVanishLayers(frame,spot);
+const twinkle = !frame.reducedMotion && (frame.now + spot.hash) % UI_TILE_MOTION.sparkleMs < UI_TILE_MOTION.sparkleOn;
+return uiRecall(spot,twinkle) || uiRemember(spot,twinkle,uiBuildCache(spot,twinkle));
+}
+function uiBuildDoor(spot,shift) {
+const layers = [...spot.floor,spot.jamb];
+if (shift < 0) return layers;
+return [...layers,{ sprite:spot.sprite,accent:spot.accent,slide:{ axis:spot.turned ? 'col' :'row',shift } }];
 }
 function uiDoorLayers(frame,spot) {
 const openness = frame.doorOpenness(spot.id);
-const layers = [...spot.floor,spot.jamb];
-if (openness >= 1) return layers;
-const slide = { axis:spot.turned ? 'col' :'row',shift:Math.round(Math.max(openness,0) * UI_HALF) };
-return [...layers,{ sprite:spot.sprite,accent:spot.accent,slide }];
+const shift = openness >= 1 ? -1 :Math.round(Math.max(openness,0) * UI_HALF);
+return uiRecall(spot,shift) || uiRemember(spot,shift,uiBuildDoor(spot,shift));
 }
 function uiBeamFrame(frame) {
 return frame.reducedMotion ? 0 :Math.floor(frame.now / UI_TILE_MOTION.beamMs) % UI_BEAM_FRAMES;
@@ -265,6 +223,15 @@ if (index < 0) return UI_NO_LAYERS;
 const spot = uiPlanOf(frame.world).cells[index];
 const layered = UI_STATE_LAYERS.get(spot.kind);
 return layered ? layered(frame,spot) :spot.layers;
+}
+
+function uiPlanLayers(spot) {
+return [...(spot.layers || []),...(spot.floor || []),...(spot.emitters || []),...(spot.jamb ? [spot.jamb] :[])];
+}
+function uiWarmPairs(world) {
+const seen = new Map();
+uiPlanOf(world).cells.flatMap(uiPlanLayers).forEach(function (layer) { seen.set(layer.sprite + '|' + layer.accent,[layer.sprite,layer.accent]); });
+return [...seen.values()];
 }
 
 function uiCentred(sprite,place) {
@@ -319,8 +286,9 @@ function uiTileOverlays(frame) {
 return [...uiRigOverlays(frame),...uiGateBadges(frame),...uiKernelOverlays(frame),...uiFocusOverlays(frame)];
 }
 
+const UI_TIE_EPS = 1e-6;
 function uiSnap(pass,value) {
-return Math.round(value * pass.dpr) / pass.dpr;
+return Math.round(value * pass.dpr + UI_TIE_EPS) / pass.dpr;
 }
 function uiBoxAt(pass,place) {
 const left = uiSnap(pass,pass.left + place.col * pass.tile);
@@ -331,22 +299,26 @@ return { left,top,width:right - left,height:uiSnap(pass,pass.top + (place.row + 
 function uiDrawSlid(pass,part) {
 const shift = part.slide.shift;
 const keep = UI_HALF - shift;
-const source = pass.paint.pixel;
+const source = part.canvas.width / UI_SPRITE_SIZE;
 const unit = pass.tile / UI_SPRITE_SIZE;
 const box = part.box;
 [{ from:shift,to:0 },{ from:UI_HALF,to:UI_HALF + shift }].forEach(function (half) {
+const start = Math.round(half.from * source);
+const span = Math.round(keep * source);
 if (part.slide.axis === 'row') {
-pass.ctx.drawImage(part.canvas,0,half.from * source,part.canvas.width,keep * source,box.left,uiSnap(pass,box.top + half.to * unit),box.width,keep * unit);
+pass.ctx.drawImage(part.canvas,0,start,part.canvas.width,span,box.left,uiSnap(pass,box.top + half.to * unit),box.width,keep * unit);
 return;
 }
-pass.ctx.drawImage(part.canvas,half.from * source,0,keep * source,part.canvas.height,uiSnap(pass,box.left + half.to * unit),box.top,keep * unit,box.height);
+pass.ctx.drawImage(part.canvas,start,0,span,part.canvas.height,uiSnap(pass,box.left + half.to * unit),box.top,keep * unit,box.height);
 });
 }
 function uiDrawLayer(pass,box,layer) {
 const canvas = uiSpriteCanvas(layer.sprite,layer.accent,pass.paint);
 pass.ctx.globalAlpha = layer.alpha === undefined ? 1 :layer.alpha;
+if (layer.blend) pass.ctx.globalCompositeOperation = layer.blend;
 if (layer.slide && layer.slide.shift > 0) uiDrawSlid(pass,{ canvas,box,slide:layer.slide });
-else pass.ctx.drawImage(canvas,box.left,box.top,box.width,box.height);
+else pass.ctx.drawImage(canvas,box.left,uiSnap(pass,box.top - (layer.lift || 0) * box.height),box.width,box.height);
+if (layer.blend) pass.ctx.globalCompositeOperation = 'source-over';
 }
 function uiDrawCell(pass,cell) {
 const layers = uiCellLayers(pass.frame,cell);
@@ -373,25 +345,30 @@ col:Math.min(Math.max(label.col,camera.col),right - width),
 row:Math.min(Math.max(label.row,camera.row - UI_LABEL.top),bottom - UI_LABEL.bottom),
 };
 }
-function uiDrawLabels(pass) {
+function uiFillLabel(pass,spec) {
 const ctx = pass.ctx;
-const frame = pass.frame;
-const unit = pass.tile / UI_SPRITE_SIZE;
-ctx.globalAlpha = 1;
-ctx.font = Math.round(pass.tile * UI_LABEL.scale) + UI_LABEL.font;
+ctx.font = spec.font;
 ctx.textAlign = 'left';
 ctx.textBaseline = 'middle';
-uiPlanOf(frame.world).labels.forEach(function (label) {
+ctx.fillStyle = pass.frame.palette.bg;
+ctx.fillText(spec.text,spec.left + spec.unit,spec.middle + spec.unit);
+ctx.fillStyle = pass.frame.palette[spec.ink];
+ctx.fillText(spec.text,spec.left,spec.middle);
+}
+function uiDrawLabel(pass,label) {
+const frame = pass.frame;
 const place = uiLabelPlace(label,frame.camera,frame.view);
 if (place === null) return;
+const unit = pass.tile / UI_SPRITE_SIZE;
 const box = uiBoxAt(pass,{ col:place.col,row:place.row,cols:1,rows:1 });
-const left = box.left + unit * UI_LABEL.inset;
-const middle = box.top + box.height / 2;
-ctx.fillStyle = frame.palette.bg;
-ctx.fillText(label.text,left + unit,middle + unit);
-ctx.fillStyle = frame.palette[label.accent];
-ctx.fillText(label.text,left,middle);
-});
+const font = Math.round(pass.tile * UI_LABEL.scale) + UI_LABEL.font;
+const spec = { text:label.text,font,ink:label.accent,unit,left:box.left + unit * UI_LABEL.inset,middle:box.top + box.height / 2 };
+if (frame.blits) uiBlitLabel(pass.ctx,frame,spec);
+else uiFillLabel(pass,spec);
+}
+function uiDrawLabels(pass) {
+pass.ctx.globalAlpha = 1;
+uiPlanOf(pass.frame.world).labels.forEach(function (label) { uiDrawLabel(pass,label); });
 }
 function uiMapRange(frame) {
 const range = visibleRange(frame.camera,frame.view);
@@ -400,24 +377,46 @@ col0:Math.max(range.col0,0),col1:Math.min(range.col1,frame.world.cols - 1),
 row0:Math.max(range.row0,0),row1:Math.min(range.row1,frame.world.rows - 1),
 };
 }
+function uiDrawRow(pass,range,spec) {
+const plan = uiPlanOf(pass.frame.world);
+for (let col = range.col0; col <= range.col1; col += 1) {
+const index = spec.row * pass.frame.world.cols + col;
+if (spec.live === undefined || plan.live[index] === spec.live) uiDrawCell(pass,plan.refs[index]);
+}
+}
+function uiDrawRange(pass,range,live) {
+for (let row = range.row0; row <= range.row1; row += 1) uiDrawRow(pass,range,{ row,live });
+}
+function uiPaintOf(frame) {
+return { palette:frame.palette,pixel:Math.max(1,Math.round((frame.tile * frame.dpr) / UI_SPRITE_SIZE)),box:Math.round(frame.tile * frame.dpr) };
+}
+function uiPassOf(frame,origin) {
+return { frame,ctx:origin.ctx,tile:frame.tile,dpr:frame.dpr,left:origin.left,top:origin.top,paint:uiPaintOf(frame) };
+}
+function uiPaintStill(ctx,job) {
+uiDrawRange(uiPassOf(job.frame,{ ctx,left:job.left,top:job.top }),job.region,false);
+}
+function uiDrawCells(pass,range) {
+const frame = pass.frame;
+const baked = frame.bake ? uiBakedMap(frame.bake,{ frame,range,paint:uiPaintStill }) :null;
+if (baked === null) {
+uiDrawRange(pass,range,undefined);
+return;
+}
+uiBlitBaked(pass.ctx,baked,{ x:Math.round(-pass.left * frame.dpr),y:Math.round(-pass.top * frame.dpr) });
+uiDrawRange(pass,range,true);
+}
 function uiDrawTiles(frame) {
 const ctx = frame.ctx;
 ctx.imageSmoothingEnabled = false;
 ctx.globalAlpha = 1;
 ctx.fillStyle = frame.palette.bg;
 ctx.fillRect(0,0,frame.width,frame.height);
-const pixel = Math.max(1,Math.round((frame.tile * frame.dpr) / UI_SPRITE_SIZE));
-const pass = {
-frame,ctx,tile:frame.tile,dpr:frame.dpr,left:-frame.camera.col * frame.tile,top:-frame.camera.row * frame.tile,
-paint:{ palette:frame.palette,pixel },
-};
-const range = uiMapRange(frame);
-for (let row = range.row0; row <= range.row1; row += 1) {
-for (let col = range.col0; col <= range.col1; col += 1) uiDrawCell(pass,{ col,row });
-}
+const pass = uiPassOf(frame,{ ctx,left:-frame.camera.col * frame.tile,top:-frame.camera.row * frame.tile });
+uiDrawCells(pass,uiMapRange(frame));
 uiTileOverlays(frame).forEach(function (overlay) { uiDrawOverlay(pass,overlay); });
 uiDrawLabels(pass);
 ctx.globalAlpha = 1;
 }
 
-export { UI_SECTOR_ACCENTS, UI_SAFEHOUSE_ACCENT, UI_RIG_ACCENTS, uiAccentOf, uiRigAccent, uiRigPlates, uiSectorAt, uiRigState, uiRigCleared, uiCellLayers, uiTileOverlays, uiDrawTiles, uiLabelPlace };
+export { UI_SECTOR_ACCENTS, UI_SAFEHOUSE_ACCENT, UI_RIG_ACCENTS, uiAccentOf, uiRigAccent, uiRigPlates, uiSectorAt, uiRigState, uiRigCleared, uiCellLayers, uiTileOverlays, uiDrawTiles, uiLabelPlace, uiWarmPairs };

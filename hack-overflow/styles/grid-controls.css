@@ -67,6 +67,16 @@
 .grid-dpad-btn:active {
   border-color:var(--bright);
   background:var(--border);
+  transform:translateY(1px) scale(0.93);
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .grid-dpad-btn,.grid-map-dock,.grid-fire {
+    transition:transform 110ms cubic-bezier(0.3,1.8,0.5,1),background-color 70ms ease-out,border-color 70ms ease-out,box-shadow 70ms ease-out;
+  }
+  .grid-dpad-btn:active,.grid-map-dock:active,.grid-fire:active {
+    transition-duration:70ms;
+  }
 }
 
 .grid-dpad-up {
@@ -162,10 +172,22 @@
 
 .grid-fire:active {
   background:var(--border);
+  transform:scale(0.93);
+}
+
+.grid-map-dock:active {
+  transform:translateY(1px) scale(0.93);
 }
 
 .grid-fire-idle {
   visibility:hidden;
+}
+
+@media (prefers-reduced-motion:no-preference) {
+  .grid-fire-leaving {
+    visibility:visible;
+    animation:grid-fire-out 160ms ease-in var(--fire-elapsed,0ms) forwards;
+  }
 }
 
 .grid-fire-pulse {
@@ -186,7 +208,7 @@
 
 @media (prefers-reduced-motion:no-preference) {
   .grid-fire-pulse {
-    animation:grid-fire-pulse 1s ease-in-out infinite;
+    animation:grid-fire-pulse 1s ease-in-out infinite,grid-fire-in 180ms cubic-bezier(0.2,1.5,0.4,1) var(--fire-elapsed,0ms) backwards;
   }
   .grid-fire-charging {
     animation:grid-fire-charge 450ms linear forwards;
@@ -200,6 +222,28 @@
   }
   50% {
     box-shadow:0 0 0 8px rgba(255,77,61,0.35),0 0 20px var(--red);
+  }
+}
+
+@keyframes grid-fire-in {
+  from {
+    opacity:0;
+    transform:scale(0.7);
+  }
+  to {
+    opacity:1;
+    transform:none;
+  }
+}
+
+@keyframes grid-fire-out {
+  from {
+    opacity:1;
+    transform:none;
+  }
+  to {
+    opacity:0;
+    transform:scale(0.7);
   }
 }
 

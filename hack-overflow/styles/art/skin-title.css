@@ -8,6 +8,9 @@
       color-mix(in srgb,var(--bg) 60%,transparent) 100%),
     url('../../assets/art/ui/title-tall.webp') center / cover no-repeat,
     var(--bg);
+}
+
+.title-screen.is-booting {
   animation:title-art-in 700ms ease-out both;
 }
 
@@ -68,7 +71,7 @@
 }
 
 @media (prefers-reduced-motion:reduce) {
-  .title-screen {
+  .title-screen.is-booting {
     animation:none;
   }
 }

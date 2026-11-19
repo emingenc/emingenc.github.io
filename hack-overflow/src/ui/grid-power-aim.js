@@ -1,5 +1,5 @@
 import { uiActiveMode,uiPowerOf } from './grid-power.js';
-import { uiPaintAimMark } from './grid-power-aim-draw.js';
+import { uiAimLost,uiPaintAimMark } from './grid-power-aim-draw.js';
 
 
 function uiPaintMark(ctx,app,frame) {
@@ -7,6 +7,7 @@ const power = uiPowerOf(app.game);
 const mode = power.aim ? uiActiveMode(app.game) :null;
 const mark = mode && mode.aimMark ? mode.aimMark(app) :null;
 if (mark) uiPaintAimMark(ctx,frame,mark);
+else uiAimLost();
 }
 function uiWrapPaint(game) {
 const inner = game.drawCast;

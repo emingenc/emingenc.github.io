@@ -1,4 +1,5 @@
 import { uiEl } from './dom.js';
+import { uiStartEntryBeat } from './screen-transition.js';
 
 const UI_RIG_SCREEN_ID = 'rig';
 const UI_RIG_STUBS = {
@@ -81,9 +82,14 @@ throw error;
 }
 await uiOpenRigScreen(app,{ id:UI_RIG_SCREEN_ID,screen:mod.uiRigScreen,ready:mod.uiRigReady,open:(target) => mod.uiRigOpen(target,rigId) });
 }
-function uiOpenRigHost(app,rig) {
-if (!Object.hasOwn(UI_RIG_HOSTS,rig.host)) return Promise.reject(new Error('unknown rig host: ' + rig.host));
-return UI_RIG_HOSTS[rig.host](app,rig);
+async function uiOpenRigHost(app,rig) {
+if (!Object.hasOwn(UI_RIG_HOSTS,rig.host)) throw new Error('unknown rig host: ' + rig.host);
+const beat = uiStartEntryBeat(app);
+try {
+await Promise.all([UI_RIG_HOSTS[rig.host](app,rig),beat.done]);
+} finally {
+if (app.screen === 'grid') beat.cancel();
+}
 }
 
 export { UI_ROOMS,uiRigStubScreen,uiRigStubScreens,uiSetRigDelegate,uiOpenRig,uiOpenRigScreen,uiOpenRigHost };

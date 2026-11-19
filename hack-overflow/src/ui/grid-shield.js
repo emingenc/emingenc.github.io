@@ -4,13 +4,15 @@ import { applyBridge,createBridge } from '../game/power/bridge.js';
 import { isSealed,lockerById,lockersFor } from '../game/power/lockers.js';
 import { usablePowers } from '../game/power/powers.js';
 import { LANE_TEXT,puzzleFor } from '../game/power/shield-lane.js';
+import { pressTargets } from '../game/power-feel.js';
 import { uiGridHook } from './bus.js';
-import { ensureFight,uiActorsTick } from './grid-actors.js';
+import { ensureFight,uiSafeTick } from './grid-actors.js';
 import { uiGuardDown } from './grid-locker.js';
 import { uiAddChips,uiPowerOf,uiPowerRefresh,uiPowerSay as uiSay } from './grid-power.js';
 import { uiBridgeInReach } from './grid-power-bridge.js';
 import { uiSpendTrial } from './grid-power-lend.js';
-import { uiPaintShields } from './grid-shield-draw.js';
+import { uiPressPulse } from './grid-power-feel.js';
+import { PULSE_KEY,uiPaintShields } from './grid-shield-draw.js';
 import { uiShotCells } from './shot-fx.js';
 
 const POWER_ID = 'pincer';
@@ -106,11 +108,13 @@ uiEnd(app,shield);
 uiDismiss(shield,locker.id);
 uiGuardDown(app,locker.id).catch(console.error);
 }
-function uiSafeTick(app,lockerId) {
-const fight = app.game.fight;
-const id = uiDroneId(lockerId);
-fight.actors = fight.actors.map((actor) => (actor.id === id ? { ...actor,arm:DRONE_ARM } :actor));
-uiActorsTick(app);
+function uiPressFeel(result) {
+pressTargets(result.kind,result.state).forEach((target) => uiPressPulse(PULSE_KEY + target.index,target));
+}
+function uiFireShot(app,press) {
+if (press.move !== 'fire' || press.result.kind === 'none') return;
+const won = press.result.kind === 'win';
+uiShotCells(app.game.avatar.pos,press.locker.drone,{ hit:won,kill:won,heavy:false });
 }
 function uiShieldPress(app,move) {
 const shield = uiShieldOf(app);
@@ -120,10 +124,11 @@ if (shield.live && shield.live !== locker.id) uiBreakOff(app,shield);
 if (!shield.live) uiBegin(app,shield,locker);
 const result = applyBridge(shield.state,move,puzzleFor(locker.id));
 shield.state = result.state;
-if (move === 'fire' && result.kind !== 'none') uiShotCells(app.game.avatar.pos,locker.drone,{ hit:result.kind === 'win',kill:result.kind === 'win',heavy:false });
+uiPressFeel(result);
+uiFireShot(app,{ move,result,locker });
 uiSay(app,{ text:result.note,kind:result.kind === 'win' ? 'reward' :'info' });
 if (result.kind === 'win') uiWin(app,shield,locker);
-uiSafeTick(app,locker.id);
+uiSafeTick(app,uiDroneId(locker.id));
 uiPowerRefresh(app);
 }
 function uiStandDown(app) {

@@ -1,16 +1,18 @@
-import { BOLT_RANGE,DRONE_ARM,createDrone } from '../game/actors.js';
+import { BOLT_RANGE,createDrone } from '../game/actors.js';
 import { hasBeat,hasFind,withFind } from '../game/ext/ops.js';
 import { trialsOf } from '../game/ext/power-ops.js';
 import { cellToward } from '../game/move.js';
 import { BRIDGE,applyBridge,bridgeStandDown,createBridge } from '../game/power/bridge.js';
+import { pressTargets } from '../game/power-feel.js';
 import { MIRROR,createMirror,judgePair,mirrorText } from '../game/power/mirror.js';
 import { usablePowers } from '../game/power/powers.js';
 import { uiGridHook } from './bus.js';
 import { uiCommitExt } from './ext-storage.js';
-import { ensureFight,uiActorsTick } from './grid-actors.js';
+import { ensureFight,uiSafeTick } from './grid-actors.js';
 import { uiAddChips,uiPowerOf,uiPowerRefresh } from './grid-power.js';
 import { uiLend,uiSpendTrial } from './grid-power-lend.js';
-import { uiPaintHall } from './grid-power-pincer-draw.js';
+import { uiPressBurst,uiPressPulse } from './grid-power-feel.js';
+import { PULSE_KEY,uiPaintHall } from './grid-power-pincer-draw.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiPayRank } from './rank-pay.js';
 import { uiShotCells } from './shot-fx.js';
@@ -83,10 +85,11 @@ game.fight.actors = game.fight.actors.map((actor) => (actor.id === BRIDGE.droneI
 uiEnd(app,bridge);
 uiPayRank(app,BRIDGE.source,BRIDGE.reward).catch(console.error);
 }
-function uiSafeTick(app) {
-const fight = app.game.fight;
-fight.actors = fight.actors.map((actor) => (actor.id === BRIDGE.droneId ? { ...actor,arm:DRONE_ARM } :actor));
-uiActorsTick(app);
+function uiPressFeel(result) {
+pressTargets(result.kind,result.state).forEach((target) => {
+uiPressPulse(PULSE_KEY + target.index,target);
+if (target.wrong || result.kind === 'win') uiPressBurst(BRIDGE.cells[target.index],target.wrong ? 'fizz' :'spark');
+});
 }
 function uiBridgePress(app,move) {
 const bridge = uiBridgeOf(app);
@@ -94,10 +97,11 @@ if (!bridge) return;
 if (!bridge.live) uiBegin(app,bridge);
 const result = applyBridge(bridge.state,move);
 bridge.state = result.state;
+uiPressFeel(result);
 if (move === 'fire' && result.kind !== 'none') uiShotCells(app.game.avatar.pos,BRIDGE.drone,{ hit:result.kind === 'win',kill:result.kind === 'win',heavy:false });
 uiSay(app,{ text:result.note,kind:result.kind === 'win' ? 'reward' :'info' });
 if (result.kind === 'win') uiWin(app,bridge);
-uiSafeTick(app);
+uiSafeTick(app,BRIDGE.droneId);
 uiPowerRefresh(app);
 }
 function uiBreakOff(app,bridge) {

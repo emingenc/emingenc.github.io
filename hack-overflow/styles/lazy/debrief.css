@@ -171,3 +171,20 @@
   box-shadow:0 0 0 100vmax var(--bg);
   clip-path:inset(calc(var(--sp-4) * -1) -100vmax calc(var(--sp-4) * -1) -100vmax);
 }
+
+.debrief-screen {
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(180deg,color-mix(in srgb,var(--bg) 62%,transparent),color-mix(in srgb,var(--bg) 78%,transparent)),
+    url('../../assets/art/ui/breach-tall.webp');
+  background-repeat:no-repeat;
+  background-size:cover;
+}
+
+@media (orientation:landscape) {
+  .debrief-screen {
+    background-image:
+      linear-gradient(180deg,color-mix(in srgb,var(--bg) 62%,transparent),color-mix(in srgb,var(--bg) 78%,transparent)),
+      url('../../assets/art/ui/breach-wide.webp');
+  }
+}

@@ -1,7 +1,11 @@
-import { clamp01, lerp } from './ease.js';
+import { clamp01, lerp, easeOutCubic } from './ease.js';
 
 
-const WALK_FEEL = { stepMs:130,nudgeMs:90,nudgeTiles:0.1875,cameraMs:120 };
+const WALK_FEEL = { stepMs:130,nudgePushMs:50,nudgeMs:140,nudgeTiles:0.22,cameraMs:120 };
+const NUDGE_OVERSHOOT = 2.5;
+const CUBIC = 3;
+const SQUARE = 2;
+const LOOK_AHEAD = { tiles:0.6,riseMs:140,fallMs:260 };
 const HALF = 0.5;
 const CAMERA_OMEGA = 2 / WALK_FEEL.cameraMs;
 const CAMERA_SETTLED = 1e-4;
@@ -61,10 +65,19 @@ col:lerp(tween.from.col,tween.to.col,travelled),row:lerp(tween.from.row,tween.to
 moving,phase:moving ? tween.stride + progress :0,
 };
 }
+function easeOutBack(progress) {
+const rest = progress - 1;
+return 1 + (NUDGE_OVERSHOOT + 1) * rest ** CUBIC + NUDGE_OVERSHOOT * rest ** SQUARE;
+}
+function nudgePush(age) {
+if (age < WALK_FEEL.nudgePushMs) return easeOutCubic(age / WALK_FEEL.nudgePushMs);
+return 1 - easeOutBack((age - WALK_FEEL.nudgePushMs) / (WALK_FEEL.nudgeMs - WALK_FEEL.nudgePushMs));
+}
 function nudgeAt(nudge,now) {
-const progress = nudge ? (now - nudge.start) / WALK_FEEL.nudgeMs :1;
-if (progress <= 0 || progress >= 1) return null;
-return { dir:nudge.dir,amount:Math.sin(progress * Math.PI) * WALK_FEEL.nudgeTiles };
+const age = nudge ? now - nudge.start :0;
+if (age <= 0 || age >= WALK_FEEL.nudgeMs) return null;
+const push = nudgePush(age);
+return { dir:nudge.dir,amount:push * WALK_FEEL.nudgeTiles,push,age,start:nudge.start };
 }
 function walkFrame(phase) {
 const stride = Math.floor(phase);
@@ -92,4 +105,13 @@ const row = followAxis({ at:camera.row,speed:speed.row },target.row,elapsed);
 return { col:col.at,row:row.at,speed:{ col:col.speed,row:row.speed } };
 }
 
-export { WALK_FEEL, pressWalk, releaseWalk, advanceWalk, stepPose, nudgeAt, walkFrame, followCamera };
+function easeAhead(value,aim,dtMs) {
+const settleMs = Math.abs(aim) >= Math.abs(value) ? LOOK_AHEAD.riseMs :LOOK_AHEAD.fallMs;
+const next = aim + (value - aim) * Math.exp(-Math.max(0,dtMs) / settleMs);
+return Math.abs(next - aim) < CAMERA_SETTLED ? aim :next;
+}
+function lookAhead(ahead,aim,dtMs) {
+return { col:easeAhead(ahead.col,aim.col,dtMs),row:easeAhead(ahead.row,aim.row,dtMs) };
+}
+
+export { WALK_FEEL, LOOK_AHEAD, pressWalk, releaseWalk, advanceWalk, stepPose, nudgeAt, walkFrame, followCamera, lookAhead };

@@ -1,6 +1,7 @@
 import { uiSetArt } from './art-hook.js';
 import { uiCreateAtlas } from './art-atlas.js';
 import { uiLinkStyles } from './lazy-style.js';
+import { uiWarmAtlas } from './art-warm.js';
 
 const UI_ATLASES = ['grid','actors'];
 const UI_SKINS = ['base','grid','breach','code','title'];
@@ -23,18 +24,26 @@ const json = await (await uiFetchOk(uiAssetUrl('assets/art/' + name + '.json')))
 const image = await createImageBitmap(await (await uiFetchOk(uiAssetUrl('assets/art/' + (json.image || name + '.png')))).blob());
 return { json,image };
 }
+async function uiAddAtlases(atlas) {
+const loaded = await Promise.all(UI_ATLASES.map(async function (name) {
+try {
+const found = await uiFetchAtlas(name);
+atlas.add(found.json,found.image);
+return true;
+} catch (error) {
+return false;
+}
+}));
+return loaded.some(Boolean);
+}
 async function uiLoadArt() {
 try {
 const atlas = uiCreateAtlas(uiReadPalette);
 const skins = uiLinkStyles(UI_SKINS.map(function (name) { return uiAssetUrl('styles/art/skin-' + name + '.css'); }));
-await Promise.all(UI_ATLASES.map(async function (name) {
-try {
-const loaded = await uiFetchAtlas(name);
-atlas.add(loaded.json,loaded.image);
+if (await uiAddAtlases(atlas)) {
+uiWarmAtlas(atlas);
 uiSetArt(atlas);
-} catch (error) {
 }
-}));
 await skins;
 } catch (error) {
 }

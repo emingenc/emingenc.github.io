@@ -1,13 +1,15 @@
+import { bobOf,phaseOf } from '../game/npc-motion.js';
 import { floodSpec } from '../game/power/flood.js';
 import { uiDrawArt } from './art-hook.js';
 import { uiRegisterActorPainter } from './grid-draw-actors.js';
-import { uiBobAt,uiEyedInk,uiFillCentred } from './grid-glyph-art.js';
+import { uiBookOf,uiDrawShadow,uiPoseBegin,uiPoseOf } from './grid-foe-glide.js';
+import { uiEyedInk,uiFillCentred } from './grid-glyph-art.js';
 import { uiSpotOf } from './grid-spot.js';
 
 const BIT_ART = ['.x.x.','xxxxx','xexex','xxxxx','.x.x.'];
 const BIT_TILES = 0.7;
-const BOB_TILES = 0.04;
-const BOB_MS = 250;
+const BOB = { tiles:0.06,ms:250 };
+const BIT_BOOK = uiBookOf({});
 const HALF = 0.5;
 const LOCK_TILES = 0.34;
 const LOCK_EDGE_TILES = 0.06;
@@ -28,14 +30,18 @@ const RING_PX = 3;
 const RING_MS = 220;
 const FULL_TURN = Math.PI * 2;
 
-function uiBobOf(frame) {
-return uiBobAt(frame,BOB_MS,BOB_TILES);
-}
-function uiDrawBit(ctx,frame,spot) {
-const actor = spot.actor;
-const cell = { left:(actor.col - frame.camera.col) * frame.tile,top:(actor.row - frame.camera.row) * frame.tile + uiBobOf(frame) };
+function uiPaintBit(ctx,frame,cell) {
 if (uiDrawArt(ctx,'flood-bit',{ ...cell,size:frame.tile,dpr:frame.dpr,accent:'red' })) return;
 uiFillCentred(ctx,BIT_ART,{ ...cell,tile:frame.tile,share:BIT_TILES,ink:uiEyedInk(frame.palette.bg,frame.palette.red) });
+}
+function uiDrawBit(ctx,frame,spot) {
+const pose = uiPoseOf(BIT_BOOK,spot.actor,frame);
+const floor = { left:(pose.col - frame.camera.col) * frame.tile,top:(pose.row - frame.camera.row) * frame.tile };
+const bob = bobOf(frame,BOB,phaseOf(spot.actor.id)) - pose.lift * frame.tile;
+uiDrawShadow(ctx,frame,{ ...floor,lift:BOB.tiles - bob / frame.tile });
+uiPoseBegin(ctx,frame,{ ...floor,pose });
+uiPaintBit(ctx,frame,{ left:floor.left,top:floor.top + bob });
+ctx.restore();
 }
 function uiRegisterFloodPainter() {
 uiRegisterActorPainter('flood',uiDrawBit);

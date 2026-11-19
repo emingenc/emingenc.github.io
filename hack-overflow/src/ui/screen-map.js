@@ -7,6 +7,7 @@ import { uiEl } from './dom.js';
 import { uiCurrentObjective } from './grid-objective.js';
 import { uiTravelTo } from './grid-travel.js';
 import { uiDrawLegendInto,uiDrawMapInto } from './map-draw.js';
+import { uiMapFxLeave,uiMapFxStart } from './map-fx.js';
 import { uiMapLayoutOf } from './map-marks.js';
 import { uiMapCellAt,uiMapPick } from './map-pick.js';
 import { uiEnterGrid } from './screen-grid.js';
@@ -122,6 +123,7 @@ return;
 }
 if (legend) uiDrawLegendInto(legend,state);
 uiDrawMapInto(canvas,state);
+uiMapFxStart(canvas,{ avatar:state.avatar,objective:state.objective });
 }
 function uiMapTap(app,canvas,event) {
 const layout = uiMapLayoutOf(canvas);
@@ -148,7 +150,10 @@ wrap.scrollLeft = middle - wrap.clientWidth / HALF;
 function uiSyncMap(app,active,root) {
 if (uiMapResizer) uiMapResizer.disconnect();
 uiMapResizer = null;
-if (!active) return;
+if (!active) {
+uiMapFxLeave();
+return;
+}
 const canvas = root.querySelector('.map-canvas');
 if (!canvas) return;
 canvas.addEventListener('click',function (event) { uiMapTap(app,canvas,event); });
