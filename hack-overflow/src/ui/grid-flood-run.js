@@ -1,14 +1,16 @@
 import { hasBeat,withBeat,withHeld } from '../game/ext/ops.js';
 import { lockName } from '../game/messages.js';
+import { clockEndHead } from '../game/power/event-text.js';
 import { FLOOD_TEXTS,createBit,floodOffer,floodSpec,floodSpecFor,planFlood,stepBit,tallyFlood } from '../game/power/flood.js';
 import { uiCommitExt } from './ext-storage.js';
-import { ensureFight,uiLiveFoes } from './grid-actors.js';
-import { uiCastSleep } from './grid-cast-act.js';
+import { ensureFight,uiDefenceHeld,uiLiveFoes,uiTimeHeld } from './grid-actors.js';
+import { CLOCK_MS,uiCastClock,uiCastSleep } from './grid-cast-act.js';
 import { uiPowerOf,uiPowerRefresh,uiPowerSay } from './grid-power.js';
 import { uiShowToast } from './grid-toast.js';
 import { uiPayRank } from './rank-pay.js';
 
-const TICK_MS = 200;
+const TICK_MS = CLOCK_MS;
+const MS_PER_SECOND = 1000;
 const BIT_KIND = 'flood';
 const BIT_PREFIX = 'flood-';
 const INTRO_TEXT = 'ROOT: Every lock you close, I try to rewrite. Shoot my bits.';
@@ -53,6 +55,13 @@ if (!run || !(run.live || run.offer)) return null;
 const name = lockName(run.key);
 return { text:run.offer ? FLOOD_TEXTS.OFFER(name) :FLOOD_TEXTS.RULE(name),targetId:null };
 }
+function uiLineUnder(app) {
+const line = app.game.objectiveOverride;
+return line === uiObjective ? uiFloodOf(app.game)?.under || null :line || null;
+}
+function uiDropObjective(app,run) {
+if (app.game.objectiveOverride === uiObjective) app.game.objectiveOverride = run.under || null;
+}
 function uiCrossed(before,after,every) {
 return Math.floor(after / every) > Math.floor(before / every);
 }
@@ -82,22 +91,26 @@ if (arrived > 0) uiPowerRefresh(app);
 }
 function uiClear(app,run) {
 run.live = false;
-app.game.objectiveOverride = null;
+uiDropObjective(app,run);
 if (app.game.fight) app.game.fight.actors = app.game.fight.actors.filter((actor) => !uiIsBit(actor));
 uiPowerRefresh(app);
 }
 function uiHeld(app,run,result) {
 const owed = !app.game.ext.rank.paid.includes(result.source);
 uiCommitExt(app,withHeld(app.game.ext,run.key));
-uiPowerSay(app,{ text:owed ? FLOOD_TEXTS.HELD :PLAIN_HELD_TEXT,kind:'reward' });
+uiPowerSay(app,{ text:uiEndHead(run) + ' ' + (owed ? FLOOD_TEXTS.HELD :PLAIN_HELD_TEXT),kind:'reward' });
 if (owed) uiPayRank(app,result.source,result.reward).catch(console.error);
+}
+function uiEndHead(run) {
+const cause = run.rewrites > run.spec.hold ? 'rewrites' :run.elapsed >= run.spec.durationMs ? 'time' :'spent';
+return clockEndHead(cause,{ name:'Flood',seconds:run.spec.durationMs / MS_PER_SECOND,rewrites:run.rewrites });
 }
 function uiFinish(app,run) {
 const killed = uiActorsOf(app.game).filter((actor) => uiIsBit(actor) && actor.hp <= 0).length;
 uiClear(app,run);
 const result = tallyFlood({ killed,rewrites:run.rewrites });
 if (result.outcome === 'held') uiHeld(app,run,result);
-else uiPowerSay(app,{ text:FLOOD_TEXTS.LOST(lockName(run.key)) });
+else uiPowerSay(app,{ text:uiEndHead(run) + ' ' + FLOOD_TEXTS.LOST(lockName(run.key)) });
 }
 function uiStandDown(app) {
 const run = uiFloodOf(app.game);
@@ -108,18 +121,11 @@ uiPowerSay(app,{ text:FLOOD_TEXTS.STAND_DOWN });
 function uiGone(app) {
 return app.screen !== 'grid' || Boolean(app.game.save.ended);
 }
-function uiAway(app) {
-return uiGone(app) || !app.game.fight;
-}
-function uiParked(app) {
-return Boolean(app.story) || Boolean(app.game.travelOpen) || Boolean(app.menuOpen);
-}
 function uiSpent(app,run) {
 return run.tutorial && run.spawned >= run.spec.bits && !uiLiveFoes(app.game).some(uiIsBit);
 }
 function uiTick(app,run) {
-if (uiAway(app)) return uiClear(app,run);
-if (uiParked(app)) return;
+if (uiDefenceHeld(app,run,uiClear)) return;
 if (run.freeze > 0) {
 run.freeze -= TICK_MS;
 return;
@@ -129,12 +135,6 @@ run.elapsed += TICK_MS;
 if (uiCrossed(before,run.elapsed,run.spec.stepMs)) uiStepBits(app,run);
 if (uiCrossed(before,run.elapsed,run.spec.bitEveryMs)) uiSpawn(app,run);
 if (run.elapsed >= run.spec.durationMs || run.rewrites > run.spec.hold || uiSpent(app,run)) uiFinish(app,run);
-}
-async function uiClock(app,run) {
-while (run.live) {
-await uiCastSleep(app,TICK_MS);
-if (run.live) uiTick(app,run);
-}
 }
 function uiTell(app,run) {
 uiPowerSay(app,{ text:FLOOD_TEXTS.START(lockName(run.key)) });
@@ -146,18 +146,18 @@ function uiRunFlood(app,key) {
 const plan = planFlood(app.game.world,key);
 if (!plan || plan.spawns.length === 0) return false;
 const spec = floodSpecFor(hasBeat(app.game.ext,floodSpec.beat));
-const run = { live:true,offer:false,key,plan,spec,tutorial:spec !== floodSpec,freeze:spec.freezeMs || 0,elapsed:0,spawned:0,rewrites:0 };
+const run = { live:true,offer:false,key,plan,spec,tutorial:spec !== floodSpec,freeze:spec.freezeMs || 0,elapsed:0,spawned:0,rewrites:0,under:uiLineUnder(app) };
 uiPowerOf(app.game).flood = run;
 app.game.objectiveOverride = uiObjective;
 uiSpawn(app,run);
 uiTell(app,run);
-uiClock(app,run).catch(console.error);
+uiCastClock(app,run,uiTick).catch(console.error);
 return true;
 }
 
 function uiCloseOffer(app,run) {
 run.offer = false;
-app.game.objectiveOverride = null;
+uiDropObjective(app,run);
 uiPowerRefresh(app);
 }
 function uiLetIt(app) {
@@ -174,7 +174,7 @@ if (!uiRunFlood(app,run.key)) uiCloseOffer(app,run);
 }
 function uiOfferTick(app,run) {
 if (uiGone(app)) return uiCloseOffer(app,run);
-if (uiParked(app)) return;
+if (uiTimeHeld(app)) return;
 run.left -= TICK_MS;
 if (run.left <= 0) uiLetIt(app);
 }
@@ -187,7 +187,7 @@ if (run.offer) uiOfferTick(app,run);
 function uiOfferFlood(app,key) {
 const plan = planFlood(app.game.world,key);
 if (!plan || plan.spawns.length === 0) return false;
-const run = { live:false,offer:true,key,plan,left:floodOffer.waitMs,elapsed:0,spawned:0,rewrites:0 };
+const run = { live:false,offer:true,key,plan,left:floodOffer.waitMs,elapsed:0,spawned:0,rewrites:0,under:uiLineUnder(app) };
 uiPowerOf(app.game).flood = run;
 app.game.objectiveOverride = uiObjective;
 uiPowerRefresh(app);

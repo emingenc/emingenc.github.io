@@ -1,5 +1,6 @@
 import { cellToward } from '../game/move.js';
 import { cellKey,findPath } from '../game/path.js';
+import { STOP_SHORT,eventAhead,pendingEvents } from '../game/power/event-cells.js';
 import { detour,foeHint,foeName,guardPath,hazardCells,isStatic } from '../game/route-guard.js';
 import { travelTargets } from '../game/travel.js';
 import { uiRenderKeepingFocus } from './app.js';
@@ -56,6 +57,9 @@ function uiAround(app,way) {
 const game = app.game;
 return detour({ world:game.world,progress:game.progress,from:game.avatar.pos,to:way.cell,hazards:uiAvoid(app,way.hazards),base:way.base });
 }
+function uiEvents(game) {
+return game.ext && !game.opening ? pendingEvents(game.ext,game.progress.won) :[];
+}
 function uiBegin(app,plan) {
 if (!plan.keep) Object.assign(app.game.route,uiFresh(plan.target));
 }
@@ -69,19 +73,35 @@ const dirs = [...game.walk.plan.dirs];
 const around = route.target ? uiAround(app,{ cell:route.target.cell,hazards,base:dirs }) :null;
 return { from:{ ...game.avatar.pos },cell,kind:uiCulprit(game,cell),dirs,around,said:false };
 }
+function uiHoldEvent(app,event) {
+const { game } = app;
+const dirs = [...game.walk.plan.dirs];
+const avoid = new Set([cellKey(event.cell)]);
+const around = game.route.target ? uiAround(app,{ cell:game.route.target.cell,hazards:avoid,base:dirs }) :null;
+return { from:{ ...game.avatar.pos },cell:{ ...event.cell },kind:'event',event,dirs,around,said:false };
+}
 function uiGuard(app,dir) {
 const { game } = app;
 const plan = game.walk.plan;
 if (!plan || plan.dirs[0] !== dir) return null;
 const hazards = uiHazards(game,game.route);
 const check = guardPath({ from:game.avatar.pos,dirs:[dir],hazards });
-if (!check.held) return null;
+if (check.held) {
 game.route.held = uiHold(app,check.hazardCell,hazards);
 return uiBump(game,dir);
 }
+const event = eventAhead({ from:game.avatar.pos,dirs:plan.dirs,events:uiEvents(game),accepted:game.route.accept });
+if (!event) return null;
+game.route.held = uiHoldEvent(app,event);
+return uiBump(game,dir);
+}
+function uiHoldText(held) {
+if (held.event) return held.event.label + ' is ' + STOP_SHORT + ' tiles ahead. Walk on to start it.';
+return foeName(held.kind) + ' ahead. ' + foeHint(held.kind);
+}
 function uiSayHold(app,held) {
-const around = held.around ? ' · go around +' + held.around.extra :'';
-uiShowToast(app,{ text:foeName(held.kind) + ' ahead. ' + foeHint(held.kind) + around,kind:'warn' });
+const around = held.around ? ' · go around' + uiCostText(held.around.extra) :'';
+uiShowToast(app,{ text:uiHoldText(held) + around,kind:'warn' });
 held.said = true;
 uiRenderKeepingFocus(app);
 }
@@ -148,11 +168,18 @@ attrs:{ type:'button','data-action':key,'data-focus-key':key,'aria-label':aria }
 children:[uiEl('span',{ className:'grid-route-label',text })],
 });
 }
+function uiCostText(extra) {
+return extra > 0 ? ' +' + extra :'';
+}
+function uiCostAria(extra) {
+if (extra <= 0) return 'Go around, no more steps';
+return 'Go around, ' + extra + (extra === 1 ? ' more step' :' more steps');
+}
 function uiHeldChips(held) {
 const resume = uiChip('resume','RESUME ROUTE','Resume the route');
 if (!held.around) return [resume];
 const extra = held.around.extra;
-return [resume,uiChip('around','GO AROUND +' + extra,'Go around, ' + extra + (extra === 1 ? ' more step' :' more steps'))];
+return [resume,uiChip('around','GO AROUND' + uiCostText(extra),uiCostAria(extra))];
 }
 function uiGoChip(route,targets) {
 const row = targets.find((target) => target.id === route.target.id);
@@ -190,14 +217,16 @@ const route = game.route;
 const held = route.held;
 route.held = null;
 if (!held || held.blocked || !uiSame(held.from,game.avatar.pos)) { uiGo(app); return; }
-if (isStatic(held.kind)) uiAccept(game,route,held.cell);
+if (held.event) route.accept.add(held.event.id);
+else if (isStatic(held.kind)) uiAccept(game,route,held.cell);
 uiWalkPath(app,{ dirs:held.dirs,target:route.target,keep:true });
 }
 function uiGoAround(app) {
 const { game } = app;
 const route = game.route;
 const held = route.held;
-const found = held && route.target ? uiAround(app,{ cell:route.target.cell,hazards:uiHazards(game,route),base:held.dirs }) :null;
+const hazards = held?.event ? new Set([cellKey(held.cell)]) :uiHazards(game,route);
+const found = held && route.target ? uiAround(app,{ cell:route.target.cell,hazards,base:held.dirs }) :null;
 if (!found) { uiShowToast(app,{ text:NO_AROUND,kind:'warn' }); return; }
 route.held = null;
 uiWalkPath(app,{ dirs:found.dirs,target:route.target,keep:true });

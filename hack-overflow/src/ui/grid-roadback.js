@@ -9,6 +9,7 @@ import {
 import { uiRenderKeepingFocus } from './app.js';
 import { uiGridHook } from './bus.js';
 import { uiCommitExt } from './ext-storage.js';
+import { uiTimeHeld } from './grid-actors.js';
 import { uiCastSay,uiCastSleep } from './grid-cast-act.js';
 import { uiCastSync } from './grid-cast-sync.js';
 import { uiKernelHurt,uiSetRevive } from './grid-kernel-hurt.js';
@@ -22,7 +23,7 @@ const SEPARATOR = ' . ';
 const CAUGHT_TOAST = 'ROOT: caught you. -1';
 
 function uiParked(app) {
-return Boolean(app.story) || app.screen !== 'grid' || Boolean(app.game.travelOpen);
+return app.screen !== 'grid' || uiTimeHeld(app);
 }
 function uiNotice(app,text) {
 uiSay(app,text,'warn');

@@ -4,7 +4,7 @@ import { heartsLost } from '../game/finale/ordeal.js';
 import { WAVES,region,waveFront,waveHearts,waveSteps,waveTouches } from '../game/finale/ordeal-waves.js';
 import { cellAt } from '../game/world.js';
 import { uiAnnounce,uiPrefersReducedMotion } from './dom.js';
-import { ensureFight,uiHurt } from './grid-actors.js';
+import { ensureFight,uiHurt,uiTimeHeld } from './grid-actors.js';
 import { uiCastSleep } from './grid-cast-act.js';
 import { uiOnGrid } from './grid-ordeal-sheet.js';
 import { PUFF_GAP_MS,dragAlong,dragAlpha,dustPuff } from '../game/cast/follower-motion.js';
@@ -310,7 +310,7 @@ let touched = false;
 for (let step = 0; step < waveSteps(wave,flood.area,reduced); step += 1) {
 const front = waveFront(wave,step,flood.area,reduced);
 flood.front = front.col;
-if (app.screen !== 'grid') await uiOnGrid(app); 
+if (app.screen !== 'grid' || uiTimeHeld(app)) await uiOnGrid(app); 
 if (!touched && waveTouches(front,game.avatar.pos,flood.area,reduced)) {
 touched = true;
 uiFloodTouch(app,wave);

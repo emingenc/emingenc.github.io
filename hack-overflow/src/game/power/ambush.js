@@ -23,7 +23,10 @@ standDown:'Stood down. The ambush breaks off.',
 
 function ambushDue(ext,won,pos) {
 const there = pos.col === AMBUSH.trigger.col && pos.row === AMBUSH.trigger.row;
-return there && ownedPowers(won).includes('lookup') && !hasBeat(ext,AMBUSH.beat);
+return there && ambushPending(ext,won);
+}
+function ambushPending(ext,won) {
+return ownedPowers(won).includes('lookup') && !hasBeat(ext,AMBUSH.beat);
 }
 function standAmbush() {
 return AMBUSH.foes.map((foe) => MAKERS[foe.kind]({ id:foe.id,col:foe.col,row:foe.row }));
@@ -43,4 +46,4 @@ function ambushText() {
 return { ...TEXT };
 }
 
-export { AMBUSH,ambushDue,ambushState,ambushText,standAmbush,withoutAmbush };
+export { AMBUSH,ambushDue,ambushPending,ambushState,ambushText,standAmbush,withoutAmbush };

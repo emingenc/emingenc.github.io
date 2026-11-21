@@ -1,5 +1,6 @@
 import { startFlow } from '../game/story/story.js';
 import { uiRenderApp } from './app.js';
+import { uiTimeHeld } from './grid-actors.js';
 import { uiCastStill } from './grid-cast-act.js';
 import { uiStoryBegin,uiStorySettle } from './story-dialogue.js';
 
@@ -11,7 +12,7 @@ const gen = game.gen;
 return new Promise(function (resolve) {
 function look() {
 if (app.game !== game || game.gen !== gen) return;
-if (app.screen === 'grid' && !app.story) resolve();
+if (app.screen === 'grid' && !uiTimeHeld(app)) resolve();
 else window.setTimeout(look,WAIT_MS);
 }
 look();
