@@ -3,6 +3,7 @@ import { uiEl } from './dom.js';
 import { uiWalkReleaseAll } from './grid-walk.js';
 import { uiLinkStyle } from './lazy-style.js';
 import { uiEnterGrid } from './screen-grid.js';
+import { uiStartEntryBeat } from './screen-transition.js';
 
 const UI_MAP_SCREEN_ID = 'map';
 const UI_MAP_CLOSE_KEY = 'map-close';
@@ -12,6 +13,7 @@ const UI_MAP_SECTION_CLASS = 'screen screen-card map-screen';
 
 let uiMapDelegate = null;
 let uiMapLoading = null;
+const UI_MAP_CUE_DELAY_MS = 80;
 
 function uiMapRender(app) {
 if (uiMapDelegate) return uiMapDelegate.render(app);
@@ -47,12 +49,25 @@ uiMapLoading = null;
 throw error;
 }
 }
+function uiStartMapCue(app) {
+let beat = null;
+const timer = window.setTimeout(() => { beat = uiStartEntryBeat(app); },UI_MAP_CUE_DELAY_MS);
+return { stop() { window.clearTimeout(timer); if (beat) beat.cancel(); } };
+}
 function uiMapCanOpen(app) {
 return app.screen === 'grid' && !app.game.breach && !app.menuOpen;
 }
 async function uiOpenMap(app,importer = uiImportMap) {
 if (!uiMapCanOpen(app)) return;
-const [mod] = await Promise.all([uiLoadMapModule(importer),uiLinkStyle(UI_MAP_STYLE_HREF)]);
+const cue = uiMapDelegate ? null :uiStartMapCue(app);
+let mod;
+try {
+[mod] = await Promise.all([uiLoadMapModule(importer),uiLinkStyle(UI_MAP_STYLE_HREF)]);
+} catch (error) {
+cue?.stop();
+throw error;
+}
+cue?.stop();
 if (!uiMapCanOpen(app)) return;
 uiMapDelegate = mod.uiMapScreen();
 uiWalkReleaseAll(app);
