@@ -1,4 +1,6 @@
 import { sectorName } from '../game/messages.js';
+import { roomRehearsing,roomsFor } from '../game/rooms/room-lock.js';
+import { rigOf } from '../game/rig-catalog.js';
 import { travelGroups } from '../game/travel-groups.js';
 import { MAX_STARS_PER_LOCK } from '../logic/index.js';
 import { uiEl } from './dom.js';
@@ -26,11 +28,20 @@ return 'BREACHED, ' + target.stars + ' of ' + MAX_STARS_PER_LOCK + ' stars';
 function uiTravelSectorText(world,target) {
 return ['terminal','rig','giver'].includes(target.kind) && target.sector ? sectorName(world,target.sector) :'';
 }
+function uiRehearsalText(app,target) {
+const thing = target.kind === 'terminal' && target.state === 'open' ? app.game.world.things[target.id] :null;
+const rooms = thing ? roomsFor(thing.key) :[];
+if (rooms.length === 0) return null;
+const rehearsed = roomRehearsing(thing.key,app.game);
+const room = rehearsed || rooms[0];
+const rig = rigOf(room);
+return (rehearsed ? 'REHEARSED: ' :'REHEARSE: ') + (rig ? rig.title :room);
+}
 function uiTravelStepsText(target) {
 return target.steps + (target.steps === 1 ? ' step' :' steps');
 }
 function uiTravelAriaLabel(world,target) {
-const parts = ['Go to ' + target.label,uiTravelSectorText(world,target),uiTravelStateWords(target),uiTravelStepsText(target)];
+const parts = ['Go to ' + target.label,uiTravelSectorText(world,target),uiTravelStateWords(target),uiTravelStepsText(target),target.rehearsal];
 return parts.filter(Boolean).join(', ');
 }
 function uiTravelMeta(world,target,named) {
@@ -42,7 +53,8 @@ const info = uiEl('span',{ className:'travel-go-info',children:[
 uiEl('span',{ className:'travel-go-meta',text:uiTravelMeta(world,target,named) }),
 uiEl('span',{ className:'travel-go-state',text:uiTravelState(target) }),
 ] });
-return uiEl('span',{ className:'travel-go-body',children:[uiEl('span',{ className:'travel-go-name',text:target.label }),info] });
+const rehearsal = target.rehearsal ? uiEl('span',{ className:'travel-go-rehearsal',text:target.rehearsal }) :null;
+return uiEl('span',{ className:'travel-go-body',children:[uiEl('span',{ className:'travel-go-name',text:target.label }),info,rehearsal].filter(Boolean) });
 }
 function uiTravelButton(world,target,named) {
 const key = PREFIX + target.id;
@@ -103,7 +115,7 @@ if (leads.length) top.push(uiLeadsSection(world,leads,opened.has(LEADS_KEY)));
 return [...top,...groups.map((group) => uiGroupSection(world,group,opened.has(group.key)))];
 }
 function list(app,targets) {
-const sections = uiSections(app,targets);
+const sections = uiSections(app,targets.map((target) => ({ ...target,rehearsal:uiRehearsalText(app,target) })));
 return { node:uiEl('ul',{ className:'grid-travel-list',children:sections.map((section) => section.node) }),stops:sections.flatMap((section) => section.stops) };
 }
 function act(app,id) {

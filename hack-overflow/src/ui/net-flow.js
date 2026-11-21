@@ -4,7 +4,7 @@ import { NET_TEXTS, fillText } from '../game/rooms/data/net-texts.js';
 import { CLEAR_STRETCH_W3_ID, THIRD_WAVE } from '../game/quest/third-wave.js';
 import { applyNet, bruteReads, netBest, netForced, netMoves, netPar, netPeek, netStars, netSum, netWouldTear } from '../game/rooms/net.js';
 import { uiArenaPayRank, uiArenaRecordWin } from './arena-reward.js';
-import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
+import { uiArenaCardFocus, uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiNetOtherModes, uiNetRunFor } from './net-modes.js';
 import { uiNetRecordBest } from './net-record.js';
@@ -208,7 +208,7 @@ function uiNetFinish(app) {
   uiArenaClearToast(app.rig);
   if (arena.state.status === 'won') uiNetWin(app, arena);
   else uiNetLose(arena);
-  app.lastFocusKey = 'net-replay';
+  app.lastFocusKey = uiArenaCardFocus(app, 'net-replay');
   app.pendingAnnounce = uiNetEndSpoken(arena.result);
   return null;
 }

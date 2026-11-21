@@ -365,7 +365,7 @@ body:has(.screen.turret-screen) {
   opacity:0.5;
 }
 
-.turret-screen .arena-actions:has(> :nth-child(5)) .arena-verb {
+.turret-screen .arena-actions:has(> :nth-child(5)) .arena-verb:not(.arena-go) {
   flex-basis:88px;
 }
 

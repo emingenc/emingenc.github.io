@@ -12,7 +12,7 @@ import { uiBeamW3Scene } from './beam-w3-scene.js';
 import { uiEl } from './dom.js';
 import { uiLinkStyles } from './lazy-style.js';
 import { uiRoomSetAssist } from './room-flow.js';
-import { uiRoomBody,uiRoomFocusKey } from './room-screen.js';
+import { uiRoomBody,uiRoomFocusKey,uiRoomGoAction } from './room-screen.js';
 
 
 const BACK_ACTION = 'rig-back';
@@ -67,7 +67,7 @@ if (arena.view === 'card') return arena.result.won ? 'Lock found.' :'Beam lost.'
 return arena.rig.title + '. ' + uiBeamSpoken(arena) + ' ' + arena.coach;
 }
 function uiBeamFocusKey(app) {
-return uiRoomFocusKey(uiBeamArena(app),BACK_ACTION,REPLAY_ACTION);
+return uiRoomFocusKey(app,uiBeamArena(app),{ back:BACK_ACTION,replay:REPLAY_ACTION });
 }
 
 
@@ -117,6 +117,7 @@ const UI_BEAM_ACTIONS = {
 [KEEP_LEFT_ACTION]:(app) => uiBeamPlay(app,(target,now) => uiBeamCommit(target,'keep:left',now)),
 [KEEP_RIGHT_ACTION]:(app) => uiBeamPlay(app,(target,now) => uiBeamCommit(target,'keep:right',now)),
 [REPLAY_ACTION]:(app) => uiBeamBegin(app,app.rig.arena.mode),
+...uiRoomGoAction(uiBeamLeave),
 };
 function uiBeamApplyAction(app,actionId) {
 if (!uiBeamArena(app)) return false;

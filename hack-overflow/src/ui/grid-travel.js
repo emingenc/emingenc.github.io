@@ -118,4 +118,4 @@ game.travelOpen = false;
 app.lastFocusKey = 'grid-stage';
 }
 
-export { uiGridTravel, uiToggleTravel, uiIsTravelAction, uiTravelTo };
+export { uiGridTravel, uiToggleTravel, uiIsTravelAction, uiTravelTo, uiRouteTo };

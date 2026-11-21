@@ -2,12 +2,18 @@ import { TURRET_W1 } from './turret-wave1.js';
 
 const list = (text) => text.split(' ').map(Number);
 const W1_SPEC = {
-  ...TURRET_W1, id: 'w1', targets: [{ from: 1, t: TURRET_W1.t0 }, { from: TURRET_W1.tSwitch, t: TURRET_W1.t1 }],
-  dark: false, goldEvery: 0, billed: false, endless: false, hintAt: 4, fuseStep: 0, fuseFloor: 0, swarm: null,
-  cap: 0, ttl: 0, fog: 0, spelled: 3,
+  ...TURRET_W1, id: 'w1', targets: [{ from: 1, t: TURRET_W1.t0 }],
+  dark: false, goldEvery: 0, billed: false, endless: false, hintAt: 0, fuseStep: 0, fuseFloor: 0, swarm: null,
+  cap: 0, ttl: 0, fog: 0, spelled: 0,
 };
+const REHEARSAL_SPEC = {
+  ...W1_SPEC, id: 'rehearsal', n: 5, fuseFrom: Infinity, fuse2From: Infinity, rushFrom: Infinity, dupAt: Infinity,
+  dualFrom: Infinity, watch: 2,
+};
+const REHEARSAL_STREAM = list('3 7 4 2 6');
 const W2_SPEC = {
-  ...W1_SPEC, id: 'w2', n: 12, targets: null, cycle: list('10 12 9'), group: 4, dark: true, goldEvery: 8, billed: true, spelled: 2,
+  ...W1_SPEC, id: 'w2', n: 12, targets: null, cycle: list('10 12 9'), group: 4, dark: true, goldEvery: 8, billed: true,
+  hintAt: 4, spelled: 2,
 };
 const W3_SPEC = {
   ...W1_SPEC, id: 'w3', n: 12, targets: [{ from: 1, t: TURRET_W1.t0 }], dualFrom: Infinity, fuse2From: Infinity, hintAt: 0,
@@ -18,7 +24,7 @@ const OVERFLOW_SPEC = {
   swarm: { start: 1500, floor: 600, step: 30, lanes: 3 },
 };
 const OVERFLOW_ASSIST_SPEC = { ...OVERFLOW_SPEC, id: 'overflow', cycle: list('10 12 9 11 8 13'), swarm: null };
-const WAVES = { w1: W1_SPEC, w2: W2_SPEC, w3: W3_SPEC, overflow: OVERFLOW_SPEC, overflowAssist: OVERFLOW_ASSIST_SPEC };
+const WAVES = { w1: W1_SPEC, rehearsal: REHEARSAL_SPEC, w2: W2_SPEC, w3: W3_SPEC, overflow: OVERFLOW_SPEC, overflowAssist: OVERFLOW_ASSIST_SPEC };
 const MODES = ['w1', 'w2', 'w3', 'overflow'];
 const W2_POOL = { seed: 2026, size: 16, min: 12 };
 const W3_POOL = { seed: 3033, size: 16, min: 12 };
@@ -30,5 +36,5 @@ const OVERFLOW_SEED = 8090;
 const OVERFLOW_PACE_DRONES = 10;
 
 export {
-  WAVES, MODES, W2_POOL, W3_POOL, GOLD_MULT, REVEAL_MS, OVERFLOW_CHUNK, OVERFLOW_AHEAD, OVERFLOW_SEED, OVERFLOW_PACE_DRONES
+  WAVES, MODES, REHEARSAL_STREAM, W2_POOL, W3_POOL, GOLD_MULT, REVEAL_MS, OVERFLOW_CHUNK, OVERFLOW_AHEAD, OVERFLOW_SEED, OVERFLOW_PACE_DRONES
 };

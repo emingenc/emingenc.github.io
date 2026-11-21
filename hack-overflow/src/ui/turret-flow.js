@@ -1,18 +1,19 @@
 import { GAME_EVENT } from '../game/game-events.js';
 import { BUSY_MS, TURRET_W1 } from '../game/rooms/data/turret-wave1.js';
 import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
-import { OVERFLOW_PACE_DRONES, REVEAL_MS } from '../game/rooms/data/turret-waves.js';
+import { OVERFLOW_PACE_DRONES, REHEARSAL_STREAM, REVEAL_MS } from '../game/rooms/data/turret-waves.js';
 import { bruteChecksAt } from '../game/rooms/turret-race.js';
 import { billedDue } from '../game/walk/double-billed.js';
 import {
-  applyTurret, bruteCompares, hintOffer, keyFor, paceAt, swarmReady, swarmWindowMs, turretStars, turretTarget, verifyHint,
+  applyTurret, bruteCompares, createTurret, hintOffer, keyFor, paceAt, swarmReady, swarmWindowMs, turretStars, turretTarget, verifyHint,
 } from '../game/rooms/turret.js';
 import { needsRoom } from '../game/rooms/turret-w3.js';
-import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
+import { uiArenaCardFocus, uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiPrefersReducedMotion } from './dom.js';
 import { uiTurretFirstMode, uiTurretRunFor } from './turret-modes.js';
 import { uiTurretRecordBest } from './turret-record.js';
+import { uiRehearsalDue, uiRehearsalFresh, uiRehearsalLine, uiRehearsalMove, uiRehearsalWatching } from './turret-rehearsal.js';
 import { uiRoomCardView, uiRoomPlayable, uiRoomSetAssist, uiRoomWin } from './room-flow.js';
 import { uiRaceFinish, uiRaceOn, uiRaceSpoken } from './turret-race.js';
 
@@ -35,11 +36,17 @@ const RACE_ASSIST_LOCKED = 'ASSIST is set when the race starts';
 function uiTurretFreshFx() {
   return { ramAt: NO_TIME, ramKind: 'dock', beam: null, pops: [], nopeAt: NO_TIME, shiftAt: NO_TIME, shifted: 0 };
 }
+function uiTurretRehearsalRun(assist) {
+  return { state: createTurret(REHEARSAL_STREAM, { wave: 'rehearsal', assist }), index: -1 };
+}
 function uiTurretCreate(app, rig, start) {
   const mode = start.mode || uiTurretFirstMode(app);
-  const run = uiTurretRunFor({ mode, assist: app.game.ext.assist === true, lastIndex: start.lastIndex });
+  const race = uiRaceOn(start.race, mode);
+  const rehearse = start.rehearse === true && mode === 'w1' && !race;
+  const assist = app.game.ext.assist === true;
+  const run = rehearse ? uiTurretRehearsalRun(assist) : uiTurretRunFor({ mode, assist, lastIndex: start.lastIndex });
   const arena = {
-    rig, mode, race: uiRaceOn(start.race, mode), levelId: rig.levels[0], poolIndex: run.index, state: run.state, reveal: {}, swarmLeft: 0, evict: false,
+    rig, mode, race, rehearsal: rehearse ? uiRehearsalFresh() : null, levelId: rig.levels[0], poolIndex: run.index, state: run.state, reveal: {}, swarmLeft: 0, evict: false,
     playMs: 0, busyUntil: NO_TIME, picked: 0, travel: {}, fuse: {}, fx: uiTurretFreshFx(),
     view: 'play', result: null, swallow: null, coach: '', arrived: [], lastT: 0, reduced: uiPrefersReducedMotion(),
   };
@@ -70,11 +77,15 @@ const ARRIVAL_LINES = [
   { when: (arena) => arena.arrived.some((drone) => drone.gold), text: (values, arena) => fillText(TURRET_TEXTS.coach.gold, { v: arena.arrived.find((drone) => drone.gold).v }) },
   { when: (arena) => arena.arrived.length > 1, text: (values) => fillText(TURRET_TEXTS.coach.two, values) },
   { when: (arena, lead) => lead.n === FIRST_DRONE && arena.state.spec.dark, text: () => TURRET_TEXTS.coach.dark },
-  { when: (arena, lead) => lead.n === FIRST_DRONE, text: (values) => fillText(TURRET_TEXTS.coach.first, values) },
+  { when: (arena, lead) => lead.n === FIRST_DRONE && uiTurretJudged(arena.state), text: (values) => fillText(TURRET_TEXTS.rehearsal.run, values) },
+  { when: (arena, lead) => lead.n === FIRST_DRONE && arena.state.spec.spelled > 0, text: (values) => fillText(TURRET_TEXTS.coach.first, values) },
   { when: (arena, lead) => lead.n >= SECOND_DRONE && lead.n <= arena.state.spec.spelled && !arena.state.spec.dark, text: (values) => fillText(TURRET_TEXTS.coach.second, values) },
   { when: (arena, lead) => lead.n === TURRET_W1.dupAt && uiTurretHeld(arena, lead) > 0, text: (values) => fillText(TURRET_TEXTS.coach.dup, values) },
   { when: (arena, lead) => lead.n === TURRET_W1.rushFrom, text: () => TURRET_TEXTS.coach.rush },
 ];
+function uiTurretJudged(state) {
+  return state.spec.id === 'w1';
+}
 function uiTurretBounded(arena) {
   return arena.state.spec.cap > 0;
 }
@@ -134,6 +145,10 @@ function uiTurretOfferLine(state) {
 function uiTurretCoachText(arena) {
   const state = arena.state;
   if (state.status !== 'running' || state.bay.length === 0) return uiTurretOutcomeLine(state);
+  return arena.rehearsal ? uiRehearsalLine(state) : uiTurretRunningLine(arena);
+}
+function uiTurretRunningLine(arena) {
+  const state = arena.state;
   const early = uiTurretOfferLine(state) || uiTurretConsequence(state);
   if (early) return early;
   const arrival = arena.arrived.length > 0 ? uiTurretArrivalLine(arena) : '';
@@ -171,6 +186,9 @@ function uiTurretRefused(arena, moveId, now) {
   if (String(moveId).startsWith('evict:')) arena.fx.nopeAt = now;
   return false;
 }
+function uiTurretRehearsalRefuses(arena, moveId) {
+  return Boolean(arena.rehearsal) && (uiRehearsalWatching(arena.state) || String(moveId).startsWith('tag:'));
+}
 function uiTurretBayIndex(moveId) {
   return Number(String(moveId).split(':')[1]);
 }
@@ -183,6 +201,10 @@ function uiTurretCommit(app, moveId, now) {
   }
   const drone = arena.state.bay[uiTurretBayIndex(moveId)];
   if (!drone) return false;
+  if (uiTurretRehearsalRefuses(arena, moveId)) {
+    arena.fx.nopeAt = now;
+    return false;
+  }
   const next = applyTurret(arena.state, moveId, uiTurretCtx(arena, drone));
   if (next === arena.state) return uiTurretRefused(arena, moveId, now);
   arena.state = next;
@@ -271,11 +293,28 @@ function uiTurretAfterMove(app, now) {
     uiArenaClearToast(app.rig);
     uiTurretSelfToast(app, last);
   }
+  if (arena.rehearsal && arena.state.status === 'won') return uiTurretStartRun(app, now);
   if (arena.state.status !== 'running') return uiTurretFinish(app);
   if (uiTurretStaleArm(arena)) arena.evict = false;
   uiTurretArrivals(arena, now);
   app.pendingAnnounce = arena.arrived.length > 0 ? uiTurretSpoken(arena) : null;
   return null;
+}
+
+
+function uiTurretStartRun(app, now) {
+  const { rig } = app.rig.arena;
+  uiArenaClearToast(app.rig);
+  app.rig.arena = uiTurretCreate(app, rig, { now, lastIndex: null, mode: 'w1' });
+  const arena = app.rig.arena;
+  app.pendingAnnounce = uiTurretSpoken(arena) + ' ' + arena.coach;
+  return null;
+}
+function uiTurretSkipRehearsal(app, now) {
+  const arena = app.rig && app.rig.arena;
+  if (!arena || !arena.rehearsal) return false;
+  uiTurretStartRun(app, now);
+  return true;
 }
 
 
@@ -295,7 +334,7 @@ function uiTurretFinish(app) {
   const record = uiTurretRecordBest(app, arena);
   arena.result = { ...result, mode: arena.mode, ...record };
   if (arena.race) uiRaceFinish(app, arena);
-  app.lastFocusKey = 'turret-replay';
+  app.lastFocusKey = uiArenaCardFocus(app, 'turret-replay');
   app.pendingAnnounce = uiTurretEndSpoken(arena);
   return null;
 }
@@ -343,11 +382,20 @@ function uiTurretSwarm(app, dt, now) {
   uiTurretAfterMove(app, now);
   return true;
 }
+function uiTurretWatch(app, dt, now) {
+  const arena = app.rig.arena;
+  const lead = arena.state.bay[0];
+  if (!lead || !uiRehearsalDue(arena, dt, uiTurretLanded(arena, lead))) return false;
+  arena.state = applyTurret(arena.state, uiRehearsalMove(arena.state));
+  uiTurretAfterMove(app, now);
+  return true;
+}
 function uiTurretTick(app, dt, now) {
   const arena = app.rig && app.rig.arena;
   if (!arena || arena.view !== 'play') return false;
   uiTurretFly(arena, dt, now);
   if (!uiTurretPlayable(app)) return false;
+  if (arena.rehearsal) return uiTurretWatch(app, dt, now);
   arena.playMs += dt;
   if (arena.state.assist) return false;
   return uiTurretBurn(app, dt, now) || uiTurretSwarm(app, dt, now);
@@ -366,6 +414,6 @@ function uiTurretBrute(arena) {
 }
 
 export {
-  TURRET_RIG_ID, TRAVEL_MS, uiTurretCreate, uiTurretCoachText, uiTurretSpoken, uiTurretPlayable, uiTurretCommit, uiTurretNoping,
+  TURRET_RIG_ID, TRAVEL_MS, uiTurretCreate, uiTurretSkipRehearsal, uiTurretCoachText, uiTurretSpoken, uiTurretPlayable, uiTurretCommit, uiTurretNoping,
   uiTurretTick, uiTurretSetAssist, uiTurretBrute, uiTurretVerify, uiTurretArmEvict, uiTurretFrozen, uiTurretSlotVerb, uiTurretPicked,
 };

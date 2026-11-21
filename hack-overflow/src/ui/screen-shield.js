@@ -1,9 +1,8 @@
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
 import { uiRenderApp } from './app.js';
-import { ARENA_FOCUS_KEY } from './arena-shell.js';
 import { uiEl } from './dom.js';
-import { uiRoomBody, uiRoomEmpty, uiRoomHead, uiRoomLeave, uiRoomOpen, uiRoomReady, uiRoomShell } from './room-screen.js';
+import { uiRoomBody, uiRoomEmpty, uiRoomFocusKey, uiRoomGoAction, uiRoomHead, uiRoomLeave, uiRoomOpen, uiRoomReady, uiRoomShell } from './room-screen.js';
 import { uiShieldCard } from './shield-card.js';
 import { BREACH_ACTION, POP_ACTION, PUSH_ACTION, uiShieldDock, uiShieldField } from './shield-board.js';
 import { SHIELD_RIG_ID, uiShieldCommit, uiShieldCreate, uiShieldSetAssist, uiShieldSpoken, uiShieldTime } from './shield-flow.js';
@@ -46,9 +45,7 @@ function uiShieldAnnounce(app) {
   return arena.rig.title + '. ' + uiShieldSpoken(arena) + ' ' + arena.coach;
 }
 function uiShieldFocusKey(app) {
-  const arena = uiShieldArena(app);
-  if (!arena) return BACK_ACTION;
-  return arena.view === 'card' ? REPLAY_ACTION : ARENA_FOCUS_KEY;
+  return uiRoomFocusKey(app, uiShieldArena(app), { back: BACK_ACTION, replay: REPLAY_ACTION });
 }
 
 
@@ -90,6 +87,7 @@ const UI_SHIELD_ACTIONS = {
   [BREACH_ACTION]: uiShieldBreachClick,
   [BREACH_NOW]: (app) => uiShieldPlay(app, 'breach', BREACH_ACTION),
   [REPLAY_ACTION]: uiShieldReplay,
+  ...uiRoomGoAction(uiShieldLeave),
 };
 function uiShieldApplyAction(app, actionId) {
   if (!uiShieldArena(app)) return false;

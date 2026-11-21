@@ -6,8 +6,8 @@ import { uiEl, uiPointerIsCoarse } from './dom.js';
 import { uiKeysSeen } from './grid-input-mode.js';
 
 
-const UI_HINT_TOUCH = 'Tap the map to walk. Follow the pulsing arrow.';
-const UI_HINT_KEYS = 'Click the map or press arrow keys to walk. Follow the pulsing arrow. ? lists every key.';
+const UI_HINT_TOUCH = 'Tap the map to walk. Follow the dots.';
+const UI_HINT_KEYS = 'Click the map or press arrow keys to walk. Follow the dots. ? lists every key.';
 const UI_STAGE_LABEL_TOUCH = 'The Grid. Tap a tile to walk. The diamond button interacts.';
 const UI_STAGE_LABEL_KEYS = 'The Grid. Arrow keys walk, Enter interacts, T opens travel, ? lists the controls.';
 

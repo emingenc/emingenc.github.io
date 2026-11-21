@@ -3,7 +3,7 @@ import { MOST_WATER_ID } from '../game/quest/third-wave.js';
 import { PINCER_BUSY_MS } from '../game/rooms/data/pincer-w1.js';
 import { PINCER_TEXTS } from '../game/rooms/data/pincer-texts.js';
 import { applyPincer, pincerStars, pincerWhyNot } from '../game/rooms/pincer.js';
-import { uiArenaClearToast, uiArenaToast } from './arena-shell.js';
+import { uiArenaCardFocus, uiArenaClearToast, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiPincerCoachText, uiPincerSpoken } from './pincer-coach.js';
 import { uiPincerCardTitle, uiPincerFirstMode, uiPincerRunFor } from './pincer-modes.js';
@@ -172,7 +172,7 @@ function uiPincerFinish(app) {
   arena.slide = null;
   const result = arena.state.status === 'won' ? uiPincerWin(app, arena) : uiPincerLose(arena);
   arena.result = { ...result, mode: arena.mode, ...uiPincerRecordBest(app, arena) };
-  app.lastFocusKey = 'pincer-replay';
+  app.lastFocusKey = uiArenaCardFocus(app, 'pincer-replay');
   app.pendingAnnounce = uiPincerEndSpoken(arena.result);
   return null;
 }

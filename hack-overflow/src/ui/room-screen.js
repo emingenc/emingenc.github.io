@@ -1,10 +1,11 @@
 import { rigOf } from '../game/rig-catalog.js';
 import {
-  ARENA_FOCUS_KEY, uiArenaCoach, uiArenaHeader, uiArenaLeave, uiArenaLeaveTooSoon, uiArenaMoment, uiArenaOpen, uiArenaRule, uiArenaToastNode,
+  ARENA_FOCUS_KEY, uiArenaCardFocus, uiArenaCoach, uiArenaHeader, uiArenaLeave, uiArenaLeaveTooSoon, uiArenaMoment, uiArenaOpen, uiArenaRule, uiArenaToastNode,
 } from './arena-shell.js';
 import { uiEl } from './dom.js';
 import { uiLinkStyles } from './lazy-style.js';
 import { uiRoomHintNode } from './room-hint.js';
+import { GO_LOCK_ACTION, uiRoomGoLock } from './room-lock.js';
 
 
 function uiRoomShell(app, arena, parts) {
@@ -59,9 +60,12 @@ function uiRoomEmpty() {
   return uiEl('section', { className: 'screen rig-screen', attrs: { 'data-screen': 'rig' } });
 }
 
-function uiRoomFocusKey(arena, backAction, replayAction) {
-  if (!arena) return backAction;
-  return arena.view === 'card' ? replayAction : ARENA_FOCUS_KEY;
+function uiRoomFocusKey(app, arena, keys) {
+  if (!arena) return keys.back;
+  return arena.view === 'card' ? uiArenaCardFocus(app, keys.replay) : ARENA_FOCUS_KEY;
+}
+function uiRoomGoAction(leave) {
+  return { [GO_LOCK_ACTION]: (app) => uiRoomGoLock(app, leave) };
 }
 
-export { uiRoomBody, uiRoomEmpty, uiRoomFocusKey, uiRoomShell, uiRoomOpen, uiRoomReady, uiRoomHead, uiRoomLeave };
+export { uiRoomBody, uiRoomEmpty, uiRoomFocusKey, uiRoomGoAction, uiRoomShell, uiRoomOpen, uiRoomReady, uiRoomHead, uiRoomLeave };

@@ -1,6 +1,7 @@
 import { RIG_CATALOG } from '../game/rig-catalog.js';
 import { UI_ROOT_ID, uiAnnounce, uiEl, uiFindByFocusKey, uiQs } from './dom.js';
 import { uiRigHostLeave } from './rig-host-common.js';
+import { uiRoomLockActions, uiRoomLockFocus, uiRoomLockLine, uiRoomLockPlan } from './room-lock.js';
 
 const ARENA_BACK = 'rig-back';
 const ARENA_FOCUS_KEY = 'arena-root';
@@ -93,7 +94,7 @@ uiArenaPaintToast(rig);
 
 
 function uiArenaCardButtons(actions) {
-return uiEl('div',{ className:'arena-actions',children:actions.map(function (item) { return uiArenaButton(item.action,item.label,'arena-verb'); }) });
+return uiEl('div',{ className:'arena-actions',children:actions.map(function (item) { return uiArenaButton(item.action,item.label,item.kind || 'arena-verb'); }) });
 }
 function uiArenaWon(app) {
 const result = app.rig && app.rig.arena && app.rig.arena.result;
@@ -103,16 +104,20 @@ function uiArenaMoment(app) {
 return uiArenaWon(app) ? uiEl('p',{ className:'arena-moment',text:ARENA_MOMENT_TEXT,attrs:{ 'aria-hidden':'true' } }) :null;
 }
 function uiArenaCard(app,result) {
-const lines = (result.lines || []).map(function (line) { return uiEl('p',{ className:'arena-card-line',text:line }); });
+const plan = uiArenaWon(app) ? uiRoomLockPlan(app) :null;
+const lines = (result.lines || []).map(function (line) { return uiEl('p',{ className:'arena-card-line arena-card-lede',text:line }); });
 return uiEl('section',{
 className:'arena-card arena-scroll' + (result.tone ? ' arena-card-' + result.tone :'') + (uiArenaWon(app) ? ' arena-card-win' :''),
 attrs:{ 'data-rig':app.rig ? app.rig.rigId :'' },
-children:[uiEl('h2',{ className:'arena-card-title',text:result.title }),...(result.lead || []),...lines,...(result.body || []),uiArenaCardButtons(result.actions)],
+children:[uiEl('h2',{ className:'arena-card-title',text:result.title }),...(result.lead || []),...lines,...(result.body || []),uiRoomLockLine(plan),uiArenaCardButtons(uiRoomLockActions(plan,result.actions))].filter(Boolean),
 });
 }
 function uiArenaPaidLine(rank,className) {
 if (!rank || rank.gain <= 0) return null;
 return uiEl('p',{ className:'arena-card-line ' + className,text:['+' + rank.gain + ' R',rank.up].filter(Boolean).join(' · ') });
+}
+function uiArenaCardFocus(app,fallback) {
+return uiRoomLockFocus(app) || fallback;
 }
 function uiArenaOpen(app,spec) {
 if (app.rig) uiArenaClearToast(app.rig);
@@ -135,5 +140,5 @@ uiRigHostLeave(app,note,rig ? rig.title :'');
 
 export {
 ARENA_FOCUS_KEY,uiArenaSetClock,uiArenaOpen,uiArenaHeader,uiArenaRule,uiArenaCoach,uiArenaToast,uiArenaClearToast,uiArenaToastNode,uiArenaCard,uiArenaMoment,uiArenaPaidLine,
-uiArenaLeaveTooSoon,uiArenaLeave,
+uiArenaLeaveTooSoon,uiArenaLeave,uiArenaCardFocus,
 };

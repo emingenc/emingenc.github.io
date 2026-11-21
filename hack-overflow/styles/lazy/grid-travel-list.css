@@ -29,6 +29,11 @@
   color:var(--dim);
 }
 
+.travel-go-rehearsal {
+  font-size:var(--fs-sm);
+  color:var(--primary);
+}
+
 .travel-go-state {
   margin-left:auto;
   color:var(--dim);

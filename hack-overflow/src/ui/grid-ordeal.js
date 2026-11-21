@@ -2,7 +2,7 @@ import { WARP_CELL } from '../game/cast/patch.js';
 import { hasBeat } from '../game/ext/ops.js';
 import { BEATS } from '../game/finale/contract.js';
 import {
-AFTER_TOASTS,ORDEAL_TOASTS,TRACED_QUIP_TEXT,TRACED_TEXT,alarmSheet,choiceOf,ordealOutcome,stanceOf,verdictSheet,withPatchTaken,
+AFTER_TOASTS,ORDEAL_TOASTS,TRACED_QUIP_TEXT,TRACED_TEXT,alarmSheet,choiceOf,ordealOutcome,ordealPayCard,stanceOf,verdictSheet,withPatchTaken,
 } from '../game/finale/ordeal.js';
 import { ordealSpec } from '../game/finale/ordeal-spec.js';
 import { waveSheets } from '../game/finale/ordeal-waves.js';
@@ -17,9 +17,13 @@ import { uiOpenReview } from './review-loader.js';
 import { uiOpenTraced } from './screen-traced.js';
 import { uiStoryChoice } from './story-dialogue.js';
 
-const TRACED_INFO = Object.freeze({ key:null,lockName:'ROOT',failed:0,revealed:false,visibleFails:0,maxStars:0,scene:TRACED_TEXT,quip:TRACED_QUIP_TEXT });
+const TRACED_INFO = Object.freeze({ key:null,lockName:'ROOT',failed:0,revealed:false,visibleFails:0,maxStars:0,scene:TRACED_TEXT });
 const BENCH = Object.freeze({ cell:WARP_CELL,facing:'left' });
 
+function uiTracedInfo(outcome) {
+const pay = ordealPayCard(outcome);
+return pay ? { ...TRACED_INFO,pay } :{ ...TRACED_INFO,quip:TRACED_QUIP_TEXT };
+}
 async function uiOrdealTaken(app,fought) {
 const game = app.game;
 if (!hasBeat(game.ext,BEATS.home)) uiCommitExt(app,withPatchTaken(game.ext));
@@ -61,7 +65,7 @@ await uiOnGrid(app);
 if (outcome.rank) await uiPayRank(app,outcome.rank.source,outcome.rank.amount);
 await uiOrdealSheet(app,verdictSheet(choice));
 if (outcome.tagged) await uiCastSay(app,{ text:ORDEAL_TOASTS.tagged,kind:'reward' });
-uiOpenTraced(app,{ ...TRACED_INFO });
+uiOpenTraced(app,uiTracedInfo(outcome));
 uiRenderApp(app);
 await uiOnGrid(app);
 uiFloodStop(app.game);

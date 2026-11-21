@@ -5,11 +5,16 @@ import { GAME_EVENT } from '../game/game-events.js';
 import { clamp01, countUpValue } from '../game/ease.js';
 import { levelBand } from '../game/progress.js';
 import { STAR_CAP_WITH_EXPLOIT } from '../game/breach.js';
+import { lockName } from '../game/messages.js';
+import { rehearsalFor } from '../game/rehearsal.js';
 import { uiEl, uiPrefersReducedMotion } from './dom.js';
 import { uiEmit } from './bus.js';
 import { uiEnterGrid } from './screen-grid.js';
+import { uiTravelTo } from './grid-travel.js';
 import { uiLevelUpBody, uiLevelUpSpeech } from './screen-levelup.js';
 import { uiBreachQuip } from './story-quip.js';
+import { roomRehearsing } from '../game/rooms/room-lock.js';
+import { rigOf } from '../game/rig-catalog.js';
 import { uiProblemByKey } from './render-lock-left.js';
 import { uiResultFamilyBlock, uiResultComplexity, uiResultMaxTest, uiResultClassFormBlock, uiResultEvidence, uiSolveLink, UI_EVIDENCE_FIRST_TRY, UI_EVIDENCE_SHOW_LINE } from './render-result.js';
 
@@ -21,6 +26,11 @@ const DEBRIEF_TICK_MS = 60;
 const PERCENT = 100;
 const XP_FLASH_MS = 500;
 const DEBRIEF_LEAD_MS = 120;
+const FOCUS_KEY = 'debrief-continue';
+const CONTINUE_ACTION = 'debrief-continue';
+const NEXT_LOCK_ACTION = 'debrief-next-lock';
+const REHEARSE_ACTION = 'debrief-rehearse';
+const TRAVEL_PREFIX = 'travel-';
 
 function uiTitleTiming(text,reducedMotion) {
 return reducedMotion ? 0 :Math.min(text.length * TYPE_CHAR_MS,TYPE_MAX_MS);
@@ -93,13 +103,17 @@ root.querySelector('.debrief-title-rest').textContent = debrief.plan.titleText.s
 root.querySelector('.debrief-xp').textContent = uiXpText(app.game.outcome,debrief.plan,elapsed);
 uiPatchXpMeter(root.querySelector('.debrief-xpmeter'),uiXpBarState(app.game.outcome,debrief.plan,elapsed));
 }
+function uiDebriefRehearsal(game) {
+if (!game.progress || !game.avatar) return null;
+return rehearsalFor(game.world,game.progress,game.avatar.pos);
+}
 function uiOpenDebrief(app) {
 const outcome = app.game.outcome;
 app.screen = 'debrief';
-app.lastFocusKey = 'debrief-continue';
+app.lastFocusKey = FOCUS_KEY;
 const plan = uiDebriefPlan(outcome,uiPrefersReducedMotion());
 const levelUp = plan.events.find(function (event) { return event.type === GAME_EVENT.LEVEL_UP; }) ?? null;
-const debrief = { plan,startedAt:performance.now(),timers:[],intervalId:null,levelUp };
+const debrief = { plan,startedAt:performance.now(),timers:[],intervalId:null,levelUp,rehearsal:uiDebriefRehearsal(app.game) };
 debrief.timers = plan.events.map(function (event) { return uiScheduleDebriefEvent(debrief,event); });
 app.game.debrief = debrief;
 if (plan.totalMs > 0) debrief.intervalId = window.setInterval(function () { uiDebriefTick(app); },DEBRIEF_TICK_MS);
@@ -185,6 +199,11 @@ function uiCapNote(outcome) {
 if (!uiExploitCapApplies(outcome)) return null;
 return uiDebriefNote('An exploit was in play: this breach is capped at ' + STAR_CAP_WITH_EXPLOIT + '★.');
 }
+function uiRehearsedNote(app,outcome) {
+const rigId = roomRehearsing(outcome.key,app.game);
+const title = rigId ? rigOf(rigId)?.title :null;
+return title ? uiDebriefNote('You rehearsed this in ' + title + '.') :null;
+}
 function uiSectorNote(outcome) {
 return outcome.sectorDone ? uiDebriefNote('Every lock in this sector is open: its CORE is ready.') :null;
 }
@@ -241,8 +260,27 @@ function uiDebriefContinueButton() {
 return uiEl('button',{
 className:'btn btn-primary debrief-continue',
 text:'CONTINUE',
-attrs:{ type:'button','data-action':'debrief-continue','data-focus-key':'debrief-continue' },
+attrs:{ type:'button','data-action':CONTINUE_ACTION,'data-focus-key':FOCUS_KEY },
 });
+}
+function uiNextLockButton(rehearsal) {
+return uiEl('button',{
+className:'btn btn-primary debrief-continue',
+text:'NEXT ' + lockName(rehearsal.lockKey) + ' · ' + rehearsal.lockSteps + ' steps',
+attrs:{ type:'button','data-action':NEXT_LOCK_ACTION,'data-focus-key':FOCUS_KEY },
+});
+}
+function uiRehearseButton(rehearsal) {
+return uiEl('button',{
+className:'btn btn-ghost debrief-rehearse',
+text:'REHEARSE FIRST: ' + rehearsal.title + ' · ' + rehearsal.roomSteps + ' steps',
+attrs:{ type:'button','data-action':REHEARSE_ACTION,'data-focus-key':REHEARSE_ACTION },
+});
+}
+function uiDebriefButtons(app) {
+const rehearsal = app.game.debrief.rehearsal;
+if (!rehearsal) return uiDebriefContinueButton();
+return uiEl('div',{ className:'debrief-choice',children:[uiNextLockButton(rehearsal),uiRehearseButton(rehearsal)] });
 }
 function uiLevelUpBlock(app,timing) {
 const outcome = app.game.outcome;
@@ -265,8 +303,9 @@ uiLevelUpBlock(app,timing),
 uiBreachQuip(outcome),
 uiCapNote(outcome),
 uiSectorNote(outcome),
+uiRehearsedNote(app,outcome),
 uiDebriefLesson(problem,timing),
-uiDebriefContinueButton(),
+uiDebriefButtons(app),
 uiDebriefIntel(outcome,problem,timing),
 ];
 }
@@ -279,10 +318,25 @@ attrs:{ 'data-screen':'debrief' },
 children:uiDebriefChildren(app,{ plan:debrief.plan,elapsed }).filter(Boolean),
 });
 }
-function uiApplyDebriefAction(app,actionId) {
-if (actionId !== 'debrief-continue') return false;
+function uiRehearsalTargetId(game,actionId) {
+const rehearsal = game.debrief?.rehearsal;
+if (!rehearsal) return null;
+if (actionId === NEXT_LOCK_ACTION) return rehearsal.lockTargetId;
+return actionId === REHEARSE_ACTION ? game.world.rigs[rehearsal.rigId].id :null;
+}
+function uiLeaveDebrief(app) {
 uiFlushLevelUp(app.game.debrief);
 uiEnterGrid(app);
+}
+function uiApplyDebriefAction(app,actionId) {
+if (actionId === CONTINUE_ACTION) {
+uiLeaveDebrief(app);
+return true;
+}
+const targetId = uiRehearsalTargetId(app.game,actionId);
+if (targetId === null) return false;
+uiLeaveDebrief(app);
+uiTravelTo(app,TRAVEL_PREFIX + targetId);
 return true;
 }
 function uiDebriefAnnounce(app) {
@@ -295,7 +349,7 @@ function uiDebriefScreen() {
 return {
 id:'debrief',
 render:uiRenderDebrief,
-focusKey:function () { return 'debrief-continue'; },
+focusKey:function () { return FOCUS_KEY; },
 announce:uiDebriefAnnounce,
 applyAction:uiApplyDebriefAction,
 sync:function (app,active) { uiSyncDebrief(app,active); },
