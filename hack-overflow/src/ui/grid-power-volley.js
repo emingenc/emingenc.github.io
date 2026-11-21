@@ -2,8 +2,10 @@ import { hasBeat,hasFind,withBeat,withFind } from '../game/ext/ops.js';
 import { cellToward } from '../game/move.js';
 import { usablePowers } from '../game/power/powers.js';
 import { DOOR,VOLLEY,VOLLEYS,createVolleyRun,playVolley,runView,standVolley,volleyDue,volleyText } from '../game/power/volley.js';
+import { endLine,eventLine } from '../game/power/event-text.js';
 import { uiCommitExt } from './ext-storage.js';
 import { ensureFight,uiActorsTick } from './grid-actors.js';
+import { uiDropLine,uiEventCard,uiStopGo } from './grid-event-card.js';
 import { uiAddChips,uiHooksOnce,uiModeOff,uiPowerOf,uiPowerRefresh,uiPowerSay as uiSay } from './grid-power.js';
 import { uiLend,uiSpendTrial } from './grid-power-lend.js';
 import { uiBreachClick,uiWireBreach } from './grid-power-plate.js';
@@ -59,13 +61,19 @@ state.wired = true;
 uiWireBreach(app,function () { uiPlay(app,'breach'); });
 }
 }
+function uiLine(app) {
+const live = uiLiveOf(app);
+if (!live || live.kind !== 'volley') return null;
+return { text:eventLine('volley',{ done:runView(live.run).volley,total:VOLLEYS.length }),targetId:null };
+}
 function uiSpring(app) {
 const fight = ensureFight(app.game);
+uiStopGo(app);
 fight.actors = [...fight.actors.filter((actor) => actor.id !== VOLLEY.drone.id),...standVolley()];
 uiBegin(app,{ kind:'volley',run:createVolleyRun(VOLLEYS),revives:fight.revives || 0 });
-uiSay(app,{ text:volleyText().start });
+app.game.objectiveOverride = uiLine;
 uiPowerRefresh(app);
-if (hasBeat(app.game.ext,'ordeal')) import('./finale-offer.js').then((module) => module.uiGhostOffer(app,{ kind:'volley',once:'hint-volley' })).catch(console.error);
+uiEventCard(app,'volley').then(() => hasBeat(app.game.ext,'ordeal') && import('./finale-offer.js').then((module) => module.uiGhostOffer(app,{ kind:'volley',once:'hint-volley' }))).catch(console.error);
 }
 function uiBumpDoor(app) {
 const game = app.game;
@@ -94,6 +102,7 @@ function uiFinish(app,live) {
 const state = uiVolleyOf(app);
 if (!state || state.live !== live) return false;
 state.live = null;
+uiDropLine(app,uiLine);
 if (live.kind === 'volley') {
 uiWithoutDrone(app.game);
 uiCommitExt(app,withBeat(app.game.ext,VOLLEY.beat));
@@ -105,7 +114,7 @@ function uiStandDown(app) {
 const live = uiLiveOf(app);
 if (!live || !uiFinish(app,live)) return;
 const text = volleyText();
-uiSay(app,{ text:live.kind === 'volley' ? text.standDown :text.doorStandDown });
+uiSay(app,{ text:live.kind === 'volley' ? endLine('volley','standDown') :text.doorStandDown });
 uiPowerRefresh(app);
 }
 function uiWin(app,live,result) {
@@ -116,10 +125,11 @@ uiCommitExt(app,withFind(app.game.ext,VOLLEY.find));
 uiSay(app,{ text:text.doorWin,kind:'reward' });
 return;
 }
+const cleared = endLine('volley','clear',{ pay:VOLLEY.reward });
 if (result.kind === 'breach') uiSay(app,{ text:text.breach(result.glyph,result.top) });
-else uiSay(app,{ text:text.cleared,kind:'reward' });
+else uiSay(app,{ text:cleared,kind:'reward' });
 uiPayRank(app,VOLLEY.source,VOLLEY.reward).then(function (paid) {
-if (result.kind === 'breach' && paid.paid && !paid.up) uiShowToast(app,{ text:text.cleared,kind:'reward' });
+if (result.kind === 'breach' && paid.paid && !paid.up) uiShowToast(app,{ text:cleared,kind:'reward' });
 }).catch(console.error);
 }
 function uiRight(app,live,result) {
@@ -195,7 +205,7 @@ if (!live || live.kind !== 'volley') return;
 const drone = uiDroneOf(app.game);
 const revived = (app.game.fight.revives || 0) > live.revives;
 if (revived || !drone || drone.hp <= 0) {
-uiFinish(app,live);
+if (uiFinish(app,live)) uiSay(app,{ text:endLine('volley',revived ? 'revive' :'shot') });
 uiPowerRefresh(app);
 }
 }

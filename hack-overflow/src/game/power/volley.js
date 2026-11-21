@@ -44,7 +44,10 @@ again:['Back again? Three more.'],
 
 function volleyDue(ext,won,pos) {
 const there = pos.col === VOLLEY.trigger.col && pos.row === VOLLEY.trigger.row;
-return there && usablePowers(won,ext).includes(VOLLEY.power) && !hasBeat(ext,VOLLEY.beat);
+return there && volleyPending(ext,won);
+}
+function volleyPending(ext,won) {
+return usablePowers(won,ext).includes(VOLLEY.power) && !hasBeat(ext,VOLLEY.beat);
 }
 function standVolley() {
 return [createDrone({ id:VOLLEY.drone.id,col:VOLLEY.drone.col,row:VOLLEY.drone.row })];
@@ -83,4 +86,4 @@ breach:(glyph,top) => 'REJECT. ' + glyph + (top ? ' hit a ' + top + ' on top.' :
 };
 }
 
-export { BREACH_HOLD_MS,DOOR,VOLLEY,VOLLEYS,createVolleyRun,moveFor,playVolley,runView,standVolley,volleyDue,volleyText };
+export { BREACH_HOLD_MS,DOOR,VOLLEY,VOLLEYS,createVolleyRun,moveFor,playVolley,runView,standVolley,volleyDue,volleyPending,volleyText };

@@ -20,6 +20,7 @@ net:() => import('./grid-power-net.js'),
 const LENT_IDS = ['pincer','plate','net'];
 const MODE_EXPORTS = { lookup:'uiModeLookup',pincer:'uiModePincer',plate:'uiModePlate',net:'uiModeNet' };
 const ENCOUNTERS = [
+() => import('./grid-event-marks.js'),
 () => import('./grid-power-ambush.js'),
 () => import('./grid-power-rift.js'),
 () => import('./grid-power-bridge.js'),
@@ -112,6 +113,9 @@ if (!power.tags[power.selected]) power.selected = Object.keys(power.tags).pop() 
 }
 function uiModeOff(game) {
 Object.assign(uiPowerOf(game),{ mode:'',aim:false,pick:null });
+}
+function uiAimOn(app) {
+if (uiReadyIds(app.game).includes('lookup')) uiModeOn(app.game,'lookup');
 }
 function uiModeOn(game,powerId) {
 const power = uiPowerOf(game);
@@ -271,4 +275,4 @@ Object.entries(hooks).forEach(([name,fn]) => uiGridHook(name,fn));
 };
 }
 
-export { CHIP_RANK_LAST,CHIP_RANK_RECALL,CHIP_RANK_TAG,uiActiveMode,uiAddTap,uiInstallPower,uiModeOff,uiPowerOf,uiPowerSay,uiHooksOnce,uiAddGuard,uiAddTagSpot,uiAddChips,uiTagSpots,uiTagIds,uiPowerRefresh,uiPrune };
+export { uiAimOn,CHIP_RANK_LAST,CHIP_RANK_RECALL,CHIP_RANK_TAG,uiActiveMode,uiAddTap,uiInstallPower,uiModeOff,uiPowerOf,uiPowerSay,uiHooksOnce,uiAddGuard,uiAddTagSpot,uiAddChips,uiTagSpots,uiTagIds,uiPowerRefresh,uiPrune };

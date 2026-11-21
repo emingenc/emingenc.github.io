@@ -15,13 +15,17 @@ function uiWalkAdvance(app,now) {
 const game = app.game;
 const before = game.walk;
 const deliberate = uiWalkIsDeliberate(before);
+const auto = uiWalkGoes(before);
 const turn = advanceWalk(game.walk,{
 now,from:game.avatar.pos,reducedMotion:uiPrefersReducedMotion(),
 move:function (dir,auto) { return uiGuardedStep(app,dir,auto); },
 });
 game.walk = turn.step ? { ...turn.walk,deliberate:false } :turn.walk;
-if (turn.step) uiApplyStepEvent(app,{ ...turn.step,deliberate });
+if (turn.step) uiApplyStepEvent(app,{ ...turn.step,deliberate,auto });
 game.route?.after(app,before,game.walk,turn.step);
+}
+function uiWalkGoes(walk) {
+return Boolean(walk.plan && walk.plan.dirs.length > 0);
 }
 function uiWalkIsDeliberate(walk) {
 return walk.deliberate === true || Boolean(walk.plan && walk.plan.dirs.length > 0);

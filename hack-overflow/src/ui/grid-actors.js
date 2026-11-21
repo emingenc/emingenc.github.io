@@ -145,8 +145,29 @@ function uiStruck(app,blow) {
 const first = blow.strikers[0];
 if (uiHurt(app,blow.hits,first ? first.kind :'mite') && first) uiKnockBack(app,first);
 }
-function uiActorsTick(app) {
-if (app.game.travelOpen || app.game.fight?.calm) return false;
+function uiAutoWalking(app) {
+const plan = app.game.walk?.plan;
+return Boolean(plan && plan.dirs.length > 0);
+}
+function uiTimedEvent(app) {
+const game = app.game;
+const power = game.power && game.power.gen === game.gen ? game.power :null;
+const flood = power && power.flood;
+const siege = game.siege && game.siege.gen === game.gen ? game.siege.run :null;
+return Boolean((flood && (flood.live || flood.offer)) || siege?.live || game.roadback?.chase || game.ordealFlood || power?.ambush?.live || power?.volley?.live);
+}
+function uiTimeHeld(app) {
+return Boolean(app.story) || Boolean(app.menuOpen) || Boolean(app.game.travelOpen) || (uiAutoWalking(app) && !uiTimedEvent(app));
+}
+function uiDefenceHeld(app,run,end) {
+if (app.screen !== 'grid' || Boolean(app.game.save.ended) || !app.game.fight) {
+end(app,run);
+return true;
+}
+return uiTimeHeld(app);
+}
+function uiActorsTick(app,step) {
+if ((step?.auto && !uiTimedEvent(app)) || uiTimeHeld(app) || app.game.fight?.calm) return false;
 const drones = uiTickDrones(app.game);
 const miteHits = app.game.sentry ? app.game.sentry.tick(app) :0;
 const hurt = drones.hits + miteHits > 0;
@@ -242,4 +263,4 @@ if (change && change.kind === 'lost') row.style.animationDelay = Math.round(chan
 return row;
 }
 
-export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiHitFoe,uiGridPing,uiGridShot,uiSentryWait,uiGridHearts,uiHurt,uiSafeTick };
+export { uiRegisterShotToasts,uiIsFreeFloor,ensureFight,uiLiveFoes,uiFoeAlive,uiDroneAlive,uiSpawnDrone,uiNoteDoorway,uiActorsTick,uiAutoWalking,uiTimeHeld,uiDefenceHeld,uiHitFoe,uiGridPing,uiGridShot,uiSentryWait,uiGridHearts,uiHurt,uiSafeTick };

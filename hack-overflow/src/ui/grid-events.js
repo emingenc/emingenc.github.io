@@ -238,7 +238,7 @@ uiCommitSave(app,withPosition(game.save,game.avatar));
 uiNoteDoorway(app,result.pos);
 if (result.event.zap) uiHitFoe(app,result.event.zap,ZAP_DAMAGE);
 uiHookEvent(app,{ event:result.event,pos:game.avatar.pos,from });
-const hurt = UI_TICKING_EVENTS.has(result.event.type) && uiActorsTick(app);
+const hurt = UI_TICKING_EVENTS.has(result.event.type) && uiActorsTick(app,{ auto:result.auto });
 const rerender = UI_STEP_HANDLERS[result.event.type](app,{ event:result.event,from,deliberate:result.deliberate });
 uiHookEntered(app,from);
 if (rerender || hurt || uiHudOutlived(game)) uiRenderKeepingFocus(app);

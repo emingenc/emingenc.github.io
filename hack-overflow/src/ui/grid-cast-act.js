@@ -6,6 +6,8 @@ import { uiShowToast } from './grid-toast.js';
 import { uiSpeaking } from './grid-speech.js';
 import { uiRenderKeepingFocus } from './app.js';
 
+const CLOCK_MS = 200;
+
 const POLL_MS = 100;
 const GIVE_UP_MS = 12000;
 
@@ -41,4 +43,11 @@ uiCommitSave(app,withPosition(game.save,game.avatar));
 uiRenderKeepingFocus(app);
 }
 
-export { uiCastSleep,uiCastUntil,uiCastStill,uiCastSay,uiCastCarry };
+async function uiCastClock(app,run,tick) {
+while (run.live) {
+await uiCastSleep(app,CLOCK_MS);
+if (run.live) tick(app,run);
+}
+}
+
+export { uiCastSleep,uiCastUntil,uiCastStill,uiCastSay,uiCastCarry,uiCastClock,CLOCK_MS };
