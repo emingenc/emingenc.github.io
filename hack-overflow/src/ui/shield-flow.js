@@ -4,7 +4,7 @@ import { BUSY_MS, END_GLYPH } from '../game/rooms/data/shield-wave1.js';
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { applyShield, bruteReads, glyphOf, shieldMoves, shieldPace, shieldPar, shieldStars } from '../game/rooms/shield.js';
 import { autoMove, shieldCallPar } from '../game/rooms/shield-auto.js';
-import { uiArenaToast } from './arena-shell.js';
+import { uiArenaCardFocus, uiArenaToast } from './arena-shell.js';
 import { uiEmit } from './bus.js';
 import { uiPrefersReducedMotion } from './dom.js';
 import { uiRoomCardView, uiRoomPlayable, uiRoomSetAssist, uiRoomWin } from './room-flow.js';
@@ -166,7 +166,7 @@ function uiShieldFinish(app) {
   const arena = uiRoomCardView(app);
   const result = arena.state.status === 'won' ? uiShieldWin(app, arena) : uiShieldLoss(arena);
   arena.result = { ...result, mode: arena.mode, ...uiShieldRun(arena), ...uiShieldRecordBest(app, arena), ...(arena.find ? { find: arena.find } : {}) };
-  app.lastFocusKey = 'shield-replay';
+  app.lastFocusKey = uiArenaCardFocus(app, 'shield-replay');
   app.pendingAnnounce = uiShieldEndSpoken(arena.result);
   return null;
 }

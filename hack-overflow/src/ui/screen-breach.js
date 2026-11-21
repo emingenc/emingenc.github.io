@@ -1,4 +1,5 @@
 import { lockName } from '../game/messages.js';
+import { roomRehearsing } from '../game/rooms/room-lock.js';
 import { gateLevel } from '../game/progress.js';
 import { uiEl } from './dom.js';
 import { ui } from './app.js';
@@ -19,16 +20,21 @@ return uiEl('button',{ className:'btn btn-ghost breach-back',attrs,children:['â—
 function uiHudClass(family) {
 return gateLevel(family) === null ? 'hud breach-hud breach-hud-compact' :'hud breach-hud';
 }
+function uiRehearsedTag(app) {
+return roomRehearsing(app.game.breach.key,app.game)
+? uiEl('span',{ className:'hud-pill hud-pill-open hud-rehearsed',text:'REHEARSED' }) :null;
+}
 function uiBreachHud(app,view) {
 return uiEl('div',{
 className:uiHudClass(view.lock.family),
 children:[
 uiGridButton(app),
 uiEl('span',{ className:'hud-family hud-title',text:uiFamilyName(view.lock.family) }),
+uiRehearsedTag(app),
 uiFirstTryPill(view.lock,app),
 uiHudSoundButton(app),
 uiHudMenuButton(),
-],
+].filter(Boolean),
 });
 }
 function uiBreachStatus(app) {

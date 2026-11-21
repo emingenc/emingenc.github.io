@@ -9,7 +9,7 @@ import { uiPincerCard } from './pincer-card.js';
 import { PINCER_RIG_ID, uiPincerCommit, uiPincerCreate, uiPincerNow, uiPincerSpoken } from './pincer-flow.js';
 import { uiPincerCardTitle, uiPincerHeading, uiPincerHeadingLabel } from './pincer-modes.js';
 import { uiPincerDock, uiPincerScene } from './pincer-scene.js';
-import { uiRoomBody } from './room-screen.js';
+import { uiRoomBody, uiRoomFocusKey, uiRoomGoAction } from './room-screen.js';
 import { uiPincerSlideCancel, uiPincerSlideDown, uiPincerSlideUp } from './pincer-slide.js';
 
 
@@ -62,9 +62,7 @@ function uiPincerAnnounce(app) {
   return arena.rig.title + '. ' + uiPincerSpoken(arena) + ' ' + arena.coach;
 }
 function uiPincerFocusKey(app) {
-  const arena = uiPincerArena(app);
-  if (!arena) return BACK_ACTION;
-  return arena.view === 'card' ? REPLAY_ACTION : ARENA_FOCUS_KEY;
+  return uiRoomFocusKey(app, uiPincerArena(app), { back: BACK_ACTION, replay: REPLAY_ACTION });
 }
 
 
@@ -94,7 +92,9 @@ function uiPincerSwitch(app, actionId) {
 function uiPincerNoAssist() {
   return null;
 }
-const UI_PINCER_ACTIONS = { [BACK_ACTION]: uiPincerLeave, [ASSIST_ACTION]: uiPincerNoAssist, [REPLAY_ACTION]: uiPincerReplay };
+const UI_PINCER_ACTIONS = {
+  [BACK_ACTION]: uiPincerLeave, [ASSIST_ACTION]: uiPincerNoAssist, [REPLAY_ACTION]: uiPincerReplay, ...uiRoomGoAction(uiPincerLeave),
+};
 function uiPincerApplyAction(app, actionId) {
   if (!uiPincerArena(app)) return false;
   if (Object.hasOwn(UI_PINCER_ACTIONS, actionId)) UI_PINCER_ACTIONS[actionId](app);

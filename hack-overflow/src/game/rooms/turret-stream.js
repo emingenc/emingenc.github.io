@@ -117,7 +117,6 @@ function playProblem(stream) {
 const played = simStream(stream);
 if (!played.dupOK) return 'drone 6 is not a stacking duplicate';
 if (!played.dupUsed) return 'the x2 slot is never used';
-if (played.cross < 1) return 'no pair crosses the T change';
 if (played.early < MIN_EARLY_PAIRS) return 'under 2 pairs before the rush';
 if (played.pairs < MIN_PAIRS) return 'under 4 pairs';
 return simStream(stream,true).walks < MIN_TAG_WALKS ? 'TAG spam would survive' :'';

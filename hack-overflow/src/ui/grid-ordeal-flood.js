@@ -1,6 +1,6 @@
 import { PATCH_CELL,trailAt,trailLost,trailPose } from '../game/cast/patch.js';
 import { hurtHp } from '../game/hp.js';
-import { heartsLost } from '../game/finale/ordeal.js';
+import { ORDEAL_OBJECTIVE,heartsLost } from '../game/finale/ordeal.js';
 import { WAVES,region,waveFront,waveHearts,waveSteps,waveTouches } from '../game/finale/ordeal-waves.js';
 import { cellAt } from '../game/world.js';
 import { uiAnnounce,uiPrefersReducedMotion } from './dom.js';
@@ -243,9 +243,13 @@ if (flood.drag) uiPaintDrag(ctx,frame,flood);
 if (flood.hit) uiPaintHit(ctx,app,frame);
 if (flood.bubble) uiPaintBubble(ctx,app,frame);
 }
+function uiOrdealLine() {
+return { text:ORDEAL_OBJECTIVE,targetId:null };
+}
 function uiFloodStart(game) {
 const cast = game.drawCast;
-game.ordealFlood = { area:region(game.avatar.pos),wave:0,dir:1,front:null,drag:null,cast,hit:null,bubble:null,patchAt:'follow',bench:null,patchLast:null };
+game.ordealFlood = { area:region(game.avatar.pos),wave:0,dir:1,front:null,drag:null,cast,hit:null,bubble:null,patchAt:'follow',bench:null,patchLast:null,under:game.objectiveOverride || null };
+game.objectiveOverride = uiOrdealLine;
 game.drawCast = function (ctx,app,frame) {
 if (cast) cast(ctx,app,frame);
 uiDrawOrdeal(ctx,app,frame);
@@ -255,6 +259,7 @@ function uiFloodStop(game) {
 const flood = game.ordealFlood;
 if (!flood) return;
 game.drawCast = flood.cast;
+if (game.objectiveOverride === uiOrdealLine) game.objectiveOverride = flood.under;
 flood.bubble = null;
 flood.hit = null;
 flood.patchLast = null;

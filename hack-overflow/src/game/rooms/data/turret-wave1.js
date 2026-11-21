@@ -1,5 +1,5 @@
 const TURRET_W1 = {
-n:10,fuseFrom:5,fuse2From:7,rushFrom:6,dupAt:6,dualFrom:7,tSwitch:8,t0:10,t1:12,
+n:10,fuseFrom:5,fuse2From:7,rushFrom:6,dupAt:6,dualFrom:7,t0:10,
 integrity:3,comboCap:5,bayCap:2,slots:9,
 };
 const FUSE_MS = { first:8000,second:5000 };

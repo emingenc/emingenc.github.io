@@ -206,7 +206,8 @@
   font-size:var(--fs-lg);
 }
 
-.arena-card-title + .arena-card-line {
+.arena-card-title + .arena-card-line,
+.arena-card-lede {
   font-size:var(--fs-md);
 }
 
@@ -229,6 +230,21 @@
 
 .arena-actions .arena-verb {
   flex:1 1 140px;
+}
+
+.arena-actions .arena-go {
+  flex:1 1 100%;
+  overflow-wrap:anywhere;
+}
+
+.arena-actions .arena-minor {
+  flex:1 1 88px;
+  min-height:44px;
+}
+
+.arena-card-lock {
+  color:var(--dim);
+  font-size:var(--fs-md);
 }
 
 .turret-star {

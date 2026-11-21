@@ -10,7 +10,7 @@ import { uiNetCard } from './net-card.js';
 import { uiNetDrag } from './net-drag.js';
 import { NET_RIG_ID, uiNetClearNope, uiNetCommit, uiNetCreate, uiNetNoping, uiNetNow, uiNetPlayable, uiNetSpoken } from './net-flow.js';
 import { uiNetDock, uiNetMagnifier, uiNetScene, uiNetStrip } from './net-scene.js';
-import { uiRoomBody, uiRoomFocusKey } from './room-screen.js';
+import { uiRoomBody, uiRoomFocusKey, uiRoomGoAction } from './room-screen.js';
 
 
 const BACK_ACTION = 'rig-back';
@@ -62,7 +62,7 @@ function uiNetAnnounce(app) {
   return arena.rig.title + '. ' + uiNetSpoken(arena) + ' ' + arena.coach;
 }
 function uiNetFocusKey(app) {
-  return uiRoomFocusKey(uiNetArena(app), BACK_ACTION, REPLAY_ACTION);
+  return uiRoomFocusKey(app, uiNetArena(app), { back: BACK_ACTION, replay: REPLAY_ACTION });
 }
 
 
@@ -114,7 +114,7 @@ function uiNetNoAssist() {
   return null;
 }
 const UI_NET_ACTIONS = {
-  [BACK_ACTION]: uiNetLeave, [ASSIST_ACTION]: uiNetNoAssist, [REPLAY_ACTION]: uiNetReplay,
+  [BACK_ACTION]: uiNetLeave, [ASSIST_ACTION]: uiNetNoAssist, [REPLAY_ACTION]: uiNetReplay, ...uiRoomGoAction(uiNetLeave),
 };
 function uiNetApplyAction(app, actionId) {
   if (!uiNetArena(app)) return false;

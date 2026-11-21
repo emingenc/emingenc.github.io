@@ -3,6 +3,7 @@ import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
 import { hintOffer, keyFor, turretTarget } from '../game/rooms/turret.js';
 import { uiEl } from './dom.js';
 import { uiTurretFrozen } from './turret-flow.js';
+import { uiRehearsalMarked } from './turret-rehearsal.js';
 
 
 const SLOT_ACTION = 'turret-slot-';
@@ -11,6 +12,7 @@ const PICK_ACTION = 'turret-pick-';
 const TRUST_ACTION = 'turret-trust';
 const VERIFY_ACTION = 'turret-verify';
 const EVICT_ACTION = 'turret-evict';
+const SKIP_ACTION = 'turret-skip';
 const LAST_TTL = 1;
 const FOG_MARK = '?';
 const FIRST_SLOT = 1;
@@ -37,6 +39,8 @@ function uiTurretSlotClasses(arena, slot, lit) {
 function uiTurretHintSlot(state) {
   const offer = hintOffer(state);
   if (offer) return offer.slot;
+  const watched = uiRehearsalMarked(state);
+  if (watched) return watched;
   const lead = state.bay[0];
   return lead && lead.n <= state.spec.spelled ? keyFor(state, lead) : 0;
 }
@@ -103,6 +107,7 @@ function uiTurretOfferVerbs(offer, drone) {
 function uiTurretTag(app) {
   const arena = app.rig.arena;
   const drone = arena.state.bay[arena.picked];
+  if (arena.rehearsal) return uiTurretSkipVerb();
   const offer = hintOffer(arena.state);
   if (offer) return uiTurretOfferVerbs(offer, drone);
   if (arena.state.spec.cap > 0) return uiEl('div', { className: 'turret-verbs', children: [uiTurretStoreVerb(drone, true), uiTurretEvictVerb(arena)] });
@@ -124,6 +129,12 @@ function uiTurretEvictVerb(arena) {
     },
     children: [word, sub],
   });
+}
+function uiTurretSkipVerb() {
+  return uiTurretVerb({
+    className: 'turret-skip', action: SKIP_ACTION, wordClass: 'turret-tag-word', word: TURRET_TEXTS.rehearsal.skip,
+    label: TURRET_TEXTS.rehearsal.skipLabel,
+  }, '');
 }
 function uiTurretChipText(state, drone) {
   const values = { n: drone.v, t: turretTarget(state) };
@@ -151,5 +162,5 @@ function uiTurretBayBand(app) {
 }
 
 export {
-  SLOT_ACTION, TAG_ACTION, PICK_ACTION, TRUST_ACTION, VERIFY_ACTION, EVICT_ACTION, uiTurretBoard, uiTurretBoardClass, uiTurretLaneMark, uiTurretSlotView, uiTurretTag, uiTurretBayBand,
+  SLOT_ACTION, TAG_ACTION, PICK_ACTION, TRUST_ACTION, VERIFY_ACTION, EVICT_ACTION, SKIP_ACTION, uiTurretBoard, uiTurretBoardClass, uiTurretLaneMark, uiTurretSlotView, uiTurretTag, uiTurretBayBand,
 };

@@ -7,7 +7,7 @@ const MAX_TOAST_CHARS = 64;
 const INTRO = {
 id:'intro',
 lines:[
-[SYSTEM,'Each lock is a missing line of Python. Follow the arrow.'],
+[SYSTEM,'Each lock is a missing line of Python. Follow the dots.'],
 ],
 };
 const GATE_BEATS = [

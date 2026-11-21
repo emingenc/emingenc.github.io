@@ -33,6 +33,8 @@ const AFTER_TOASTS = Object.freeze([
 "BIT: He's not gone. He's unreferenced.",
 ]);
 const TRACED_TEXT = 'TRACE COMPLETE — the flood dropped you from the safehouse.';
+const PAY_HEAD = 'You found it. PATCH had merged it before you.';
+const ORDEAL_OBJECTIVE = 'Find the line that breaks it.';
 const TRACED_QUIP_TEXT = 'Read it or merged it blind, the flood came anyway. Remember how that felt.';
 
 function ordealPick(line) {
@@ -77,7 +79,7 @@ return {
 id:'ordeal-' + choice,
 lines:merged
 ? [{ who:BIT,text:'Unreviewed.' },{ who:GHOST,text:'Like everything I ship.' }]
-:[{ who:GHOST,text:'...You read it. Huh.' },{ who:BIT,text:'No time to fix it. Brace!' }],
+:[{ who:GHOST,text:'...You read it. Huh.' },{ who:BIT,text:'Right line. PATCH merged first. Brace!' }],
 choices:[{ id:'ok',label:'OK',default:true }],
 };
 }
@@ -93,11 +95,19 @@ const tagged = withTag(resolveOrdeal(ext,'reviewed'),TAG_ID,PATCH_CELL);
 const earned = withCosmetic(withBadge(tagged,REVIEWER.id),REVIEWER.cosmetic);
 return { ext:earned,flag:'reviewed',tagged:true,badge:REVIEWER.badge,rank:{ source:REVIEWER.source,amount:REVIEWER.rank },overrun:0 };
 }
+function heartsKept(overrun) {
+return overrun > 0 ? 'all but ' + overrun + (overrun === 1 ? ' heart' :' hearts') :'all hearts';
+}
+function ordealPayCard(outcome) {
+if (!outcome.tagged) return null;
+const kept = [heartsKept(outcome.overrun),outcome.badge,outcome.rank ? '+' + outcome.rank.amount + ' R' :null,'a tag on PATCH'];
+return { head:PAY_HEAD,keep:'You keep: ' + kept.filter(Boolean).join(' · ') };
+}
 function choiceOf(result) {
 return result.stamp === 'MERGED' ? 'merge' :'review';
 }
 
 export {
-ANSWER,ORDEAL_LISTING,ORDEAL_HINT_TOASTS,ORDEAL_STANCE_PROMPTS,REVIEWER,TAG_ID,OVERRUN_HEARTS,LOG_LINE,ORDEAL_TOASTS,AFTER_TOASTS,TRACED_TEXT,TRACED_QUIP_TEXT,
-ordealPick,alarmSheet,stanceOf,ordealPrompts,openerText,dealSheetLines,verdictSheet,heartsLost,withPatchTaken,ordealOutcome,choiceOf,
+ANSWER,ORDEAL_LISTING,ORDEAL_HINT_TOASTS,ORDEAL_STANCE_PROMPTS,REVIEWER,TAG_ID,OVERRUN_HEARTS,LOG_LINE,ORDEAL_TOASTS,AFTER_TOASTS,TRACED_TEXT,TRACED_QUIP_TEXT,ORDEAL_OBJECTIVE,
+ordealPick,alarmSheet,stanceOf,ordealPrompts,openerText,dealSheetLines,verdictSheet,heartsLost,withPatchTaken,ordealOutcome,ordealPayCard,choiceOf,
 };

@@ -207,6 +207,31 @@
   color:var(--text);
 }
 
+.traced-pay {
+  display:grid;
+  gap:var(--sp-3);
+  max-width:520px;
+  padding:var(--sp-4) var(--sp-5);
+  border:1px solid var(--amber);
+  border-radius:var(--radius-md);
+  background:var(--panel);
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+
+.traced-pay-head {
+  margin:0;
+  color:var(--text);
+  font-size:var(--fs-lg);
+}
+
+.traced-pay-keep {
+  margin:0;
+  color:var(--amber);
+  font-family:var(--font-display);
+  letter-spacing:0.04em;
+}
+
 .traced-carried,.traced-note {
   max-width:520px;
   color:var(--dim);

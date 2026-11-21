@@ -36,6 +36,10 @@
   border:1px solid var(--border);
 }
 
+.hud-rehearsed {
+  width:auto;
+}
+
 .hud-pill-open {
   color:var(--primary);
   border-color:var(--primary);

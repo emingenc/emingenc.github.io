@@ -6,7 +6,7 @@ import { ASSIST_PACE,PACE_MAX,SHARD } from '../game/rooms/data/beam-wave.js';
 import { BEAM_TEXTS } from '../game/rooms/data/beam-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
 import { applyBeam,beamStars,createBeam,middleHint,middleOf,scopeCells } from '../game/rooms/beam.js';
-import { uiArenaToast } from './arena-shell.js';
+import { uiArenaCardFocus, uiArenaToast } from './arena-shell.js';
 import { uiBeamRecordBest } from './beam-record.js';
 import { uiBeamRunFor } from './beam-modes.js';
 import { uiBeamW3Cue,uiBeamW3Toast,uiBeamW3Values } from './beam-w3-flow.js';
@@ -246,7 +246,7 @@ function uiBeamFinish(app) {
 const arena = uiRoomCardView(app);
 const result = arena.state.status === 'won' ? uiBeamWin(app,arena) :uiBeamLoss(arena);
 arena.result = { ...result,mode:arena.mode,...uiBeamRecordBest(app,arena) };
-app.lastFocusKey = 'beam-replay';
+app.lastFocusKey = uiArenaCardFocus(app, 'beam-replay');
 app.pendingAnnounce = uiBeamEndSpoken(arena.result);
 return null;
 }

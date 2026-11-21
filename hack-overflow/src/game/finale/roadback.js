@@ -20,6 +20,7 @@ const ROAD_TOASTS = Object.freeze({
 system:'ROOT: 0 writable locks. Rewriting: kernel.',
 door:'KERNEL: made it. BIT: look up patch-0.',
 found:'LOOKUP patch-0: O(1) get. Found.',
+foundReviewed:'LOOKUP patch-0: O(1) get. Your review tag: 1 step, not 3.',
 scanned:'BIT: Found it. Three steps. A tag is one.',
 });
 const REUNION_LINES = Object.freeze([{ who:PATCH_WHO,text:"I approved his helper without reading. Don't be me." }]);
@@ -83,13 +84,17 @@ function createLookup(ext) {
 const told = flagOf(ext) !== null && hasBeat(ext,BEATS.m5);
 const tagged = Object.hasOwn(tagsOf(ext),PATCH_TAG) || told || flagOf(ext) === 'reviewed';
 const block = { id:PATCH_TAG,kind:'drone',col:PATCH_CELL.col,row:PATCH_CELL.row,hp:1,arm:1,awake:false };
-return { tagged,steps:tagged ? 1 :SCAN_STEPS,step:0,actors:[block] };
+return { tagged,reviewed:flagOf(ext) === 'reviewed',steps:tagged ? 1 :SCAN_STEPS,step:0,actors:[block] };
+}
+function foundText(lookup) {
+if (!lookup.tagged) return ROAD_TOASTS.scanned;
+return lookup.reviewed ? ROAD_TOASTS.foundReviewed :ROAD_TOASTS.found;
 }
 function lookupStep(lookup) {
 const step = lookup.step + 1;
 if (step < lookup.steps) return { lookup:{ ...lookup,step },found:false,text:'BIT: Not in your map. Scan ' + step + ' of ' + lookup.steps + '.' };
 const recalled = recallOne(lookup.actors,PATCH_TAG);
-return { lookup:{ ...lookup,step,actors:recalled.actors },found:true,text:lookup.tagged ? ROAD_TOASTS.found :ROAD_TOASTS.scanned };
+return { lookup:{ ...lookup,step,actors:recalled.actors },found:true,text:foundText(lookup) };
 }
 function reunionSheet() {
 return { id:'road-back',lines:REUNION_LINES.map((line) => ({ ...line })),choices:REUNION_CHOICES.map((choice) => ({ ...choice })) };

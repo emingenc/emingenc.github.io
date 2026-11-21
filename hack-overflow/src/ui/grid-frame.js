@@ -9,6 +9,7 @@ import { uiAvatarPose } from './grid-walk.js';
 import { uiCameraTick } from './grid-camera.js';
 import { uiBarsInset } from './grid-fit.js';
 import { uiDrawTiles,uiWarmPairs } from './grid-draw-tiles.js';
+import { uiDrawRoute } from './grid-draw-route.js';
 import { uiDrawAvatar } from './grid-draw-avatar.js';
 import { uiDrawFx } from './grid-draw-fx.js';
 import { uiDrawWayfinding } from './grid-draw-wayfinding.js';
@@ -32,6 +33,7 @@ return {
 ctx:stage.ctx,world:game.world,progress:game.progress,save:game.save,camera,tile:stage.tile,view,avatar,now,
 doorOpenness:stage.doorOpenness,reducedMotion:uiReducedMotion(),bake:stage.bake,blits:stage.blits,
 rootRank:game.progress.level >= MAX_LEVEL,targetId:game.coach ? null :game.objectiveTarget,palette:stage.palette,width:stage.width,height:stage.height,dpr:stage.dpr,
+avatarCell:game.avatar.pos,walking:Boolean(game.walk.plan),routeAvoid:game.tapAvoid ? game.tapAvoid(app) :undefined,routeCache:stage.routeCache,
 };
 }
 function uiSceneBusy(app,frame) {
@@ -51,8 +53,10 @@ const stage = app.game.stage;
 if (!stage.tile) return;
 stage.bake ||= uiCreateBakeCache();
 stage.blits ||= uiCreateBlits();
+stage.routeCache ||= { key:'',progress:null,cells:[] };
 const frame = uiFrameFor(app,now);
 uiDrawTiles(frame);
+uiDrawRoute(frame);
 if (app.game.drawOracle) app.game.drawOracle(frame.ctx,app,frame);
 if (app.game.drawCast) app.game.drawCast(frame.ctx,app,frame);
 uiDrawAvatar(frame);

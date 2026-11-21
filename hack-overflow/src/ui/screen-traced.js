@@ -33,6 +33,17 @@ return uiCarriedTextWith(traced,uiStarsGlyph);
 function uiTracedButton(action,label,kind) {
 return uiEl('button',{ className:'btn ' + kind,text:label,attrs:{ type:'button','data-action':action,'data-focus-key':action } });
 }
+function uiPayCard(pay) {
+return uiEl('section',{
+className:'traced-pay',
+attrs:{ 'aria-label':'What your read kept' },
+children:[uiEl('p',{ className:'traced-pay-head',text:pay.head }),uiEl('p',{ className:'traced-pay-keep',text:pay.keep })],
+});
+}
+function uiTracedNote(traced) {
+if (traced.pay) return uiPayCard(traced.pay);
+return traced.quip ? uiGhostQuip(traced.quip) :uiTracedQuip(traced);
+}
 function uiRenderTraced(app) {
 const traced = app.game.traced;
 const lock = !traced.scene;
@@ -41,7 +52,7 @@ className:'screen screen-card traced-screen',
 attrs:{ 'data-screen':'traced' },
 children:[
 uiEl('h1',{ className:'traced-title',text:'TRACED' }),
-traced.quip ? uiGhostQuip(traced.quip) :uiTracedQuip(traced),
+uiTracedNote(traced),
 uiEl('p',{ className:'traced-lead',text:traced.scene || TRACED_HEADLINE + ' at ' + traced.lockName + '.' }),
 ...(lock ? [uiEl('p',{ className:'traced-carried',text:uiCarriedText(traced) }),uiEl('p',{ className:'traced-note',text:'RETRY: fresh TRACE, reshuffled chips.' })] :[]),
 uiEl('div',{
@@ -59,7 +70,7 @@ return true;
 }
 function uiTracedAnnounce(app) {
 const traced = app.game.traced;
-if (traced.scene) return traced.scene;
+if (traced.scene) return traced.pay ? traced.scene + ' ' + traced.pay.head + ' ' + traced.pay.keep + '.' :traced.scene;
 return 'Dropped at ' + traced.lockName + '. ' + uiCarriedTextWith(traced,uiStarsWord);
 }
 function uiTracedScreen() {

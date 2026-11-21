@@ -1,14 +1,17 @@
 import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
 import { hintOffer } from '../game/rooms/turret.js';
 import { uiRenderApp } from './app.js';
-import { ARENA_FOCUS_KEY } from './arena-shell.js';
-import { uiRoomBody, uiRoomEmpty, uiRoomHead, uiRoomLeave, uiRoomOpen, uiRoomReady, uiRoomShell } from './room-screen.js';
-import { EVICT_ACTION, PICK_ACTION, SLOT_ACTION, TAG_ACTION, TRUST_ACTION, VERIFY_ACTION, uiTurretBoard, uiTurretTag } from './turret-board.js';
+import { uiRoomBody, uiRoomEmpty, uiRoomFocusKey, uiRoomGoAction, uiRoomHead, uiRoomLeave, uiRoomOpen, uiRoomReady, uiRoomShell } from './room-screen.js';
+import { EVICT_ACTION, PICK_ACTION, SKIP_ACTION, SLOT_ACTION, TAG_ACTION, TRUST_ACTION, VERIFY_ACTION, uiTurretBoard, uiTurretTag } from './turret-board.js';
 import { uiTurretCard } from './turret-card.js';
 import { uiTurretDragAttach, uiTurretDragCancel, uiTurretDragDetach, uiTurretDragDown, uiTurretDragKeep, uiTurretDragUp } from './turret-drag.js';
-import { TURRET_RIG_ID, uiTurretArmEvict, uiTurretCommit, uiTurretCreate, uiTurretPicked, uiTurretSetAssist, uiTurretSlotVerb, uiTurretSpoken, uiTurretVerify } from './turret-flow.js';
+import {
+  TURRET_RIG_ID, uiTurretArmEvict, uiTurretCommit, uiTurretCreate, uiTurretPicked, uiTurretSetAssist, uiTurretSkipRehearsal, uiTurretSlotVerb, uiTurretSpoken,
+  uiTurretVerify,
+} from './turret-flow.js';
 import { uiTurretNow, uiTurretStart, uiTurretStop } from './turret-loop.js';
 import { uiRaceRule, uiRaceSpoken, uiRaceTake } from './turret-race.js';
+import { uiRehearsalRule } from './turret-rehearsal.js';
 import { uiTurretPaint, uiTurretScene, uiTurretSceneNodes } from './turret-scene.js';
 import { uiStoryLabFinish } from './story-dialogue.js';
 
@@ -33,9 +36,14 @@ function uiTurretArena(app) {
 }
 
 
+function uiTurretRuleLine(arena) {
+  if (arena.race) return uiRaceRule(arena);
+  if (arena.rehearsal) return uiRehearsalRule(arena.state);
+  return fillText(RULES[arena.mode], { n: arena.state.stream.length });
+}
 function uiTurretPlayView(app) {
   const arena = app.rig.arena;
-  const rule = arena.race ? uiRaceRule(arena) : fillText(RULES[arena.mode], { n: arena.state.stream.length });
+  const rule = uiTurretRuleLine(arena);
   return [...uiRoomHead(rule, arena.coach), uiTurretScene(app), uiTurretBoard(app), uiTurretTag(app)];
 }
 function uiTurretRender(app) {
@@ -58,10 +66,7 @@ function uiTurretAnnounce(app) {
   return arena.rig.title + MODE_SPOKEN[arena.mode] + '. ' + uiTurretSpoken(arena) + ' ' + arena.coach;
 }
 function uiTurretFocusKey(app) {
-  const arena = uiTurretArena(app);
-  if (!arena) return BACK_ACTION;
-  if (arena.view === 'card') return REPLAY_ACTION;
-  return ARENA_FOCUS_KEY;
+  return uiRoomFocusKey(app, uiTurretArena(app), { back: BACK_ACTION, replay: REPLAY_ACTION });
 }
 
 
@@ -124,10 +129,12 @@ const UI_TURRET_ACTIONS = {
   [BACK_ACTION]: uiTurretLeave,
   'arena-assist': (app) => uiTurretSetAssist(app, app.game.ext.assist !== true),
   [TAG_ACTION]: (app) => uiTurretPlay(app, 'tag:' + app.rig.arena.picked, TAG_ACTION),
+  [SKIP_ACTION]: (app) => uiTurretSkipRehearsal(app, uiTurretNow()),
   [REPLAY_ACTION]: uiTurretReplay,
   [EVICT_ACTION]: uiTurretEvictAction,
   [TRUST_ACTION]: uiTurretTrust,
   [VERIFY_ACTION]: uiTurretVerifyAction,
+  ...uiRoomGoAction(uiTurretLeave),
 };
 function uiTurretApplyAction(app, actionId) {
   if (!uiTurretArena(app)) return false;
@@ -154,8 +161,8 @@ function uiTurretPointerUp(event, app) {
   const slot = Number(dropped.split(':')[2]);
   const moveId = dropped.replace('probe:', uiTurretSlotVerb(app.rig.arena, slot) + ':');
   const slotAction = SLOT_ACTION + moveId.split(':')[2];
-  app.rig.arena.swallow = { action: slotAction, until: uiTurretNow() + CLICK_SWALLOW_MS };
   uiTurretPlay(app, moveId, slotAction);
+  app.rig.arena.swallow = { action: slotAction, until: uiTurretNow() + CLICK_SWALLOW_MS };
   uiRenderApp(app);
   return true;
 }
@@ -217,7 +224,7 @@ function uiRigScreen() {
   };
 }
 function uiRigOpen(app, rigId) {
-  const start = (opened, rig) => uiTurretCreate(opened, rig, { now: uiTurretNow(), lastIndex: null, race: uiRaceTake(opened) });
+  const start = (opened, rig) => uiTurretCreate(opened, rig, { now: uiTurretNow(), lastIndex: null, race: uiRaceTake(opened), rehearse: true });
   uiRoomOpen(app, rigId, start);
 }
 function uiRigReady() {

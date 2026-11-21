@@ -13,9 +13,8 @@ function allSolved(ids,solved) {
 return Array.isArray(ids) && ids.length > 0 && ids.every((id) => solved.has(id));
 }
 function sectorDone(sectorId,facts) {
-const roomWon = facts.roomsWon.some((room) => ROOM_SECTOR[room] === sectorId);
 const locks = Object.hasOwn(facts.lockIdsBySector,sectorId) ? facts.lockIdsBySector[sectorId] :[];
-return roomWon || facts.cores.includes(sectorId) || allSolved(locks,new Set(facts.solved));
+return facts.cores.includes(sectorId) || allSolved(locks,new Set(facts.solved));
 }
 function milestoneReached(facts) {
 const byLocks = Math.floor(new Set(facts.solved).size / LOCKS_PER_STAGE);

@@ -1,7 +1,6 @@
 import { cameraFor } from './viewport.js';
 
 
-const EDGE_INSET = 0.9;
 const PULSE_MS = 900;
 const PULSE_STILL = 0.5;
 const HALF = 0.5;
@@ -13,16 +12,6 @@ function targetCell(world,targetId) {
 const thing = targetId ? world.things[targetId] :null;
 return thing ? { col:thing.col,row:thing.row } :null;
 }
-function viewCentre(view) {
-return { col:view.cols * HALF,row:view.rows * HALF };
-}
-function edgeScale(delta,view) {
-const reachCol = view.cols * HALF - EDGE_INSET;
-const reachRow = view.rows * HALF - EDGE_INSET;
-const alongCol = delta.col === 0 ? Infinity :reachCol / Math.abs(delta.col);
-const alongRow = delta.row === 0 ? Infinity :reachRow / Math.abs(delta.row);
-return Math.min(alongCol,alongRow);
-}
 function clearBand(view) {
 const inset = view.inset || NO_INSET;
 return { top:inset.top,rows:view.rows - inset.top - inset.bottom };
@@ -30,19 +19,11 @@ return { top:inset.top,rows:view.rows - inset.top - inset.bottom };
 function centreInView(at,view) {
 return at.col >= 0 && at.col <= view.cols && at.row >= 0 && at.row <= view.rows;
 }
-function markerInView(cell,view) {
-const at = { col:cell.col + HALF - view.camera.col,row:cell.row + HALF - view.camera.row };
-const centre = viewCentre(view);
-const delta = { col:at.col - centre.col,row:at.row - centre.row };
-if (centreInView(at,view)) return { kind:'here',col:at.col,row:at.row };
-const scale = edgeScale(delta,view);
-return { kind:'edge',col:centre.col + delta.col * scale,row:centre.row + delta.row * scale,angle:Math.atan2(delta.row,delta.col) };
-}
 function markerFor(cell,view) {
 if (!cell) return { kind:'none' };
 const band = clearBand(view);
-const marker = markerInView(cell,{ camera:{ col:view.camera.col,row:view.camera.row + band.top },cols:view.cols,rows:band.rows });
-return { ...marker,row:marker.row + band.top };
+const at = { col:cell.col + HALF - view.camera.col,row:cell.row + HALF - view.camera.row - band.top };
+return centreInView(at,{ cols:view.cols,rows:band.rows }) ? { kind:'here',col:at.col,row:at.row + band.top } :{ kind:'none' };
 }
 function keepAxis(camera,axis) {
 const end = camera + axis.span;
@@ -71,4 +52,4 @@ if (reducedMotion) return PULSE_STILL;
 return (Math.sin(now / PULSE_MS * FULL_TURN) + 1) * HALF;
 }
 
-export { CAMERA_MARGIN, EDGE_INSET, targetCell, markerFor, framedCamera, pulseAt };
+export { CAMERA_MARGIN, targetCell, markerFor, framedCamera, pulseAt };
