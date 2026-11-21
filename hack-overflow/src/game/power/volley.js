@@ -23,9 +23,10 @@ ally:'brace',
 power:'plate',
 });
 const PLATE_VERBS = ['push','pop'];
+const moveWord = (move) => (move === 'breach' ? 'REJECT' : move.toUpperCase());
 const TEXT = {
-start:'VOLLEY. Stack the openers, pop to match, hold BREACH when it cannot match.',
-cleared:'Volleys blocked. +' + VOLLEY.reward + ' RANK.',
+start:'VOLLEY. Stack the openers, pop to match, hold REJECT when it cannot match.',
+cleared:'Volleys blocked. +' + VOLLEY.reward + ' R.',
 standDown:'Stood down. The volleys stop.',
 doorBump:'A nested door: ( [ ( ) ] ). Open it with the stack.',
 doorLocked:'A nested door. OLD BRACE has a way in.',
@@ -75,10 +76,10 @@ volley:Math.min(state.vi,volleys - 1),volleys,done:state.status === 'won',end:gl
 function volleyText() {
 return {
 ...TEXT,
-wrong:(right) => 'That one was a ' + right.toUpperCase() + '. -1',
-slip:(right) => 'That one was a ' + right.toUpperCase() + '.',
+wrong:(right) => 'That one was a ' + moveWord(right) + '. -1',
+slip:(right) => 'That one was a ' + moveWord(right) + '.',
 blocked:(done,total) => 'Volley ' + done + ' of ' + total + ' blocked.',
-breach:(glyph,top) => 'BREACH. ' + glyph + (top ? ' hit a ' + top + ' on top.' :' had nothing to match.') + ' A counter would have said fine.',
+breach:(glyph,top) => 'REJECT. ' + glyph + (top ? ' hit a ' + top + ' on top.' :' had nothing to match.') + ' A counter would have said fine.',
 };
 }
 

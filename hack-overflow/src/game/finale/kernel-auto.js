@@ -13,7 +13,7 @@ const AUTO_HINTS = Object.freeze({
 recall:'RECALL ALL visits every tag',
 pop:'Return: POP the matching frame',
 clear:'Stack empty: CLEAR',
-breach:'Cannot match: BREACH',
+breach:'Cannot match: REJECT',
 grey:'Grey entry: shoot it, then nudge',
 deque:'POP BACK or PUSH? You decide',
 });

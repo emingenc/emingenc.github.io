@@ -2,7 +2,7 @@ import { fillText } from '../fill-text.js';
 
 const TURRET_TEXTS = {
 coach:{
-first:'{v} needs {t} - {v} = {key}. Drag {v} onto slot {key}: empty, so it gets stored.',
+first:'{v} needs {t} - {v} = {key}. Tap slot {key}: empty, so {v} gets stored.',
 second:'{v} needs {t} - {v} = {key}. Slot {key}: lit = PAIR, empty = STORE.',
 plain:'Drone {v} in the bay. Target {t}.',
 ask:'{t} - {v} = ?',
@@ -31,7 +31,7 @@ evict:'EVICT {slot}: del seen[{slot}]. Room made. Now {v}.',
 armed:'EVICT armed: tap the tag to remove.',
 expired:'Slot {slots} expired: its TTL ran out.',
 },
-rule:'Clear all {n} drones to open the way. Drop each drone on the slot TARGET minus its number: lit slot = PAIR, empty slot = STORE.',
+rule:'Clear all {n} drones to open the way. Tap slot TARGET minus the drone number: lit slot = PAIR, empty slot = STORE.',
 rule2:'Clear all {n} drones. The slots are dark: work out TARGET minus the number, then look it up.',
 rule3:'Clear all {n} drones. The board holds only 3 tags and each one expires: EVICT the tag whose partner cannot arrive in time.',
 ruleOverflow:'OVERFLOW has no end. The swarm speeds up. Hold it as long as you can.',

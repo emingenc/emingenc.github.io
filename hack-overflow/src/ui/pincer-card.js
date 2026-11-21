@@ -1,8 +1,10 @@
 import { PINCER_TEXTS, fillText } from '../game/rooms/data/pincer-texts.js';
 import { bruteChecks, pincerPar } from '../game/rooms/pincer.js';
+import { LOSS_LINE, starGapLine } from '../game/rooms/star-gap.js';
 import { specOf } from '../game/rooms/pincer-base.js';
 import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
+import { uiRoomGap } from './room-card.js';
 import { uiPincerCardTitle, uiPincerOtherModes } from './pincer-modes.js';
 
 
@@ -56,7 +58,7 @@ function uiPincerHow(state, words) {
 function uiPincerWinBody(state, result) {
   const words = WAVE_WORDS[result.mode];
   const used = fillText(PINCER_TEXTS.card[words.used], uiPincerValues(state));
-  const head = [uiPincerStars(result.stars), uiPincerScore(state), ...uiPincerBestLine(result), uiPincerLine('pincer-used', used)];
+  const head = [uiPincerStars(result.stars), uiRoomGap(starGapLine('pincer', state, result.stars)), uiPincerScore(state), ...uiPincerBestLine(result), uiPincerLine('pincer-used', used)];
   const find = result.find ? uiPincerLine('pincer-find', result.find) : null;
   return [...head, uiArenaPaidLine(result.rank, 'pincer-paid'), find, uiPincerHow(state, words)].filter(Boolean);
 }
@@ -66,7 +68,7 @@ function uiPincerFailRule(state, result) {
 }
 function uiPincerFailLines(state, result) {
   const why = FAILS_WITH_WHY.has(result.fail) ? result.why : '';
-  return [why, uiPincerFailRule(state, result)].filter(Boolean);
+  return [why, LOSS_LINE, uiPincerFailRule(state, result)].filter(Boolean);
 }
 function uiPincerWinLines(result) {
   if (result.mode === 'w2') return result.firstWin ? [PINCER_TEXTS.card.unlock3] : [];

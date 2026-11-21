@@ -1,9 +1,11 @@
 import { BEAM_TEXTS } from '../game/rooms/data/beam-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
+import { LOSS_LINE,starGapLine } from '../game/rooms/star-gap.js';
 import { beamPar,bruteShots } from '../game/rooms/beam.js';
 import { uiArenaCard,uiArenaPaidLine } from './arena-shell.js';
 import { uiBeamOtherModes } from './beam-modes.js';
 import { uiEl } from './dom.js';
+import { uiRoomGap } from './room-card.js';
 
 
 const MAX_STARS = 3;
@@ -70,7 +72,7 @@ return lines.map((line) => uiBeamLine('beam-lesson',line));
 }
 function uiBeamWinBody(state,result) {
 const values = { shots:state.probes,n:bruteShots(state.wave),par:beamPar(state.wave) };
-const head = [uiBeamStars(result.stars),uiBeamScore(state),...uiBeamBestLine(result),uiBeamLine('turret-used',fillText(BEAM_TEXTS.card.used,values))];
+const head = [uiBeamStars(result.stars),uiRoomGap(starGapLine('beam',state,result.stars)),uiBeamScore(state),...uiBeamBestLine(result),uiBeamLine('turret-used',fillText(BEAM_TEXTS.card.used,values))];
 const lesson = uiBeamLessonLines(state,result);
 return [...head,uiBeamVersus(state),...lesson,uiArenaPaidLine(result.rank,'beam-paid'),uiBeamHow(uiBeamWordsFor(STARS_RULES,result.mode),fillText(uiBeamWordsFor(WHYS,result.mode),values))].filter(Boolean);
 }
@@ -78,7 +80,7 @@ function uiBeamCard(app,result) {
 const state = app.rig.arena.state;
 const actions = uiBeamActions(app,result.mode);
 if (!result.won) {
-const lines = [result.why || '',uiBeamWordsFor(FAIL_RULES,result.mode)].filter(Boolean);
+const lines = [result.why || '',LOSS_LINE,uiBeamWordsFor(FAIL_RULES,result.mode)].filter(Boolean);
 return uiArenaCard(app,{ title:BEAM_TEXTS.card.failTitle,tone:'fail',lines,body:[uiBeamScore(state)],actions });
 }
 return uiArenaCard(app,{ title:TITLES[result.mode],lines:[],body:uiBeamWinBody(state,result),actions });

@@ -3,6 +3,7 @@ import { NEXT_TALLER_ID, THIRD_WAVE } from '../game/quest/third-wave.js';
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
 import { answerFor, glyphOf, isOpener, shieldHint } from '../game/rooms/shield.js';
+import { autoMove } from '../game/rooms/shield-auto.js';
 
 
 const RIGHT_KINDS = new Set(['push', 'pop', 'breach', 'clear']);
@@ -76,6 +77,7 @@ function plainLine(state) {
 function uiShieldCoachText(arena) {
   const state = arena.state;
   if (state.status !== 'running') return '';
+  if (!arena.begun && !arena.manual && autoMove(state) !== '') return COACH.startStep;
   const teach = uiShieldTeach(arena);
   if (teach) return teach;
   const note = arena.manual ? '' : uiShieldNote(arena);

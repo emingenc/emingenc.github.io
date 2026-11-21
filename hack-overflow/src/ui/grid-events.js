@@ -2,7 +2,7 @@ import { GAME_EVENT } from '../game/game-events.js';
 import { DIRS, cellToward } from '../game/move.js';
 import { thingAt } from '../game/world.js';
 import { withPosition, claimCache, claimCore, markBeatsSeen, markMet } from '../game/save.js';
-import { rigOf } from '../game/rig-catalog.js';
+import { labThingHidden,rigOf } from '../game/rig-catalog.js';
 import { unlocksBetween } from '../game/progress.js';
 import { TURRET_LAB_ID,rigMeeting } from '../game/story/story.js';
 import { blockedText, nearText, sectorName } from '../game/messages.js';
@@ -23,7 +23,7 @@ import { uiActorsTick, uiHitFoe, uiNoteDoorway } from './grid-actors.js';
 const UI_NEAR_KINDS = { terminal:1,core:1,kernel:1,rig:1 };
 function uiNearThingAt(game,dir) {
 const thing = thingAt(game.world,cellToward(game.avatar.pos,dir));
-return thing && UI_NEAR_KINDS[thing.kind] ? thing :null;
+return thing && UI_NEAR_KINDS[thing.kind] && !labThingHidden(game.progress,thing) ? thing :null;
 }
 function uiNearDir(game) {
 const dirs = [game.avatar.facing,...Object.keys(DIRS)];

@@ -17,7 +17,7 @@ beat:'ambush',
 const MAKERS = { sentinel:createSentinel,drone:createDrone };
 const TEXT = {
 start:'AMBUSH. S1 heals every tick. TAG all three, then RECALL ALL.',
-clear:'Ambush clear. +' + AMBUSH.reward + ' RANK.',
+clear:'Ambush clear. +' + AMBUSH.reward + ' R.',
 standDown:'Stood down. The ambush breaks off.',
 };
 

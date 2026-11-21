@@ -67,7 +67,7 @@ lostHearts:'No hearts left with {m} cells live ({lo}..{hi}). A wrong KEEP costs 
 card:{
 used:'You used {shots} shots. Brute force would sweep up to {n} cells; halving needs {par}.',
 stars:'STARS: 1 = locked, 2 = no heart lost (without BOLT, mite bites do not count), 3 = also par or better and no worse split.',
-title:'HALVING BEAM CLEAR - THE LOCK IS OPEN',
+title:'HALVING BEAM CLEAR - THE ROOM IS CLEAR',
 next:'Next: breach a LOCK. Solving locks is how you pass each sector.',
 failTitle:'BEAM LOST',
 title3:'WAVE 3 CLEAR',

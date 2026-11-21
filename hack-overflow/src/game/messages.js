@@ -1,6 +1,6 @@
 import { hashStr } from '../logic/tray.js';
 import { coreState, sectorLocksLeft } from './progress.js';
-import { rigOf, rigStars } from './rig-catalog.js';
+import { labThingHidden, rigOf, rigStars } from './rig-catalog.js';
 import { encryptedHook } from './story/story.js';
 
 const LOCK_SEED_SUFFIX = ':0:0';
@@ -82,7 +82,7 @@ rig:rigNearText,
 };
 function nearText(world,id,{ progress = null,actWord = 'Enter',save = null } = {}) {
 const thing = Object.hasOwn(world.things,id) ? world.things[id] :null;
-return thing && Object.hasOwn(NEAR_TEXTS,thing.kind) ? NEAR_TEXTS[thing.kind](world,thing,{ progress,actWord,save }) :'';
+return thing && Object.hasOwn(NEAR_TEXTS,thing.kind) && !labThingHidden(progress,thing) ? NEAR_TEXTS[thing.kind](world,thing,{ progress,actWord,save }) :'';
 }
 function listText(names) {
 return names.length > 1 ? names.slice(0,-1).join(', ') + ' and ' + names.at(-1) :names.join('');

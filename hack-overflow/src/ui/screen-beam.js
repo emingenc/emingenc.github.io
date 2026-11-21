@@ -23,6 +23,7 @@ const MODE_TITLES = { w1:'BEAM · WAVE 1',w2:'BEAM · WAVE 2',w3:'BEAM · WAVE 3
 const MODE_LABELS = { w1:'wave 1',w2:'wave 2',w3:'wave 3' };
 const CELL_PATTERN = /^beam-cell-(\d+)$/;
 const ASSIST_HINT = 'ASSIST: no speed bonus, calmer motion';
+const ASSIST_LABEL = 'ASSIST: CALMER';
 const KEY_ACTIONS = {
 arrowleft:PREV_ACTION,arrowdown:PREV_ACTION,arrowright:NEXT_ACTION,arrowup:NEXT_ACTION,f:FIRE_ACTION,b:BOLT_ACTION,
 };
@@ -50,7 +51,7 @@ const arena = uiBeamArena(app);
 if (!arena) return uiEl('section',{ className:'screen rig-screen',attrs:{ 'data-screen':'rig' } });
 const view = {
 hearts:arena.state.hearts,heartsMax:HEARTS,score:arena.state.score,title:MODE_TITLES[arena.mode],titleLabel:arena.rig.title + ', ' + MODE_LABELS[arena.mode],
-assist:uiBeamAssist(app),assistHint:ASSIST_HINT,
+assist:uiBeamAssist(app),assistHint:ASSIST_HINT,assistLabel:ASSIST_LABEL,
 };
 const body = uiRoomBody(app,arena,{ play:() => uiBeamPlayView(app),card:() => uiBeamCard(app,arena.result) });
 return uiEl('section',{

@@ -13,7 +13,7 @@ import { uiShowToast } from './grid-toast.js';
 import { uiPayRank } from './rank-pay.js';
 
 const STAND_DOWN_ID = 'plate-stand-down';
-const HINTS = { breach:'hold',push:'plate on',pop:'top off',clear:'tower empty' };
+const HINTS = { breach:'hold',push:'plate on',pop:'top off',clear:'stack empty' };
 const SAFE_ARM = 2;
 const SHOT_ARM = 1;
 
@@ -157,9 +157,9 @@ else if (result.kind !== 'idle') uiRight(app,live,result);
 uiPowerRefresh(app);
 }
 function uiDockChip(verb,view) {
-const word = view.end && verb !== 'breach' ? 'CLEAR' :verb.toUpperCase();
+const word = view.end && verb !== 'breach' ? 'CLEAR' :verb === 'breach' ? 'REJECT' :verb.toUpperCase();
 const hint = verb === 'breach' ? HINTS.breach :view.end ? HINTS.clear :HINTS[verb];
-const aria = verb === 'breach' ? 'Breach: hold to deflect the volley' :view.end ? 'Clear: the tower is empty' :verb === 'push' ? 'Push a plate' :'Pop the top plate';
+const aria = verb === 'breach' ? 'Reject: hold to deflect the volley' :view.end ? 'Clear: the stack is empty' :verb === 'push' ? 'Push a plate' :'Pop the top plate';
 return { id:verb,label:word,intent:hint,aria,tone:verb === 'breach' ? 'breach' :'plate' };
 }
 function uiDockChips(app) {
