@@ -1,5 +1,6 @@
 import { rigPlate } from '../game/messages.js';
 import { DIRS, cellToward } from '../game/move.js';
+import { labThingHidden } from '../game/rig-catalog.js';
 import { thingAt } from '../game/world.js';
 import { uiEl, uiPointerIsCoarse } from './dom.js';
 import { uiKeysSeen } from './grid-input-mode.js';
@@ -50,7 +51,7 @@ function uiNearThing(game) {
 const dirs = [game.avatar.facing,...Object.keys(DIRS)].filter(function (dir) { return Object.hasOwn(DIRS,dir); });
 for (const dir of dirs) {
 const thing = thingAt(game.world,cellToward(game.avatar.pos,dir));
-if (thing && UI_NEAR_KINDS.has(thing.kind)) return thing;
+if (thing && UI_NEAR_KINDS.has(thing.kind) && !labThingHidden(game.progress,thing)) return thing;
 }
 return null;
 }

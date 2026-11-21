@@ -144,7 +144,7 @@
   padding:var(--sp-5);
   border:1px solid var(--border);
   border-radius:var(--radius-lg);
-  background:color-mix(in srgb,var(--panel) 48%,transparent);
+  background:var(--panel);
 }
 
 .arena-scroll {
@@ -167,7 +167,7 @@
   z-index:5;
   box-sizing:border-box;
   max-width:720px;
-  max-height:56dvh;
+  max-height:74dvh;
   margin:0 auto;
   border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   box-shadow:0 -12px 32px rgba(0, 0, 0, 0.6);
@@ -224,7 +224,7 @@
   margin:0 calc(-1 * var(--sp-5)) calc(-1 * var(--sp-5));
   padding:var(--sp-3) var(--sp-5) calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
   border-top:1px solid var(--border);
-  background:color-mix(in srgb,var(--panel) 48%,transparent);
+  background:var(--panel);
 }
 
 .arena-actions .arena-verb {

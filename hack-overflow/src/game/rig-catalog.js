@@ -43,7 +43,7 @@ shield:{
 id:'shield',title:'PLATE SHIELD',family:'stack',host:'rig',
 labId:'shield',
 levels:['shield-1'],
-pitch:'stack the plates, breach what cannot match',
+pitch:'stack the plates, reject what cannot match',
 guided:false,
 rank:{ clear:'dish-rush',star:10,stars:{ 2:'shield-s2',3:'shield-s3' } },
 },
@@ -89,4 +89,17 @@ maxStars:rig.levels.length * STARS_PER_LEVEL,
 };
 }
 
-export { RIG_CATALOG,rigOf,rigStars };
+const LAB_RIG_IDS = Object.freeze(['context','forge','stream']);
+function labsOpen(progress) {
+if (!progress) return false;
+if (progress.cores && progress.cores.size > 0) return true;
+return progress.met !== undefined && LAB_RIG_IDS.some((rigId) => progress.met.has(rigId));
+}
+function labHidden(progress,rigId) {
+return Boolean(progress) && LAB_RIG_IDS.includes(rigId) && !labsOpen(progress);
+}
+function labThingHidden(progress,thing) {
+return Boolean(thing) && thing.kind === 'rig' && labHidden(progress,thing.rig);
+}
+
+export { RIG_CATALOG,LAB_RIG_IDS,labsOpen,labHidden,labThingHidden,rigOf,rigStars };

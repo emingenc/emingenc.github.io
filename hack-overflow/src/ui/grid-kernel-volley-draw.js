@@ -69,7 +69,7 @@ ctx.strokeRect(box.left + edge / 2,box.top + edge / 2,box.width - edge,box.heigh
 }
 function paintVerb(ctx,frame,place) {
 const { run,view,anchor } = place;
-const verb = run.state.status === 'running' ? answerFor(run.state).toUpperCase() :'';
+const verb = run.state.status === 'running' ? answerFor(run.state).replace('breach','reject').toUpperCase() :'';
 if (!verb) return;
 const count = view.lane.length;
 const cell = glyphBox(frame,anchor,{ index:Math.min(view.at,count - 1),count });

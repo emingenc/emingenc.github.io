@@ -1,4 +1,5 @@
 import { LEVEL_XP, sectorLocksLeft } from './progress.js';
+import { labThingHidden } from './rig-catalog.js';
 import { isOpen, isPassable, thingAt } from './world.js';
 
 
@@ -33,6 +34,7 @@ rig:(world,progress,rig) => ({ type:'rig',id:rig.id,rigId:rig.rig,met:progress.m
 function eventInto(world,progress,cell) {
 const thing = thingAt(world,cell);
 if (!thing) return { type:isPassable(world,progress,cell) ? 'step' :'bump' };
+if (labThingHidden(progress,thing)) return { type:'bump' };
 if (!Object.hasOwn(NEEDS,thing.kind)) return THING_EVENTS[thing.kind](world,progress,thing);
 if (isOpen(world,progress,thing.id)) return { type:'step' };
 return { type:'blocked',id:thing.id,need:NEEDS[thing.kind](world,progress,thing) };

@@ -87,6 +87,7 @@ function uiShieldCommit(app, verb, now) {
 }
 function uiShieldPlay(arena, move, now) {
   if (arena.startedAt === null) arena.startedAt = now;
+  arena.begun = true;
   if (arena.manual || autoMove(arena.state) === '') arena.calls += 1;
   else arena.autoMoves += 1;
   arena.state = applyShield(arena.state, move, uiShieldCtx(arena, now));

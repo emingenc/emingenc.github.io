@@ -1,5 +1,6 @@
 import { DIRS, cellToward } from '../game/move.js';
 import { coreState } from '../game/progress.js';
+import { labHidden,labThingHidden } from '../game/rig-catalog.js';
 import { cacheVanishLook } from '../game/reward-motion.js';
 import { visibleRange } from '../game/viewport.js';
 import { cellAt } from '../game/world.js';
@@ -269,7 +270,7 @@ return [ring,{ ...count,row:uiCountRow(frame.world,{ ring,sprite:count.sprite })
 }
 function uiNearAt(frame,cell) {
 const entry = cellAt(frame.world,cell);
-return entry !== null && UI_NEAR_KINDS.has(entry.kind);
+return entry !== null && UI_NEAR_KINDS.has(entry.kind) && !labThingHidden(frame.progress,frame.world.things[entry.id]);
 }
 function uiFocusOverlays(frame) {
 const avatar = frame.avatar;
@@ -368,7 +369,9 @@ else uiFillLabel(pass,spec);
 }
 function uiDrawLabels(pass) {
 pass.ctx.globalAlpha = 1;
-uiPlanOf(pass.frame.world).labels.forEach(function (label) { uiDrawLabel(pass,label); });
+uiPlanOf(pass.frame.world).labels.forEach(function (label) {
+if (!label.rig || !labHidden(pass.frame.progress,label.rig)) uiDrawLabel(pass,label);
+});
 }
 function uiMapRange(frame) {
 const range = visibleRange(frame.camera,frame.view);

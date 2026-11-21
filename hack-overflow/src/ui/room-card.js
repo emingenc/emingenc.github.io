@@ -32,4 +32,8 @@ function uiRoomLine(className, text) {
   return uiEl('p', { className: 'arena-card-line ' + className, text });
 }
 
-export { uiRoomStars, uiRoomBars, uiRoomLine };
+function uiRoomGap(text) {
+  return text ? uiRoomLine('arena-card-gap', text) : null;
+}
+
+export { uiRoomStars, uiRoomBars, uiRoomLine, uiRoomGap };

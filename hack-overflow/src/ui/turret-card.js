@@ -2,7 +2,8 @@ import { TURRET_TEXTS, fillText } from '../game/rooms/data/turret-texts.js';
 import { bruteCompares, parOf } from '../game/rooms/turret.js';
 import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
-import { uiRoomBars, uiRoomLine, uiRoomStars } from './room-card.js';
+import { LOSS_LINE, starGapLine } from '../game/rooms/star-gap.js';
+import { uiRoomBars, uiRoomGap, uiRoomLine, uiRoomStars } from './room-card.js';
 import { uiTurretOtherModes } from './turret-modes.js';
 import { AGAIN, uiRaceCardLines, uiRaceStamp } from './turret-race.js';
 
@@ -54,7 +55,7 @@ function uiTurretHow(rule, why) {
 }
 function uiTurretWinBody(state, result) {
   const [used, rule, why] = uiTurretLessons(state);
-  const head = [uiRoomStars(result.stars, 'turret-stars'), ...uiRaceCardLines(result), uiTurretScore(state), ...uiTurretBestLine(result), uiRoomLine('turret-used', used), uiTurretVersus(state)];
+  const head = [uiRoomStars(result.stars, 'turret-stars'), uiRoomGap(starGapLine('turret', state, result.stars)), ...uiRaceCardLines(result), uiTurretScore(state), ...uiTurretBestLine(result), uiRoomLine('turret-used', used), uiTurretVersus(state)];
   return [...head, ...uiTurretBilledLine(state), uiArenaPaidLine(result.rank, 'turret-paid'), uiTurretHow(rule, why)].filter(Boolean);
 }
 function uiTurretOverflowBody(state, result) {
@@ -64,7 +65,7 @@ function uiTurretOverflowBody(state, result) {
 }
 function uiTurretLossCard(app, result) {
   const state = app.rig.arena.state;
-  const lines = [result.why || '', 'Every drone needs one look-up: slot T - v.'].filter(Boolean);
+  const lines = [result.why || '', LOSS_LINE, 'Every drone needs one look-up: slot T - v.'].filter(Boolean);
   const actions = uiTurretActions(app, result.mode);
   return uiArenaCard(app, { title: TURRET_TEXTS.card.failTitle, tone: 'fail', lead: uiRaceStamp(result), lines, body: [uiTurretScore(state), ...uiRaceCardLines(result)], actions });
 }

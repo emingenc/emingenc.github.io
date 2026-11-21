@@ -22,10 +22,17 @@ function uiShieldManualChanged(app, arena, manual) {
   app.autoManual = manual;
   if (app.rig.arena === arena) uiShieldPaint(app, arena);
 }
+function uiShieldBegun(app, arena) {
+  arena.coach = uiShieldCoachText(arena);
+  uiShieldAutoKick(app);
+}
 function uiShieldAutoPort(app, arena) {
   return {
     step: () => {
+      const first = !arena.begun;
+      arena.begun = true;
       const moved = uiShieldAutoStep(app, uiShieldTime());
+      if (moved && first) uiShieldBegun(app, arena);
       if (moved) uiShieldPaint(app, arena);
       return moved;
     },
@@ -45,14 +52,14 @@ function uiShieldAutoOf(app) {
 }
 function uiShieldKickNow(app, arena) {
   arena.kickTimer = 0;
-  if (app.rig.arena !== arena || arena.manual || arena.stalled || !uiShieldForced(app)) return;
+  if (app.rig.arena !== arena || !arena.begun || arena.manual || arena.stalled || !uiShieldForced(app)) return;
   const { run } = uiShieldAutoOf(app);
   const state = run.snapshot().state;
   if (state === 'idle' || state === 'decision') run.go();
 }
 function uiShieldAutoKick(app) {
   const arena = app.rig && app.rig.arena;
-  if (!arena || arena.view !== 'play' || arena.manual || arena.kickTimer) return;
+  if (!arena || arena.view !== 'play' || !arena.begun || arena.manual || arena.kickTimer) return;
   arena.kickTimer = window.setTimeout(() => uiShieldKickNow(app, arena), START_MS);
 }
 function uiShieldAutoStop(app) {

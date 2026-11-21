@@ -3,7 +3,6 @@ import { runToDecision, uiAutoRunControls } from './auto-run.js';
 import { uiNetAutoForced, uiNetAutoStep, uiNetSpoken } from './net-flow.js';
 
 
-const START_DELAY_MS = 700;
 const NUDGE_DELAY_MS = 0;
 const uiAutoPref = { manual: false };
 
@@ -32,7 +31,6 @@ function uiNetAutoStopped(app, arena) {
 
 function uiNetAutoStop(arena) {
   if (!arena || !arena.auto) return;
-  window.clearTimeout(arena.autoStart);
   arena.auto.destroy();
   arena.auto = null;
   arena.autoNode = null;
@@ -47,12 +45,13 @@ function uiNetAutoAttach(app) {
     onManualChange: (manual) => { uiAutoPref.manual = manual; },
   });
   arena.autoNode = uiAutoRunControls(arena.auto).node;
-  arena.autoStart = window.setTimeout(() => arena.auto && arena.auto.go(), START_DELAY_MS);
+  arena.begun = false;
 }
 function uiNetAutoMoved(app) {
   const arena = app.rig && app.rig.arena;
   if (!arena || !arena.auto) return;
   if (arena.view !== 'play') return uiNetAutoStop(arena);
+  arena.begun = true;
   if (arena.auto.snapshot().state === 'paused') return null;
   arena.autoQuiet = true;
   arena.autoMoved = false;
@@ -62,7 +61,7 @@ function uiNetAutoMoved(app) {
 }
 function uiNetAutoNudge(app) {
   const arena = app.rig && app.rig.arena;
-  if (!arena || !arena.auto || arena.autoNudged) return;
+  if (!arena || !arena.auto || !arena.begun || arena.autoNudged) return;
   const view = arena.auto.snapshot();
   if (view.state !== 'decision' || view.manual || !uiNetAutoForced(app)) return;
   arena.autoNudged = true;

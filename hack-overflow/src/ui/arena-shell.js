@@ -7,7 +7,7 @@ const ARENA_FOCUS_KEY = 'arena-root';
 const ARENA_LEAVE_GUARD_MS = 600;
 const ARENA_ASSIST_ACTION = 'arena-assist';
 const ARENA_SOUND_ACTION = 'toggle-sound';
-const ARENA_ASSIST_LABEL = 'ASSIST';
+const ARENA_ASSIST_LABEL = 'ASSIST: NO CLOCK';
 const ARENA_ASSIST_HINT = 'ASSIST: no fuses, no bonus score';
 const ARENA_HEARTS_MAX = 3;
 const ARENA_HEART_FULL = '♥';
@@ -15,7 +15,7 @@ const ARENA_HEART_EMPTY = '♡';
 const ARENA_TOAST_MS = 2500;
 const ARENA_TOAST_KINDS = { bad:'alert' };
 const ARENA_TOAST_ROLE = 'status';
-const ARENA_MOMENT_TEXT = 'LOCK OPEN';
+const ARENA_MOMENT_TEXT = 'ROOM CLEAR';
 
 function uiArenaDefaultNow() {
 return typeof performance !== 'undefined' ? performance.now() :Date.now();
@@ -37,8 +37,8 @@ const button = uiArenaButton(ARENA_SOUND_ACTION,app.soundOn ? 'SND ON' :'SND OFF
 button.setAttribute('aria-pressed',String(!!app.soundOn));
 return button;
 }
-function uiArenaAssist(assist,hint) {
-const button = uiArenaButton(ARENA_ASSIST_ACTION,ARENA_ASSIST_LABEL,'arena-assist');
+function uiArenaAssist(assist,hint,label) {
+const button = uiArenaButton(ARENA_ASSIST_ACTION,label ?? ARENA_ASSIST_LABEL,'arena-assist');
 button.setAttribute('aria-pressed',String(assist === true));
 button.setAttribute('title',hint);
 button.setAttribute('aria-label',hint);
@@ -48,7 +48,7 @@ function uiArenaHeader(app,view) {
 const score = uiEl('span',{ className:'arena-score',text:String(view.score),attrs:{ 'aria-label':'Score ' + view.score } });
 const top = uiEl('div',{ className:'arena-row',children:[uiArenaHearts(view.hearts,view.heartsMax ?? ARENA_HEARTS_MAX),score,uiArenaMute(app)] });
 const title = uiEl('span',{ className:'arena-title',text:view.title,attrs:view.titleLabel ? { role:'heading','aria-level':'2','aria-label':view.titleLabel } :undefined });
-const bottom = uiEl('div',{ className:'arena-row',children:[uiArenaButton(ARENA_BACK,'LEAVE','arena-back'),title,uiArenaAssist(view.assist,view.assistHint ?? ARENA_ASSIST_HINT)] });
+const bottom = uiEl('div',{ className:'arena-row',children:[uiArenaButton(ARENA_BACK,'LEAVE','arena-back'),title,uiArenaAssist(view.assist,view.assistHint ?? ARENA_ASSIST_HINT,view.assistLabel)] });
 return uiEl('header',{ className:'arena-header',children:[top,bottom] });
 }
 function uiArenaRule(text) {

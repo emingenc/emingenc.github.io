@@ -33,7 +33,7 @@ function uiShieldTower(state) {
   const plates = state.stack.map((entry, index) => uiShieldPlateOf(state, entry, index === last));
   const floor = uiEl('span', { className: 'shield-floor', text: state.stack.length === 0 ? 'EMPTY' : '', attrs: { 'aria-hidden': 'true' } });
   return uiEl('div', {
-    className: 'shield-tower', attrs: { role: 'list', 'aria-label': 'Tower, ' + state.stack.length + (state.stack.length === 1 ? ' plate' : ' plates') },
+    className: 'shield-tower', attrs: { role: 'list', 'aria-label': 'Stack, ' + state.stack.length + (state.stack.length === 1 ? ' plate' : ' plates') },
     children: [floor, ...plates],
   });
 }
@@ -59,7 +59,7 @@ function uiShieldRace(state) {
   const chip = state.spec.towers ? SHIELD_TEXTS.coach.chipTower : SHIELD_TEXTS.coach.chip;
   const order = uiEl('span', { className: 'shield-order', text: fillText(chip, { o: Math.min(state.vi + 1, state.wave.length), n: state.wave.length }) });
   const streak = uiEl('span', { className: 'shield-streak', text: state.combo > 1 ? 'STREAK x' + state.combo : '' });
-  const held = state.spec.towers ? 'WAITING ' : 'TOWER ';
+  const held = state.spec.towers ? 'WAITING ' : 'STACK ';
   const plates = uiEl('span', { className: 'shield-depth', text: held + state.stack.length });
   return uiEl('p', { className: 'shield-race', children: [order, streak, plates] });
 }
@@ -91,12 +91,12 @@ function uiShieldDock(app) {
   if (state.spec.towers) return uiShieldTowersDock();
   const end = glyphOf(state) === END_GLYPH;
   const breach = uiShieldVerb({
-    action: BREACH_ACTION, word: 'BREACH', hint: HINTS.breach, extra: 'shield-breach',
-    label: 'Breach: hold to deflect the volley',
+    action: BREACH_ACTION, word: 'REJECT', hint: HINTS.breach, extra: 'shield-breach',
+    label: 'Reject: hold to deflect the volley',
   });
   breach.setAttribute('data-shield-breach', 'hold');
-  const push = uiShieldVerb({ action: PUSH_ACTION, word: end ? 'CLEAR' : 'PUSH', hint: end ? HINTS.clear : HINTS.push, label: end ? 'Clear: the tower is empty' : 'Push a plate' });
-  const pop = uiShieldVerb({ action: POP_ACTION, word: end ? 'CLEAR' : 'POP', hint: end ? HINTS.clear : HINTS.pop, label: end ? 'Clear: the tower is empty' : 'Pop the top plate' });
+  const push = uiShieldVerb({ action: PUSH_ACTION, word: end ? 'CLEAR' : 'PUSH', hint: end ? HINTS.clear : HINTS.push, label: end ? 'Clear: the stack is empty' : 'Push a plate' });
+  const pop = uiShieldVerb({ action: POP_ACTION, word: end ? 'CLEAR' : 'POP', hint: end ? HINTS.clear : HINTS.pop, label: end ? 'Clear: the stack is empty' : 'Pop the top plate' });
   return uiEl('div', { className: 'shield-dock', attrs: { role: 'group', 'aria-label': 'Shield controls' }, children: [breach, push, pop] });
 }
 

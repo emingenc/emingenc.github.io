@@ -62,20 +62,20 @@ intro:[
 },
 shield:{
 intro:[
-[GHOST,'A dish rush. Orders come in as brackets, and my plates stack: only the top one comes off.'],
-[GHOST,'Match each closer to the top plate. If it cannot match, hold BREACH.'],
+[GHOST,'A plate shield. Volleys come in as brackets, and my plates stack: only the top one comes off.'],
+[GHOST,'Match each closer to the top plate. If it cannot match, hold REJECT.'],
 ],
 },
 net:{
 intro:[
 [GHOST,'A sliding net. I hold a run of items and slide its edges along the line, the way I slide my own window.'],
-[GHOST,'Grow the net with EXTEND, trim it with SHRINK. Start with EXTEND.'],
+[GHOST,'Grow the net with EXTEND, trim it with SHRINK, and JUMP the left edge past a repeat in one move. Start with EXTEND.'],
 ],
 },
 beam:{
 intro:[
 [GHOST,'This beam hides my weak point in a row of cells. It only answers HIGHER or LOWER, and it cheats toward the bigger side.'],
-[GHOST,'So aim at the middle: every shot should kill half the cells. Select a cell, then FIRE.'],
+[GHOST,'So aim at the middle: every shot should kill half the cells. Tap a cell to fire.'],
 ],
 },
 };

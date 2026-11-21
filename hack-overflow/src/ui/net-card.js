@@ -1,7 +1,9 @@
 import { NET_TEXTS, fillText } from '../game/rooms/data/net-texts.js';
 import { bruteReads, netPar } from '../game/rooms/net.js';
+import { LOSS_LINE, starGapLine } from '../game/rooms/star-gap.js';
 import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
+import { uiRoomGap } from './room-card.js';
 
 
 const MAX_STARS = 3;
@@ -44,7 +46,7 @@ function uiNetHow(values) {
 function uiNetWinBody(state, result) {
   const values = uiNetValues(state);
   const flick = state.flicked ? uiNetLine('net-flick', NET_TEXTS.card.flick) : null;
-  const head = [uiNetStars(result.stars), uiNetScore(state), uiNetLine('net-used', fillText(NET_TEXTS.card.used, values)), flick];
+  const head = [uiNetStars(result.stars), uiRoomGap(starGapLine('net', state, result.stars)), uiNetScore(state), uiNetLine('net-used', fillText(NET_TEXTS.card.used, values)), flick];
   const find = result.find ? uiNetLine('net-find', result.find) : null;
   return [...head, uiArenaPaidLine(result.rank, 'net-paid'), find, uiNetHow(values)].filter(Boolean);
 }
@@ -54,7 +56,7 @@ function uiNetWinActions(result) {
 function uiNetCard(app, result) {
   const state = app.rig.arena.state;
   if (!result.won) {
-    const lines = [result.why].filter(Boolean);
+    const lines = [result.why, LOSS_LINE].filter(Boolean);
     return uiArenaCard(app, { title: NET_TEXTS.card.failTitle, tone: 'fail', lines, body: [uiNetScore(state)], actions: [REPLAY, BACK] });
   }
   return uiArenaCard(app, { title: NET_TEXTS.card.title, body: uiNetWinBody(state, result), actions: uiNetWinActions(result) });

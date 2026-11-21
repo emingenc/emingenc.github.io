@@ -1,4 +1,4 @@
-import { rigStars } from '../game/rig-catalog.js';
+import { labHidden,rigStars } from '../game/rig-catalog.js';
 import { UI_RIG_PIPS } from './grid-sprites.js';
 import { UI_SAFEHOUSE_ACCENT, uiIsGround, uiLabelWidth, uiPulse, uiRigAccent, uiWallAt } from './grid-draw-common.js';
 
@@ -24,8 +24,9 @@ const across = { col:rig.col + UI_ACROSS.col,row:rig.row + UI_ACROSS.row };
 if (uiWallRun(world,across,run)) return across;
 return uiWallRun(world,{ col:rig.col - run,row:rig.row - 1 },run) ? { col:rig.col - width,row:rig.row - 1 } :null;
 }
-function uiRigPlates(world) {
+function uiRigPlates(world,progress) {
 return Object.values(world.rigs).flatMap(function (rig) {
+if (progress && labHidden(progress,rig.rig)) return [];
 const cell = uiRigPlateAt(world,rig);
 return cell ? [{ text:rig.name,col:cell.col,row:cell.row,accent:uiRigAccent(rig.rig,rig.family),rig:rig.rig }] :[];
 });
@@ -43,6 +44,7 @@ function uiRigStateAt(frame,rig) {
 return uiRigState({ met:frame.progress.met !== undefined && frame.progress.met.has(rig),...uiRigCleared(frame.save,rig) });
 }
 function uiRigLayers(frame,spot) {
+if (labHidden(frame.progress,frame.world.things[spot.id].rig)) return spot.base;
 const state = uiRigStateAt(frame,frame.world.things[spot.id].rig);
 const layers = [...spot.base,{ sprite:state.sprite,accent:spot.accent }];
 for (let pip = 1; pip <= state.pips; pip += 1) layers.push({ sprite:'rig-pip-' + pip,accent:spot.accent });
@@ -50,6 +52,7 @@ if (!state.pulse) return layers;
 return [...layers,{ sprite:'rig-glow',accent:spot.accent,alpha:uiPulse(frame) },{ sprite:'rig-halo',accent:spot.accent,alpha:uiPulse(frame) }];
 }
 function uiRigMast(frame,rig) {
+if (labHidden(frame.progress,rig.rig)) return [];
 const above = { col:rig.col,row:rig.row - 1 };
 if (uiIsGround(frame.world,above)) return [];
 const state = uiRigStateAt(frame,rig.rig);

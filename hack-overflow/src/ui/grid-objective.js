@@ -6,6 +6,15 @@ import { goalLine, objectiveFor } from '../game/objective.js';
 const UI_VERB_WALK = 'WALK';
 const UI_VERB_ACT = { keys:'PRESS ENTER',touch:'TAP ◆' };
 const UI_VERB_ZAP = { keys:'ZAP · F',touch:'ZAP · A' };
+const UI_VERB_TAG = { keys:'TAG · F',touch:'TAG · A' };
+const UI_VERB_BOLT = { keys:'BOLT · F',touch:'BOLT · A' };
+const UI_KEY = { keys:'F',touch:'A' };
+function uiFoeVerb(game,hand) {
+const text = (game.aimLabel && game.aimLabel.text) || '';
+if (!text) return UI_VERB_ZAP[hand];
+if (!/^AIM\b/.test(text)) return text + ' · ' + UI_KEY[hand];
+return /BOLT/.test(text) ? UI_VERB_BOLT[hand] :UI_VERB_TAG[hand];
+}
 const UI_ZAP_REACH = 5;
 function uiCurrentObjective(app) {
 const game = app.game;
@@ -29,7 +38,7 @@ return uiLiveFoes(game).some(function (foe) { return uiGapTo(game,foe) <= UI_ZAP
 }
 function uiVerbFor(game,objective) {
 const hand = uiKeysSeen() ? 'keys' :'touch';
-if (uiFoeNear(game)) return UI_VERB_ZAP[hand];
+if (uiFoeNear(game)) return uiFoeVerb(game,hand);
 const thing = objective.targetId && game.world.things ? game.world.things[objective.targetId] :null;
 if (!thing) return null;
 if (!uiNextTo(game,thing)) return UI_VERB_WALK;

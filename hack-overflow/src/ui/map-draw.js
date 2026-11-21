@@ -1,4 +1,5 @@
 import { coreState } from '../game/progress.js';
+import { labHidden } from '../game/rig-catalog.js';
 import { isOpen } from '../game/world.js';
 import { uiAccentOf, uiRigAccent, uiRigCleared, uiRigPlates, uiRigState, uiSectorAt } from './grid-draw-tiles.js';
 import { uiDrawMapObjective, uiDrawRingSwatch, uiMapLayoutRemember } from './map-marks.js';
@@ -129,6 +130,7 @@ function uiMapThingBoxes(view) {
 const boxes = [];
 view.world.cells.forEach(function (cell,index) {
 if (!UI_MAP_RESERVED_KINDS.has(cell.kind)) return;
+if (cell.kind === 'rig' && labHidden(view.progress,view.world.things[cell.id].rig)) return;
 const rect = uiMapCellRect(view,index);
 boxes.push(uiRectBox(cell.kind === 'rig' ? uiMapRigRect(rect) :rect));
 });
@@ -172,12 +174,14 @@ function uiDrawMapRigs(view) {
 view.world.cells.forEach(function (cell,index) {
 if (cell.kind !== 'rig') return;
 const thing = view.world.things[cell.id];
+if (labHidden(view.progress,thing.rig)) return;
 const color = view.palette[uiRigAccent(thing.rig,thing.family)];
 uiDrawRigMark(view.ctx,{ rect:uiMapRigRect(uiMapCellRect(view,index)),color,look:uiMapRigLook(view,thing),palette:view.palette });
 });
 }
 function uiDrawMapCell(view,cell,index) {
 const rect = uiMapCellRect(view,index);
+if (cell.kind === 'rig' && labHidden(view.progress,view.world.things[cell.id].rig)) return;
 const inset = UI_MAP_INSET_KINDS.has(cell.kind);
 if (inset || UI_MAP_GROUND_KINDS.has(cell.kind)) uiDrawMapGround(view,rect,index);
 if (inset && cell.kind !== 'rig') return uiDrawInsetSquare(view.ctx,rect,uiMapThingColor(view,cell));
@@ -278,7 +282,7 @@ const labelView = { ...view,labelHeight:font.size,reserved:[...uiMapThingBoxes(v
 const placed = [];
 const encrypted = uiMapStateColor(view.palette,'encrypted');
 uiMapLandmarks(labelView).forEach(function (spot) { uiDrawMapLabelIfFits(labelView,placed,spot); });
-uiRigPlates(view.world).forEach(function (plate) { uiDrawMapLabelIfFits(labelView,placed,{ ...plate,color:view.palette[plate.accent],mustDraw:false }); });
+uiRigPlates(view.world,view.progress).forEach(function (plate) { uiDrawMapLabelIfFits(labelView,placed,{ ...plate,color:view.palette[plate.accent],mustDraw:false }); });
 view.world.encrypted.forEach(function (entry) { uiDrawMapLabelIfFits(labelView,placed,{ text:entry.name,col:entry.col,row:entry.row,color:encrypted,mustDraw:false }); });
 }
 

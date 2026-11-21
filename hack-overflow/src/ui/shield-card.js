@@ -1,13 +1,14 @@
 import { SHIELD_TEXTS } from '../game/rooms/data/shield-texts.js';
 import { fillText } from '../game/rooms/data/turret-texts.js';
+import { LOSS_LINE, starGapLine } from '../game/rooms/star-gap.js';
 import { bruteReads, shieldPar, shieldStars } from '../game/rooms/shield.js';
 import { uiArenaCard, uiArenaPaidLine } from './arena-shell.js';
 import { uiEl } from './dom.js';
-import { uiRoomBars, uiRoomLine, uiRoomStars } from './room-card.js';
+import { uiRoomBars, uiRoomGap, uiRoomLine, uiRoomStars } from './room-card.js';
 import { uiShieldOtherModes } from './shield-modes.js';
 
 
-const FIRST_CLEAR = 'First DISH RUSH cleared. The stack hall remembers it.';
+const FIRST_CLEAR = 'First PLATE SHIELD cleared. The stack hall remembers it.';
 const SWITCH_ACTIONS = { w1: 'shield-wave1', w2: 'shield-wave2', w3: 'shield-wave3' };
 const MODE_LABELS = { w1: SHIELD_TEXTS.card.wave1, w2: SHIELD_TEXTS.card.wave2, w3: SHIELD_TEXTS.card.wave3 };
 const TITLES = { w1: SHIELD_TEXTS.card.title, w2: SHIELD_TEXTS.card.title2, w3: SHIELD_TEXTS.card.title3 };
@@ -54,7 +55,7 @@ function uiShieldFindLine(result) {
 }
 function uiShieldWinBody(state, result) {
   const [used, rule, why] = uiShieldLessons(state, result);
-  const head = [uiRoomStars(result.stars, 'shield-stars'), uiShieldScore(state), ...uiShieldBestLine(result), uiRoomLine('turret-used', used), uiShieldVersus(state)];
+  const head = [uiRoomStars(result.stars, 'shield-stars'), uiRoomGap(starGapLine('shield', state, result.stars)), uiShieldScore(state), ...uiShieldBestLine(result), uiRoomLine('turret-used', used), uiShieldVersus(state)];
   return [...head, ...uiShieldAnswerLine(state), uiArenaPaidLine(result.rank, 'shield-paid'), ...uiShieldFindLine(result), uiShieldHow(rule, why)].filter(Boolean);
 }
 function uiShieldCardLines(result) {
@@ -63,11 +64,11 @@ function uiShieldCardLines(result) {
 }
 function uiShieldLossRule(result, state) {
   if (result.machine > 0) return state.spec.towers ? SHIELD_TEXTS.card.failRule3Auto : SHIELD_TEXTS.card.failRuleAuto;
-  return state.spec.towers ? SHIELD_TEXTS.card.failRule3 : 'Every glyph needs one action: PUSH, POP, or hold BREACH.';
+  return state.spec.towers ? SHIELD_TEXTS.card.failRule3 : 'Every glyph needs one action: PUSH, POP, or hold REJECT.';
 }
 function uiShieldLossLines(result, state) {
   const rule = uiShieldLossRule(result, state);
-  return [result.why || '', rule, result.find || ''].filter(Boolean);
+  return [result.why || '', LOSS_LINE, rule, result.find || ''].filter(Boolean);
 }
 function uiShieldCard(app, result) {
   const state = app.rig.arena.state;

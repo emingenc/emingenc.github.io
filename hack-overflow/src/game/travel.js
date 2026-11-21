@@ -1,6 +1,6 @@
 import { findPath } from './path.js';
 import { coreState } from './progress.js';
-import { rigOf,rigStars } from './rig-catalog.js';
+import { labHidden,rigOf,rigStars } from './rig-catalog.js';
 import { isOpen } from './world.js';
 import { isPlace, lockLabel, sectorName } from './messages.js';
 
@@ -63,7 +63,7 @@ place:live ? ctx.world.sectors[sector].keys.length + 1 :0,
 function allRows(ctx) {
 const terminals = ctx.world.placed.map((key) => terminalRow(ctx,key));
 const cores = readyCores(ctx).map((core) => coreRow(ctx,core));
-const rigs = Object.values(ctx.world.rigs).map((rig) => rigRow(ctx,rig));
+const rigs = Object.values(ctx.world.rigs).filter((rig) => !labHidden(ctx.progress,rig.rig)).map((rig) => rigRow(ctx,rig));
 return [...terminals,...cores,...rigs,...kernelRows(ctx)];
 }
 function groupRank(row) {
